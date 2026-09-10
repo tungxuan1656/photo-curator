@@ -18,8 +18,8 @@ struct HomeView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(true)
                 if appModel.authorization == .limited {
-                    // TODO(feat-002INT): present the limited-library picker here;
-                    // G1 skeleton only opens the guidance sheet.
+                    // Picker lives in the guidance sheet (wired feat-002INT);
+                    // this entry only opens the sheet.
                     Button("Limited Photos Access — Choose More Photos") {
                         showsAccessGuidance = true
                     }
@@ -61,9 +61,6 @@ struct HomeView: View {
         .navigationTitle("Photos Curator")
         .sheet(isPresented: $showsAccessGuidance) {
             AccessGuidanceSheet()
-        }
-        .task {
-            await appModel.refreshAuthorization()
         }
     }
 }

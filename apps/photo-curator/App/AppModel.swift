@@ -11,6 +11,7 @@ final class AppModel {
     var path: [AppRoute] = []
     var authorization: PhotoLibraryAuthorization = .notDetermined
     var hasSeenWelcome: Bool
+    private var isRequesting = false
 
     private let container: AppContainer
 
@@ -35,9 +36,16 @@ final class AppModel {
     }
 
     func requestPermission() async {
+        guard !isRequesting else { return }
+        isRequesting = true
+        defer { isRequesting = false }
         authorization = await container.photoLibrary.requestAuthorization()
         markSeen()
         path = []
+    }
+
+    func presentPicker() {
+        container.photoLibrary.presentLimitedLibraryPicker()
     }
 
     private func markSeen() {
