@@ -51,6 +51,7 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-025 | Deterministic rules around model outputs | 03, 04 |
 | DEC-026 | Never auto-delete rejected photos | 01, 02 |
 | DEC-027 | Speed of development over purity | 05 |
+| DEC-028 | G0 contract naming | 05 |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -218,6 +219,12 @@ Owner: 01, 02.
 **DEC-027 — Ship speed over purity (Accepted).**
 Given equal quality, pick less code, fewer deps, easier debug. Resist clean-architecture rewrites without proof.
 Owner: 05.
+
+**DEC-028 — G0 contract naming (Accepted).**
+Keep `PhotoCuratorApp` (matches Xcode target); canonical model `PhotoAsset` (drop `PhotoAssetRecord`
+at G0); engine file `SelectionEngine.swift` holds concrete `SelectionEngine` (no protocol per DEC-015).
+Owner: 05. Affected: feature_index owns, 05. Risk: later stages extend contracts via leader review only.
+Reconsider when: a stage needs a name the contract cannot express.
 
 ---
 

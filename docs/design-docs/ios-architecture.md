@@ -65,7 +65,7 @@ Rules:
 |---|---|
 | UI | SwiftUI + Observation (`@Observable`), `NavigationStack` with typed routes |
 | App shape | One iOS app target, iOS 26+ per [07](apple-frameworks.md); folders bound behavior, no MVP packages |
-| Composition | `PhotosCuratorApp` builds `AppContainer.live()` once, injects `AppModel` |
+| Composition | `PhotoCuratorApp` builds `AppContainer.live()` once, injects `AppModel` |
 | UI state | `@MainActor @Observable` models; explicit enums, not boolean soup |
 | Shared mutable background state | Actors (coordinator, cache, file store) |
 | Concurrency | Swift structured concurrency: tasks, task groups, actors |
@@ -102,8 +102,8 @@ Invariants (only use of MUST in this doc):
 Single Xcode project, one application target.
 
 ```text
-PhotosCurator/
-├── App/            PhotosCuratorApp, AppContainer, AppModel, AppRoute, AppEnvironment
+PhotoCurator/
+├── App/            PhotoCuratorApp, AppContainer, AppModel, AppRoute, AppEnvironment
 ├── Features/       Onboarding, SourceSelection, Processing, Results, Review, Settings
 ├── Domain/         Models, Selection (engine façade + stages), Scoring
 ├── Services/       Photos, Analysis, Cache, Export, Analytics
@@ -123,7 +123,7 @@ Entry point creates the container once and injects the root model. No expensive 
 
 ```swift
 @main
-struct PhotosCuratorApp: App {
+struct PhotoCuratorApp: App {
     @State private var appModel: AppModel
 
     init() {
