@@ -91,7 +91,7 @@ On-device analysis. No photo pixels, face data, embeddings, GPS, or asset IDs ar
 ## Contributing
 
 1. Pick a `todo` feat whose `depends_on` feats are `done`; mark it `active`.
-2. Branch `feat/<id>` từ `main`; touch only your `owns` files.
+2. Branch `feat/<id>` from `main`; touch only your `owns` files.
 3. Run `./init.sh` before opening a PR into `main`.
 4. Keep scope inside the active feat; record evidence and handoff in `features/feat-<id>.md`.
 5. Never add test targets, `*Test*.swift` files, or test-only architecture.

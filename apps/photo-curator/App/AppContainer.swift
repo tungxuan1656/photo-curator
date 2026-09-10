@@ -1,7 +1,7 @@
 import Foundation
 
 /// Plain dependency holder, not a framework. Holds no feature state.
-/// `SessionCheckpointStore` joins in feat-002A; real DI replaces Noops in feat-002INT.
+/// `SessionCheckpointStore` joined in feat-002; real DI in feat-002.
 struct AppContainer: Sendable {
     let photoLibrary: any PhotoLibraryService
     let imageLoader: any PhotoImageLoader

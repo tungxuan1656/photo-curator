@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 /// G1 skeleton session state. Runs on the `PhotoLibraryService` protocol (Noop in G1);
-/// real permission wiring lands in feat-002INT.
+/// real permission wiring landed in feat-002.
 @MainActor
 @Observable
 final class AppModel {

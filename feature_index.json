@@ -31,8 +31,11 @@
         "Features/Onboarding/",
         "App/AppModel.swift",
         "App/AppRoute.swift",
+        "App/RootView.swift",
         "App/AppContainer.swift",
-        "Services/Photos/PhotoLibraryPermissionService.swift"
+        "Services/ServiceProtocols.swift",
+        "Services/Photos/PhotoLibraryPermissionService.swift",
+        "apps/photo-curator/PrivacyInfo.xcprivacy"
       ],
       "status": "done",
       "title": "Foundation: store + onboarding + real DI (ex-G1)"
@@ -58,7 +61,10 @@
       "id": "feat-004",
       "owns": [
         "Features/SourceSelection/",
-        "SharedUI/AsyncPhotoThumbnail.swift"
+        "SharedUI/AsyncPhotoThumbnail.swift",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift"
       ],
       "status": "todo",
       "title": "SourceSelection + Summary on real fetch"
@@ -85,7 +91,11 @@
       "id": "feat-006",
       "owns": [
         "Features/Processing/",
-        "Features/Settings/"
+        "Features/Settings/",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Services/Session/SelectionSessionCoordinator.swift"
       ],
       "status": "todo",
       "title": "Processing UI on real coordinator + Settings skeleton"
@@ -198,5 +208,5 @@
       "title": "Release: QA plus conditional analytics"
     }
   ],
-  "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done"
+  "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done; owns is per-feat scope, not an exclusive lock — a later feat may sequentially modify an earlier feat's file (e.g. BatchPipeline.swift, Settings/, ServiceProtocols.swift); single-active order means no concurrent overlap"
 }

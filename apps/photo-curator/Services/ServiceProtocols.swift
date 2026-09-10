@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 
-/// Photo-library access level. Full/limited/denied flow is wired in feat-002INT.
+/// Photo-library access level. Full/limited/denied flow is wired in feat-002.
 enum PhotoLibraryAuthorization: Sendable {
     case notDetermined, limited, authorized, denied, restricted
 }

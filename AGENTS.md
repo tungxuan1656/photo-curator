@@ -39,7 +39,7 @@ If baseline verification fails, record the failure. Fix it only when the current
 - Keep the plan inside `features/feat-<id>.md` for bounded tracked work (1-3 files, 1 workspace, <200 lines).
 - Create `docs/plans/feat-<id>.md` only for substantial work (>=4 files or >=2 workspaces, DB migration/breaking API, or needs phases/rollback — requires >=2 signals). Default to inline.
 - Link the external plan from the feature file.
-- Define agent and file ownership before parallel work starts.
+- Use the active feature's owns list before work starts.
 
 ## Escalation
 

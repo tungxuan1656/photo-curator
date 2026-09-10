@@ -2,7 +2,7 @@ import Foundation
 
 /// File-backed AnalysisCache skeleton. Conforms to the G0 AnalysisCache protocol.
 /// Reuses an entry only when the stored analysisVersion matches the current version.
-/// Fingerprint comparison against live PhotoAsset metadata arrives with feat-003A.
+/// Fingerprint comparison against live PhotoAsset metadata arrives with feat-003.
 /// Holds compact PhotoAnalysis values only, never image blobs.
 actor FileAnalysisCache: AnalysisCache {
     private let files: FileStore

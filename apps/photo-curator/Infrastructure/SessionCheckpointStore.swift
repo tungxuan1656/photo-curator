@@ -13,7 +13,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
     let updatedAt: Date
 }
 
-/// File-backed checkpoint skeleton. Real wiring to AppContainer.live() happens in feat-002INT.
+/// File-backed checkpoint skeleton. Wired in AppContainer.live() in feat-002.
 actor SessionCheckpointStore {
     private let files: FileStore
     private let directory: String

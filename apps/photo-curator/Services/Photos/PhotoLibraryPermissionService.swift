@@ -4,8 +4,8 @@ import Photos
 import PhotosUI
 import UIKit
 
-/// Real PhotoKit permission service (feat-002INT). Auth + limited-library picker only;
-/// asset fetch arrives with feat-003A.
+/// Real PhotoKit permission service (feat-002). Auth + limited-library picker only;
+/// asset fetch arrives with feat-003.
 struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
     func authorizationStatus() async -> PhotoLibraryAuthorization {
         Self.map(PHPhotoLibrary.authorizationStatus(for: .readWrite))
@@ -21,7 +21,7 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
     }
 
     func fetchAssets() async throws -> [PhotoAsset] {
-        // TODO(feat-003A): implement asset fetch.
+        // TODO(feat-003): implement asset fetch.
         throw SelectionError.internal
     }
 
