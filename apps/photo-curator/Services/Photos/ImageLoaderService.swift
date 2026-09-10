@@ -238,7 +238,9 @@ private extension ImageLoaderService {
             return cg
         }
         let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
+        // Preserve source pixels: size is points, so redraw at the image's own
+        // scale (scale 1 would downsample scaled assets).
+        format.scale = image.scale
         format.opaque = true
         return UIGraphicsImageRenderer(size: image.size, format: format).image { _ in
             image.draw(at: .zero)

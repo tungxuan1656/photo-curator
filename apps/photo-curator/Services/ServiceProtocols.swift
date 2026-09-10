@@ -21,6 +21,8 @@ protocol PhotoLibraryService: Sendable {
 }
 
 /// Sized image delivery. Picks request parameters; owns cancellation via task cooperation.
+/// Sizes are pixels (PhotoKit units), not points: `thumbnail` callers multiply layout
+/// points by display scale; `analysisImage` always uses the fixed 512 px edge.
 protocol PhotoImageLoader: Sendable {
     func thumbnail(for id: AssetID, targetSize: CGSize) async throws -> CGImage
     func analysisImage(for id: AssetID) async throws -> CGImage
