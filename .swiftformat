@@ -3,7 +3,7 @@
 --tabwidth 4
 --maxwidth 120
 --trimwhitespace always
---indentcase true
+--indentcase false
 --allman false
 --wrapcollections before-first
 --wraparguments preserve
