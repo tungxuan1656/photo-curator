@@ -35,7 +35,13 @@ Task convention: each Task runs `swiftlint` on changed files only; NO `./init.sh
 
 ## Review
 
-- Self-review + peer fixer review (diff-only) mỗi task, CẤM oracle per-task. Oracle chỉ final khi chạm contracts/Domain-Selection/privacy/perf/export.
+- Classify each Task, then review by risk (never all-oracle, never no-review):
+  - Transcription (plan already has exact code): fixer-cheap implementer + fixer-cheap peer (diff-vs-brief).
+  - Integration (new logic, multi-file): fixer-mid implementer + fixer-mid peer with repo checklist below.
+  - Risky (contracts, Domain/Selection scoring, privacy, performance budgets, export/save): fixer-mid implementer + oracle review, scoped diff-only.
+- Repo checklist (every peer review, file:line evidence): SwiftUI never calls PhotoKit/Vision; engine never imports SwiftUI; `Infrastructure/` Foundation-only; no persisted pixels/face boxes/locations; 120 cols; copy matches ux-flows; no leftover TODO/mock/Noop; YAGNI (nothing extra).
+- Oracle per-task is FORBIDDEN except Risky tasks above. Final per-feat: fixer final by default; oracle only when the feat is risky.
+- Spot-check: orchestrator sends the riskiest task of each feat to oracle (scoped). 2–3 clean feats in a row = process healthy; a miss upgrades that task class to a stronger reviewer.
 
 ## Git
 
