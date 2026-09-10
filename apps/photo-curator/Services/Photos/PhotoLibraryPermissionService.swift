@@ -1,5 +1,6 @@
 import Foundation
 import Photos
+import PhotosUI
 import UIKit
 
 /// Real PhotoKit permission service (feat-002INT). Auth + limited-library picker only;
@@ -27,8 +28,8 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
         Task { @MainActor in
             let scenes = UIApplication.shared.connectedScenes
             guard let scene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-                let window = scene.windows.first(where: { $0.isKeyWindow }),
-                let rootViewController = window.rootViewController
+                  let window = scene.windows.first(where: { $0.isKeyWindow }),
+                  let rootViewController = window.rootViewController
             else {
                 return
             }
