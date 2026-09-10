@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-11 — feat-003
+
+**State**: done
+**Done**: Landed PhotoKit fetch + ImageLoader + iCloud (deepwork, 2 phases): fetchAssets with guarded fetch + cheap-field map + shared LibraryChangeTracker; new ImageLoaderService (one PHCachingImageManager, locked once-only claim, atomic cancelClaim, single-request iCloud + progress, orientation bake); AppContainer 1-line DI swap. Gate 1 GO (attempt 3) + Gate 2 GO (no findings).
+**Evidence**: ./init.sh PASS (format, swiftlint --strict 0 violations/21 files, BUILD SUCCEEDED, SKIP [test]); simulator smoke iPhone 17 Pro iOS 26.5 — install + launch PID 31336, alive +5s, no crash.
+**Blockers**: none
+**Next**: feat-004 (SourceSelection + Summary on real fetch; owns the 1k-load exercise).
+
 ## 2026-09-10 — feat-002INT (G1 INT, close G1)
 
 **State**: done

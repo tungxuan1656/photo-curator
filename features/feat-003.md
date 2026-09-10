@@ -360,9 +360,9 @@ Check: app launches with real services wired and shows no crash; permission stat
 
 ## Acceptance
 
-- [ ] `./init.sh` passes
-- [ ] Launch smoke with real services wired, no crash
-- [ ] 1k-load exercise deferred to feat-004 gate (first real caller; decided per oracle blocker 8)
+- [x] `./init.sh` passes
+- [x] Launch smoke with real services wired, no crash
+- [x] 1k-load exercise deferred to feat-004 gate (first real caller; decided per oracle blocker 8)
 
 ## Depends
 
@@ -370,9 +370,9 @@ Check: app launches with real services wired and shows no crash; permission stat
 
 ## Handoff
 
-- State: todo
-- Evidence: plan reconciled per oracle review (8/8 blockers resolved; 1k-load gate moved to feat-004)
+- State: done
+- Evidence: `./init.sh` PASS (format, `swiftlint --strict` 0 violations/21 files, BUILD SUCCEEDED generic/platform=iOS Simulator, SKIP [test]); Gate 1 GO on attempt 3 (atomic cancelClaim + take-and-nil, `SelectionError.cancelled` mapping, non-recursive `isNetworkError`) + Gate 2 GO with no findings (1-line DI); simulator smoke iPhone 17 Pro iOS 26.5 — install + launch PID 31336, alive at +5s, no crash; 1k-load/iCloud/cancel/observer exercise deferred to feat-004 per plan.
 - Blockers: none
-- Next: Activate feat-003 and implement Tasks 1–3 on `feat/feat-003`.
+- Next: feat-004 (SourceSelection + Summary on real fetch).
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->

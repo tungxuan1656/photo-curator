@@ -50,7 +50,7 @@
         "Services/Photos/PhotoLibraryPermissionService.swift",
         "Services/Photos/ImageLoaderService.swift"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "PhotoKit fetch + ImageLoader + iCloud"
     },
     {
