@@ -17,6 +17,7 @@ protocol PhotoLibraryService: Sendable {
     func authorizationStatus() async -> PhotoLibraryAuthorization
     func requestAuthorization() async -> PhotoLibraryAuthorization
     func fetchAssets() async throws -> [PhotoAsset]
+    func presentLimitedLibraryPicker()
 }
 
 /// Sized image delivery. Picks request parameters; owns cancellation via task cooperation.
@@ -60,6 +61,8 @@ struct NoopPhotoLibrary: PhotoLibraryService {
     func fetchAssets() async throws -> [PhotoAsset] {
         []
     }
+
+    func presentLimitedLibraryPicker() {}
 }
 
 /// G0 Noop only: typed service errors arrive with their owning stages.
