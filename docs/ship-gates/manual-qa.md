@@ -1,6 +1,6 @@
-# 10 — Manual QA and Selection Evaluation (QA method owner)
+# Manual QA and Selection Evaluation (QA method owner)
 
-**Doc:** `10-manual-qa-and-selection-evaluation.md` (native filename kept)
+**Doc:** `manual-qa.md` (native filename kept)
 **Status:** MVP specification
 **Role:** Single owner of QA method: dual app + selection QA, datasets, labels, metrics, procedures, checklists, severity, templates, release blockers, cadence. Manual QA is primary; analytics is secondary.
 
@@ -9,12 +9,12 @@ This doc owns QA method only. It does not own selection policy, stored shapes, i
 
 Related docs:
 
-- `03-photo-selection-rules.md` — what counts as good selection (duplicate, moment, quality, diversity rules)
-- `06-data-model.md` — stored shapes and decision record fields
-- `07-apple-framework-integration.md` — PhotoKit, Vision, iCloud mechanics
-- `08-performance-spec.md` — perf targets and budgets; 10 owns procedure and evidence only
-- `09-privacy-and-permissions.md` — privacy policy and logging redaction
-- `11-analytics-and-metrics.md` — event names and aggregates
+- `selection-rules.md` — what counts as good selection (duplicate, moment, quality, diversity rules)
+- `data-model.md` — stored shapes and decision record fields
+- `apple-frameworks.md` — PhotoKit, Vision, iCloud mechanics
+- `performance.md` — perf targets and budgets; 10 owns procedure and evidence only
+- `privacy.md` — privacy policy and logging redaction
+- `analytics.md` — event names and aggregates
 
 MUST invariants (only use of MUST in this doc):
 
@@ -204,7 +204,7 @@ Acceptable with only small edits?
 
 Blind check on a fresh set (catches overfit to Golden): take a new trip, do not pre-curate, run the app, log removals needed, missing key photos, duplicate fails, and moment fails.
 
-Regression after scoring, threshold, clustering, diversity, face, or sizing changes: run A, B, Golden, and one real trip. Record recall, bad-pick rate, leakage, best-shot accuracy, moment coverage, final size, and notes. Never ship a change on one better number alone (e.g. leakage 5% → 1% with recall 96% → 82% is a fail). Log big calls in `13-decision-log.md`.
+Regression after scoring, threshold, clustering, diversity, face, or sizing changes: run A, B, Golden, and one real trip. Record recall, bad-pick rate, leakage, best-shot accuracy, moment coverage, final size, and notes. Never ship a change on one better number alone (e.g. leakage 5% → 1% with recall 96% → 82% is a fail). Log big calls in `decision-log.md`.
 
 Side-by-side: build albums from old and new configs, diff which photos are only in each, which cluster pick changed, which moments were lost, how balance shifted. Numbers hide taste fails.
 

@@ -1,6 +1,6 @@
-# 11 — Analytics and Metrics (Event Contract Only, Conditional)
+# Analytics and Metrics (Event Contract Only, Conditional)
 
-**Doc:** `11-analytics-and-metrics.md` (native filename kept)
+**Doc:** `analytics.md` (native filename kept)
 **Status:** CONDITIONAL — this doc applies only if a metrics provider and consent choice are decided. If no provider is chosen, ship without analytics. Analytics failure never blocks curation.
 **Role:** Single owner of the analytics event contract only. Other docs own their areas. This doc does not copy them.
 
@@ -11,10 +11,10 @@ This doc does not own privacy and redaction rules (09 is sole owner), perf targe
 
 **Related docs:**
 
-- `01-product.md` — product goals (not restated here)
-- `08-performance-spec.md` — perf targets (not restated here)
-- `09-privacy-and-permissions.md` — privacy, redaction, consent, retention rules (sole owner)
-- `10-manual-qa-and-selection-evaluation.md` — QA method, primary evaluation (analytics is secondary)
+- `product.md` — product goals (not restated here)
+- `performance.md` — perf targets (not restated here)
+- `privacy.md` — privacy, redaction, consent, retention rules (sole owner)
+- `manual-qa.md` — QA method, primary evaluation (analytics is secondary)
 
 ---
 
@@ -129,10 +129,10 @@ Compare engine versions with the same table each time: acceptance, restore, edit
 
 ## 6. What this doc does not own (links only)
 
-- Privacy, forbidden fields, log redaction, consent, retention: see `09-privacy-and-permissions.md`. That doc is the sole owner. This doc sends counts and time buckets only, per 09.
-- Perf targets and budgets: see `08-performance-spec.md`. This doc only defines how to measure time.
-- QA method, datasets, pass rules: see `10-manual-qa-and-selection-evaluation.md`. Manual QA is primary. Analytics only backs it up.
-- Product goals and scope: see `01-product.md`.
+- Privacy, forbidden fields, log redaction, consent, retention: see `privacy.md`. That doc is the sole owner. This doc sends counts and time buckets only, per 09.
+- Perf targets and budgets: see `performance.md`. This doc only defines how to measure time.
+- QA method, datasets, pass rules: see `manual-qa.md`. Manual QA is primary. Analytics only backs it up.
+- Product goals and scope: see `product.md`.
 
 ---
 

@@ -1,6 +1,6 @@
-# 07 — Apple Framework Integration (PhotoKit/Vision use only)
+# Apple Framework Integration (PhotoKit/Vision use only)
 
-**Doc:** `07-apple-framework-integration.md` (native filename kept)
+**Doc:** `apple-frameworks.md` (native filename kept)
 **Status:** MVP specification
 **Role:** Single owner of how the app calls PhotoKit and Vision. Other docs link here. This doc does not copy them.
 
@@ -14,13 +14,13 @@ This doc does not own selection policy, duplicate strategy, face buckets, aesthe
 
 Related docs:
 
-- `02-ux-flows.md` — permission screens and copy
-- `03-photo-selection-rules.md` — duplicate strategy, face buckets, scoring policy
-- `04-selection-engine-design.md` — analysis size, pipeline order, concurrency numbers
-- `06-data-model.md` — stored asset and analysis shape
-- `08-performance-spec.md` — budgets, concurrency, resume
-- `09-privacy-and-permissions.md` — privacy rules, retention, redaction
-- `10-manual-qa-and-selection-evaluation.md` — QA procedure
+- `ux-flows.md` — permission screens and copy
+- `selection-rules.md` — duplicate strategy, face buckets, scoring policy
+- `selection-engine.md` — analysis size, pipeline order, concurrency numbers
+- `data-model.md` — stored asset and analysis shape
+- `performance.md` — budgets, concurrency, resume
+- `privacy.md` — privacy rules, retention, redaction
+- `manual-qa.md` — QA procedure
 
 ---
 
@@ -81,13 +81,13 @@ PHPhotoLibrary.requestAuthorization(for: .readWrite)
 
 Use the access-level APIs (`authorizationStatus(for:)`, `requestAuthorization(for:handler:)`). They separate limited from full access. Older level-blind calls hide that difference.
 
-`Info.plist` key: `NSPhotoLibraryUsageDescription`. Text must state true behavior. Exact wording policy and timing rules: [09](09-privacy-and-permissions.md). Screen copy and pre-prompt flow: [02](02-ux-flows.md).
+`Info.plist` key: `NSPhotoLibraryUsageDescription`. Text must state true behavior. Exact wording policy and timing rules: [09](../ship-gates/privacy.md). Screen copy and pre-prompt flow: [02](../product-specs/ux-flows.md).
 
 Ask in context (user taps Start or Select Photos), never at launch. Show a short true note first, then the system prompt.
 
 ### 3.1 Auth states
 
-Canonical state meanings live in [09](09-privacy-and-permissions.md). This table states API handling only.
+Canonical state meanings live in [09](../ship-gates/privacy.md). This table states API handling only.
 
 | Status | API handling |
 |---|---|
@@ -113,7 +113,7 @@ let result = PHAsset.fetchAssets(with: .image, options: options)
 
 ### 4.1 Metadata map
 
-Read cheap `PHAsset` fields before asking for pixels. Map them to the app model in [06](06-data-model.md).
+Read cheap `PHAsset` fields before asking for pixels. Map them to the app model in [06](data-model.md).
 
 | `PHAsset` field | Use |
 |---|---|
@@ -128,7 +128,7 @@ Read cheap `PHAsset` fields before asking for pixels. Map them to the app model 
 
 ### 4.2 Subtype handling (API facts only)
 
-Policy (exclude or keep) is owned by [03](03-photo-selection-rules.md). This doc states only what PhotoKit exposes.
+Policy (exclude or keep) is owned by [03](../product-specs/selection-rules.md). This doc states only what PhotoKit exposes.
 
 | Class | PhotoKit fact | Loader action |
 |---|---|---|
@@ -155,7 +155,7 @@ A stored ID can stop resolving. Causes: user deleted the photo, revoked access, 
 stored ID + empty fetch = unavailable (normal, not a crash)
 ```
 
-On miss: mark unavailable per [06](06-data-model.md), drop or skip its analysis, and continue the batch. If it disappears mid-analysis, fail that asset only and continue. Full change handling: §10.
+On miss: mark unavailable per [06](data-model.md), drop or skip its analysis, and continue the batch. If it disappears mid-analysis, fail that asset only and continue. Full change handling: §10.
 
 ---
 
@@ -180,7 +180,7 @@ Use one long-lived `PHCachingImageManager` owned by `ImageLoadingService`. Do no
 | Analysis image | Default 512 px long edge | Owned by 04; 07 states API limits only |
 | Full resolution (`PHImageManagerMaximumSize`) | Original pixels | Not for the selection path; only when a feature needs original data |
 
-Why the split: thumbs serve the screen; analysis images serve Vision. One cached variant per class is enough unless benchmarks prove otherwise. Exact analysis size, batch counts, and time budgets: [04](04-selection-engine-design.md) and [08](08-performance-spec.md).
+Why the split: thumbs serve the screen; analysis images serve Vision. One cached variant per class is enough unless benchmarks prove otherwise. Exact analysis size, batch counts, and time budgets: [04](selection-engine.md) and [08](../ship-gates/performance.md).
 
 ### 6.2 Request options
 
@@ -206,7 +206,7 @@ PHAsset -> decode once -> CGImage -> feature print + faces + sharpness + exposur
 | Decoded image | Per-asset scope (`autoreleasepool`) | Short life; never hold hundreds of `UIImage`/`CGImage` |
 | Persisted analysis | App store per 06 | Small fields plus version; reuse when inputs unchanged; never full images, crops, or blobs |
 
-Priority order: visible UI, then current asset, then near-future analysis, then speculative prefetch. Background work never starves the review grid. On pressure: cut concurrency, stop preheat, release images, pause optional Vision steps. Thresholds: [08](08-performance-spec.md). Do not build a custom disk image cache; PhotoKit owns the pixels.
+Priority order: visible UI, then current asset, then near-future analysis, then speculative prefetch. Background work never starves the review grid. On pressure: cut concurrency, stop preheat, release images, pause optional Vision steps. Thresholds: [08](../ship-gates/performance.md). Do not build a custom disk image cache; PhotoKit owns the pixels.
 
 ---
 
@@ -265,8 +265,8 @@ CGImage + orientation -> feature print + face rects + face quality (+ optional l
 Rules:
 
 - Store derived values (counts, boxes, quality summaries, feature-print blob, version, timestamp). Never store source images or face crops.
-- Thresholds, group scoring, face buckets, and final-score mixing are owned by [03](03-photo-selection-rules.md). Removed from this doc by design. Similarity-threshold tuning plus QA: 03 and [10](10-manual-qa-and-selection-evaluation.md).
-- No identity: detect faces, never name people, never keep an identity store. Privacy limits: [09](09-privacy-and-permissions.md).
+- Thresholds, group scoring, face buckets, and final-score mixing are owned by [03](../product-specs/selection-rules.md). Removed from this doc by design. Similarity-threshold tuning plus QA: 03 and [10](../ship-gates/manual-qa.md).
+- No identity: detect faces, never name people, never keep an identity store. Privacy limits: [09](../ship-gates/privacy.md).
 - Version cached analysis (`analysisVersion`). On algorithm change, bump and recompute; do not migrate ephemeral AI fields. Vision revision pinning beyond the app version is out of scope for MVP.
 - Partial Vision failure degrades per asset: keep what succeeded, mark the missing field unknown, continue. Unknown face count differs from zero faces.
 
@@ -292,7 +292,7 @@ task cancelled -> cancel PHImageRequestID -> discard result -> stop Vision work
 
 Resume the continuation exactly once. Some delivery modes call back more than once; only the usable final image resumes analysis.
 
-Do not launch one unbounded task per photo. Use bounded concurrency owned and numbered by [08](08-performance-spec.md). Never use `isSynchronous = true` in the pipeline; it blocks executors, worse with iCloud waits.
+Do not launch one unbounded task per photo. Use bounded concurrency owned and numbered by [08](../ship-gates/performance.md). Never use `isSynchronous = true` in the pipeline; it blocks executors, worse with iCloud waits.
 
 ---
 
@@ -349,7 +349,7 @@ Batch rule: one failed asset never fails the job. Finish the batch, then report 
 
 ## 13. Logging and privacy pointers
 
-Redaction rules are owned by [09](09-privacy-and-permissions.md). This doc states only the API-side list.
+Redaction rules are owned by [09](../ship-gates/privacy.md). This doc states only the API-side list.
 
 Never log: image bytes, face crops, raw feature-print contents, full file paths, precise location, full `localIdentifier`. Safe to log: redacted ID or hash, request type, target size, duration, success or failure, iCloud-needed flag, Vision error category. Face results stay on device for selection only. Persisted fields: IDs, metadata, scalar scores, counts, normalized boxes, feature-print blob, version. Full list: 06 and 09.
 
@@ -394,11 +394,11 @@ Manual scenarios (detail in 10): 100 / 1,000 / 2,000 local photos; Optimize Stor
 
 ## 17. Links and upkeep
 
-- Selection policy, duplicates, faces, scoring: see `03-photo-selection-rules.md`.
-- Analysis size default (512 px) (default owned by 04), pipeline order: see `04-selection-engine-design.md`.
-- Stored shapes: see `06-data-model.md`.
-- Budgets, concurrency numbers, resume: see `08-performance-spec.md`.
-- Privacy, retention, redaction: see `09-privacy-and-permissions.md`.
-- UX copy: see `02-ux-flows.md`. QA: see `10-manual-qa-and-selection-evaluation.md`.
+- Selection policy, duplicates, faces, scoring: see `selection-rules.md`.
+- Analysis size default (512 px) (default owned by 04), pipeline order: see `selection-engine.md`.
+- Stored shapes: see `data-model.md`.
+- Budgets, concurrency numbers, resume: see `performance.md`.
+- Privacy, retention, redaction: see `privacy.md`.
+- UX copy: see `ux-flows.md`. QA: see `manual-qa.md`.
 
 Check Apple docs each release: PhotoKit auth, `PHCachingImageManager`, `PHImageRequestOptions`, change observer, album requests, Vision face and feature-print requests.

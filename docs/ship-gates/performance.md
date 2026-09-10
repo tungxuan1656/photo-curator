@@ -1,18 +1,18 @@
-# 08 — Performance Spec (budgets owner)
+# Performance Spec (budgets owner)
 
 **Responsibility:** This file owns perf budgets, targets, and measurement: workload sizes, batch and concurrency limits, resolution cost assumption, derived-cache versioning rule, checkpoint and cancel and resume budgets, memory and progress limits, completion-time targets, and Definition of Done.
 
-**Not owned here:** selection semantics ([03](03-photo-selection-rules.md), [04](04-selection-engine-design.md)), stored representation ([06](06-data-model.md)), PhotoKit/Vision API mechanics and iCloud behavior ([07](07-apple-framework-integration.md)), privacy and logging redaction ([09](09-privacy-and-permissions.md)), QA procedure ([10](10-manual-qa-and-selection-evaluation.md)), analytics events ([11](11-analytics-and-metrics.md)). Where those topics appear below, this file states the budget; the linked file states the mechanism.
+**Not owned here:** selection semantics ([03](../product-specs/selection-rules.md), [04](../design-docs/selection-engine.md)), stored representation ([06](../design-docs/data-model.md)), PhotoKit/Vision API mechanics and iCloud behavior ([07](../design-docs/apple-frameworks.md)), privacy and logging redaction ([09](privacy.md)), QA procedure ([10](manual-qa.md)), analytics events ([11](analytics.md)). Where those topics appear below, this file states the budget; the linked file states the mechanism.
 
 Related docs:
 
-- `03-photo-selection-rules.md` — what gets selected
-- `04-selection-engine-design.md` — pipeline order and chosen analysis size
-- `06-data-model.md` — stored shape of cache and checkpoints
-- `07-apple-framework-integration.md` — PhotoKit and Vision call shape
-- `09-privacy-and-permissions.md` — sole owner of redaction and retention
-- `10-manual-qa-and-selection-evaluation.md` — QA steps
-- `11-analytics-and-metrics.md` — event names
+- `selection-rules.md` — what gets selected
+- `selection-engine.md` — pipeline order and chosen analysis size
+- `data-model.md` — stored shape of cache and checkpoints
+- `apple-frameworks.md` — PhotoKit and Vision call shape
+- `privacy.md` — sole owner of redaction and retention
+- `manual-qa.md` — QA steps
+- `analytics.md` — event names
 
 ---
 
@@ -31,7 +31,7 @@ One table. All numbers are starting defaults. Centralize them in code in one pol
 | Constrained Vision concurrency (Low Power, pressure) | 1 |
 | Persistence writes | Serialized or small batches |
 | Selection and ranking stage | 1 task with efficient loops |
-| Analysis input class | ~512 px long edge; exact size per feature lives in [04](04-selection-engine-design.md) |
+| Analysis input class | ~512 px long edge; exact size per feature lives in [04](../design-docs/selection-engine.md) |
 | No custom persistent thumbnail cache | None; Photos caching plus bounded preheat only |
 | Derived-analysis cache | Enabled with version key |
 | Checkpoint interval | Every ~25 assets or ~10 s, whichever comes first, at batch edges |
@@ -73,19 +73,19 @@ Good: 5,000 assets -> metadata scan -> small batches -> few image
 
 ## 3. Execution strategy
 
-Pipeline order and selection policy live in [03](03-photo-selection-rules.md) and [04](04-selection-engine-design.md). This file only bounds how they run.
+Pipeline order and selection policy live in [03](../product-specs/selection-rules.md) and [04](../design-docs/selection-engine.md). This file only bounds how they run.
 
 - Start with cheap metadata (`localIdentifier`, dates, size, type, subtype, favorite, burst info). Use it to group, skip unsupported media, and pick required analysis. Do not fetch pixels first.
-- Use the smallest image that still answers the Vision question. Full resolution only for features that state a need, or for on-demand review and export. The chosen per-feature size lives in [04](04-selection-engine-design.md); this file budgets around the ~512 px class.
+- Use the smallest image that still answers the Vision question. Full resolution only for features that state a need, or for on-demand review and export. The chosen per-feature size lives in [04](../design-docs/selection-engine.md); this file budgets around the ~512 px class.
 - Process in finite batches (§1). Each batch: load IDs, fetch bounded images, analyze, persist derived results, release image memory, checkpoint, next batch. No later stage keeps a decoded image from a done batch.
 - Use Swift structured concurrency with a small bounded worker pool (`TaskGroup`, actor queue, or similar small pipeline). Never one live task per asset. No custom thread pool unless profiling proves need.
 - Adapt to device state: normal uses §1 values; Low Power, heat, or memory warning lowers concurrency toward 1, shrinks prefetch, clears nonessential caches, avoids guess-ahead work; critical heat or memory finishes the safe unit, checkpoints, clears decoded images, pauses, and tells UI. Never push hard while the device reports critical heat.
 - Keep the main actor for UI state only. Image decode, Vision, distance math, clustering, migrations, large writes, file work, and cache cleanup run off main. Publish compact job-level state (`completed`, `stage`, `cancelled`, `album`), not per-photo mutations.
-- Review grid uses lazy containers and identifier-based cell models, not decoded images. Preheat a bounded window around the visible range through `PHCachingImageManager`. Never preheat the full set. Stored shapes live in [06](06-data-model.md).
+- Review grid uses lazy containers and identifier-based cell models, not decoded images. Preheat a bounded window around the visible range through `PHCachingImageManager`. Never preheat the full set. Stored shapes live in [06](../design-docs/data-model.md).
 - Selection logic works on compact summaries (IDs, scores, cluster and moment refs), not `UIImage` values. Sorting a few thousand compact values is cheap; image fetch, decode, Vision, and repeat analysis are the real costs.
 - Persist in batches at batch edges. Keep fast-changing progress in memory; persist semantic points (asset done, batch done, stage done, job state changed).
 - Re-selection reruns ranking, not Vision, when visual analysis is still valid. Changing album size or taste flags reuses cached analysis.
-- No silent quality cuts at large sizes. Pressure slows speed first (prefetch, concurrency, batch size, caches, pause), not correctness. A fast lower-quality mode needs an explicit product call in [03](03-photo-selection-rules.md).
+- No silent quality cuts at large sizes. Pressure slows speed first (prefetch, concurrency, batch size, caches, pause), not correctness. A fast lower-quality mode needs an explicit product call in [03](../product-specs/selection-rules.md).
 - Persisted values and config constants live in one place. Never scatter batch size, worker counts, image size, checkpoint gaps, or progress rate through code. Never show them as user settings; dev diagnostics may show them during profiling.
 
 ## 4. Memory and complexity
@@ -102,18 +102,18 @@ Invariants (only MUST lines in this doc):
 
 ## 5. Derived cache and versions
 
-What the cache stores and its exact fields live in [06](06-data-model.md). This file sets only the reuse budget rule.
+What the cache stores and its exact fields live in [06](../design-docs/data-model.md). This file sets only the reuse budget rule.
 
-- Cache holds compact derived values (counts, scores, signatures, scene info, cluster and moment refs), never image blobs. Face detail limits follow [09](09-privacy-and-permissions.md).
+- Cache holds compact derived values (counts, scores, signatures, scene info, cluster and moment refs), never image blobs. Face detail limits follow [09](privacy.md).
 - Reuse a cached result only when its key still holds: asset ID plus asset edit state plus pipeline version plus config version. No full-byte hashing; that alone reads every file.
 - Bump the analysis version on incompatible Vision or reading changes. Invalidate lazily on next use (reuse when valid, recompute when not). Never reprocess the whole library on app update for a version bump.
 - Recompute on: photo edit, asset replace, pipeline or config change, corrupt entry. Unrelated app changes (UI strings, colors) never void analysis.
-- Later jobs reuse valid entries for the same photo, so repeat work trends toward seconds. Drop orphaned rows, old versions, and missing assets lazily; no fancy eviction scheme is needed for MVP. Retention and delete rules live in [09](09-privacy-and-permissions.md).
+- Later jobs reuse valid entries for the same photo, so repeat work trends toward seconds. Drop orphaned rows, old versions, and missing assets lazily; no fancy eviction scheme is needed for MVP. Retention and delete rules live in [09](privacy.md).
 - No permanent copy of all PhotoKit thumbnails. Photos already caches images; a second copy adds disk, invalidation, and privacy cost for no engine gain.
 
 ## 6. Checkpoint, cancel, and resume budgets
 
-Stored checkpoint shape lives in [06](06-data-model.md). iCloud fetch shape lives in [07](07-apple-framework-integration.md).
+Stored checkpoint shape lives in [06](../design-docs/data-model.md). iCloud fetch shape lives in [07](../design-docs/apple-frameworks.md).
 
 - Checkpoint at §1 gaps. Persist completed analysis as it lands so a stop at photo 4,999 keeps 4,999 results. Keep job state small: job ID, times, config, ID list, pipeline version, stage, completed count, status. Per-photo cache stays the source of truth for what needs redo; no second task database.
 - Analysis is idempotent: same asset state plus same version plus same config gives the same stored result. Resume means: load job, check cache, skip valid entries, run the rest, keep the bar where it was instead of resetting to zero.
@@ -125,7 +125,7 @@ Stored checkpoint shape lives in [06](06-data-model.md). iCloud fetch shape live
 
 ## 7. Measurement
 
-QA steps live in [10](10-manual-qa-and-selection-evaluation.md). Event names live in [11](11-analytics-and-metrics.md). Redaction rules live in [09](09-privacy-and-permissions.md); never log pixels, file names, face data, GPS, or full asset IDs for perf notes.
+QA steps live in [10](manual-qa.md). Event names live in [11](analytics.md). Redaction rules live in [09](privacy.md); never log pixels, file names, face data, GPS, or full asset IDs for perf notes.
 
 Capture per run at minimum:
 
@@ -165,12 +165,12 @@ Perf bug scale: crash or corrupt or deadlock or stuck cancel on a normal 1,000-p
 - Similarity work stays inside bounded neighborhoods.
 - Heat and memory pressure degrade speed with no kill.
 - Instruments shows no large leak and no analysis block on main.
-- No test targets added (manual validation only, per [10](10-manual-qa-and-selection-evaluation.md)).
+- No test targets added (manual validation only, per [10](manual-qa.md)).
 
 ## 9. Uncertain
 
 1. True absolute times on the oldest supported device; current targets are starts and need prototype data.
 2. Best batch size in the 16–64 span for heat vs speed.
-3. Best per-feature pixel size inside the ~512 px class without quality loss (call owned by [04](04-selection-engine-design.md)).
+3. Best per-feature pixel size inside the ~512 px class without quality loss (call owned by [04](../design-docs/selection-engine.md)).
 4. Stage-weight split for progress bars; needs tuning from real runs.
 5. Heat and Low Power step points across device models.

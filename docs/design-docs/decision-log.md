@@ -1,14 +1,14 @@
 # Photos Curator — Decision Log
 
-**Doc:** `13-decision-log.md` · **Status:** Living · **Updated:** 2026-09-10
+**Doc:** `decision-log.md` · **Status:** Living · **Updated:** 2026-09-10
 
 **Ownership:** This doc OWNS rationale/history only (why a choice was made, append-only DEC-xxx).
 It never owns current operational values — those live in owner docs (linked per entry).
-Current values: selection policy → `03-photo-selection-rules.md`, mechanics → `04-selection-engine-design.md`,
-arch → `05-ios-architecture.md`, shapes → `06-data-model.md`, APIs → `07-apple-framework-integration.md`,
-budgets → `08-performance-spec.md`, privacy → `09-privacy-and-permissions.md`,
-QA → `10-manual-qa-and-selection-evaluation.md`, UX → `02-ux-flows.md`, product → `01-product.md`,
-metrics → `11-analytics-and-metrics.md`, roadmap → `12-roadmap.md`.
+Current values: selection policy → `selection-rules.md`, mechanics → `selection-engine.md`,
+arch → `ios-architecture.md`, shapes → `data-model.md`, APIs → `apple-frameworks.md`,
+budgets → `performance.md`, privacy → `privacy.md`,
+QA → `manual-qa.md`, UX → `ux-flows.md`, product → `product.md`,
+metrics → `analytics.md`, roadmap → `roadmap.md`.
 
 **Rules:** Append-only. Never silently rewrite history. To change a DEC: keep old text,
 mark `Superseded by DEC-xxx`, add new entry. Statuses: `Accepted / Rejected / Superseded / Deferred / Revisit`.

@@ -1,7 +1,7 @@
-# 02 — UX Flows
+# UX Flows
 
 **Product:** Photos Curator
-**Document:** `02-ux-flows.md`
+**Document:** `ux-flows.md`
 **Status:** MVP specification
 **Last updated:** 2026-09-10
 **Primary platform:** iOS (SwiftUI)
@@ -14,16 +14,16 @@ user-facing error taxonomy.
 
 **Not owned here (link, do not duplicate):**
 
-- Selection policy (what gets picked and why) → `03-photo-selection-rules.md`
-- Pipeline mechanics (stages, ordering, degradation) → `04-selection-engine-design.md`
-- Topology, scheduling, concurrency, checkpoints → `05-ios-architecture.md`
-- Stored shapes, session schema, cache validity → `06-data-model.md`
-- PhotoKit / Vision APIs, fetch options, export calls → `07-apple-framework-integration.md`
-- Budgets, limits, timing targets → `08-performance-spec.md`
-- Privacy policy, retention, permission policy → `09-privacy-and-permissions.md`
-- QA procedure and walkthrough scripts → `10-manual-qa-and-selection-evaluation.md`
-- Analytics events and metrics → `11-analytics-and-metrics.md`
-- Open product decisions → `13-decision-log.md`
+- Selection policy (what gets picked and why) → `selection-rules.md`
+- Pipeline mechanics (stages, ordering, degradation) → `selection-engine.md`
+- Topology, scheduling, concurrency, checkpoints → `ios-architecture.md`
+- Stored shapes, session schema, cache validity → `data-model.md`
+- PhotoKit / Vision APIs, fetch options, export calls → `apple-frameworks.md`
+- Budgets, limits, timing targets → `performance.md`
+- Privacy policy, retention, permission policy → `privacy.md`
+- QA procedure and walkthrough scripts → `manual-qa.md`
+- Analytics events and metrics → `analytics.md`
+- Open product decisions → `decision-log.md`
 
 ---
 
@@ -218,8 +218,8 @@ flowchart TD
 ```
 
 Permission policy, retention, and disclosure rules live in
-`09-privacy-and-permissions.md`. API details live in
-`07-apple-framework-integration.md`. This section covers only copy,
+`privacy.md`. API details live in
+`apple-frameworks.md`. This section covers only copy,
 order, and transitions.
 
 ### 5.1 S02 — Welcome (first run only)
@@ -309,7 +309,7 @@ smaller album."
   items.
 - Hard limits (if any) are communicated before processing, e.g. "This
   version can process up to 5,000 photos at once." Exact numbers live in
-  `08-performance-spec.md`; this doc owns only the message placement.
+  `performance.md`; this doc owns only the message placement.
 
 ### 6.3 S06 — Summary / Start (checkpoint before expensive work)
 
@@ -336,10 +336,10 @@ User-facing phases (stable labels; they do not map 1:1 to engine stages):
 4. **Choosing the best photos**
 5. **Finishing your album**
 
-Stage internals live in `04-selection-engine-design.md`; scheduling and
-background rules in `05-ios-architecture.md`; fetch behavior in
-`07-apple-framework-integration.md`; timing budgets in
-`08-performance-spec.md`. This section covers only what the user sees.
+Stage internals live in `selection-engine.md`; scheduling and
+background rules in `ios-architecture.md`; fetch behavior in
+`apple-frameworks.md`; timing budgets in
+`performance.md`. This section covers only what the user sees.
 
 ### 7.1 S07 — Processing screen
 
@@ -358,7 +358,7 @@ stop/discard path.
   the internet." Never animate a fake percentage.
 - Leaving: "You can leave this screen. We'll keep your progress and
   resume if needed." Never promise background execution the build cannot
-  guarantee (see `05-ios-architecture.md`).
+  guarantee (see `ios-architecture.md`).
 - Stop is optional. When present, separate **Pause / Stop Processing**
   (keeps the session) from **Discard Curation** (deletes session progress).
 - On return from lock or background: restore the view, reconcile real
@@ -374,7 +374,7 @@ stop/discard path.
 - No network: **Some Photos Need iCloud** — "Connect to the internet to
   download the remaining photos." Actions: **Try Again**, plus **Continue
   Without Them** only when partial processing is a supported product rule
-  (thresholds live in `04-selection-engine-design.md`).
+  (thresholds live in `selection-engine.md`).
 - Missing assets (deleted or edited mid-job): skip, count as unavailable,
   continue when safe, and summarize before review:
   **3 photos were unavailable and could not be analyzed.**
@@ -405,7 +405,7 @@ Review answers three questions: what did the app choose, what did it
 leave out, and where is a decision genuinely useful. Default review never
 requires re-inspecting every source photo. No raw scores appear in the
 primary UI. What counts as duplicate, moment, best pick, or diverse is
-defined in `03-photo-selection-rules.md`; this section defines only how
+defined in `selection-rules.md`; this section defines only how
 those outcomes are shown and corrected.
 
 ```mermaid
@@ -476,7 +476,7 @@ Per group: best pick marked **Recommended best pick**, alternatives,
 included state, and count (**1 selected from 5 similar photos**). The
 user can keep the pick, choose another, keep more than one, or remove
 all; nothing forces exactly-one unless the rule is strict duplicates per
-`03-photo-selection-rules.md`. Primary group action: **Keep Best Pick**;
+`selection-rules.md`. Primary group action: **Keep Best Pick**;
 the rest happens on thumbnails. Between groups show `4 of 18`; at the
 end: **Similar photos reviewed** with **Back to Review**.
 
@@ -509,7 +509,7 @@ flowchart TD
     F -- Fail --> J[Save error]
 ```
 
-Export mechanics live in `07-apple-framework-integration.md`. This
+Export mechanics live in `apple-frameworks.md`. This
 section covers checkpoints, copy, and completion UX.
 
 ### 9.1 S14 — Final Review
@@ -542,7 +542,7 @@ duplicate album.
 Title: **Album Saved** with count and album name. Actions: **View in
 Photos** (only when a reliable deep link exists, otherwise omit),
 **Done** (mark completed, return Home), optional **Curate More Photos**.
-Cleanup of temporary data follows `09-privacy-and-permissions.md`.
+Cleanup of temporary data follows `privacy.md`.
 Session history is not an MVP feature.
 
 ---
@@ -551,7 +551,7 @@ Session history is not an MVP feature.
 
 Ideal resume points: processing, attention state, review, final review,
 partial save. State machines and persistence live in
-`05-ios-architecture.md` and `06-data-model.md`; this section defines
+`ios-architecture.md` and `data-model.md`; this section defines
 the visible behavior.
 
 On launch with an unfinished session: interrupted processing restores
@@ -583,7 +583,7 @@ identifiers and offer **Restart Analysis**, never crash on decode.
 Minimal. Sections: Photos Access (Full / Limited / Denied + **Manage
 Photos Access**), Processing & Privacy (informational line such as
 "Photo analysis is performed on this device." only when true for the
-build; full policy in `09-privacy-and-permissions.md`), About (version,
+build; full policy in `privacy.md`), About (version,
 privacy policy, help when available). No MVP toggles for ranking
 weights, thresholds, models, cache, or thread counts.
 
@@ -668,7 +668,7 @@ carousels, gamified swiping, test-only screens.
 ## 15. Acceptance checklist
 
 Release-ready when each item below holds. Procedure and scripts live in
-`10-manual-qa-and-selection-evaluation.md`.
+`manual-qa.md`.
 
 - First run: system prompt follows S03; full, limited, and denied each
   have a working path; permission changes on return are rechecked.
@@ -686,7 +686,7 @@ Release-ready when each item below holds. Procedure and scripts live in
   reported as full; completion matches the Photos output.
 - Safety: originals untouched; privacy lines match the build; no raw
   scores, embeddings, or identity claims in UI; temp data follows the
-  retention rules in `09-privacy-and-permissions.md`.
+  retention rules in `privacy.md`.
 - Access: Dynamic Type, VoiceOver state and actions, non-color state,
   tap targets, Reduce Motion all hold on the main flow.
 
@@ -696,14 +696,14 @@ Release-ready when each item below holds. Procedure and scripts live in
 
 Normative detail lives with its owner:
 
-- `01-product.md`, `03-photo-selection-rules.md`,
-  `04-selection-engine-design.md`, `05-ios-architecture.md`,
-  `06-data-model.md`, `07-apple-framework-integration.md`,
-  `08-performance-spec.md`, `09-privacy-and-permissions.md`,
-  `10-manual-qa-and-selection-evaluation.md`,
-  `11-analytics-and-metrics.md`, `12-roadmap.md`.
+- `product.md`, `selection-rules.md`,
+  `selection-engine.md`, `ios-architecture.md`,
+  `data-model.md`, `apple-frameworks.md`,
+  `performance.md`, `privacy.md`,
+  `manual-qa.md`,
+  `analytics.md`, `roadmap.md`.
 
 Uncertain: open UX questions are not resolved here. Anything undecided
 about wording, thresholds that surface in copy, save-destination choice,
 partial-processing support, or session-history scope is recorded in
-`13-decision-log.md` and linked from the owning doc above.
+`decision-log.md` and linked from the owning doc above.

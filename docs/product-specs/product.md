@@ -1,7 +1,7 @@
-# 01 — Product (vision / scope / gates owner)
+# Product (vision / scope / gates owner)
 
 **Product:** Photos Curator
-**Document:** `01-product.md` (native filename kept)
+**Document:** `product.md` (native filename kept)
 **Platform:** iPhone / iOS
 **Status:** Draft for MVP
 
@@ -11,18 +11,18 @@ core loop, MVP priority order, functional requirements list, and launch gates.
 
 **Not owned here (link, do not duplicate):**
 
-- User-visible flow, states, copy, review behavior → `02-ux-flows.md`
-- Selection policy (what gets picked and why) → `03-photo-selection-rules.md`
-- Pipeline mechanics (stages, ordering, degradation) → `04-selection-engine-design.md`
-- App structure, scheduling, concurrency → `05-ios-architecture.md`
-- Stored shapes, session schema → `06-data-model.md`
-- PhotoKit / Vision API mechanics, iCloud behavior → `07-apple-framework-integration.md`
-- Budgets, limits, timing targets → `08-performance-spec.md`
-- Privacy policy, retention, permission policy → `09-privacy-and-permissions.md`
-- QA method, datasets, metrics, procedures → `10-manual-qa-and-selection-evaluation.md`
-- Analytics events and aggregates → `11-analytics-and-metrics.md`
-- Roadmap detail → `12-roadmap.md`
-- Rationale, history, open decisions → `13-decision-log.md`
+- User-visible flow, states, copy, review behavior → `ux-flows.md`
+- Selection policy (what gets picked and why) → `selection-rules.md`
+- Pipeline mechanics (stages, ordering, degradation) → `selection-engine.md`
+- App structure, scheduling, concurrency → `ios-architecture.md`
+- Stored shapes, session schema → `data-model.md`
+- PhotoKit / Vision API mechanics, iCloud behavior → `apple-frameworks.md`
+- Budgets, limits, timing targets → `performance.md`
+- Privacy policy, retention, permission policy → `privacy.md`
+- QA method, datasets, metrics, procedures → `manual-qa.md`
+- Analytics events and aggregates → `analytics.md`
+- Roadmap detail → `roadmap.md`
+- Rationale, history, open decisions → `decision-log.md`
 
 ---
 
@@ -138,7 +138,7 @@ language. Details live in the linked docs.
    "delete this photo".
 2. The app MUST keep core curation on-device-first for the MVP. It MUST NOT
    upload photo pixels to Photos Curator servers for normal curation.
-   Privacy controls: `09-privacy-and-permissions.md`.
+   Privacy controls: `privacy.md`.
 3. The MVP MUST NOT require a Photos Curator account, login, or custom
    backend for the core Select → Analyze → Review → Save flow.
 4. The user MUST approve the final album. The engine proposes; the user
@@ -151,7 +151,7 @@ language. Details live in the linked docs.
 
 ## 7. Non-goals for MVP
 
-Not in the MVP unless promoted through `13-decision-log.md`:
+Not in the MVP unless promoted through `decision-log.md`:
 
 - Automatic photo deletion or cleanup workflows.
 - Full Photos app replacement; professional RAW workflows (Lightroom,
@@ -249,12 +249,12 @@ Product-level expectations (goals only; numbers in linked docs):
 - Review feels much easier than manual review of the full set (proxy: at
   least ~80% fewer photos needing close review in common cases).
 - Processing is reliable, stays responsive, gives progress feedback, and
-  survives interruption (budgets: `08-performance-spec.md`).
+  survives interruption (budgets: `performance.md`).
 - Privacy posture holds: no account, no normal upload, no deletion, clear
-  permission messaging (controls: `09-privacy-and-permissions.md`).
-- Selection quality judged per `10-manual-qa-and-selection-evaluation.md`;
+  permission messaging (controls: `privacy.md`).
+- Selection quality judged per `manual-qa.md`;
   usage signals (completion, save, acceptance, replacement, repeat use)
-  defined in `11-analytics-and-metrics.md`.
+  defined in `analytics.md`.
 
 The MVP fails if users still inspect nearly every source photo, duplicates
 fill the album, key moments vanish, weak versions win obvious comparisons,
@@ -274,7 +274,7 @@ The 10 open product questions from former §57 (source selection shape,
 album-size input, auto-suggested size, alternative browsing depth, mandatory
 picks, screenshots, Live Photos, edited versions, Favorites influence,
 cross-session feedback) are not resolved here. They are tracked and decided
-in `13-decision-log.md`. Do not add new product decisions to this doc;
+in `decision-log.md`. Do not add new product decisions to this doc;
 propose them in 13.
 
 ---
@@ -283,15 +283,15 @@ propose them in 13.
 
 Canonical links:
 
-- Flow, states, copy → `02-ux-flows.md`
-- Selection rules → `03-photo-selection-rules.md`
-- Engine design → `04-selection-engine-design.md`
-- Budgets → `08-performance-spec.md`
-- Privacy → `09-privacy-and-permissions.md`
-- QA method and metric targets → `10-manual-qa-and-selection-evaluation.md`
-- Analytics events → `11-analytics-and-metrics.md`
-- Roadmap → `12-roadmap.md`
-- Decisions and rationale → `13-decision-log.md`
+- Flow, states, copy → `ux-flows.md`
+- Selection rules → `selection-rules.md`
+- Engine design → `selection-engine.md`
+- Budgets → `performance.md`
+- Privacy → `privacy.md`
+- QA method and metric targets → `manual-qa.md`
+- Analytics events → `analytics.md`
+- Roadmap → `roadmap.md`
+- Decisions and rationale → `decision-log.md`
 
 Uncertain (owned elsewhere, not decided here):
 

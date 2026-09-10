@@ -1,6 +1,6 @@
-# 09 — Privacy, Permissions, Retention, and Disclosure Rules (Canonical Owner)
+# Privacy, Permissions, Retention, and Disclosure Rules (Canonical Owner)
 
-**Doc:** `09-privacy-and-permissions.md` (native filename kept)
+**Doc:** `privacy.md` (native filename kept)
 **Status:** MVP specification
 **Role:** Single owner of privacy and redaction rules. Other docs link here. This doc does not copy them.
 
@@ -14,15 +14,15 @@ This doc does not own UX copy and state flow (02), PhotoKit API mechanics (07), 
 
 Related docs:
 
-- `01-product.md` — product scope
-- `02-ux-flows.md` — screen wording and permission state flow
-- `03-photo-selection-rules.md` — face, quality, and moment categories
-- `04-selection-engine-design.md` — engine inputs
-- `05-ios-architecture.md` — app structure
-- `07-apple-framework-integration.md` — PhotoKit and Vision API use
-- `08-performance-spec.md` — checkpoints, resume, background work
-- `10-manual-qa-and-selection-evaluation.md` — release checklists
-- `11-analytics-and-metrics.md` — event names and aggregates
+- `product.md` — product scope
+- `ux-flows.md` — screen wording and permission state flow
+- `selection-rules.md` — face, quality, and moment categories
+- `selection-engine.md` — engine inputs
+- `ios-architecture.md` — app structure
+- `apple-frameworks.md` — PhotoKit and Vision API use
+- `performance.md` — checkpoints, resume, background work
+- `manual-qa.md` — release checklists
+- `analytics.md` — event names and aggregates
 
 ---
 
@@ -108,7 +108,7 @@ Rules behind the table:
 - Store scores by `PHAsset.localIdentifier`. Do not copy full images into app files.
 - Tag cached analysis with a version. Drop old results when the model changes.
 
-Face detail categories live in `03-photo-selection-rules.md`. This doc does not repeat them. It sets only the privacy limit: use faces to judge clarity and group strength. Do not name people. Do not link faces to contacts, mail, phones, or social IDs.
+Face detail categories live in `selection-rules.md`. This doc does not repeat them. It sets only the privacy limit: use faces to judge clarity and group strength. Do not name people. Do not link faces to contacts, mail, phones, or social IDs.
 
 ---
 
@@ -160,7 +160,7 @@ Suggested text (short, true, calm):
 Photos Curator needs access to your photo library to analyze and select your best photos. Photo analysis is performed on your device.
 ```
 
-No other permission is needed for MVP. Do not add camera, mic, contacts, location, motion, or tracking strings unless a feature needs them. API call shape and auth call details live in `07-apple-framework-integration.md`.
+No other permission is needed for MVP. Do not add camera, mic, contacts, location, motion, or tracking strings unless a feature needs them. API call shape and auth call details live in `apple-frameworks.md`.
 
 ### 5.2 When to ask
 
@@ -168,7 +168,7 @@ Do not ask at launch. Ask when the user taps Start or Select Photos. Show a shor
 
 The note says analysis runs on device. It does not push full access. Limited access stays valid.
 
-Screen wording and full state flow live in `02-ux-flows.md`. This doc sets only timing and pressure rules.
+Screen wording and full state flow live in `ux-flows.md`. This doc sets only timing and pressure rules.
 
 ### 5.3 Permission states (canonical)
 
@@ -218,7 +218,7 @@ Rules:
 - Reset Analysis clears cache, moments, dup groups, and history. It keeps originals.
 - Session delete clears picks and temp files. It keeps originals.
 - Uninstall clears app files per iOS rules. The photo library stays whole.
-- Resume stubs hold IDs and progress only. No image copies. Full resume steps live in `08-performance-spec.md`.
+- Resume stubs hold IDs and progress only. No image copies. Full resume steps live in `performance.md`.
 - The local store holds refs, scores, groups, picks, taste flags, versions, and times. It does not hold image blobs, face blobs, full EXIF, or embedding blobs.
 
 ---
@@ -264,7 +264,7 @@ Narrow cases where the rule bends. Nothing else bends.
 2. Anonymous counts: input count, pick count, time bucket, and fail reason may leave device per 11. No IDs, no pixels, no faces, no GPS.
 3. Crash service: stack and state may leave device. Stripped per §4. No photo content.
 4. Album save: the app writes the final user-approved album to the library. This is a user act. Not auto delete.
-5. Dev datasets: QA uses owned or licensed sets only. Never copy a real user library for tests. Full QA rules live in `10-manual-qa-and-selection-evaluation.md`.
+5. Dev datasets: QA uses owned or licensed sets only. Never copy a real user library for tests. Full QA rules live in `manual-qa.md`.
 
 ---
 
@@ -293,12 +293,12 @@ Guiding rule: if a leaner build can do the job, ship the leaner build.
 
 ## 11. Links and upkeep
 
-- UX wording and flow: see `02-ux-flows.md`.
-- Face and quality groups: see `03-photo-selection-rules.md`.
-- Engine inputs: see `04-selection-engine-design.md`.
-- PhotoKit and Vision calls: see `07-apple-framework-integration.md`.
-- Resume and background: see `08-performance-spec.md`.
-- QA lists: see `10-manual-qa-and-selection-evaluation.md`.
-- Metrics events: see `11-analytics-and-metrics.md`.
+- UX wording and flow: see `ux-flows.md`.
+- Face and quality groups: see `selection-rules.md`.
+- Engine inputs: see `selection-engine.md`.
+- PhotoKit and Vision calls: see `apple-frameworks.md`.
+- Resume and background: see `performance.md`.
+- QA lists: see `manual-qa.md`.
+- Metrics events: see `analytics.md`.
 
 Check Apple docs before each big release: PhotoKit auth, Vision faces, privacy manifests, reason APIs, store answers, and face data terms. Platform rules can shift.

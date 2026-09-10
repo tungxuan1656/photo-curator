@@ -4,7 +4,7 @@ photos-curator is an iPhone app that turns a large photo set (100–2,000) into 
 
 Detected stack: `Swift 5 / SwiftUI, PhotoKit, Vision, Core ML — Xcode project apps/photo-curator.xcodeproj (scheme photo-curator); SwiftLint + SwiftFormat; fastlane present but stale (ignore)`
 
-Product docs: start at `docs/product/index.md` for task routes and the doc ownership table.
+Product docs: start at `docs/index.md` for task routes and the doc ownership table.
 
 ## Assess the task
 

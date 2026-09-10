@@ -1,27 +1,27 @@
-# 05 — iOS Architecture (topology and orchestration owner)
+# iOS Architecture (topology and orchestration owner)
 
-**Doc:** `05-ios-architecture.md` (native filename kept)
+**Doc:** `ios-architecture.md` (native filename kept)
 **Status:** MVP implementation baseline
 **Role:** Single owner of app topology and runtime orchestration. Other docs link here. This doc does not copy them.
 
 **Ownership:**
 This doc owns single-target SwiftUI + Observation topology, AppContainer/DI, service boundaries, engine façade, scheduling and task groups, structured concurrency and cancellation, foreground-first checkpoints, runtime memory behavior, state machines, versioned config, and OSLog.
 
-This doc does not own selection pipeline logic ([04](04-selection-engine-design.md)), selection policy ([03](03-photo-selection-rules.md)), stored shapes ([06](06-data-model.md)), PhotoKit/Vision call shapes ([07](07-apple-framework-integration.md)), budgets and resume numbers ([08](08-performance-spec.md)), UX flows and copy ([02](02-ux-flows.md)), privacy policy ([09](09-privacy-and-permissions.md)), QA procedure ([10](10-manual-qa-and-selection-evaluation.md)), or metrics events ([11](11-analytics-and-metrics.md)). Where those topics appear below, this file states the boundary; the linked file states the rule.
+This doc does not own selection pipeline logic ([04](selection-engine.md)), selection policy ([03](../product-specs/selection-rules.md)), stored shapes ([06](data-model.md)), PhotoKit/Vision call shapes ([07](apple-frameworks.md)), budgets and resume numbers ([08](../ship-gates/performance.md)), UX flows and copy ([02](../product-specs/ux-flows.md)), privacy policy ([09](../ship-gates/privacy.md)), QA procedure ([10](../ship-gates/manual-qa.md)), or metrics events ([11](../ship-gates/analytics.md)). Where those topics appear below, this file states the boundary; the linked file states the rule.
 
 **Incoming links:** 04, 06, 07, 08 link here for structure and scheduling. They do not restate it.
 **Outgoing links:** This doc links to 02, 03, 04, 06, 07, 08, 09, 11. It does not copy their content.
 
 Related docs:
 
-- `02-ux-flows.md` — screens, copy, review actions
-- `03-photo-selection-rules.md` — what gets selected and why
-- `04-selection-engine-design.md` — pipeline order and stage mechanics
-- `06-data-model.md` — stored entity and cache shapes
-- `07-apple-framework-integration.md` — PhotoKit and Vision API use
-- `08-performance-spec.md` — budgets, concurrency numbers, resume intervals
-- `09-privacy-and-permissions.md` — privacy, retention, redaction
-- `11-analytics-and-metrics.md` — event schemas
+- `ux-flows.md` — screens, copy, review actions
+- `selection-rules.md` — what gets selected and why
+- `selection-engine.md` — pipeline order and stage mechanics
+- `data-model.md` — stored entity and cache shapes
+- `apple-frameworks.md` — PhotoKit and Vision API use
+- `performance.md` — budgets, concurrency numbers, resume intervals
+- `privacy.md` — privacy, retention, redaction
+- `analytics.md` — event schemas
 
 ---
 
@@ -55,7 +55,7 @@ Rules:
 - Views trigger intents and render state. They do no fetching, analysis, or scoring.
 - The coordinator owns order, progress, cancellation, and checkpoints. It owns no scoring formula.
 - Services own Apple-framework contact. Domain code sees IDs and structs, not `PHAsset` or Vision request types.
-- The engine is a callable façade. Its stage logic lives in [04](04-selection-engine-design.md).
+- The engine is a callable façade. Its stage logic lives in [04](selection-engine.md).
 
 ---
 
@@ -72,8 +72,8 @@ Rules:
 | Processing | Foreground-first, resumable at stage edges; no dependence on long background execution |
 | Persistence | Light files and cache only; no database for MVP |
 | Logging | OSLog `Logger` with subsystem and category |
-| Analytics | Thin internal interface; provider deferred; schemas in [11](11-analytics-and-metrics.md) |
-| Validation | Manual QA per [10](10-manual-qa-and-selection-evaluation.md); no test targets in repo |
+| Analytics | Thin internal interface; provider deferred; schemas in [11](../ship-gates/analytics.md) |
+| Validation | Manual QA per [10](../ship-gates/manual-qa.md); no test targets in repo |
 
 Invariants (only use of MUST in this doc):
 
@@ -81,7 +81,7 @@ Invariants (only use of MUST in this doc):
 - The session MUST NOT retain decoded full-resolution images for the whole job.
 - Every long-running loop and expensive stage MUST cooperate with Swift task cancellation.
 - The selection engine MUST NOT import SwiftUI.
-- Photo pixels, face data, and embeddings MUST NOT leave the device through app code; see [09](09-privacy-and-permissions.md).
+- Photo pixels, face data, and embeddings MUST NOT leave the device through app code; see [09](../ship-gates/privacy.md).
 
 ---
 
@@ -91,7 +91,7 @@ Invariants (only use of MUST in this doc):
 - Keep the engine UI-free: it takes IDs, analyses, config, and feedback, and returns decisions. No navigation, alerts, PhotoKit, or progress bars inside.
 - Use protocols only at boundaries that vary or isolate Apple frameworks: photo library, image loading, analysis, cache, export, analytics. Do not add a protocol per class.
 - Prefer value types (`struct`, `enum`, `Sendable`) for data crossing actors. Shared mutable coordinators are actors, not locked classes.
-- Bound concurrency at every expensive stage. Exact numbers live in [08](08-performance-spec.md); this doc makes them configurable (§12).
+- Bound concurrency at every expensive stage. Exact numbers live in [08](../ship-gates/performance.md); this doc makes them configurable (§12).
 - Treat cancellation as a normal path (leave flow, restart, source change, background, memory pressure, explicit Cancel).
 - Persist little: in-memory session state, cache-directory derived data, small checkpoint manifest, settings storage for small prefs. Add SwiftData only when durable history needs it.
 
@@ -171,7 +171,7 @@ PhotoKit / Vision / file-system implementations
 
 ## 6. Service boundaries
 
-Each service owns one seam. Call shapes and API facts live in [07](07-apple-framework-integration.md); stored shapes live in [06](06-data-model.md).
+Each service owns one seam. Call shapes and API facts live in [07](apple-frameworks.md); stored shapes live in [06](data-model.md).
 
 | Service | Owns | Must not own |
 |---|---|---|
@@ -184,16 +184,16 @@ Each service owns one seam. Call shapes and API facts live in [07](07-apple-fram
 
 Contract notes:
 
-- Consumers ask for an *analysis representation*, not the original. The loader picks request parameters. Full-resolution use needs a stated feature reason; see [04](04-selection-engine-design.md) and [07](07-apple-framework-integration.md).
-- The cache holds derived values only, in the app cache directory, safe to delete. Key shape and fingerprint rule: [06](06-data-model.md). Disk budget: [08](08-performance-spec.md).
-- Export writes existing assets into an album through PhotoKit changes. Naming and reuse rules follow product docs; API mechanics: [07](07-apple-framework-integration.md).
-- Analytics receives events and counts only as [09](09-privacy-and-permissions.md) permits. It never receives pixels by default. Event schemas: [11](11-analytics-and-metrics.md).
+- Consumers ask for an *analysis representation*, not the original. The loader picks request parameters. Full-resolution use needs a stated feature reason; see [04](selection-engine.md) and [07](apple-frameworks.md).
+- The cache holds derived values only, in the app cache directory, safe to delete. Key shape and fingerprint rule: [06](data-model.md). Disk budget: [08](../ship-gates/performance.md).
+- Export writes existing assets into an album through PhotoKit changes. Naming and reuse rules follow product docs; API mechanics: [07](apple-frameworks.md).
+- Analytics receives events and counts only as [09](../ship-gates/privacy.md) permits. It never receives pixels by default. Event schemas: [11](../ship-gates/analytics.md).
 
 ---
 
 ## 7. Engine façade (schedule, do not own)
 
-05 schedules the engine; 04 owns its logic. Policy (what wins, thresholds, reason-code meanings) is [03](03-photo-selection-rules.md). Stage order and mechanics are [04](04-selection-engine-design.md).
+05 schedules the engine; 04 owns its logic. Policy (what wins, thresholds, reason-code meanings) is [03](../product-specs/selection-rules.md). Stage order and mechanics are [04](selection-engine.md).
 
 ```swift
 struct SelectionEngine: Sendable {
@@ -216,7 +216,7 @@ Façade rules:
 
 - The engine is synchronous value-type logic where possible. It does not fetch images or await PhotoKit. Image work completes before final selection.
 - Same inputs plus same engine version, config version, and feedback give the same result. Any tie-break seed derives from session or config so runs reproduce.
-- Decisions carry reason codes and scores; UI formats the wording. Review edits re-enter only the affected balancing step, not full Vision analysis; review actions and copy: [02](02-ux-flows.md).
+- Decisions carry reason codes and scores; UI formats the wording. Review edits re-enter only the affected balancing step, not full Vision analysis; review actions and copy: [02](../product-specs/ux-flows.md).
 
 ---
 
@@ -278,7 +278,7 @@ Scheduling rules:
 - The actor guards session bookkeeping, checkpoint consistency, cache coordination, and counters. It does not serialize expensive image work; it launches bounded child tasks and collects results.
 - Dynamic asset sets use task groups. No detached task per photo, no `DispatchQueue.global().async` as the default path.
 - `Task.detached` is avoided unless an executor or inheritance reason requires it and lifetime and cancellation are understood.
-- Partial failure is structural: one bad asset does not fail the job. The coordinator classes failures as skippable asset, degraded capability, or fatal session. Thresholds: [04](04-selection-engine-design.md) and [08](08-performance-spec.md).
+- Partial failure is structural: one bad asset does not fail the job. The coordinator classes failures as skippable asset, degraded capability, or fatal session. Thresholds: [04](selection-engine.md) and [08](../ship-gates/performance.md).
 
 ---
 
@@ -295,7 +295,7 @@ Scheduling rules:
 
 Cancellation checkpoints (minimum): before the next image request, after each load, before and after expensive Vision work, between selection stages, before cache or checkpoint writes when safe, before export. Use `try Task.checkCancellation()` and make wrapper continuations resume correctly under Apple-API cancellation.
 
-Concurrency shape (bounded workers; exact limits in [08](08-performance-spec.md)):
+Concurrency shape (bounded workers; exact limits in [08](../ship-gates/performance.md)):
 
 ```swift
 // Conceptual: bounded worker pool over a task group.
@@ -319,7 +319,7 @@ Sendability: enable strict concurrency checking. Keep domain values `Sendable`. 
 
 ## 10. Foreground-first checkpoints
 
-Design for interruption; do not depend on extended background execution. Checkpoint shape: [06](06-data-model.md). Frequency and resume budgets: [08](08-performance-spec.md).
+Design for interruption; do not depend on extended background execution. Checkpoint shape: [06](data-model.md). Frequency and resume budgets: [08](../ship-gates/performance.md).
 
 - Checkpoint content is small: session ID, source definition, target size and config versions, source hash, completed analysis IDs, pipeline stage, timestamps. No image bytes.
 - Write at safe stage edges (after source fetch, per analysis batch, after analysis, after shortlist, after final selection), not after every tiny op.
@@ -332,7 +332,7 @@ Design for interruption; do not depend on extended background execution. Checkpo
 
 - Retain metadata, compact analyses, compact descriptors, and visible thumbnails. Do not retain the job's decoded originals.
 - Per-asset lifecycle: identifier → bounded analysis image → decode only as needed → Vision and quality signals → compact `PhotoAnalysis` → cache write if needed → release image. Wrap Objective-C-heavy per-image loops in `autoreleasepool` when profiling shows buildup.
-- Use different sizes for grid, review, analysis, and the rare verification pass. The analysis stage uses the smallest size that keeps its signal; per-feature sizes: [04](04-selection-engine-design.md); delivery: [07](07-apple-framework-integration.md).
+- Use different sizes for grid, review, analysis, and the rare verification pass. The analysis stage uses the smallest size that keeps its signal; per-feature sizes: [04](selection-engine.md); delivery: [07](apple-frameworks.md).
 - iCloud-backed assets surface as local success, network fetch where permitted, temporarily unavailable, permanently unavailable, or cancelled. The coordinator classifies; UI shows product language without PhotoKit detail.
 - On memory pressure: drop nonessential thumbnails, stop prefetching, lower future concurrency per policy, release image buffers promptly, checkpoint if useful, and keep user review state. A warning does not destroy the active result.
 
@@ -373,9 +373,9 @@ struct ProcessingProgress: Sendable, Equatable {
 }
 ```
 
-- Overall fraction never moves backward. Updates are throttled (rate: [08](08-performance-spec.md)) so the main actor is not flooded. Cancellation is separate from progress.
-- Stage names here are orchestration labels. Selection-stage semantics: [04](04-selection-engine-design.md). User-facing labels and copy: [02](02-ux-flows.md).
-- Typed internal errors per layer map to actionable UI categories (permission, unavailable, iCloud, interrupted, too few eligible, export, storage, unexpected). Never show raw errors. Copy: [02](02-ux-flows.md).
+- Overall fraction never moves backward. Updates are throttled (rate: [08](../ship-gates/performance.md)) so the main actor is not flooded. Cancellation is separate from progress.
+- Stage names here are orchestration labels. Selection-stage semantics: [04](selection-engine.md). User-facing labels and copy: [02](../product-specs/ux-flows.md).
+- Typed internal errors per layer map to actionable UI categories (permission, unavailable, iCloud, interrupted, too few eligible, export, storage, unexpected). Never show raw errors. Copy: [02](../product-specs/ux-flows.md).
 
 ---
 
@@ -393,8 +393,8 @@ struct AppConfiguration: Sendable {
 ```
 
 - Knob examples: analysis size class, concurrency caps, moment and duplicate thresholds, shortlist multiplier, album size, per-moment bounds, diversity weights, cache schema version. No remote config for MVP.
-- Defaults and policy meaning: [03](03-photo-selection-rules.md) and [04](04-selection-engine-design.md). Numeric caps and intervals: [08](08-performance-spec.md).
-- Every result carries engine, analysis-schema, and config versions so caches invalidate, evaluations compare, and builds debug. Stored version fields: [06](06-data-model.md).
+- Defaults and policy meaning: [03](../product-specs/selection-rules.md) and [04](selection-engine.md). Numeric caps and intervals: [08](../ship-gates/performance.md).
+- Every result carries engine, analysis-schema, and config versions so caches invalidate, evaluations compare, and builds debug. Stored version fields: [06](data-model.md).
 
 ---
 
@@ -404,7 +404,7 @@ Use `Logger` with subsystem and category separation. Suggested categories: `app`
 
 Log session starts, finishes, cancellations, asset counts by stage, cache hits and misses, stage durations, skipped counts, memory-pressure events, and export outcomes. Keep identifiers privacy-aware.
 
-Do not log image bytes, face images, or sensitive metadata. Redaction and retention rules: [09](09-privacy-and-permissions.md). Analytics stays separate: logging answers what happened on this device; analytics answers product behavior within the approved model. Analytics schemas: [11](11-analytics-and-metrics.md).
+Do not log image bytes, face images, or sensitive metadata. Redaction and retention rules: [09](../ship-gates/privacy.md). Analytics stays separate: logging answers what happened on this device; analytics answers product behavior within the approved model. Analytics schemas: [11](../ship-gates/analytics.md).
 
 ---
 
@@ -429,6 +429,6 @@ Deferred until a product need appears: cloud inference, accounts, cross-device s
 
 ## Uncertain
 
-- Whether the oldest supported device forces the Vision concurrency default below the [08](08-performance-spec.md) starting value; tune from prototype profiling.
+- Whether the oldest supported device forces the Vision concurrency default below the [08](../ship-gates/performance.md) starting value; tune from prototype profiling.
 - Whether `PHCachingImageManager` preheat alone keeps review scrolling smooth at stress sizes, or a small bounded app-side thumbnail layer is needed.
 - Whether resume needs per-batch checkpoints at 5,000 assets or stage-edge checkpoints suffice; confirm against interrupt testing.

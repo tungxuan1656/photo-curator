@@ -1,8 +1,8 @@
-# 06 — Data Model (stored representation owner)
+# Data Model (stored representation owner)
 
 **Responsibility:** This file owns stored representation only: entities, IDs, lifecycle, versioning, and persistence shape (PhotoAsset, PhotoAnalysis storage shape, Moment/Cluster representation, SelectionDecision/Result/Session/Progress/Config storage, cache fingerprint and validity, `analysisVersion` vs `engineVersion`).
 
-**Not owned here:** selection policy, formulas, sizing, and reason-code meanings ([03](03-photo-selection-rules.md)), pipeline order and mechanics ([04](04-selection-engine-design.md)), app structure ([05](05-ios-architecture.md)), PhotoKit/Vision call shapes ([07](07-apple-framework-integration.md)), performance budgets and resume mechanics ([08](08-performance-spec.md)), review UX and wording ([02](02-ux-flows.md)), privacy, retention, and redaction ([09](09-privacy-and-permissions.md)), QA procedure ([10](10-manual-qa-and-selection-evaluation.md)), metrics events ([11](11-analytics-and-metrics.md)). Where those topics appear below, this file states the stored shape; the linked file states the rule.
+**Not owned here:** selection policy, formulas, sizing, and reason-code meanings ([03](../product-specs/selection-rules.md)), pipeline order and mechanics ([04](selection-engine.md)), app structure ([05](ios-architecture.md)), PhotoKit/Vision call shapes ([07](apple-frameworks.md)), performance budgets and resume mechanics ([08](../ship-gates/performance.md)), review UX and wording ([02](../product-specs/ux-flows.md)), privacy, retention, and redaction ([09](../ship-gates/privacy.md)), QA procedure ([10](../ship-gates/manual-qa.md)), metrics events ([11](../ship-gates/analytics.md)). Where those topics appear below, this file states the stored shape; the linked file states the rule.
 
 ---
 
@@ -25,9 +25,9 @@ Data ownership:
 | Thumbnail | Image cache |
 | Analysis, moment assignment, cluster assignment, AI choice | Selection engine + app store |
 | User override and final pick | User |
-| Library change (album write) | PhotoKit layer; see [07](07-apple-framework-integration.md) |
+| Library change (album write) | PhotoKit layer; see [07](apple-frameworks.md) |
 
-Loading rule: loading 1,000–5,000 assets means loading IDs, dates, sizes, favorite flags, subtypes, and location refs — never 1,000+ pixel buffers. Request pixels only for the stage that needs them, then release. See [08](08-performance-spec.md) for budgets.
+Loading rule: loading 1,000–5,000 assets means loading IDs, dates, sizes, favorite flags, subtypes, and location refs — never 1,000+ pixel buffers. Request pixels only for the stage that needs them, then release. See [08](../ship-gates/performance.md) for budgets.
 
 ---
 
@@ -60,7 +60,7 @@ Core pipeline in storage terms:
 PhotoAsset → PhotoAnalysis → Moment / Cluster refs → SelectionDecision → SelectionResult → CuratedAlbum + UserFeedback
 ```
 
-Key storage rule: photo, analysis, and decision are three separate records. Re-ranking writes new decisions from stored analyses without re-running image work. See [04](04-selection-engine-design.md) for the run order.
+Key storage rule: photo, analysis, and decision are three separate records. Re-ranking writes new decisions from stored analyses without re-running image work. See [04](selection-engine.md) for the run order.
 
 ---
 
@@ -112,12 +112,12 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
 
 | Field | Notes |
 |---|---|
-| `creationDate` | May be nil; missing dates never lower quality, see [03](03-photo-selection-rules.md). |
+| `creationDate` | May be nil; missing dates never lower quality, see [03](../product-specs/selection-rules.md). |
 | `pixelWidth/Height` | Basis for derived `aspectRatio` and `orientation`; orientation is derived, not stored separately. |
-| `mediaSubtype` | Only values that change behavior (`standard`, `livePhoto`, `screenshot`, `panorama`, `hdr`, `portrait`, `unknown`). Eligibility policy: [03](03-photo-selection-rules.md). |
-| `isFavorite` | Soft bonus flag only; see [03](03-photo-selection-rules.md). |
-| `location` | `GeoCoordinate(latitude, longitude)`, optional. Store only when needed for grouping. No place history; see [09](09-privacy-and-permissions.md). |
-| `source` | `local` / `iCloud` / `unknown`. Hint for progress and retry only; iCloud state can change. API detail: [07](07-apple-framework-integration.md). |
+| `mediaSubtype` | Only values that change behavior (`standard`, `livePhoto`, `screenshot`, `panorama`, `hdr`, `portrait`, `unknown`). Eligibility policy: [03](../product-specs/selection-rules.md). |
+| `isFavorite` | Soft bonus flag only; see [03](../product-specs/selection-rules.md). |
+| `location` | `GeoCoordinate(latitude, longitude)`, optional. Store only when needed for grouping. No place history; see [09](../ship-gates/privacy.md). |
+| `source` | `local` / `iCloud` / `unknown`. Hint for progress and retry only; iCloud state can change. API detail: [07](apple-frameworks.md). |
 
 Ephemeral analysis input (never persisted):
 
@@ -128,7 +128,7 @@ struct AnalysisInput {
 }
 ```
 
-Memory rule: `PhotoAsset` and `PhotoAnalysis` stay for the session; thumbnails live in cache; full images are processed then released. See [08](08-performance-spec.md).
+Memory rule: `PhotoAsset` and `PhotoAnalysis` stay for the session; thumbnails live in cache; full images are processed then released. See [08](../ship-gates/performance.md).
 
 ---
 
@@ -158,7 +158,7 @@ struct PhotoAnalysis: Identifiable, Codable, Sendable {
 | `sharpnessScore`, `exposureScore`, `resolutionScore` | `0.0 ... 1.0`, higher is better |
 | `blurProbability`, `underexposureProbability`, `overexposureProbability` | `0.0 ... 1.0`, higher means more likely defective |
 
-Name fields so direction is clear (`sharpnessScore` vs `blurProbability`). Never use a bare `blurScore`. Cutoffs and tiers: [03](03-photo-selection-rules.md).
+Name fields so direction is clear (`sharpnessScore` vs `blurProbability`). Never use a bare `blurScore`. Cutoffs and tiers: [03](../product-specs/selection-rules.md).
 
 ### 6.2 PeopleAnalysis and FaceAnalysis
 
@@ -178,7 +178,7 @@ struct FaceAnalysis: Codable, Sendable {
 }
 ```
 
-Privacy limits: anonymous faces only. No `personName`, `personID`, identity embedding, or contact link in MVP. Face boxes and embeddings stay in memory or temp session scope. See [09](09-privacy-and-permissions.md). Group and portrait scoring policy: [03](03-photo-selection-rules.md).
+Privacy limits: anonymous faces only. No `personName`, `personID`, identity embedding, or contact link in MVP. Face boxes and embeddings stay in memory or temp session scope. See [09](../ship-gates/privacy.md). Group and portrait scoring policy: [03](../product-specs/selection-rules.md).
 
 ### 6.3 CompositionAnalysis
 
@@ -208,17 +208,17 @@ enum SceneType: String, Codable, Sendable {
 }
 ```
 
-Scene meanings and diversity use: [03](03-photo-selection-rules.md). Keep tags light; no ontology in MVP.
+Scene meanings and diversity use: [03](../product-specs/selection-rules.md). Keep tags light; no ontology in MVP.
 
 ### 6.5 Quality rollup storage
 
-`qualityScore` (`0.0` poor … `1.0` excellent) and optional `QualityScoreBreakdown(technical, people?, composition?, content?, total)` are stored for reuse and debug. Weighting, tier cutoffs, and the split between intrinsic quality and final selection value are owned by [03](03-photo-selection-rules.md); computation order by [04](04-selection-engine-design.md). This file defines only the stored fields.
+`qualityScore` (`0.0` poor … `1.0` excellent) and optional `QualityScoreBreakdown(technical, people?, composition?, content?, total)` are stored for reuse and debug. Weighting, tier cutoffs, and the split between intrinsic quality and final selection value are owned by [03](../product-specs/selection-rules.md); computation order by [04](selection-engine.md). This file defines only the stored fields.
 
 ---
 
 ## 7. Moment and Cluster representation
 
-Definitions, grouping thresholds, time windows, per-moment keeper counts, and worked cases are owned by [03](03-photo-selection-rules.md). Detection mechanics are owned by [04](04-selection-engine-design.md). This file defines only stored shape and membership.
+Definitions, grouping thresholds, time windows, per-moment keeper counts, and worked cases are owned by [03](../product-specs/selection-rules.md). Detection mechanics are owned by [04](selection-engine.md). This file defines only stored shape and membership.
 
 ```swift
 struct PhotoMoment: Identifiable, Codable, Sendable {
@@ -255,13 +255,13 @@ struct SimilarityEdge: Sendable {
 }
 ```
 
-Feature prints (Vision or equivalent) are cache data keyed by `AssetID`, not domain entities, so the similarity backend can change without touching UI models. API detail: [07](07-apple-framework-integration.md).
+Feature prints (Vision or equivalent) are cache data keyed by `AssetID`, not domain entities, so the similarity backend can change without touching UI models. API detail: [07](apple-frameworks.md).
 
 ---
 
 ## 8. SelectionDecision storage
 
-One recorded choice per asset per session. Score math and keeper rules: [03](03-photo-selection-rules.md).
+One recorded choice per asset per session. Score math and keeper rules: [03](../product-specs/selection-rules.md).
 
 ```swift
 struct SelectionDecision: Identifiable, Codable, Sendable {
@@ -287,10 +287,10 @@ struct SelectionScoreBreakdown: Codable, Sendable {
 
 | Stored item | Owner of meaning |
 |---|---|
-| Keep/reject policy, tier cutoffs, weights, diversity and coverage model | [03](03-photo-selection-rules.md) |
-| Rank and assemble order | [04](04-selection-engine-design.md) |
-| `SelectionReason` code list (e.g. `exactDuplicate`, `bestInMoment`, `userSelected`) | [03 §16](03-photo-selection-rules.md); this file stores the codes |
-| Analytics use of reasons | [11](11-analytics-and-metrics.md) |
+| Keep/reject policy, tier cutoffs, weights, diversity and coverage model | [03](../product-specs/selection-rules.md) |
+| Rank and assemble order | [04](selection-engine.md) |
+| `SelectionReason` code list (e.g. `exactDuplicate`, `bestInMoment`, `userSelected`) | [03 §16](../product-specs/selection-rules.md); this file stores the codes |
+| Analytics use of reasons | [11](../ship-gates/analytics.md) |
 
 Keep `SelectionStatus` to three cases; put nuance in `reasons`. Never mutate the engine record for a user edit — write `UserOverride` + `UserFeedback` instead (§11).
 
@@ -326,7 +326,7 @@ struct RankedCandidate: Identifiable, Sendable {
 }
 ```
 
-Review-surface order, shortlist sizing, and accept semantics: [02](02-ux-flows.md). Album sizing targets: [03 §14](03-photo-selection-rules.md). Debug extras (`candidateRank`, `clusterRank`, raw score maps) stay dev-only and out of prod persistence.
+Review-surface order, shortlist sizing, and accept semantics: [02](../product-specs/ux-flows.md). Album sizing targets: [03 §14](../product-specs/selection-rules.md). Debug extras (`candidateRank`, `clusterRank`, raw score maps) stay dev-only and out of prod persistence.
 
 ---
 
@@ -368,7 +368,7 @@ struct SelectionConfiguration: Codable, Sendable {
 }
 ```
 
-Notes: `SessionStatus` mirrors pipeline phases at coarse grain; stage mechanics and retry live in [04](04-selection-engine-design.md) and [08](08-performance-spec.md). `SelectionConfiguration` exists for reproducibility and experiment tracking; most fields use internal defaults in MVP. Tunable defaults and sizing math: [03 §14, §17](03-photo-selection-rules.md). Progress text is non-localized; user wording: [02](02-ux-flows.md). Progress fraction (`processedCount / totalCount`) is derived.
+Notes: `SessionStatus` mirrors pipeline phases at coarse grain; stage mechanics and retry live in [04](selection-engine.md) and [08](../ship-gates/performance.md). `SelectionConfiguration` exists for reproducibility and experiment tracking; most fields use internal defaults in MVP. Tunable defaults and sizing math: [03 §14, §17](../product-specs/selection-rules.md). Progress text is non-localized; user wording: [02](../product-specs/ux-flows.md). Progress fraction (`processedCount / totalCount`) is derived.
 
 ---
 
@@ -404,7 +404,7 @@ struct ReviewState: Sendable {          // UI state, never persisted
 }
 ```
 
-Rules: user include/exclude is a hard session override (see [03 §14](03-photo-selection-rules.md)); accept, restore, and undo wording and flow are owned by [02](02-ux-flows.md). Store raw feedback events in MVP; do not build preference profiles yet. No testing-only models; QA handling: [10](10-manual-qa-and-selection-evaluation.md).
+Rules: user include/exclude is a hard session override (see [03 §14](../product-specs/selection-rules.md)); accept, restore, and undo wording and flow are owned by [02](../product-specs/ux-flows.md). Store raw feedback events in MVP; do not build preference profiles yet. No testing-only models; QA handling: [10](../ship-gates/manual-qa.md).
 
 ---
 
@@ -434,7 +434,7 @@ struct SessionFailure: Codable, Sendable {
 }
 ```
 
-Store stable categories only, never raw framework errors. Retry and backoff: [04](04-selection-engine-design.md), [08](08-performance-spec.md).
+Store stable categories only, never raw framework errors. Retry and backoff: [04](selection-engine.md), [08](../ship-gates/performance.md).
 
 ---
 
@@ -461,7 +461,7 @@ struct AssetFingerprint: Codable, Hashable, Sendable {
 | Fingerprint matches | Dimensions + dates compatible |
 | Version matches | `record.analysisVersion == currentAnalysisVersion` |
 
-Goal is "safe to reuse", not cryptographic proof. Eviction, checkpoint cadence, and resume-stub shape: [08](08-performance-spec.md). Retention and reset: [09](09-privacy-and-permissions.md).
+Goal is "safe to reuse", not cryptographic proof. Eviction, checkpoint cadence, and resume-stub shape: [08](../ship-gates/performance.md). Retention and reset: [09](../ship-gates/privacy.md).
 
 ---
 
@@ -474,7 +474,7 @@ Two independent counters. Bumping one never forces work owned by the other.
 | `analysisVersion` | Image reading changes (blur method, face request, semantic input, Vision call) | Old `PhotoAnalysis` rows invalid; re-analyze |
 | `engineVersion` | Choice changes (weights, thresholds, diversity rules, moment balance) | Old `SelectionDecision` rows invalid; re-rank from stored analyses |
 
-Changing rank weights re-ranks stored analyses into new decisions with no Vision rerun. API-side triggers: [07](07-apple-framework-integration.md). Tuning validation: [10](10-manual-qa-and-selection-evaluation.md).
+Changing rank weights re-ranks stored analyses into new decisions with no Vision rerun. API-side triggers: [07](apple-frameworks.md). Tuning validation: [10](../ship-gates/manual-qa.md).
 
 ---
 
@@ -482,7 +482,7 @@ Changing rank weights re-ranks stored analyses into new decisions with no Vision
 
 Persist: session, result, decisions, analyses + cache, overrides, feedback, minimal validation metadata. Cache-only: moments, clusters, features, thumbnails. Never: pixel buffers, Vision objects, matrices, UI state.
 
-Domain models stay persistence-agnostic: `Persistence → Domain → Engine → Domain → Persistence`. Start with one model type; add DTOs only if the store forces it. Folder layout is owned by [05](05-ios-architecture.md); suggested code grouping is Asset / Analysis / Grouping / Selection / Session / Feedback, flattened while small.
+Domain models stay persistence-agnostic: `Persistence → Domain → Engine → Domain → Persistence`. Start with one model type; add DTOs only if the store forces it. Folder layout is owned by [05](ios-architecture.md); suggested code grouping is Asset / Analysis / Grouping / Selection / Session / Feedback, flattened while small.
 
 Runtime indexes are rebuilt on load, not stored:
 
@@ -505,9 +505,9 @@ created → loadingAssets → analyzing → groupingMoments → clustering
   ↳ failed (any stage)
 ```
 
-Resume needs only: session ID, source IDs, stage, completed analyses, config, and result if present. Example: 1,000 assets with 620 cached → reuse 620, analyze 380, continue. Full resume and background rules: [08](08-performance-spec.md).
+Resume needs only: session ID, source IDs, stage, completed analyses, config, and result if present. Example: 1,000 assets with 620 cached → reuse 620, analyze 380, continue. Full resume and background rules: [08](../ship-gates/performance.md).
 
-Retention, deletion, logging redaction, and what never leaves device: [09](09-privacy-and-permissions.md). This file adds no privacy rules.
+Retention, deletion, logging redaction, and what never leaves device: [09](../ship-gates/privacy.md). This file adds no privacy rules.
 
 ---
 
@@ -523,17 +523,17 @@ Minimum start schema: `PhotoAsset`, `PhotoAnalysis`, `PhotoMoment`, `PhotoCluste
 
 ## 17. Links and Uncertain
 
-- What to pick and why: [03](03-photo-selection-rules.md).
-- Run order and retry: [04](04-selection-engine-design.md).
-- Review wording and accept flow: [02](02-ux-flows.md).
-- PhotoKit/Vision calls: [07](07-apple-framework-integration.md).
-- Budgets, checkpoints, resume: [08](08-performance-spec.md).
-- Retention, redaction, disclosures: [09](09-privacy-and-permissions.md).
-- QA and metrics: [10](10-manual-qa-and-selection-evaluation.md), [11](11-analytics-and-metrics.md).
+- What to pick and why: [03](../product-specs/selection-rules.md).
+- Run order and retry: [04](selection-engine.md).
+- Review wording and accept flow: [02](../product-specs/ux-flows.md).
+- PhotoKit/Vision calls: [07](apple-frameworks.md).
+- Budgets, checkpoints, resume: [08](../ship-gates/performance.md).
+- Retention, redaction, disclosures: [09](../ship-gates/privacy.md).
+- QA and metrics: [10](../ship-gates/manual-qa.md), [11](../ship-gates/analytics.md).
 
 Uncertain (storage impact only; policy tuning lives in 03/04/10):
 
 1. Whether `PhotoMoment`/`PhotoCluster` stay cache-only or need durable rows after cost data.
 2. Final `AssetFingerprint` fields, pending available PhotoKit metadata.
 3. Whether `RankedCandidate` or score maps need durable debug rows.
-4. Minimal resume-stub fields under background limits (see [08](08-performance-spec.md)).
+4. Minimal resume-stub fields under background limits (see [08](../ship-gates/performance.md)).

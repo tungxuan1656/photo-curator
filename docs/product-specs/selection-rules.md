@@ -1,8 +1,8 @@
-# 03 — Photo Selection Rules (selection policy owner)
+# Photo Selection Rules (selection policy owner)
 
 **Responsibility:** This file owns what the curator selects and why: moment/duplicate definitions, selection priority, quality tiers, face/group/scene rules, diversity model, album sizing, score policy, tie-breaks, reason codes, user-intent override.
 
-**Not owned here:** product goals ([01](01-product.md)), UX and review copy ([02](02-ux-flows.md)), pipeline and orchestration ([04](04-selection-engine-design.md)), app architecture ([05](05-ios-architecture.md)), stored representation ([06](06-data-model.md)), PhotoKit/Vision APIs ([07](07-apple-framework-integration.md)), performance budgets ([08](08-performance-spec.md)), privacy ([09](09-privacy-and-permissions.md)), QA procedure ([10](10-manual-qa-and-selection-evaluation.md)), metrics ([11](11-analytics-and-metrics.md)). Where those topics appear below, this file states the rule; the linked file states the mechanism.
+**Not owned here:** product goals ([01](product.md)), UX and review copy ([02](ux-flows.md)), pipeline and orchestration ([04](../design-docs/selection-engine.md)), app architecture ([05](../design-docs/ios-architecture.md)), stored representation ([06](../design-docs/data-model.md)), PhotoKit/Vision APIs ([07](../design-docs/apple-frameworks.md)), performance budgets ([08](../ship-gates/performance.md)), privacy ([09](../ship-gates/privacy.md)), QA procedure ([10](../ship-gates/manual-qa.md)), metrics ([11](../ship-gates/analytics.md)). Where those topics appear below, this file states the rule; the linked file states the mechanism.
 
 ## 1. Decision hierarchy (read first)
 
@@ -47,7 +47,7 @@ Moment grouping combines time, visual similarity, people, scene, composition, an
 
 ## 3. Product rule in one paragraph
 
-Behave like a careful human curator after a trip: remove duplicates and failed frames, keep the best frame per moment, preserve people/places/activities, suppress repetition, keep chronological story and varied compositions. Prefer coverage of the whole trip over stacking technically perfect near-identical frames. Full goal: [01](01-product.md).
+Behave like a careful human curator after a trip: remove duplicates and failed frames, keep the best frame per moment, preserve people/places/activities, suppress repetition, keep chronological story and varied compositions. Prefer coverage of the whole trip over stacking technically perfect near-identical frames. Full goal: [01](product.md).
 
 ## 4. Asset eligibility
 
@@ -58,7 +58,7 @@ Behave like a careful human curator after a trip: remove duplicates and failed f
 | Hidden assets | Exclude hidden assets unless the selected source explicitly includes them. |
 | Favorites | Treat favorite as soft bonus only. It never forces selection of a duplicate or unusable frame. |
 
-Storage of eligibility flags: [06](06-data-model.md). Source access mechanics: [07](07-apple-framework-integration.md). Review-surface behavior: [02](02-ux-flows.md).
+Storage of eligibility flags: [06](../design-docs/data-model.md). Source access mechanics: [07](../design-docs/apple-frameworks.md). Review-surface behavior: [02](ux-flows.md).
 
 ## 5. Hard rejection (quality floor)
 
@@ -113,7 +113,7 @@ Time windows are tunable defaults (see §17), not invariants. Confirm with share
 | Rich (viewpoint yielding wide + group + candid) | Keep up to 2–3, each adding distinct information. |
 | High-count (many frames, people, compositions, favorites, duration) | Allow more only via measurable evidence above, never via inferred emotion. |
 
-Uncertain: thresholds separating ordinary/rich/high-count moments; tune from manual review ([10](10-manual-qa-and-selection-evaluation.md)).
+Uncertain: thresholds separating ordinary/rich/high-count moments; tune from manual review ([10](../ship-gates/manual-qa.md)).
 
 ## 9. Quality model and score policy
 
@@ -131,7 +131,7 @@ candidateValue =
   - repetitionPenalty
 ```
 
-Rules for the formula: weights live in configuration, not code; aesthetic score is one input, never the selector (`aestheticScore != selectionScore`); tiny score gaps are noise — decide near-ties by diversity, intent, expression, or coverage (§15). Computation order and implementation: [04](04-selection-engine-design.md).
+Rules for the formula: weights live in configuration, not code; aesthetic score is one input, never the selector (`aestheticScore != selectionScore`); tiny score gaps are noise — decide near-ties by diversity, intent, expression, or coverage (§15). Computation order and implementation: [04](../design-docs/selection-engine.md).
 
 ### Quality tiers (canonical)
 
@@ -158,7 +158,7 @@ Portrait preference among similar frames: sharper unobstructed face, natural exp
 | Repeated group pose | Keep 1 normally; 2 only on formal-versus-candid or clearly different composition. |
 | Selfies | Score like any portrait. Deduplicate same-spot selfie runs aggressively (≈20 similar frames → 1, or 2 when meaningfully different). |
 
-Uncertain: eye-state reliability in low light and candid frames; prefer no penalty when detection confidence is low. Face pipeline details: [07](07-apple-framework-integration.md).
+Uncertain: eye-state reliability in low light and candid frames; prefer no penalty when detection confidence is low. Face pipeline details: [07](../design-docs/apple-frameworks.md).
 
 ## 11. Scene rules
 
@@ -172,7 +172,7 @@ Uncertain: eye-state reliability in low light and candid frames; prefer no penal
 
 Uncertain: classifier boundary for obvious utility versus contextual sign (e.g. historic plaque as scene detail).
 
-Judge landscapes on sharpness, exposure, clipping, obstruction, composition, aesthetic signal. Signals computation: [04](04-selection-engine-design.md).
+Judge landscapes on sharpness, exposure, clipping, obstruction, composition, aesthetic signal. Signals computation: [04](../design-docs/selection-engine.md).
 
 ## 12. Meaningful variation
 
@@ -205,12 +205,12 @@ Quality-versus-diversity test: prefer a Good unique-activity photo over an Excel
 
 ## 14. Album sizing and user-intent override (owned here)
 
-Sizing policy is executable and owned here; [01](01-product.md) states the goal only.
+Sizing policy is executable and owned here; [01](product.md) states the goal only.
 
 | Parameter | Default (tunable) |
 |---|---|
 | Target album size | ~10% of input count, clamped to 30–40 minimum and 120–150 maximum. |
-| Shortlist for review | ~2× final target, feeding the review surface ([02](02-ux-flows.md)). |
+| Shortlist for review | ~2× final target, feeding the review surface ([02](ux-flows.md)). |
 | Undersupply | Return fewer than target rather than promote Poor/Unusable assets. |
 | Small target | Favor strongest moments, best representatives, broad coverage first; drop repeats first. |
 | Large target | Add secondary rich-moment picks, alternate compositions, strong candids; never pad with obvious duplicates. |
@@ -231,7 +231,7 @@ When candidates are effectively tied, decide in this order: explicit user select
 
 ## 16. Reason codes (canonical)
 
-Every automatic keep/reject exposes one primary reason and optional secondary reasons. Codes are stable for logs and analytics ([11](11-analytics-and-metrics.md)).
+Every automatic keep/reject exposes one primary reason and optional secondary reasons. Codes are stable for logs and analytics ([11](../ship-gates/analytics.md)).
 
 | Group | Codes |
 |---|---|
@@ -244,11 +244,11 @@ Every automatic keep/reject exposes one primary reason and optional secondary re
 | Diversity/coverage | `sceneDiversity`, `peopleDiversity`, `compositionDiversity`, `temporalCoverage`, `meaningfulVariation` |
 | User intent | `userSelected`, `userExcluded`, `favoriteBoost`, `editedVersionPreferred` |
 
-Example: primary `bestGroupPhoto` with secondaries `betterFaceQuality`, `nearDuplicateRepresentative`. Stored shape: [06](06-data-model.md).
+Example: primary `bestGroupPhoto` with secondaries `betterFaceQuality`, `nearDuplicateRepresentative`. Stored shape: [06](../design-docs/data-model.md).
 
 ## 17. Tunable parameters (single table)
 
-All numbers below are starting defaults. Centralize them in selection configuration; scatter no threshold in code. Score weights stay symbolic here (no invented constants); engineering sets values per [04](04-selection-engine-design.md) and validates per [10](10-manual-qa-and-selection-evaluation.md).
+All numbers below are starting defaults. Centralize them in selection configuration; scatter no threshold in code. Score weights stay symbolic here (no invented constants); engineering sets values per [04](../design-docs/selection-engine.md) and validates per [10](../ship-gates/manual-qa.md).
 
 | Parameter | Default |
 |---|---|
@@ -283,7 +283,7 @@ Keep the parameter count small; add new knobs only when manual evaluation proves
 | Original plus intentional edit | Keep edited twin only. |
 | One landmark morning/midday/sunset/night | Keep lighting-distinct versions; drop same-light retakes. |
 
-Evaluation libraries and pass criteria: [10](10-manual-qa-and-selection-evaluation.md).
+Evaluation libraries and pass criteria: [10](../ship-gates/manual-qa.md).
 
 ## 19. Invariants (MUST only)
 
@@ -298,7 +298,7 @@ Evaluation libraries and pass criteria: [10](10-manual-qa-and-selection-evaluati
 
 ## 20. Non-goals and Uncertain list
 
-Non-goals: retouching, color correction, emotion detection, identity recognition, demographic balancing, cloud search, language understanding, long-term taste learning, generative enhancement. Roadmap: [12](12-roadmap.md). Decisions: [13](13-decision-log.md).
+Non-goals: retouching, color correction, emotion detection, identity recognition, demographic balancing, cloud search, language understanding, long-term taste learning, generative enhancement. Roadmap: [12](../exec-plans/roadmap.md). Decisions: [13](../design-docs/decision-log.md).
 
 Remaining Uncertain items (evidence conflicts or needs QA tuning):
 
