@@ -15,8 +15,13 @@ struct AppContainer: Sendable {
     /// G1 wiring: real permission service + file-backed cache/checkpoint;
     /// everything else stays Noop until its owning stage.
     static func live() -> Self {
-        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("photo-curator", isDirectory: true)
+        let dirs = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+        let base =
+            dirs.first ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+        guard let base else {
+            preconditionFailure("AppContainer.live() needs a writable app directory.")
+        }
+        let root = base.appendingPathComponent("photo-curator", isDirectory: true)
         let files = FileStore(rootDirectory: root)
         return Self(
             photoLibrary: PhotoLibraryPermissionService(),

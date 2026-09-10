@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Photos
 import PhotosUI
 import UIKit
@@ -27,13 +28,21 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
     func presentLimitedLibraryPicker() {
         Task { @MainActor in
             let scenes = UIApplication.shared.connectedScenes
+            // Present from the topmost controller: the call site lives inside
+            // a sheet, so rootViewController is already presenting (presenting
+            // from it mid-dismissal drops the picker).
             guard let scene = scenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
-                  let window = scene.windows.first(where: { $0.isKeyWindow }),
-                  let rootViewController = window.rootViewController
+                  let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first,
+                  var topViewController = window.rootViewController
             else {
+                Logger(subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "photos")
+                    .warning("Limited-library picker dropped: no window to present from.")
                 return
             }
-            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: rootViewController)
+            while let presented = topViewController.presentedViewController {
+                topViewController = presented
+            }
+            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: topViewController)
         }
     }
 
