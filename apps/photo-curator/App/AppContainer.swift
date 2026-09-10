@@ -25,7 +25,7 @@ struct AppContainer: Sendable {
         let files = FileStore(rootDirectory: root)
         return Self(
             photoLibrary: PhotoLibraryPermissionService(),
-            imageLoader: NoopImageLoader(),
+            imageLoader: ImageLoaderService(),
             analyzer: NoopImageAnalyzer(),
             analysisCache: FileAnalysisCache(
                 files: files,
