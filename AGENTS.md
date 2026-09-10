@@ -1,6 +1,6 @@
 # AGENTS.md
 
-photos-curator is an iPhone app that turns a large photo set (100–2,000) into a smaller curated album (~20%, e.g. 1,024→187). Flow is Select→Analyze→Review→Save to an Apple Photos album; processing is on-device only and never deletes originals. Canonical spec: `docs/product/01-product-spec.md`.
+photos-curator is an iPhone app that turns a large photo set (100–2,000) into a smaller curated album (~20%, e.g. 1,024→187). Flow is Select→Analyze→Review→Save to an Apple Photos album; processing is on-device only and never deletes originals.
 
 Detected stack: `Swift 5 / SwiftUI, PhotoKit, Vision, Core ML — Xcode project apps/photo-curator.xcodeproj (scheme photo-curator); SwiftLint + SwiftFormat; fastlane present but stale (ignore)`
 
@@ -30,6 +30,7 @@ If baseline verification fails, record the failure. Fix it only when the current
 - Record scope, acceptance, evidence, and handoff in the feature file.
 - Record a feature result in `progress.md` only when the result, blocker, handoff, or next action materially changes. Do not copy feature scope there.
 - Update `init.sh` when verification commands or workspace modules change.
+- Do not create automated tests for this project: no test targets, no `*Test*.swift` files, no test frameworks or test-only architecture. Validation is manual only; `./init.sh` reports `SKIP [test]` by policy.
 
 ## Plans
 

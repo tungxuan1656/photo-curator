@@ -87,8 +87,15 @@ run_parallel "format" "${FORMAT_TASKS[@]}"
 echo "=== Lint ==="
 run_parallel "lint" "${LINT_TASKS[@]}"
 
-echo "=== Build and test ==="
-run_parallel "build/test" "${BUILD_TASKS[@]}" "${TEST_TASKS[@]}"
+echo "=== Build ==="
+run_parallel "build" "${BUILD_TASKS[@]}"
+
+echo "=== Test ==="
+if [ "${#TEST_TASKS[@]}" -eq 0 ]; then
+  echo "SKIP [test] no automated tests — manual validation only"
+else
+  run_parallel "test" "${TEST_TASKS[@]}"
+fi
 
 if [ "$STATUS" -ne 0 ]; then
   echo "=== Verification failed ===" >&2
