@@ -9,9 +9,17 @@ import SwiftUI
 
 @main
 struct PhotoCuratorApp: App {
+    @State private var appModel: AppModel
+
+    init() {
+        let container = AppContainer.live()
+        _appModel = State(initialValue: AppModel(container: container))
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
+                .environment(appModel)
         }
     }
 }
