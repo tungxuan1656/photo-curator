@@ -20,7 +20,7 @@ BUILD_TASKS=(
 )
 
 TEST_TASKS=(
-  # "xcodebuild test -project apps/photo-curator.xcodeproj -scheme photo-curator -destination 'generic/platform=iOS Simulator'" # SKIP explicit: no test target (xcodebuild -list shows single target photo-curator), no *Test*.swift, spec §41 requires no unit/UI-test targets
+  # "xcodebuild test -project apps/photo-curator.xcodeproj -scheme photo-curator -destination 'generic/platform=iOS Simulator'" # SKIP explicit: no test target (xcodebuild -list shows single target photo-curator), no *Test*.swift; policy: AGENTS.md no-tests rule + docs/ship-gates/manual-qa.md
 )
 
 if ! [[ "$MAX_JOBS" =~ ^[1-9][0-9]*$ ]]; then
