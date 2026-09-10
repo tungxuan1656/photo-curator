@@ -19,7 +19,7 @@ actor FileStore {
         let base = rootDirectory.standardizedFileURL
         let target = base.appendingPathComponent(relativePath).standardizedFileURL
         let prefix = base.path.hasSuffix("/") ? base.path : base.path + "/"
-        guard target.path == base.path || target.path.hasPrefix(prefix) else {
+        guard target.path.hasPrefix(prefix) else {
             throw FileStoreError.pathEscapesRoot(relativePath)
         }
         return target

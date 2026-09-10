@@ -22,13 +22,18 @@ actor FileAnalysisCache: AnalysisCache {
     }
 
     func analysis(for id: AssetID) async -> PhotoAnalysis? {
-        if let cached = memory[id], cached.analysisVersion == analysisVersion {
+        if let cached = memory[id] {
+            guard cached.analysisVersion == analysisVersion else {
+                memory[id] = nil
+                return nil
+            }
             return cached
         }
         guard let loaded: PhotoAnalysis = try? await files.load(PhotoAnalysis.self, from: path(for: id)) else {
             return nil
         }
         guard loaded.analysisVersion == analysisVersion else {
+            memory[id] = nil
             return nil
         }
         memory[id] = loaded
@@ -40,10 +45,7 @@ actor FileAnalysisCache: AnalysisCache {
             return
         }
         memory[analysis.assetID] = analysis
-        do {
-            try await files.save(analysis, to: path(for: analysis.assetID))
-        } catch {
-            memory[analysis.assetID] = nil
-        }
+        // Best effort: retain memory on transient I/O failure rather than forcing re-analysis.
+        try? await files.save(analysis, to: path(for: analysis.assetID))
     }
 }

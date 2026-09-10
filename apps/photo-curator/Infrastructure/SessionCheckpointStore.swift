@@ -38,8 +38,6 @@ actor SessionCheckpointStore {
     func delete(sessionID: SessionID) async throws {
         do {
             try await files.remove(relativePath: path(for: sessionID))
-        } catch let error as CocoaError where error.code == .fileNoSuchFile {
-            // Already absent; treat as success.
         } catch {
             let nsError = error as NSError
             guard nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileNoSuchFileError else {
