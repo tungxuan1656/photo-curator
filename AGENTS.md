@@ -24,7 +24,7 @@ If baseline verification fails, record the failure. Fix it only when the current
 
 ## Working rules
 
-- Keep at most one feature `active` per lane. Within one stage, lanes A and B may each have one `active` feat when `owns` does not overlap (controlled exception per `docs/exec-plans/team-build-plan.md` §3); one `INT` owner per stage. Zero active features means the repository is idle.
+- Keep at most one feature `active` at a time. Zero active features means the repository is idle.
 - Use only `todo`, `active`, `blocked`, or `done` as feature status.
 - Start `todo` work only after the user selects or approves it.
 - Keep feature work inside the active feature's scope and acceptance criteria.

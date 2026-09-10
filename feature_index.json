@@ -1,24 +1,202 @@
 {
-  "_harness": {"skill": "harness-slim", "version": "1.4.0", "generatedAt": "2026-09-10"},
-  "rule": "1 active / lane, 1 INT owner / stage. A later stage starts only after the previous stage is done. Within one stage, lanes A and B run in parallel with non-overlapping owns.",
+  "_harness": {
+    "generatedAt": "2026-09-10",
+    "skill": "harness-slim",
+    "version": "1.4.0"
+  },
   "features": [
-    {"id": "feat-001", "stage": "G0", "lane": "joint", "owner": "leader", "title": "Contract + shell", "status": "done", "depends_on": [], "owns": ["Domain/Models/", "Services/ServiceProtocols.swift", "Domain/Selection/SelectionEngine.swift", "Configuration/AppConfiguration.swift", "App/AppContainer.swift"], "gate": "protocols compile; lanes A and B can build without waiting for each other"},
-    {"id": "feat-002A", "stage": "G1", "lane": "A", "owner": "dev-A", "title": "Foundation store: FileStore + CheckpointStore + AnalysisCache", "status": "done", "depends_on": ["feat-001"], "owns": ["Infrastructure/", "Configuration/"], "gate": "persistence and checkpoint skeleton done"},
-    {"id": "feat-002B", "stage": "G1", "lane": "B", "owner": "dev-B", "title": "Onboarding + Permission + Home", "status": "done", "depends_on": ["feat-001"], "owns": ["Features/Onboarding/", "App/AppModel.swift", "App/AppRoute.swift"], "gate": "S02/S03/S04/S19 skeleton runs"},
-    {"id": "feat-002INT", "stage": "G1", "lane": "INT", "owner": "leader", "title": "Connect G1: wire real DI", "status": "done", "depends_on": ["feat-002A", "feat-002B"], "owns": ["App/AppContainer.live()"], "gate": "real permission flow for full/limited/denied; ./init.sh passes"},
-    {"id": "feat-003A", "stage": "G2", "lane": "A", "owner": "dev-A", "title": "PhotoKit fetch + ImageLoader + iCloud", "status": "todo", "depends_on": ["feat-002INT"], "owns": ["Services/Photos/PhotoLibraryService.swift", "Services/Photos/ImageLoaderService.swift"], "gate": "1k local assets load; missing asset means unavailable"},
-    {"id": "feat-003B", "stage": "G2", "lane": "B", "owner": "dev-B", "title": "SourceSelection + Summary UI on mocks", "status": "todo", "depends_on": ["feat-002INT"], "owns": ["Features/SourceSelection/", "SharedUI/AsyncPhotoThumbnail.swift"], "gate": "S05/S06 run on 50 mock assets"},
-    {"id": "feat-003INT", "stage": "G2", "lane": "INT", "owner": "leader", "title": "Connect G2: mock source becomes real fetch", "status": "todo", "depends_on": ["feat-003A", "feat-003B"], "owns": ["Features/SourceSelection/ wiring"], "gate": "real source selection reaches real summary"},
-    {"id": "feat-004A", "stage": "G3", "lane": "A", "owner": "dev-A", "title": "Vision core + batch pipeline", "status": "todo", "depends_on": ["feat-003INT"], "owns": ["Services/Analysis/VisionAnalysisService.swift", "Domain/Models/PhotoAnalysis.swift", "Services/Photos/BatchPipeline.swift"], "gate": "every asset has versioned PhotoAnalysis; batch + checkpoint per performance §1"},
-    {"id": "feat-004B", "stage": "G3", "lane": "B", "owner": "dev-B", "title": "Processing UI + Settings skeleton", "status": "todo", "depends_on": ["feat-003INT"], "owns": ["Features/Processing/", "Features/Settings/"], "gate": "S07/S08 run on fake progress"},
-    {"id": "feat-004INT", "stage": "G3", "lane": "INT", "owner": "leader", "title": "Connect G3: fake progress becomes real coordinator", "status": "todo", "depends_on": ["feat-004A", "feat-004B"], "owns": ["Features/Processing/ wiring"], "gate": "100 real assets reach review"},
-    {"id": "feat-005A", "stage": "G4", "lane": "A", "owner": "dev-A", "title": "Duplicates + moments", "status": "todo", "depends_on": ["feat-004INT"], "owns": ["Domain/Selection/DuplicateResolver.swift", "Domain/Selection/MomentBuilder.swift"], "gate": "clusters and moments correct on dataset B"},
-    {"id": "feat-005B", "stage": "G4", "lane": "B", "owner": "dev-B", "title": "Core review on mock result", "status": "todo", "depends_on": ["feat-004INT"], "owns": ["Features/Review/ReviewOverview.swift", "Features/Review/CuratedGrid.swift", "Features/Review/PhotoDetail.swift"], "gate": "S09/S10/S11 operable on mocks"},
-    {"id": "feat-006A", "stage": "G4", "lane": "A", "owner": "dev-A", "title": "Scoring + diversity + verify", "status": "todo", "depends_on": ["feat-005A"], "owns": ["Domain/Scoring/QualityScorer.swift", "Domain/Selection/DiversitySelector.swift", "Domain/Selection/FinalAlbumBuilder.swift"], "gate": "sizing per selection-rules §14; reason codes; chronological order"},
-    {"id": "feat-006B", "stage": "G4", "lane": "B", "owner": "dev-B", "title": "Groups + Removed + Final on mocks", "status": "todo", "depends_on": ["feat-004INT"], "owns": ["Features/Review/SimilarGroups.swift", "Features/Review/RemovedPhotos.swift", "Features/Review/FinalReviewMock.swift"], "gate": "S12/S13/S14 mock swap and add-back work"},
-    {"id": "feat-007INT", "stage": "G5", "lane": "INT", "owner": "leader", "title": "Integration + real Export + Save", "status": "todo", "depends_on": ["feat-006A", "feat-006B", "feat-005B"], "owns": ["Services/Export/AlbumExportService.swift", "Features/Review/FinalReview.swift", "Features/Review/Saving.swift", "Features/Review/Completion.swift"], "gate": "real user can pick, process, review, fix, and save with no duplicate album"},
-    {"id": "feat-008A", "stage": "G6", "lane": "A", "owner": "dev-A", "title": "Reliability + performance", "status": "todo", "depends_on": ["feat-007INT"], "owns": ["Infrastructure/MemoryPressureObserver.swift", "Services/Photos/BatchPipeline.swift"], "gate": "resume without redo; budgets per performance §1"},
-    {"id": "feat-008B", "stage": "G6", "lane": "B", "owner": "dev-B", "title": "Privacy + polish + errors", "status": "todo", "depends_on": ["feat-007INT"], "owns": ["Features/Settings/", "SharedUI/ErrorStateView.swift"], "gate": "redaction plus retention plus accessibility plus S18/S20; privacy AC-01..12"},
-    {"id": "feat-009", "stage": "G6", "lane": "joint", "owner": "leader", "title": "Release: QA plus conditional analytics", "status": "todo", "depends_on": ["feat-008A", "feat-008B"], "owns": ["Services/Analytics/"], "gate": "datasets A-H plus Golden plus manual-qa section 7.3 pass; analytics only when a provider is selected"}
-  ]
+    {
+      "depends_on": [],
+      "gate": "protocols compile; later feats build without waiting",
+      "id": "feat-001",
+      "owns": [
+        "Domain/Models/",
+        "Services/ServiceProtocols.swift",
+        "Domain/Selection/SelectionEngine.swift",
+        "Configuration/AppConfiguration.swift",
+        "App/AppContainer.swift"
+      ],
+      "status": "done",
+      "title": "Contract + shell"
+    },
+    {
+      "depends_on": [
+        "feat-001"
+      ],
+      "gate": "real permission flow for full/limited/denied; ./init.sh passes",
+      "id": "feat-002",
+      "owns": [
+        "Infrastructure/",
+        "Configuration/",
+        "Features/Onboarding/",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/AppContainer.swift",
+        "Services/Photos/PhotoLibraryPermissionService.swift"
+      ],
+      "status": "done",
+      "title": "Foundation: store + onboarding + real DI (ex-G1)"
+    },
+    {
+      "depends_on": [
+        "feat-002"
+      ],
+      "gate": "1k local assets load; missing asset means unavailable",
+      "id": "feat-003",
+      "owns": [
+        "Services/Photos/PhotoLibraryService.swift",
+        "Services/Photos/ImageLoaderService.swift"
+      ],
+      "status": "todo",
+      "title": "PhotoKit fetch + ImageLoader + iCloud"
+    },
+    {
+      "depends_on": [
+        "feat-003"
+      ],
+      "gate": "S05/S06 run on 50 real assets; real source reaches real summary",
+      "id": "feat-004",
+      "owns": [
+        "Features/SourceSelection/",
+        "SharedUI/AsyncPhotoThumbnail.swift"
+      ],
+      "status": "todo",
+      "title": "SourceSelection + Summary on real fetch"
+    },
+    {
+      "depends_on": [
+        "feat-004"
+      ],
+      "gate": "every asset has versioned PhotoAnalysis; batch + checkpoint per performance §1",
+      "id": "feat-005",
+      "owns": [
+        "Services/Analysis/VisionAnalysisService.swift",
+        "Domain/Models/PhotoAnalysis.swift",
+        "Services/Photos/BatchPipeline.swift"
+      ],
+      "status": "todo",
+      "title": "Vision core + batch pipeline"
+    },
+    {
+      "depends_on": [
+        "feat-005"
+      ],
+      "gate": "S07/S08 run on real progress; 100 real assets reach review",
+      "id": "feat-006",
+      "owns": [
+        "Features/Processing/",
+        "Features/Settings/"
+      ],
+      "status": "todo",
+      "title": "Processing UI on real coordinator + Settings skeleton"
+    },
+    {
+      "depends_on": [
+        "feat-006"
+      ],
+      "gate": "clusters and moments correct on dataset B",
+      "id": "feat-007",
+      "owns": [
+        "Domain/Selection/DuplicateResolver.swift",
+        "Domain/Selection/MomentBuilder.swift"
+      ],
+      "status": "todo",
+      "title": "Duplicates + moments"
+    },
+    {
+      "depends_on": [
+        "feat-007"
+      ],
+      "gate": "sizing per selection-rules §14; reason codes; chronological order",
+      "id": "feat-008",
+      "owns": [
+        "Domain/Scoring/QualityScorer.swift",
+        "Domain/Selection/DiversitySelector.swift",
+        "Domain/Selection/FinalAlbumBuilder.swift"
+      ],
+      "status": "todo",
+      "title": "Scoring + diversity + verify"
+    },
+    {
+      "depends_on": [
+        "feat-008"
+      ],
+      "gate": "S09/S10/S11 operable on real result",
+      "id": "feat-009",
+      "owns": [
+        "Features/Review/ReviewOverview.swift",
+        "Features/Review/CuratedGrid.swift",
+        "Features/Review/PhotoDetail.swift"
+      ],
+      "status": "todo",
+      "title": "Review core on real result (overview/grid/detail)"
+    },
+    {
+      "depends_on": [
+        "feat-009"
+      ],
+      "gate": "S12/S13/S14 swap and add-back work on real result",
+      "id": "feat-010",
+      "owns": [
+        "Features/Review/SimilarGroups.swift",
+        "Features/Review/RemovedPhotos.swift",
+        "Features/Review/FinalReview.swift"
+      ],
+      "status": "todo",
+      "title": "Review groups + removed + final"
+    },
+    {
+      "depends_on": [
+        "feat-010"
+      ],
+      "gate": "real user can pick, process, review, fix, and save with no duplicate album",
+      "id": "feat-011",
+      "owns": [
+        "Services/Export/AlbumExportService.swift",
+        "Features/Review/Saving.swift",
+        "Features/Review/Completion.swift"
+      ],
+      "status": "todo",
+      "title": "Export + Save + Completion"
+    },
+    {
+      "depends_on": [
+        "feat-011"
+      ],
+      "gate": "resume without redo; budgets per performance §1",
+      "id": "feat-012",
+      "owns": [
+        "Infrastructure/MemoryPressureObserver.swift",
+        "Services/Photos/BatchPipeline.swift"
+      ],
+      "status": "todo",
+      "title": "Reliability + performance"
+    },
+    {
+      "depends_on": [
+        "feat-012"
+      ],
+      "gate": "redaction plus retention plus accessibility plus S18/S20; privacy AC-01..12",
+      "id": "feat-013",
+      "owns": [
+        "Features/Settings/",
+        "SharedUI/ErrorStateView.swift"
+      ],
+      "status": "todo",
+      "title": "Privacy + polish + errors"
+    },
+    {
+      "depends_on": [
+        "feat-013"
+      ],
+      "gate": "datasets A-H plus Golden plus manual-qa section 7.3 pass; analytics only when a provider is selected",
+      "id": "feat-014",
+      "owns": [
+        "Services/Analytics/"
+      ],
+      "status": "todo",
+      "title": "Release: QA plus conditional analytics"
+    }
+  ],
+  "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done"
 }
