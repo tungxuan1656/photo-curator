@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-10 — feat-002INT (G1 INT, close G1)
+
+**State**: done
+**Done**: Wired real DI on int/G1 (8 commits): PhotoLibraryPermissionService (PhotoKit .readWrite auth + limited picker via protocol extension), AppContainer.live() with file-backed cache/checkpoint (+ concrete checkpointStore field), AppModel double-tap guard, exhaustive guidance switch, HomeView redundant refresh removed, privacy manifest CA92.1.
+**Evidence**: ./init.sh PASS fresh on final HEAD (format, strict lint, BUILD SUCCEEDED, SKIP [test]); boundary greps clean; simulator smoke iPhone 17 Pro iOS 26.5 — install + launch OK, S02 renders, no crash (iOS 26.2 device rejects app: deployment target 26.5).
+**Blockers**: none
+**Next**: PR int/G1 → main (merge commit); interactive tap-through + real-iPhone smoke recommended on lead device; G2 unblocked.
+
 ## 2026-09-10 — feat-002A/B (G1 lanes A+B)
 
 **State**: done
