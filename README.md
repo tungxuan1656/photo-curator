@@ -49,7 +49,7 @@ open apps/photo-curator.xcodeproj
 
 ```text
 apps/photo-curator/      Xcode project (scheme: photo-curator)
-├── App/                 PhotosCuratorApp, AppContainer, AppModel, AppRoute
+├── App/                 PhotoCuratorApp, AppContainer, AppModel, AppRoute
 ├── Features/            Onboarding, SourceSelection, Processing, Results, Review, Settings
 ├── Domain/              Models, Selection engine facade + stages, Scoring
 ├── Services/            Photos, Analysis, Cache, Export, Analytics
