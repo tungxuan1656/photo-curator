@@ -1,1612 +1,362 @@
 # Photos Curator — Decision Log
 
-**Document:** `13_Decision_Log.md`  
-**Product:** Photos Curator  
-**Status:** Living document  
-**Last updated:** 2026-09-10
+**Doc:** `13-decision-log.md` · **Status:** Living · **Updated:** 2026-09-10
+
+**Ownership:** This doc OWNS rationale/history only (why a choice was made, append-only DEC-xxx).
+It never owns current operational values — those live in owner docs (linked per entry).
+Current values: selection policy → `03-photo-selection-rules.md`, mechanics → `04-selection-engine-design.md`,
+arch → `05-ios-architecture.md`, shapes → `06-data-model.md`, APIs → `07-apple-framework-integration.md`,
+budgets → `08-performance-spec.md`, privacy → `09-privacy-and-permissions.md`,
+QA → `10-manual-qa-and-selection-evaluation.md`, UX → `02-ux-flows.md`, product → `01-product.md`,
+metrics → `11-analytics-and-metrics.md`, roadmap → `12-roadmap.md`.
+
+**Rules:** Append-only. Never silently rewrite history. To change a DEC: keep old text,
+mark `Superseded by DEC-xxx`, add new entry. Statuses: `Accepted / Rejected / Superseded / Deferred / Revisit`.
+New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsider-when. Keep English simple.
 
 ---
 
-## 1. Purpose
+## 1. Status table (first — full index)
 
-This document records important product and engineering decisions made during the development of Photos Curator.
+### 1a. Accepted (27 kept)
 
-Its purpose is not to document every implementation detail.
-
-Instead, it captures decisions that:
-
-- materially affect the product behavior;
-- significantly constrain the architecture;
-- would be expensive or confusing to reverse later;
-- explain why one approach was chosen over another;
-- may otherwise be questioned or accidentally changed in the future.
-
-The Decision Log is intentionally lightweight.
-
-Photos Curator is a small product and should not introduce a heavyweight Architecture Decision Record process unless the project eventually grows enough to justify one.
-
----
-
-# 2. How to Use This Document
-
-Each important decision receives a stable ID:
-
-```text
-DEC-001
-DEC-002
-DEC-003
-...
-```
-
-A decision should normally include:
-
-- status;
-- date;
-- context;
-- decision;
-- rationale;
-- consequences;
-- conditions under which the decision should be reconsidered.
-
-Decisions are append-only whenever practical.
-
-Do not silently rewrite historical decisions.
-
-If a decision changes:
-
-1. keep the old decision;
-2. mark it as `Superseded`;
-3. create a new decision;
-4. reference the new decision from the old one.
-
----
-
-# 3. Decision Status
-
-The following statuses are used.
-
-| Status | Meaning |
-|---|---|
-| `Proposed` | Under consideration |
-| `Accepted` | Current project decision |
-| `Rejected` | Evaluated but intentionally not chosen |
-| `Superseded` | Replaced by a newer decision |
-| `Deferred` | Intentionally postponed |
-| `Revisit` | Still valid but should be reevaluated soon |
-
----
-
-# 4. Decision Summary
-
-| ID | Decision | Status |
+| ID | Decision | Owner doc |
 |---|---|---|
-| DEC-001 | Build Photos Curator as a native iOS application | Accepted |
-| DEC-002 | Use SwiftUI as the primary UI framework | Accepted |
-| DEC-003 | Prefer Apple-native frameworks before third-party dependencies | Accepted |
-| DEC-004 | Perform photo analysis on-device by default | Accepted |
-| DEC-005 | Keep original user photos untouched | Accepted |
-| DEC-006 | Build a multi-stage selection engine rather than a single global score | Accepted |
-| DEC-007 | Organize selection around moments and similarity groups | Accepted |
-| DEC-008 | Remove near-duplicates before higher-level album selection | Accepted |
-| DEC-009 | Optimize for album quality rather than selecting only the highest-scoring photos | Accepted |
-| DEC-010 | Diversity is an explicit selection constraint | Accepted |
-| DEC-011 | Typical processing target is approximately 1,000 photos | Accepted |
-| DEC-012 | Design the processing pipeline to remain usable with up to approximately 5,000 photos | Accepted |
-| DEC-013 | Use incremental and cancellable processing | Accepted |
-| DEC-014 | Cache reusable photo-analysis results | Accepted |
-| DEC-015 | Keep the architecture intentionally simple | Accepted |
-| DEC-016 | Do not include unit tests, UI tests, or test targets in the repository | Accepted |
-| DEC-017 | Validate selection quality primarily through manual QA and curated datasets | Accepted |
-| DEC-018 | Analytics must not contain image contents or biometric data | Accepted |
-| DEC-019 | Store enough decision metadata to explain why a photo was selected or rejected | Accepted |
-| DEC-020 | Personalization is not required for the initial MVP | Accepted |
-| DEC-021 | User feedback should be represented in the data model for future personalization | Accepted |
-| DEC-022 | Selection processing should tolerate app interruption | Accepted |
-| DEC-023 | iCloud-backed assets should be handled explicitly rather than assumed to be local | Accepted |
-| DEC-024 | Do not require a cloud AI backend for core photo selection | Accepted |
-| DEC-025 | Prefer deterministic rules around model outputs | Accepted |
-| DEC-026 | Do not automatically delete rejected photos | Accepted |
-| DEC-027 | Optimize implementation speed over theoretical architectural purity | Accepted |
+| DEC-001 | Native iOS app | 01 |
+| DEC-002 | SwiftUI primary UI | 05 |
+| DEC-003 | Apple-native frameworks first | 05, 07 |
+| DEC-004 | On-device processing by default | 01, 09 |
+| DEC-005 | Originals untouched | 01, 09 |
+| DEC-006 | Multi-stage selection pipeline | 03, 04 |
+| DEC-007 | Moment-centric grouping | 03, 04 |
+| DEC-008 | Duplicate reduction before final pick | 03, 04 |
+| DEC-009 | Optimize album quality, not top-N scores | 03 |
+| DEC-010 | Diversity is explicit constraint | 03 |
+| DEC-011 | ~1,000 photos primary workload | 08 |
+| DEC-012 | Workable to ~5,000 without redesign | 08, 04 |
+| DEC-013 | Incremental, cancellable processing | 04, 05, 08 |
+| DEC-014 | Cache reusable analysis | 04, 06, 08 |
+| DEC-015 | Intentionally simple architecture | 05 |
+| DEC-016 | No automated test targets | 10 |
+| DEC-017 | Manual QA for selection quality | 10 |
+| DEC-018 | Analytics carry no photo/biometric content | 11, 09 |
+| DEC-019 | Keep selection-reason metadata | 03, 04, 06 |
+| DEC-020 | No personalization required for MVP | 01, 03 |
+| DEC-021 | Keep user-feedback shape for future use | 06 |
+| DEC-022 | Tolerate interruption | 04, 05, 08 |
+| DEC-023 | Handle iCloud assets explicitly | 07, 02 |
+| DEC-024 | No cloud-AI dependency for core selection | 01, 07 |
+| DEC-025 | Deterministic rules around model outputs | 03, 04 |
+| DEC-026 | Never auto-delete rejected photos | 01, 02 |
+| DEC-027 | Speed of development over purity | 05 |
+
+### 1b. Deferred TBDs (7 kept, structured)
+
+| ID | Topic | Owner | Status |
+|---|---|---|---|
+| DEC-TBD-001 | Min iOS version | 07 | Deferred |
+| DEC-TBD-002 | Persistent storage tech | 05, 06 | Deferred |
+| DEC-TBD-003 | Analytics provider | 11 | Deferred |
+| DEC-TBD-004 | Monetization model | 01 | Deferred |
+| DEC-TBD-005 | Final album export behavior | 02, 07 | Deferred |
+| DEC-TBD-006 | Advanced ML models | 03, 04, 07 | Deferred |
+| DEC-TBD-007 | Personalization strategy | 03, 06 | Deferred |
+
+### 1c. Open product questions (from 01 §57 — no answers yet)
+
+| ID | Question | Owner | Status |
+|---|---|---|---|
+| OPEN-P01 | Input scope: photos vs date range vs both? | 01, 02 | Deferred |
+| OPEN-P02 | Album size: exact number or S/M/L presets? | 01, 02 | Deferred |
+| OPEN-P03 | Auto-suggest album size? | 01, 03 | Deferred |
+| OPEN-P04 | How much alternative browsing in review? | 02 | Deferred |
+| OPEN-P05 | Mandatory-include mark before curation? | 02, 03 | Deferred |
+| OPEN-P06 | Screenshots: exclude or deprioritize? | 03 | Deferred |
+| OPEN-P07 | Live Photos representation in MVP? | 02, 07 | Deferred |
+| OPEN-P08 | Prefer edited versions? | 03 | Deferred |
+| OPEN-P09 | Do Apple Photos favorites boost rank? | 03 | Deferred |
+| OPEN-P10 | Feedback persistence across sessions? | 06, 03 | Deferred |
+
+### 1d. Open UX pointers (owned by 02 §16 — grouped, ~20 questions)
+
+| ID | Group | Covers | Owner | Status |
+|---|---|---|---|---|
+| OPEN-UX01 | Input & size select | picker wording, range UI, S/M/L vs number, suggestion display | 02 | Deferred |
+| OPEN-UX02 | Progress & cancel | progress stages, %, cancel/pause wording, background note | 02, 08 | Deferred |
+| OPEN-UX03 | iCloud & error states | download wait copy, offline, denied/limited, retry | 02, 07 | Deferred |
+| OPEN-UX04 | Review grid & alternatives | grid density, compare, swap-winner, bulk actions | 02 | Deferred |
+| OPEN-UX05 | Save & history | save destination, confirm copy, session history scope | 02, 07 | Deferred |
+
+(Each group holds ~3–5 micro-questions; full wording owned by 02. This log tracks only decision state.)
+
+### 1e. Open numeric / Uncertain (values owned elsewhere — this log tracks state)
+
+| ID | Topic | Owner | Affected | Status |
+|---|---|---|---|---|
+| OPEN-N01 | Quality-tier cutoffs | 03 | 04, 10 | Deferred |
+| OPEN-N02 | Similarity thresholds (dup/near-dup) | 03 | 04, 10 | Deferred |
+| OPEN-N03 | Moment windows (45s/180s, dense events) | 03 | 04, 10 | Deferred |
+| OPEN-N04 | Ordinary/rich/high-count boundaries | 03 | 04, 10 | Deferred |
+| OPEN-N05 | Clamp edges (min 30–40, max 120–150) | 03 | 04, 10 | Deferred |
+| OPEN-N06 | Weight set (diversity/coverage/repetition/bonus) | 03 | 04, 10 | Deferred |
+| OPEN-N07 | Batch sweet spot (16–64), concurrency caps | 08 | 04, 05 | Deferred |
+| OPEN-N08 | Vision edge cases (eyes, blur intent, small faces, signs) | 03 | 07, 10 | Deferred |
 
 ---
 
-# 5. Accepted Decisions
+## 2. Accepted decisions (compressed — rationale only)
 
-## DEC-001 — Native iOS Application
+Format per entry: decision → why → risk/trigger. Current numbers live in owner docs.
 
-**Status:** Accepted  
-**Date:** 2026-09-10
+**DEC-001 — Native iOS app (Accepted, 2026-09-10).**
+Deep PhotoKit/Vision/lifecycle integration needed; cross-platform adds cost at the most native layer.
+Risk if reversed: rewrite. Revisit only if iOS succeeds and Android demand is proven. Owner: 01.
 
-### Context
+**DEC-002 — SwiftUI primary (Accepted).**
+Fast, concise, state-driven; UIKit only for gaps. Risk: minor wrappers later. Owner: 05.
 
-Photos Curator requires deep integration with the user's photo library, image metadata, local image processing, PhotoKit, Vision, memory management, and iOS lifecycle behavior.
+**DEC-003 — Apple-native first (Accepted).**
+Less maintenance, size, privacy and abandonment risk. Third-party needs clear benefit. Owner: 05, 07.
 
-A cross-platform application would introduce an abstraction layer around the parts of the application that are most platform-specific.
+**DEC-004 — On-device by default (Accepted).**
+Personal photos; avoids upload latency, cost, network need. Constraint: must fit CPU/GPU/memory/thermal.
+Cloud only for optional extras, never core selection. Owner: 01, 09.
 
-### Decision
+**DEC-005 — Originals untouched (Accepted).**
+Selection ≠ management. Operate on refs/metadata/thumbnails/decisions. Risk of breach: trust loss. Owner: 01.
 
-Photos Curator will be implemented as a native iOS application.
+**DEC-006 — Multi-stage pipeline (Accepted).**
+Top-N ranking repeats the same scene. Stages: discover → light analysis → quality filter →
+group → moments → best-of-group → shortlist → diversity pick → album. Scores are inputs, not the answer.
+Owner: 03, 04.
 
-### Rationale
+**DEC-007 — Moment-centric (Accepted).**
+Several shots = one event; group by time/similarity/burst/location/subject before final pick. Owner: 03, 04.
 
-Native development provides:
+**DEC-008 — Duplicates first (Accepted).**
+Group near-duplicates, reason about the winner only, or heavy moments dominate. Owner: 03, 04.
 
-- direct PhotoKit access;
-- direct Vision integration;
-- better control over image loading;
-- better memory management;
-- easier handling of iCloud Photos;
-- native Swift concurrency;
-- simpler integration with iOS lifecycle events;
-- fewer third-party dependencies.
+**DEC-009 — Album quality over top-N (Accepted).**
+Goal: best collection representing the experience, not N highest scores. Owner: 03.
 
-### Consequences
+**DEC-010 — Explicit diversity (Accepted).**
+Dims: moment, similarity, people, scene, orientation, subject, time spread.
+A weaker photo may win for coverage. Owner: 03.
 
-The first version of Photos Curator targets Apple platforms only.
+**DEC-011 — ~1,000-photo target (Accepted).**
+Realistic big trip/event; fits on-device. Evaluate perf here first. Owner: 08.
 
-Android support is outside the current scope.
+**DEC-012 — Usable to ~5,000 (Accepted).**
+Via staging, thumbnails, batching, cache, early filter, lazy load. Avoid full-set O(N²); compare in clusters.
+Owner: 08, 04.
 
-### Reconsider When
+**DEC-013 — Incremental + cancellable (Accepted).**
+Backgrounding, cancel, memory, iCloud gaps are normal. Expose cancel-aware async APIs with progress. Owner: 04, 05.
 
-Reconsider only if:
+**DEC-014 — Cache analysis (Accepted).**
+Dims/timestamps/quality/Vision/prints/groups/thumbnails cached with asset identity + version for invalidation.
+Owner: 04, 06.
 
-- the iOS product becomes successful enough to justify Android development;
-- a significant portion of the target audience requires Android.
+**DEC-015 — Simple architecture (Accepted).**
+App → Features / SelectionEngine / Services / Models / Infra. No extra protocols, packages-per-feature,
+DI frameworks, buses, or plugin systems without a real problem. Owner: 05.
 
----
+**DEC-016 — No test targets (Accepted).**
+Speed over suite at this stage; no XCTest/UI-test infra. Quality via §DEC-017 instead — validation still required.
+Owner: 10.
 
-# DEC-002 — SwiftUI as the Primary UI Framework
+**DEC-017 — Manual QA for quality (Accepted).**
+No single metric = good album. Datasets: trip, family, event, landscape/portrait-heavy, low-light,
+burst-heavy, screenshots-mix, iCloud-heavy. Dims: dup suppression, coverage, faces, blur, diversity. Owner: 10.
 
-**Status:** Accepted  
-**Date:** 2026-09-10
+**DEC-018 — Analytics carry no image/biometric content (Accepted).**
+Only aggregates (counts, durations, add/remove tallies). Never images, crops, vectors, inferred names. Owner: 11, 09.
 
-### Decision
+**DEC-019 — Keep reason metadata (Accepted).**
+Store state + reasons (+ rival ID) per decision so QA/review/tuning can explain rejects. Owner: 03, 04, 06.
 
-Use SwiftUI for the application UI.
+**DEC-020 — No MVP personalization (Accepted).**
+Prove generic rules first; cold-start learning is costly. MVP uses quality/dups/moments/faces/composition/diversity.
+Owner: 01, 03.
 
-UIKit may be used only when a required behavior is unavailable or unnecessarily difficult in SwiftUI.
+**DEC-021 — Keep feedback shape (Accepted).**
+Model remove/restore/favorite/swap-winner now; learn later. Cheap option value. Owner: 06.
 
-### Rationale
+**DEC-022 — Tolerate interruption (Accepted).**
+Background/kill/memory/PhotoKit errors must not corrupt state. Checkpoint where cheap; else restart stage. Owner: 04, 05.
 
-SwiftUI provides:
+**DEC-023 — Explicit iCloud handling (Accepted).**
+States: local / needs-download / pending / unavailable / failed. One bad asset never fails a session; UI says so.
+Owner: 07, 02.
 
-- fast development;
-- concise UI code;
-- strong integration with modern Swift;
-- straightforward state-driven interfaces;
-- good compatibility with async processing workflows.
+**DEC-024 — No cloud-AI core (Accepted).**
+No OpenAI/vision-API uploads for selection (cost, latency, privacy, lock-in). Local analysis + rules suffice for MVP.
+Owner: 01, 07.
 
-The project prioritizes development speed and maintainability.
+**DEC-025 — Rules around models (Accepted).**
+Vision/ML = signals → normalize → score → group → rules → decision. Predictable, tunable, debuggable. Owner: 03, 04.
 
-### Consequences
+**DEC-026 — Never auto-delete (Accepted).**
+Reject = "not in this album", not "safe to delete". Any future cleanup needs its own flow + confirm + review.
+Owner: 01, 02.
 
-The application should avoid unnecessary UIKit wrappers.
-
----
-
-# DEC-003 — Apple-Native Frameworks First
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Use Apple-native frameworks whenever they adequately solve the problem.
-
-Primary frameworks include:
-
-- SwiftUI;
-- PhotoKit;
-- Vision;
-- Core Image where appropriate;
-- ImageIO;
-- Core Graphics where appropriate;
-- Swift Concurrency;
-- OSLog;
-- Foundation.
-
-Third-party dependencies should require a clear benefit.
-
-### Rationale
-
-This reduces:
-
-- dependency maintenance;
-- binary size;
-- privacy risk;
-- compatibility risk;
-- dependency abandonment risk;
-- unnecessary architectural complexity.
-
-### Consequences
-
-A third-party library should not be introduced merely to save a small amount of implementation code.
+**DEC-027 — Ship speed over purity (Accepted).**
+Given equal quality, pick less code, fewer deps, easier debug. Resist clean-architecture rewrites without proof.
+Owner: 05.
 
 ---
 
-# DEC-004 — On-Device Processing by Default
+## 3. Deferred TBDs (structured — no answers invented)
 
-**Status:** Accepted  
-**Date:** 2026-09-10
+**DEC-TBD-001 — Min iOS version (Deferred).**
+Owner: 07. Affected: 05, 08. Decide from needed Vision/SwiftUI/PhotoKit APIs + store distribution.
+Risk: too low = API gaps; too high = lost users. Trigger: first device-matrix pass.
 
-### Context
+**DEC-TBD-002 — Storage tech (Deferred).**
+Owner: 05, 06. Options: Codable files / SwiftData / Core Data / tiny DB.
+Rule: simplest that fits volume + lifecycle (see OPEN-N data questions). Risk: over-build. Trigger: persistence need.
 
-The application analyzes highly personal user photos.
+**DEC-TBD-003 — Analytics provider (Deferred).**
+Owner: 11. Options: none → Apple metrics → light custom → third-party. Must satisfy 09 + DEC-018.
+Risk: privacy breach. Trigger: first metrics need.
 
-Uploading potentially thousands of images to a server would create:
+**DEC-TBD-004 — Monetization (Deferred).**
+Owner: 01. Options: paid / unlock / sub / freemium / free-cap. Must not warp MVP arch.
+Risk: paywall rework. Trigger: pre-launch.
 
-- privacy concerns;
-- upload latency;
-- network dependency;
-- server costs;
-- additional security responsibilities.
+**DEC-TBD-005 — Export behavior (Deferred).**
+Owner: 02, 07. Options: Photos album / internal collection / file export / several.
+Driven by MVP UX (see OPEN-UX05). Risk: permission surprise. Trigger: save-flow build.
 
-### Decision
+**DEC-TBD-006 — Advanced ML (Deferred).**
+Owner: 03, 04, 07. Options: custom quality/aesthetic model, embeddings, expression analysis.
+Only after Apple-baseline is QA-measured. Risk: size/battery/regression. Trigger: baseline gaps in 10.
 
-Core photo analysis and selection will run on the user's device.
-
-### Rationale
-
-On-device processing provides:
-
-- stronger privacy;
-- offline operation;
-- predictable cost;
-- no large photo uploads;
-- lower infrastructure complexity.
-
-### Consequences
-
-Algorithms must operate within iPhone:
-
-- CPU limits;
-- GPU/Neural Engine availability;
-- memory constraints;
-- thermal constraints;
-- battery constraints.
-
-### Reconsider When
-
-Cloud processing may be considered for an optional future feature only when it delivers functionality that cannot reasonably be implemented on-device.
-
-Core album selection must not depend on it.
+**DEC-TBD-007 — Personalization (Deferred).**
+Owner: 03, 06. Options: weight tweaks → implicit/explicit → on-device learning. From observed behavior, not speculation.
+Risk: complexity without gain. Trigger: repeat-user data (see OPEN-P10).
 
 ---
 
-# DEC-005 — Original Photos Remain Untouched
+## 4. Open product questions (from 01 §57 — recorded, not answered)
 
-**Status:** Accepted  
-**Date:** 2026-09-10
+Owner: 01 (+ listed co-owner). Risk + trigger per item. None blocks core pipeline unless noted.
 
-### Decision
+**OPEN-P01 — Input scope (Deferred).** Photos vs date range vs both? Owner 01, 02.
+Risk: scope creep into picker. Trigger: input-screen prototype.
 
-The selection workflow must not modify original photo assets.
+**OPEN-P02 — Size select (Deferred).** Exact number vs S/M/L? Owner 01, 02.
+Risk: choice overload vs weak control. Trigger: same prototype. Values → 03 if presets map to numbers.
 
-The application should operate on:
+**OPEN-P03 — Auto-suggest size (Deferred).** Suggest from source count? Owner 01, 03.
+Risk: wrong guess annoys. Trigger: sizing QA. Value (ratio/clamps) → 03.
 
-- asset references;
-- analysis metadata;
-- derived thumbnails;
-- selection decisions.
+**OPEN-P04 — Alternatives in review (Deferred).** How much browsing/swap? Owner 02.
+Risk: cluttered review. Trigger: review prototype (see OPEN-UX04).
 
-### Rationale
+**OPEN-P05 — Mandatory mark (Deferred).** Pin photo pre-curation? Owner 02, 03.
+Risk: hard constraints distort diversity. Trigger: review testing. Rule → 03.
 
-The primary purpose of Photos Curator is selection, not destructive photo management.
+**OPEN-P06 — Screenshots (Deferred).** Exclude vs deprioritize? Owner 03.
+Risk: junk keepers or lost context. Trigger: QA on mixed libraries. Rule → 03.
 
-### Consequences
+**OPEN-P07 — Live Photos (Deferred).** Still vs loop vs badge? Owner 02, 07.
+Risk: API/perf cost. Trigger: asset-type pass in 07.
 
-The user should be able to use the application without fear of losing original photos.
+**OPEN-P08 — Edited versions (Deferred).** Prefer edits? Owner 03.
+Risk: double-keeping twins. Trigger: QA on edited sets. Rule → 03.
 
----
+**OPEN-P09 — Favorites (Deferred).** Boost Apple-Photos favorites? Owner 03.
+Risk: bias vs delight. Trigger: QA. Weight → 03 (see OPEN-N06).
 
-# DEC-006 — Multi-Stage Selection Pipeline
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Context
-
-A simple approach would calculate one score for every photo and select the highest-scoring photos.
-
-This performs poorly when many high-quality images represent the same scene.
-
-### Decision
-
-Use a multi-stage selection pipeline.
-
-Conceptually:
-
-```text
-Photo Library
-    ↓
-Asset Discovery
-    ↓
-Lightweight Analysis
-    ↓
-Quality Filtering
-    ↓
-Duplicate / Similarity Grouping
-    ↓
-Moment Detection
-    ↓
-Best-of-Group Selection
-    ↓
-Candidate Shortlist
-    ↓
-Global Diversity Selection
-    ↓
-Final Album
-```
-
-### Rationale
-
-Selection is not equivalent to ranking.
-
-A good album requires both:
-
-- photo quality;
-- coverage of the experience.
-
-### Consequences
-
-Individual photo scores are inputs to the selection engine, not the final selection algorithm.
+**OPEN-P10 — Feedback persistence (Deferred).** Per-session vs cross-session? Owner 06, 03.
+Risk: storage/privacy weight. Trigger: repeat-use data. Shape → 06.
 
 ---
 
-# DEC-007 — Moment-Centric Selection
+## 5. Open UX groups (detail owned by 02 — state only)
 
-**Status:** Accepted  
-**Date:** 2026-09-10
+**OPEN-UX01 — Input & size (Deferred).** Wording for picker, range UI, S/M/L labels, suggestion line.
+Owner 02 (values 03). Risk: confusion at entry. Trigger: input prototype.
 
-### Decision
+**OPEN-UX02 — Progress & cancel (Deferred).** Stage names, % vs counts, cancel/pause, background note.
+Owner 02, 08. Risk: frozen-feel during long runs. Trigger: 1,000-photo run.
 
-Photos should be grouped into meaningful moments before final selection whenever sufficient metadata or similarity signals are available.
+**OPEN-UX03 — iCloud & errors (Deferred).** Waiting/offline/denied/limited/retry copy, granularity without noise.
+Owner 02, 07. Risk: support load. Trigger: iCloud + permission tests.
 
-Possible signals include:
+**OPEN-UX04 — Review & alternatives (Deferred).** Grid size, compare, swap-winner, select/remove, bulk undo.
+Owner 02. Risk: correction cost (01 §40.6). Trigger: review prototype.
 
-- capture timestamp;
-- temporal distance;
-- visual similarity;
-- burst behavior;
-- location where available;
-- detected subjects or scenes.
-
-### Rationale
-
-Users frequently take several photos of the same real-world event.
-
-Treating each photo independently produces repetitive albums.
-
-### Consequences
-
-Moment detection becomes a core concept in the data model and selection engine.
+**OPEN-UX05 — Save & history (Deferred).** Destination choice, confirm copy, failure copy, history scope.
+Owner 02, 07. Risk: duplicate albums / lost trust. Trigger: save-flow build.
 
 ---
 
-# DEC-008 — Duplicate Reduction Before Final Selection
+## 6. Open numerics (values owned elsewhere — tune via 10)
 
-**Status:** Accepted  
-**Date:** 2026-09-10
+Each: owner doc holds the number; this log holds status + risk + trigger. Do not hardcode values here.
 
-### Decision
+**OPEN-N01 — Quality cutoffs (Deferred).** Owner 03 (mech 04, QA 10).
+Risk: too strict drops keepers; too loose keeps junk. Trigger: tier QA.
 
-Near-duplicate and highly similar photos should be grouped before global album selection.
+**OPEN-N02 — Similarity cutoffs (Deferred).** Owner 03 (04, 10).
+Risk: leakage vs over-merge. Trigger: dup QA ≥85% best-shot agreement (01 §43).
 
-### Example
+**OPEN-N03 — Moment windows (Deferred).** ~45s strong / ~180s extended + dense-event edges. Owner 03 (04, 10).
+Risk: split events or merged days. Trigger: temporal QA.
 
-Given:
+**OPEN-N04 — Moment-size bounds (Deferred).** Ordinary 1 / rich 2–3 / high-count caps. Owner 03 (04, 10).
+Risk: heavy-day dominance. Trigger: balance QA.
 
-```text
-IMG_101
-IMG_102
-IMG_103
-IMG_104
-```
+**OPEN-N05 — Album clamps (Deferred).** Min 30–40, max 120–150, ratio ~10%. Owner 03 (04, 10).
+Risk: tiny inputs padded, huge inputs starved. Trigger: small/large library QA.
 
-where all four images are effectively the same shot, the engine should first determine:
+**OPEN-N06 — Weights/bonuses (Deferred).** Diversity/coverage/repetition/favorite/edit. Owner 03 (04, 10).
+Symbolic here; numbers only in config. Risk: quota-like bias. Trigger: diversity QA.
 
-```text
-SimilarityGroup
-    winner: IMG_103
-    alternatives:
-        IMG_101
-        IMG_102
-        IMG_104
-```
+**OPEN-N07 — Batch/concurrency (Deferred).** Batch 16–64, Vision caps, pixel class ~512px, heat steps.
+Owner 08 (04, 05). Risk: heat/throttle or slow runs. Trigger: oldest-device profiling.
 
-The global selector should usually reason about `IMG_103`, not four independent photographs.
+**OPEN-N08 — Vision edge reliability (Deferred).** Eyes low-light, motion-blur intent, small faces, sign-vs-scene.
+Policy: keep-when-unsure; no penalty on low confidence. Owner 03 (07, 10).
+Risk: false rejects. Trigger: targeted QA sets.
 
-### Rationale
-
-Otherwise duplicate-heavy moments dominate the final album.
+Plus storage-shape unknowns (owner 06): moment/cluster durability, fingerprint fields, debug rows, resume stub.
+Mechanics unknowns (owner 04): dup window vs cost, gap edges, full-res verify need, tie-break keys.
 
 ---
 
-# DEC-009 — Optimize for Album Quality, Not Individual Scores
+## 7. Non-decisions (stay flexible — not DECs)
 
-**Status:** Accepted  
-**Date:** 2026-09-10
+Weights, folder names, type renames, button/spacing/color choices are tuning/implementation, not log entries.
+They live in 03/04/05/02 respectively.
 
-### Decision
+## 8. When to add a DEC
 
-The optimization target is:
+Add one when the answer is yes to any: changes what the app does? privacy expectations? destructive?
+core selection philosophy? major dep/backend? local↔cloud? persistence arch? new layer? hard to reverse?
+pipeline/moment/optimization change? new ML dep? full-res at scale? image data leaves device?
+Otherwise it belongs in the owner doc, not here.
 
-> Produce the best collection of photos representing the user's experience.
-
-It is not:
-
-> Find the N photographs with the highest independent quality scores.
-
-### Rationale
-
-An album containing twenty excellent photographs of the same sunset is usually worse than a diverse album containing:
-
-- people;
-- environments;
-- landmarks;
-- activities;
-- details;
-- landscapes;
-- transitions between moments.
-
-### Consequences
-
-Final selection must consider interactions between already-selected photos and new candidates.
-
----
-
-# DEC-010 — Diversity Is an Explicit Constraint
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-The selection engine must explicitly manage diversity.
-
-Relevant dimensions may include:
-
-- moment;
-- visual similarity;
-- people;
-- scene type;
-- landscape vs portrait;
-- composition;
-- subject;
-- temporal distribution.
-
-### Rationale
-
-Diversity does not reliably emerge from photo-quality ranking alone.
-
-### Consequences
-
-A slightly lower-quality photo may be selected instead of a higher-scoring photo if it significantly improves album coverage.
-
----
-
-# DEC-011 — Approximately 1,000 Photos as the Primary Workload
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-The primary optimization target is a selection session containing approximately:
-
-```text
-1,000 photos
-```
-
-### Rationale
-
-This represents a realistic large trip, event, or accumulated photo session while remaining suitable for on-device processing.
-
-### Consequences
-
-Performance decisions should be evaluated against this workload first.
-
----
-
-# DEC-012 — Support Larger Collections Without Redesign
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-The architecture should remain operational with approximately:
-
-```text
-1,000–5,000 photos
-```
-
-without requiring a fundamentally different processing system.
-
-### Important Clarification
-
-This does not mean every operation must analyze 5,000 full-resolution images simultaneously.
-
-The system should instead rely on:
-
-- staged processing;
-- thumbnails;
-- batching;
-- caching;
-- early filtering;
-- lazy loading.
-
-### Consequences
-
-Algorithms with unnecessary O(N²) behavior should be avoided on the full library.
-
-Pairwise comparisons should normally occur only after candidate reduction or within bounded clusters.
-
----
-
-# DEC-013 — Incremental and Cancellable Processing
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Long-running analysis should be implemented as incremental work rather than one monolithic operation.
-
-Processing should support:
-
-- cancellation;
-- progress reporting;
-- bounded batches;
-- graceful interruption.
-
-### Rationale
-
-Users may:
-
-- leave the screen;
-- background the app;
-- cancel the operation;
-- receive memory pressure;
-- lose access to an iCloud asset.
-
-### Consequences
-
-Processing services should expose cancellation-aware asynchronous APIs.
-
----
-
-# DEC-014 — Cache Reusable Analysis
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Expensive analysis that remains valid should be cached.
-
-Possible cached results include:
-
-- image dimensions;
-- timestamps;
-- lightweight quality metrics;
-- Vision observations;
-- fingerprints;
-- similarity features;
-- duplicate-group membership;
-- derived thumbnails.
-
-### Rationale
-
-Repeatedly analyzing the same photo wastes:
-
-- CPU;
-- battery;
-- time.
-
-### Consequences
-
-The cache requires an invalidation strategy.
-
-A cache entry should be associated with sufficient asset identity/version information to prevent stale results from being treated as current.
-
----
-
-# DEC-015 — Intentionally Simple Architecture
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Photos Curator should use the simplest architecture that keeps major responsibilities separated.
-
-Avoid creating layers merely because they are common in large enterprise applications.
-
-### Preferred Shape
-
-Conceptually:
-
-```text
-App
- ├── Features
- │    ├── PhotoImport
- │    ├── Processing
- │    ├── AlbumReview
- │    └── Settings
- │
- ├── SelectionEngine
- │
- ├── Services
- │    ├── PhotoLibraryService
- │    ├── ImageAnalysisService
- │    ├── CacheService
- │    └── AnalyticsService
- │
- ├── Models
- │
- └── Infrastructure
-```
-
-The exact folder names may evolve.
-
-### Avoid
-
-Unless clearly required, do not introduce:
-
-- excessive protocol abstraction;
-- separate package for every feature;
-- repository classes around trivial storage;
-- dependency injection frameworks;
-- service locator frameworks;
-- event buses;
-- microservices;
-- unnecessary networking layers;
-- premature plugin systems.
-
-### Rationale
-
-The project is optimized for fast development by a small team.
-
----
-
-# DEC-016 — No Automated Test Targets in the Repository
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Context
-
-Development speed is currently more important than maintaining a comprehensive automated test suite.
-
-The developer will perform manual validation.
-
-### Decision
-
-The repository will not include:
-
-- unit test targets;
-- UI test targets;
-- XCTest files;
-- snapshot test infrastructure;
-- test-only dependency frameworks;
-- generated test boilerplate.
-
-### Rationale
-
-For the current project stage, maintaining test infrastructure would increase implementation overhead without being a product requirement.
-
-### Consequences
-
-Quality must instead be protected through:
-
-- clear selection rules;
-- deterministic behavior where practical;
-- manual QA;
-- curated photo datasets;
-- debugging tools;
-- observable selection reasoning;
-- performance testing on real devices.
-
-### Important Boundary
-
-This decision does **not** mean quality validation is optional.
-
-It means validation is performed manually rather than through repository-based automated test suites.
-
-### Related Document
-
-`10_Manual_QA_and_Selection_Evaluation.md`
-
----
-
-# DEC-017 — Manual Evaluation for Selection Quality
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Selection-engine quality should be evaluated using real photo collections and human review.
-
-Important dimensions include:
-
-- duplicate suppression;
-- moment coverage;
-- group-photo quality;
-- face quality;
-- blur rejection;
-- landscape representation;
-- diversity;
-- overall album usefulness.
-
-### Rationale
-
-There is no single objective metric that fully represents whether a curated personal album feels good.
-
-Human evaluation remains necessary.
-
-### Consequences
-
-The QA process should include several representative datasets, such as:
-
-```text
-Trip
-Family gathering
-Group event
-Landscape-heavy trip
-Portrait-heavy session
-Low-light event
-Burst-heavy collection
-Mixed screenshots + camera photos
-iCloud-heavy library
-```
-
----
-
-# DEC-018 — Analytics Must Not Contain Photo Content
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Analytics must never transmit:
-
-- original images;
-- thumbnails;
-- face crops;
-- Vision feature vectors that could reasonably represent biometric/image content;
-- names inferred from Photos;
-- precise user photo contents.
-
-### Allowed Examples
-
-Aggregate events may include values such as:
-
-```text
-processing_started
-photo_count = 1240
-
-processing_completed
-duration_seconds = 78
-
-album_reviewed
-selected_count = 84
-removed_by_user = 6
-added_by_user = 4
-```
-
-### Rationale
-
-Product analytics should measure system effectiveness without creating a second source of sensitive photo data.
-
-### Related Document
-
-`11_Analytics_and_Metrics.md`
-
----
-
-# DEC-019 — Preserve Selection Reasoning
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-The selection engine should retain structured information explaining important selection decisions.
-
-Example:
-
-```swift
-SelectionDecision(
-    assetID: assetID,
-    state: .rejected,
-    reasons: [
-        .nearDuplicate,
-        .lowerQualityThanGroupWinner
-    ],
-    competingAssetID: winnerID
-)
-```
-
-### Rationale
-
-Selection reasoning is useful for:
-
-- debugging;
-- manual QA;
-- engine tuning;
-- review UI;
-- future explainability.
-
-Without this information, developers may know that an image was rejected but not understand why.
-
-### Consequences
-
-The engine should not return only:
-
-```swift
-[SelectedAsset]
-```
-
-It should maintain enough intermediate decision metadata to explain meaningful outcomes.
-
----
-
-# DEC-020 — No Personalization Requirement for MVP
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-The first production-quality selection engine should work without requiring a learned profile for each user.
-
-### Rationale
-
-Cold-start personalization introduces significant complexity.
-
-The application must first prove that generic selection rules create useful albums.
-
-### Consequences
-
-MVP selection should rely primarily on:
-
-- image quality;
-- duplicate suppression;
-- moment structure;
-- faces;
-- composition;
-- scene diversity;
-- global album rules.
-
----
-
-# DEC-021 — Preserve User Feedback for Future Personalization
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Although personalization is not required for MVP, the data model should be able to represent user feedback.
-
-Examples:
-
-```text
-User removed AI-selected photo
-User restored rejected photo
-User marked favorite
-User replaced suggested group winner
-```
-
-### Rationale
-
-These interactions may eventually reveal user preferences such as:
-
-- preference for people vs scenery;
-- favorite individuals;
-- preference for candid photos;
-- preferred framing;
-- willingness to keep similar shots.
-
-### Consequences
-
-Feedback should be represented in a simple structured model without building a personalization engine prematurely.
-
----
-
-# DEC-022 — Processing Must Tolerate Interruption
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-Selection processing should be designed so that interruption does not corrupt application state.
-
-Potential interruptions include:
-
-- app entering background;
-- task cancellation;
-- iOS termination;
-- memory pressure;
-- iCloud download failure;
-- temporary PhotoKit error.
-
-### Rationale
-
-Processing thousands of photos cannot assume uninterrupted execution.
-
-### Consequences
-
-Persist only meaningful checkpoints where useful.
-
-Do not build a complex distributed job system.
-
-A reasonable implementation may simply restart incomplete stages when that is cheaper and safer than implementing fine-grained resume logic.
-
----
-
-# DEC-023 — Explicit Handling of iCloud Assets
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Context
-
-A `PHAsset` existing in the Photos library does not guarantee that its image data is currently available locally.
-
-### Decision
-
-The processing pipeline must explicitly account for assets stored in iCloud.
-
-### Behavior
-
-The application should distinguish between:
-
-```text
-Asset available locally
-Asset requires network download
-Asset download pending
-Asset unavailable
-Asset failed
-```
-
-### Rationale
-
-Ignoring this distinction would make progress appear frozen or produce inconsistent selection results.
-
-### Consequences
-
-The UI should communicate when network-backed assets affect processing.
-
-One unavailable photo must not necessarily fail the entire session.
-
----
-
-# DEC-024 — No Cloud AI Dependency for Core Selection
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-The core selection engine will not require:
-
-- OpenAI APIs;
-- external vision APIs;
-- cloud-hosted multimodal models;
-- user photo uploads to proprietary AI services.
-
-### Rationale
-
-A cloud AI dependency would add:
-
-- recurring cost;
-- network requirements;
-- privacy complexity;
-- latency;
-- vendor dependency.
-
-The MVP problem can be approached effectively using local image analysis and deterministic selection rules.
-
-### Consequences
-
-Cloud AI may be explored later for optional features but must not become a prerequisite for normal curation.
-
----
-
-# DEC-025 — Deterministic Rules Around Model Outputs
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Context
-
-Vision and machine-learning outputs are useful signals but should not directly control every selection decision.
-
-### Decision
-
-Use model outputs as signals inside an explicit selection policy.
-
-Example:
-
-```text
-Vision / image analysis
-        ↓
-Normalized signals
-        ↓
-Quality scoring
-        ↓
-Grouping
-        ↓
-Selection rules
-        ↓
-Final decision
-```
-
-Instead of:
-
-```text
-AI score
-   ↓
-Select top N
-```
-
-### Rationale
-
-Explicit rules make the system:
-
-- more predictable;
-- easier to tune;
-- easier to debug;
-- easier to explain;
-- less sensitive to individual model errors.
-
----
-
-# DEC-026 — Never Automatically Delete Rejected Photos
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-A photo rejected from the curated album is only:
-
-```text
-not selected for this album
-```
-
-It does not mean:
-
-```text
-safe to delete from the user's photo library
-```
-
-### Rationale
-
-Selection and deletion have very different risk profiles.
-
-A technically poor photo may still have significant personal value.
-
-### Consequences
-
-Automatic photo-library cleanup is not part of the curation engine.
-
-Any future deletion feature would require:
-
-- a separate user flow;
-- explicit confirmation;
-- separate product requirements;
-- additional safety review.
-
----
-
-# DEC-027 — Optimize for Development Speed
-
-**Status:** Accepted  
-**Date:** 2026-09-10
-
-### Decision
-
-When two solutions provide similar product quality, prefer the one with:
-
-- fewer abstractions;
-- fewer dependencies;
-- less code;
-- easier debugging;
-- faster iteration;
-- lower maintenance burden.
-
-### Example
-
-Prefer:
-
-```swift
-final class PhotoLibraryService {
-    ...
-}
-```
-
-over introducing:
-
-```text
-PhotoLibraryRepositoryProtocol
-DefaultPhotoLibraryRepository
-PhotoLibraryUseCase
-PhotoLibraryInteractor
-PhotoLibraryDataSource
-PhotoLibraryProvider
-```
-
-unless those abstractions solve an actual existing problem.
-
-### Rationale
-
-Photos Curator is not an enterprise framework.
-
-The architecture exists to ship the product.
-
-### Consequences
-
-Future developers should resist "clean architecture" changes that substantially increase code volume without solving a demonstrated problem.
-
----
-
-# 6. Deferred Decisions
-
-The following decisions do not need to be finalized at the start of development.
-
-They should be decided only when implementation reaches the relevant area.
-
----
-
-## DEC-TBD-001 — Minimum Supported iOS Version
-
-**Status:** Deferred
-
-Determine based on:
-
-- required Vision APIs;
-- SwiftUI APIs;
-- Photos framework behavior;
-- current App Store device distribution.
-
-Do not lower deployment targets solely to support very old devices unless there is a clear product reason.
-
----
-
-# DEC-TBD-002 — Persistent Storage Technology
-
-**Status:** Deferred
-
-Possible options include:
-
-- simple Codable files;
-- SwiftData;
-- Core Data;
-- lightweight database.
-
-Decision principle:
-
-> Choose the simplest persistence mechanism that supports the actual data volume and lifecycle requirements.
-
-Do not introduce a database merely because the application contains models.
-
----
-
-# DEC-TBD-003 — Analytics Provider
-
-**Status:** Deferred
-
-Potential options:
-
-```text
-No analytics provider initially
-App Store / Apple metrics
-Custom lightweight analytics
-Third-party product analytics
-```
-
-Provider selection must comply with:
-
-`09_Privacy_and_Permissions.md`
-
-and:
-
-`11_Analytics_and_Metrics.md`
-
----
-
-# DEC-TBD-004 — Monetization Model
-
-**Status:** Deferred
-
-Possible future models include:
-
-- paid app;
-- one-time unlock;
-- subscription;
-- freemium;
-- limited free processing.
-
-Monetization must not influence the initial architecture unless necessary.
-
----
-
-# DEC-TBD-005 — Final Album Export Behavior
-
-**Status:** Deferred
-
-Possible approaches include:
-
-- create a Photos album;
-- maintain an internal curated collection;
-- export selected assets;
-- support multiple outputs.
-
-The decision should be driven by the final MVP UX.
-
----
-
-# DEC-TBD-006 — Advanced ML Models
-
-**Status:** Deferred
-
-Potential future capabilities may include:
-
-- custom Core ML quality model;
-- aesthetic ranking model;
-- scene embeddings;
-- semantic similarity;
-- personalized ranking;
-- advanced face-expression analysis.
-
-Do not introduce them until baseline Apple-framework-based selection has been evaluated.
-
----
-
-# DEC-TBD-007 — Personalization Strategy
-
-**Status:** Deferred
-
-Potential future approaches include:
-
-```text
-Simple preference weights
-Per-user ranking adjustments
-Implicit feedback
-Explicit preference controls
-On-device learning
-```
-
-This should follow actual observed user behavior rather than speculative architecture.
-
----
-
-# 7. Explicit Non-Decisions
-
-Some areas should intentionally remain flexible.
-
-The following should not become architectural commitments prematurely.
-
----
-
-## Exact Selection Weights
-
-Values such as:
-
-```text
-sharpnessWeight = 0.25
-faceWeight = 0.20
-aestheticWeight = 0.30
-diversityWeight = 0.25
-```
-
-are tuning parameters, not architectural decisions.
-
-They belong in:
-
-`03_Photo_Selection_Rules.md`
-
-or engine configuration.
-
----
-
-## Exact Folder Structure
-
-Folder naming may evolve during implementation.
-
-Changing:
-
-```text
-Services/
-```
-
-to:
-
-```text
-Infrastructure/
-```
-
-does not require a decision record unless it represents a meaningful architectural change.
-
----
-
-## Naming of Internal Types
-
-Renaming:
-
-```swift
-PhotoAnalysis
-```
-
-to:
-
-```swift
-AssetAnalysis
-```
-
-does not require a decision entry.
-
----
-
-## UI Details
-
-Button placement, spacing, colors, or icon choices normally belong to UX/design implementation rather than the Decision Log.
-
----
-
-# 8. When a New Decision Should Be Added
-
-Add a decision when the answer to at least one of these questions is **yes**:
-
-### Product
-
-- Does this significantly change what Photos Curator does?
-- Does it alter user privacy expectations?
-- Does it introduce destructive behavior?
-- Does it change the core selection philosophy?
-
-### Architecture
-
-- Does this introduce a major dependency?
-- Does this introduce a backend?
-- Does this change local vs cloud processing?
-- Does this change the persistence architecture?
-- Does this create a new architectural layer?
-- Would reversing it later require substantial work?
-
-### Selection Engine
-
-- Does this change the fundamental pipeline?
-- Does this change the meaning of a moment or cluster?
-- Does this change how final selections are optimized?
-- Does it introduce a new machine-learning dependency?
-
-### Performance
-
-- Does this fundamentally change how thousands of assets are processed?
-- Does this introduce full-resolution processing at scale?
-- Does it materially change caching or concurrency?
-
-### Privacy
-
-- Does this cause any image-related data to leave the device?
-- Does it change how face information is stored?
-- Does it change Photo Library access behavior?
-
-If none of these apply, the choice probably does not belong in this file.
-
----
-
-# 9. Decision Entry Template
-
-Use the following template for new decisions.
+## 9. Entry template
 
 ```markdown
-# DEC-XXX — Decision Title
-
-**Status:** Proposed | Accepted | Rejected | Superseded | Deferred | Revisit  
-**Date:** YYYY-MM-DD
-
-## Context
-
-Describe the problem or tradeoff that required a decision.
-
-## Options Considered
-
-### Option A
-
-Description.
-
-Advantages:
-
-- ...
-
-Disadvantages:
-
-- ...
-
-### Option B
-
-Description.
-
-Advantages:
-
-- ...
-
-Disadvantages:
-
-- ...
-
-## Decision
-
-Clearly state what was chosen.
-
-## Rationale
-
-Explain why this option was selected.
-
-## Consequences
-
-Describe important effects of the decision.
-
-Positive:
-
-- ...
-
-Negative:
-
-- ...
-
-## Reconsider When
-
-List conditions that would justify reevaluating the decision.
-
-## Related Documents
-
-- `XX_Document.md`
+# DEC-xxx — Title
+Status: Proposed|Accepted|Rejected|Superseded|Deferred|Revisit · Date: YYYY-MM-DD
+Owner: `0x-....md` · Affected: [...]
+Decision: ...
+Rationale: ...
+Risk: ... · Reconsider when: ...
 ```
 
----
+## 10. Principles (priority order)
 
-# 10. Superseding a Decision
+Protect photos → privacy → useful album → understandable → real-iPhone perf →
+simple → few deps → ship speed → cheap extensibility → no speculative infra.
 
-Do not erase the original reasoning.
+## 11. Philosophy (one screen)
 
-Example:
-
-```markdown
-# DEC-014 — Cache Analysis Results
-
-**Status:** Superseded by DEC-041
-```
-
-Then:
-
-```markdown
-# DEC-041 — Replace Disk Cache with SwiftData Analysis Store
-
-**Status:** Accepted
-**Date:** YYYY-MM-DD
-
-...
-```
-
-This preserves the project's architectural history.
-
----
-
-# 11. Relationship to Other Documentation
-
-The Decision Log explains **why** major choices were made.
-
-Other documents explain **what** the system should do and **how** it should work.
-
-| Document | Responsibility |
-|---|---|
-| `01_PRD.md` | Product goals and MVP definition |
-| `02_UX_Flows.md` | User journeys and UI states |
-| `03_Photo_Selection_Rules.md` | Selection behavior |
-| `04_Selection_Engine_Design.md` | Selection pipeline implementation |
-| `05_iOS_Architecture.md` | Application architecture |
-| `06_Data_Model.md` | Persistent and runtime data structures |
-| `07_Apple_Framework_Integration.md` | Apple APIs and framework integration |
-| `08_Performance_Spec.md` | Performance constraints |
-| `09_Privacy_and_Permissions.md` | Privacy policy and permissions |
-| `10_Manual_QA_and_Selection_Evaluation.md` | Manual validation |
-| `11_Analytics_and_Metrics.md` | Product and selection metrics |
-| `12_Roadmap.md` | Implementation sequence |
-| `13_Decision_Log.md` | Rationale behind important choices |
-
-Avoid duplicating entire specifications inside this document.
-
-Instead, reference the authoritative document.
-
----
-
-# 12. Decision Principles
-
-When a new architectural or product question appears, use the following principles before introducing additional complexity.
-
-In priority order:
-
-```text
-1. Protect user photos
-2. Protect user privacy
-3. Produce a genuinely useful curated album
-4. Keep selection behavior understandable
-5. Maintain acceptable performance on real iPhones
-6. Keep the implementation simple
-7. Minimize dependencies
-8. Optimize development speed
-9. Preserve future extensibility where inexpensive
-10. Avoid speculative infrastructure
-```
-
-A future capability should not impose significant complexity on today's MVP unless there is a concrete near-term requirement.
-
----
-
-# 13. Current Architectural Philosophy
-
-The current Photos Curator architecture can be summarized as:
-
-```text
-Native iOS
-    +
-SwiftUI
-    +
-PhotoKit
-    +
-Vision / Apple-native image analysis
-    +
-On-device processing
-    +
-Batching and caching
-    +
-Moment / similarity grouping
-    +
-Explicit selection rules
-    +
-Manual QA
-    +
-Minimal infrastructure
-```
-
-The project intentionally avoids:
-
-```text
-Cloud dependency
-Unnecessary backend services
-Heavy Clean Architecture
-Premature personalization
-Large third-party dependency graphs
-Automated test targets
-Destructive photo management
-Opaque top-N AI ranking
-```
-
----
-
-# 14. Guiding Rule
-
-When considering a new architectural component, ask:
-
-> What concrete problem in the current version of Photos Curator does this solve?
-
-If the answer is unclear, do not add it yet.
-
-When considering a more sophisticated algorithm, ask:
-
-> Does this materially improve the final album compared with a simpler solution?
-
-If that improvement has not been demonstrated through manual evaluation, prefer the simpler approach.
-
-The goal is not to build the most sophisticated photo-analysis architecture.
-
-The goal is to build a fast, private, reliable iPhone application that turns a large photo collection into a small album the user actually wants to keep.
+Native iOS + SwiftUI + PhotoKit + Vision + on-device + batch/cache + moment/similarity +
+explicit rules + manual QA + minimal infra. Avoid: cloud core, backends, heavy architecture,
+early personalization, big dep graphs, test targets, deletion, opaque top-N.
