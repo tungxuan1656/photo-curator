@@ -2,35 +2,35 @@
 
 ## Goal
 
-S02/S03/S04/S19 skeleton chạy được trên Noop mocks: first-run Welcome → Permission education → Home, permission recheck khi quay lại từ Settings, copy đúng ux-flows, chưa đấu PhotoKit thật (để feat-002INT).
+S02/S03/S04/S19 skeleton runs on Noop mocks: first-run Welcome → Permission education → Home, permission rechecked when returning from Settings, copy matches ux-flows, no real PhotoKit wiring yet (deferred to feat-002INT).
 
 ## Scope
 
-- `App/AppRoute.swift`: typed routes cho `NavigationStack` (welcome, permissionEducation, home).
-- `App/AppModel.swift`: `@MainActor @Observable` giữ route + `authorization` + `hasSeenWelcome`, gọi `PhotoLibraryService` protocol (Noop ở G1).
-- `App/RootView.swift`: `NavigationStack` root, conditional Welcome/Home, `navigationDestination(for:)`, recheck permission on appear/return.
+- `App/AppRoute.swift`: typed routes for `NavigationStack` (welcome, permissionEducation, home).
+- `App/AppModel.swift`: `@MainActor @Observable` holding route + `authorization` + `hasSeenWelcome`, calling the `PhotoLibraryService` protocol (Noop in G1).
+- `App/RootView.swift`: `NavigationStack` root, conditional Welcome/Home, `navigationDestination(for:)`, permission recheck on appear/return.
 - `Features/Onboarding/WelcomeView.swift` (S02), `PermissionEducationView.swift` (S03), `HomeView.swift` (S04), `AccessGuidanceSheet.swift` (S19 sheet).
-- `PhotoCuratorApp.swift`: build `AppContainer.live()` một lần, inject `AppModel` qua `.environment` (đúng ios-architecture §5).
-- Permission base: `INFOPLIST_KEY_NSPhotoLibraryUsageDescription` trong pbxproj + `PrivacyInfo.xcprivacy` base (không tạo `Info.plist` rời vì `GENERATE_INFOPLIST_FILE=YES`).
-- Không chạm: `Infrastructure/`, `Domain/`, `Services/`, `Configuration/`, `App/AppContainer.live()`.
+- `PhotoCuratorApp.swift`: builds `AppContainer.live()` once, injects `AppModel` via `.environment` (per ios-architecture §5).
+- Permission base: `INFOPLIST_KEY_NSPhotoLibraryUsageDescription` in the pbxproj + `PrivacyInfo.xcprivacy` base (no standalone `Info.plist` file because `GENERATE_INFOPLIST_FILE=YES`).
+- Do not touch: `Infrastructure/`, `Domain/`, `Services/`, `Configuration/`, `App/AppContainer.live()`.
 
 ## Non-goals
 
-- Không fetch PhotoKit thật, Vision, scoring, duplicates, moments (G2–G4).
-- Không SourceSelection S05/S06 (feat-003B), Processing S07/S08 (feat-004B), Review/Save (G4–G5).
-- Không sửa `AppContainer.live()` (owns feat-002INT), không sửa `Configuration/`.
-- Không `feature_index.json` + `progress.md` (leader chỉ sửa trong INT PR).
-- Không test targets, `*Test*.swift`, packages, DB, DI frameworks (DEC-015/016).
+- No real PhotoKit fetch, Vision, scoring, duplicates, or moments (G2–G4).
+- No SourceSelection S05/S06 (feat-003B), Processing S07/S08 (feat-004B), Review/Save (G4–G5).
+- No changes to `AppContainer.live()` (owned by feat-002INT), no changes to `Configuration/`.
+- No `feature_index.json` + `progress.md` edits (leader only, inside the INT PR).
+- No test targets, `*Test*.swift`, packages, DB, or DI frameworks (DEC-015/016).
 
 ## Acceptance
 
 - [ ] `./init.sh` passes (format + strict swiftlint + build; SKIP [test]).
-- [ ] First-run: S02 → S03 → system prompt path render được; `Continue` gọi protocol, `Not Now` về Home access-required; system prompt đứng sau S03.
-- [ ] Full/limited/denied/restricted mỗi trạng thái có path khả kiến: full normal, limited valid (không phải error) + Choose More Photos, denied card `Photos Access Needed` + `Open Settings`, không có nút `Curate Photos` chết.
-- [ ] Copy khớp ux-flows §5–§6/§11, từ vựng `removed / add back` (cấm `delete/trash/rejected`).
-- [ ] `Features/` + `App/` không `import PhotoKit`, engine không `import SwiftUI`; UI chỉ gọi `PhotoLibraryService` protocol.
-- [ ] `grep -rn "PhotosCurator" apps/photo-curator/App apps/photo-curator/Features` rỗng (ngoại trừ lịch sử); pbxproj có usage key; app launch trên simulator tới Home.
-- [ ] PR `lane-B/feat-002B → int/G1` tiêu đề `[feat-002B][lane-B]`, trong `owns`, cross-review xong.
+- [ ] First run: the S02 → S03 → system-prompt path renders; `Continue` calls the protocol, `Not Now` returns to Home in the access-required state; the system prompt always follows S03.
+- [ ] Every full/limited/denied/restricted state has a visible path: full is normal, limited is valid (not an error) + Choose More Photos, denied shows the `Photos Access Needed` card + `Open Settings`, no dead `Curate Photos` button.
+- [ ] Copy matches ux-flows §5–§6/§11; vocabulary uses `removed / add back` (never `delete/trash/rejected`).
+- [ ] `Features/` + `App/` never `import PhotoKit`; the engine never `import SwiftUI`; UI only calls the `PhotoLibraryService` protocol.
+- [ ] `grep -rn "PhotosCurator" apps/photo-curator/App apps/photo-curator/Features` is empty (excluding history); the pbxproj contains the usage key; the app launches on the simulator to Home.
+- [ ] PR `lane-B/feat-002B → int/G1` titled `[feat-002B][lane-B]`, stays inside `owns`, cross-review done.
 
 ## Relevant docs
 
@@ -46,13 +46,13 @@ S02/S03/S04/S19 skeleton chạy được trên Noop mocks: first-run Welcome →
 
 > **Execution:** Follow the repository's implementation and verification rules. No automated tests per DEC-016 — each task's test cycle is `./init.sh` (SwiftFormat + `swiftlint lint --strict` + simulator build). Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Dựng skeleton onboarding 8 tasks để lane B chạy độc lập trên Noop, INT thay real sau.
+**Goal:** Build the onboarding skeleton in 8 tasks so lane B runs standalone on Noop; INT swaps in the real wiring later.
 
-**Architecture:** Value-type `AppRoute` + `@MainActor @Observable AppModel` giữ route/auth; `RootView` là `NavigationStack` duy nhất; 4 màn hình mỏng chỉ render + gọi intent; auth logic qua `PhotoLibraryService` protocol. Thứ tự giữ `./init.sh` xanh sau mỗi task.
+**Architecture:** Value-type `AppRoute` + `@MainActor @Observable AppModel` holding route/auth; `RootView` is the single `NavigationStack`; 4 thin screens that only render state and trigger intents; all auth logic goes through the `PhotoLibraryService` protocol. Ordered so `./init.sh` stays green after every task.
 
-**Tech Stack:** Swift 5.0, SwiftUI + Observation, Foundation only, single target `photo-curator` (synced folders — file mới không cần `.pbxproj` trừ key permission).
+**Tech Stack:** Swift 5.0, SwiftUI + Observation, Foundation only, single target `photo-curator` (synced folders — new files need no `.pbxproj` edit except the permission key).
 
-**Plan artifact decision:** Plan stays inline here. AGENTS.md requires >=2 substantial signals for `docs/plans/feat-<id>.md`; this work has 1 (7 files mới, 1 workspace, no migration, no internal phases/rollback — real wiring là feat-002INT riêng). Tiền lệ feat-001 (8 files) cũng inline.
+**Plan artifact decision:** Plan stays inline here. AGENTS.md requires >=2 substantial signals for `docs/plans/feat-<id>.md`; this work has 1 (7 new files, 1 workspace, no migration, no internal phases/rollback — the real wiring is the separate feat-002INT). Precedent: feat-001 (8 files) also stayed inline.
 
 ## Global Constraints
 
@@ -76,7 +76,7 @@ S02/S03/S04/S19 skeleton chạy được trên Noop mocks: first-run Welcome →
 
 **Interfaces:**
 - Consumes: nothing (first file).
-- Produces: `AppRoute` enum — `Task 2/3` dùng `path: [AppRoute]`, `navigationDestination(for: AppRoute.self)`.
+- Produces: `AppRoute` enum — Tasks 2/3 use `path: [AppRoute]` and `navigationDestination(for: AppRoute.self)`.
 
 - [ ] **Step 1: Create the file with this exact content**
 
@@ -108,7 +108,7 @@ git commit -m "feat-002B: add AppRoute typed routes"
 
 **Interfaces:**
 - Consumes: `AppRoute` (Task 1), `AppContainer` + `PhotoLibraryService`/`PhotoLibraryAuthorization` (G0 contract).
-- Produces: `@MainActor @Observable AppModel` — Tasks 3–7 dùng `appModel.path`, `authorization`, `hasSeenWelcome`, `showPermissionEducation()`, `skipPermission()`, `refreshAuthorization()`, `requestPermission()`.
+- Produces: `@MainActor @Observable AppModel` — Tasks 3–7 use `appModel.path`, `authorization`, `hasSeenWelcome`, `showPermissionEducation()`, `skipPermission()`, `refreshAuthorization()`, `requestPermission()`.
 
 - [ ] **Step 1: Create the file with this exact content**
 
@@ -359,7 +359,7 @@ git commit -m "feat-002B: add PermissionEducationView S03"
 import SwiftUI
 import UIKit
 
-/// S04 Home skeleton. Copy owned by ux-flows §6.1. Denied replaces CTA with the
+/// S04 Home skeleton. Copy owned by ux-flows §6.1. Denied replaces the CTA with the
 /// access-required card (never a dead Curate Photos button).
 struct HomeView: View {
     @Environment(AppModel.self) private var appModel
@@ -407,7 +407,7 @@ struct HomeView: View {
 - [ ] **Step 2: Run verification (full build now resolves Tasks 3–6)**
 
 Run: `./init.sh`
-Expected: full PASS + `SKIP [test]`. If `AccessGuidanceSheet` missing (Task 7) fails build, run lint-only instead and continue to Task 7 before re-running full.
+Expected: full PASS + `SKIP [test]`. If `AccessGuidanceSheet` missing (Task 7) fails the build, run lint-only instead and continue to Task 7 before re-running the full script.
 
 - [ ] **Step 3: Commit**
 
@@ -423,7 +423,7 @@ git commit -m "feat-002B: add HomeView S04 skeleton"
 
 **Interfaces:**
 - Consumes: `AppModel.authorization` (Task 2).
-- Produces: `AccessGuidanceSheet` — presented by `HomeView` (Task 6). Unblocks Task 6 full build.
+- Produces: `AccessGuidanceSheet` — presented by `HomeView` (Task 6). Unblocks the Task 6 full build.
 
 - [ ] **Step 1: Create the file with this exact content**
 
@@ -485,18 +485,18 @@ git commit -m "feat-002B: add AccessGuidanceSheet S19"
 - Modify: `features/feat-002B.md` (Handoff Evidence)
 
 **Interfaces:**
-- Consumes: all Tasks 1–7 (skeleton must be green first).
-- Produces: installable build with usage description; privacy manifest base for INT.
+- Consumes: all Tasks 1–7 (the skeleton must be green first).
+- Produces: an installable build with the usage description; the privacy manifest base for INT.
 
 - [ ] **Step 1: Add the usage key (no `Info.plist` file — `GENERATE_INFOPLIST_FILE=YES`)**
 
-In Xcode target `photo-curator` > Build Settings, add:
+In the Xcode target `photo-curator` > Build Settings, add:
 
 ```text
 INFOPLIST_KEY_NSPhotoLibraryUsageDescription = Photos Curator needs access to your photo library to analyze and select your best photos. Photo analysis is performed on your device.
 ```
 
-String owned by privacy §5.1. Touch no other build setting (pbxproj vùng xám với lane A — leader giải quyết conflict ở INT).
+String owned by privacy §5.1. Touch no other build setting (the pbxproj is a shared gray zone with lane A — the leader resolves conflicts at INT).
 
 - [ ] **Step 2: Create `apps/photo-curator/PrivacyInfo.xcprivacy` with this exact content**
 
@@ -520,11 +520,11 @@ grep -rn "INFOPLIST_KEY_NSPhotoLibraryUsageDescription" apps/photo-curator.xcode
 grep -rn "import PhotoKit" apps/photo-curator/App apps/photo-curator/Features || true
 ```
 
-Expected: first grep prints the key line; second prints nothing (SwiftUI never touches PhotoKit).
+Expected: the first grep prints the key line; the second prints nothing (SwiftUI never touches PhotoKit).
 
 - [ ] **Step 4: Record evidence and commit**
 
-Set Handoff in this file to: State `active`, Evidence `./init.sh PASS (BUILD SUCCEEDED, SKIP [test]) + S02/S03/S04/S19 skeleton on Noop, temp check removed`, Next `mở PR [feat-002B][lane-B] lane-B/feat-002B → int/G1`.
+Set the Handoff in this file to: State `active`, Evidence `./init.sh PASS (BUILD SUCCEEDED, SKIP [test]) + S02/S03/S04/S19 skeleton on Noop`, Next `open PR [feat-002B][lane-B] lane-B/feat-002B → int/G1`.
 
 ```bash
 git add apps/photo-curator.xcodeproj/project.pbxproj apps/photo-curator/PrivacyInfo.xcprivacy features/feat-002B.md
@@ -534,13 +534,13 @@ git commit -m "feat-002B: add permission key, privacy manifest, evidence"
 ## Verify
 
 - `./init.sh`
-- Manual Walkthrough (Noop skeleton): fresh launch → S02 Welcome → Get Started → S03 → Continue (Noop `.denied` → Home access-required card) / Not Now (Home access-required); Home limited path shows Choose More Photos sheet; recheck on return from Settings không crash.
+- Manual walkthrough (Noop skeleton): fresh launch → S02 Welcome → Get Started → S03 → Continue (Noop `.denied` → Home access-required card) / Not Now (Home access-required); the Home limited path shows the Choose More Photos sheet; rechecking on return from Settings does not crash.
 
 ## Handoff
 
 - State: active
 - Evidence: —
 - Blockers: none
-- Next: Thực thi Tasks 1–8 theo thứ tự, giữ `./init.sh` xanh sau mỗi task, rồi mở PR `[feat-002B][lane-B]` vào `int/G1`.
+- Next: Execute Tasks 1–8 in order, keep `./init.sh` green after each task, then open PR `[feat-002B][lane-B]` into `int/G1`.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
