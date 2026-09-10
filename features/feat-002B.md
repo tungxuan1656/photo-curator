@@ -121,14 +121,17 @@ import Observation
 @MainActor
 @Observable
 final class AppModel {
+    private static let seenWelcomeKey = "hasSeenWelcome"
+
     var path: [AppRoute] = []
     var authorization: PhotoLibraryAuthorization = .notDetermined
-    var hasSeenWelcome: Bool = false
+    var hasSeenWelcome: Bool
 
     private let container: AppContainer
 
     init(container: AppContainer) {
         self.container = container
+        self.hasSeenWelcome = UserDefaults.standard.bool(forKey: Self.seenWelcomeKey)
     }
 
     func showPermissionEducation() {
@@ -136,8 +139,8 @@ final class AppModel {
     }
 
     func skipPermission() {
-        hasSeenWelcome = true
-        path = [.home]
+        markSeen()
+        path = []
     }
 
     func refreshAuthorization() async {
@@ -146,8 +149,13 @@ final class AppModel {
 
     func requestPermission() async {
         authorization = await container.photoLibrary.requestAuthorization()
+        markSeen()
+        path = []
+    }
+
+    private func markSeen() {
         hasSeenWelcome = true
-        path = [.home]
+        UserDefaults.standard.set(true, forKey: Self.seenWelcomeKey)
     }
 }
 ```
@@ -179,9 +187,11 @@ git commit -m "feat-002B: add AppModel skeleton on Noop protocol"
 ```swift
 import SwiftUI
 
-/// G1 skeleton root. One `NavigationStack` with typed routes; permission rechecked on appear.
+/// G1 skeleton root. One `NavigationStack` with typed routes; permission rechecked
+/// on appear and on return from Settings.
 struct RootView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         @Bindable var appModel = appModel
@@ -206,6 +216,13 @@ struct RootView: View {
         }
         .task {
             await appModel.refreshAuthorization()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task {
+                    await appModel.refreshAuthorization()
+                }
+            }
         }
     }
 }
@@ -359,17 +376,18 @@ git commit -m "feat-002B: add PermissionEducationView S03"
 import SwiftUI
 import UIKit
 
-/// S04 Home skeleton. Copy owned by ux-flows §6.1. Denied replaces the CTA with the
-/// access-required card (never a dead Curate Photos button).
+/// S04 Home skeleton. Copy owned by ux-flows §6.1. Denied/restricted replace the CTA
+/// with the access-required card (never a dead Curate Photos button).
 struct HomeView: View {
     @Environment(AppModel.self) private var appModel
     @State private var showsAccessGuidance = false
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Pick a trip, event, or batch of photos. Photos Curator will find the strongest set for you to review.")
+            Text("Pick a trip, event, or batch of photos. "
+                + "Photos Curator will find the strongest set for you to review.")
             switch appModel.authorization {
-            case .authorized, .limited, .notDetermined:
+            case .authorized, .limited:
                 Button("Curate Photos") {}
                     .buttonStyle(.borderedProminent)
                 if appModel.authorization == .limited {
@@ -377,7 +395,18 @@ struct HomeView: View {
                         showsAccessGuidance = true
                     }
                 }
-            case .denied, .restricted:
+            case .notDetermined:
+                Text("Photos Access Needed")
+                    .font(.headline)
+                Text("Allow photo access to choose images for curation.")
+                Button("Continue") {
+                    appModel.showPermissionEducation()
+                }
+                .buttonStyle(.borderedProminent)
+                Button("Learn More") {
+                    showsAccessGuidance = true
+                }
+            case .denied:
                 Text("Photos Access Needed")
                     .font(.headline)
                 Text("Allow photo access to choose images for curation.")
@@ -387,6 +416,13 @@ struct HomeView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                Button("Learn More") {
+                    showsAccessGuidance = true
+                }
+            case .restricted:
+                Text("Photos Access Restricted")
+                    .font(.headline)
+                Text("Photos access is restricted on this device.")
                 Button("Learn More") {
                     showsAccessGuidance = true
                 }
@@ -445,7 +481,7 @@ struct AccessGuidanceSheet: View {
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
-            case .denied, .restricted:
+            case .denied:
                 Text("Photo access is turned off. Enable it in Settings to curate photos.")
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -453,6 +489,11 @@ struct AccessGuidanceSheet: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+            case .restricted:
+                Text("Photos access is restricted on this device.")
+                Button("Done") {
+                    dismiss()
+                }
             default:
                 Text("Photo analysis is performed on this device.")
                 Button("Done") {
@@ -539,8 +580,8 @@ git commit -m "feat-002B: add permission key, privacy manifest, evidence"
 ## Handoff
 
 - State: active
-- Evidence: —
+- Evidence: `./init.sh PASS (format + strict lint + build, SKIP [test])` on lane-B/feat-002B; joint oracle review CHANGES-REQUESTED addressed in one fix wave (scenePhase recheck on return from Settings, restricted copy split, notDetermined access-required card, UserDefaults first-run flag, path=[] root switch); `.swiftformat --indentcase false` per user decision (leader to confirm at INT).
 - Blockers: none
-- Next: Execute Tasks 1–8 in order, keep `./init.sh` green after each task, then open PR `[feat-002B][lane-B]` into `int/G1`.
+- Next: Scoped re-review → commit → open PR `[feat-002B][lane-B]` into `int/G1`.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
