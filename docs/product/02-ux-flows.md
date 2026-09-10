@@ -126,19 +126,21 @@ Gestures may accelerate actions, but visible controls must exist for all importa
 
 Use consistent terminology in UI and code.
 
-| Term | Meaning |
-|---|---|
-| **Source photos** | Photos selected by the user for one curation job |
-| **Curation** | One end-to-end processing session |
-| **Curated album** | Final set recommended by the app and approved by the user |
-| **Selected** | Currently included in the curated album |
-| **Removed** | Excluded from the curated album but never deleted from the Photos library |
-| **Similar group** | Near-duplicate or same-moment images presented together |
-| **Best pick** | Photo preferred by the engine within a group or moment |
-| **Needs attention** | A small set where automatic choice is uncertain or user review is valuable |
-| **Processing** | Analysis and selection work performed after source selection |
-| **Save** | Create/update the resulting album in Apple Photos or complete the app's configured output action |
-| **Session** | Persisted state of an unfinished or completed curation |
+
+| Term                | Meaning                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| **Source photos**   | Photos selected by the user for one curation job                                                 |
+| **Curation**        | One end-to-end processing session                                                                |
+| **Curated album**   | Final set recommended by the app and approved by the user                                        |
+| **Selected**        | Currently included in the curated album                                                          |
+| **Removed**         | Excluded from the curated album but never deleted from the Photos library                        |
+| **Similar group**   | Near-duplicate or same-moment images presented together                                          |
+| **Best pick**       | Photo preferred by the engine within a group or moment                                           |
+| **Needs attention** | A small set where automatic choice is uncertain or user review is valuable                       |
+| **Processing**      | Analysis and selection work performed after source selection                                     |
+| **Save**            | Create/update the resulting album in Apple Photos or complete the app's configured output action |
+| **Session**         | Persisted state of an unfinished or completed curation                                           |
+
 
 Avoid using "delete" when the action only removes an image from the curated selection.
 
@@ -160,28 +162,30 @@ The curation flow is modal or navigation-stack driven and should feel like one f
 
 ### 4.2 MVP screen inventory
 
-| ID | Screen | Required |
-|---|---|---|
-| S01 | Launch / Session Restore | Yes |
-| S02 | Welcome / First Run | Yes |
-| S03 | Photo Permission Education | Yes |
-| S04 | Home | Yes |
-| S05 | Source Selection | Yes |
-| S06 | Selection Summary / Start | Yes |
-| S07 | Processing | Yes |
-| S08 | Processing Blocked / Attention Required | Yes |
-| S09 | Review Overview | Yes |
-| S10 | Curated Grid | Yes |
-| S11 | Photo Detail | Yes |
-| S12 | Similar Group Review | Yes |
-| S13 | Removed Photos | Yes |
-| S14 | Final Review / Save | Yes |
-| S15 | Saving | Yes |
-| S16 | Completion | Yes |
-| S17 | Resume Curation | Yes |
-| S18 | Settings | Yes |
-| S19 | Photo Access Management Guidance | Yes |
-| S20 | Generic Recoverable Error | Yes |
+
+| ID  | Screen                                  | Required |
+| --- | --------------------------------------- | -------- |
+| S01 | Launch / Session Restore                | Yes      |
+| S02 | Welcome / First Run                     | Yes      |
+| S03 | Photo Permission Education              | Yes      |
+| S04 | Home                                    | Yes      |
+| S05 | Source Selection                        | Yes      |
+| S06 | Selection Summary / Start               | Yes      |
+| S07 | Processing                              | Yes      |
+| S08 | Processing Blocked / Attention Required | Yes      |
+| S09 | Review Overview                         | Yes      |
+| S10 | Curated Grid                            | Yes      |
+| S11 | Photo Detail                            | Yes      |
+| S12 | Similar Group Review                    | Yes      |
+| S13 | Removed Photos                          | Yes      |
+| S14 | Final Review / Save                     | Yes      |
+| S15 | Saving                                  | Yes      |
+| S16 | Completion                              | Yes      |
+| S17 | Resume Curation                         | Yes      |
+| S18 | Settings                                | Yes      |
+| S19 | Photo Access Management Guidance        | Yes      |
+| S20 | Generic Recoverable Error               | Yes      |
+
 
 There is no separate account, cloud sync, social, profile, or subscription flow in the MVP unless explicitly added by the PRD later.
 
@@ -886,14 +890,16 @@ Use this screen only when processing cannot continue automatically.
 
 ### 16.2 Common cases
 
-| Condition | Primary action | Secondary |
-|---|---|---|
-| Photos permission removed | Open Settings | Discard Curation |
-| iCloud assets need network | Try Again | Continue Without Them, if allowed |
-| Temporary asset loading failure | Retry | Return Home |
-| Storage too low for temporary data | Free Up Space / Retry | Return Home |
-| Session data corrupt but source IDs remain | Restart Analysis | Discard |
-| Unexpected recoverable engine failure | Retry | Return Home |
+
+| Condition                                  | Primary action        | Secondary                         |
+| ------------------------------------------ | --------------------- | --------------------------------- |
+| Photos permission removed                  | Open Settings         | Discard Curation                  |
+| iCloud assets need network                 | Try Again             | Continue Without Them, if allowed |
+| Temporary asset loading failure            | Retry                 | Return Home                       |
+| Storage too low for temporary data         | Free Up Space / Retry | Return Home                       |
+| Session data corrupt but source IDs remain | Restart Analysis      | Discard                           |
+| Unexpected recoverable engine failure      | Retry                 | Return Home                       |
+
 
 ### 16.3 Retry
 
@@ -993,7 +999,7 @@ CTA: **Review Removed**
 
 ### 19.4 Primary CTA
 
-**Review & Save**
+**Review &amp; Save**
 
 This may open S10 Curated Grid first, or S14 Final Review depending on product design.
 
@@ -1563,20 +1569,22 @@ Preferred behavior:
 
 ## 29. Interruption Matrix
 
-| Interruption | Expected UX |
-|---|---|
-| User backgrounds app during source selection | Return to picker/selection if possible |
-| User backgrounds during processing | Save progress; resume safely |
-| Device locks | Same as backgrounding |
-| App terminated by system | Restore persisted session next launch |
-| App manually force-quit | Restore session if state was persisted |
-| Incoming call / temporary interruption | No destructive effect |
-| Network loss during local-only assets | Continue |
-| Network loss while fetching iCloud assets | Show waiting/attention state |
-| Permission removed | Pause dependent work and request resolution |
-| Some source photos deleted externally | Mark unavailable; continue when safe |
-| Low disk space | Preserve progress and request user action |
-| Save interrupted | Reconcile before retrying to prevent duplicate output |
+
+| Interruption                                 | Expected UX                                           |
+| -------------------------------------------- | ----------------------------------------------------- |
+| User backgrounds app during source selection | Return to picker/selection if possible                |
+| User backgrounds during processing           | Save progress; resume safely                          |
+| Device locks                                 | Same as backgrounding                                 |
+| App terminated by system                     | Restore persisted session next launch                 |
+| App manually force-quit                      | Restore session if state was persisted                |
+| Incoming call / temporary interruption       | No destructive effect                                 |
+| Network loss during local-only assets        | Continue                                              |
+| Network loss while fetching iCloud assets    | Show waiting/attention state                          |
+| Permission removed                           | Pause dependent work and request resolution           |
+| Some source photos deleted externally        | Mark unavailable; continue when safe                  |
+| Low disk space                               | Preserve progress and request user action             |
+| Save interrupted                             | Reconcile before retrying to prevent duplicate output |
+
 
 ---
 
@@ -1600,7 +1608,7 @@ Action:
 
 **Manage Photos Access**
 
-#### Processing & Privacy
+#### Processing &amp; Privacy
 
 Informational text only unless real choices exist.
 
@@ -1698,14 +1706,16 @@ Show a neutral placeholder and allow retry when the asset itself remains valid.
 
 ## 33. Empty States
 
-| Context | Message | Action |
-|---|---|---|
-| No accessible photos | No Photos Available | Choose More Photos / Try Again |
-| No photos selected | Select photos to continue | None; Continue disabled |
-| No similar groups | No similar groups need review | Back to Review |
-| No removed photos | Nothing removed | Back to Review |
-| No selected photos at save | Add at least one photo | Back to Review |
-| No resumable session | Normal Home | Curate Photos |
+
+| Context                    | Message                       | Action                         |
+| -------------------------- | ----------------------------- | ------------------------------ |
+| No accessible photos       | No Photos Available           | Choose More Photos / Try Again |
+| No photos selected         | Select photos to continue     | None; Continue disabled        |
+| No similar groups          | No similar groups need review | Back to Review                 |
+| No removed photos          | Nothing removed               | Back to Review                 |
+| No selected photos at save | Add at least one photo        | Back to Review                 |
+| No resumable session       | Normal Home                   | Curate Photos                  |
+
 
 Empty states should never look like errors when nothing is wrong.
 
@@ -2318,22 +2328,24 @@ The engine must not silently revert it.
 
 ## 61. Screen-Level State Matrix
 
-| Screen | Normal | Loading | Empty | Recoverable Error | Blocking Permission |
-|---|---|---|---|---|---|
-| Welcome | Yes | No | N/A | Rare | N/A |
-| Home | Yes | Session restore | No photos | Session load issue | Yes |
-| Source Selection | Yes | Picker load | 0 selected | Asset load | Yes |
-| Selection Summary | Yes | Asset validation | N/A | Validation issue | Yes |
-| Processing | Yes | Core state | N/A | Yes | Yes |
-| Review Overview | Yes | Result load | Zero result = abnormal | Yes | Maybe |
-| Curated Grid | Yes | Thumbnail load | Empty after manual removal | Thumbnail/result load | Maybe |
-| Photo Detail | Yes | Full image load | N/A | Asset unavailable | Maybe |
-| Similar Group Review | Yes | Group load | No groups | Yes | Maybe |
-| Removed Photos | Yes | Thumbnail load | Nothing removed | Yes | Maybe |
-| Final Review | Yes | Preview load | No selected photos | Yes | Maybe |
-| Saving | Yes | Core state | N/A | Yes | Yes |
-| Completion | Yes | N/A | N/A | Destination unavailable | N/A |
-| Settings | Yes | Permission read | N/A | Rare | N/A |
+
+| Screen               | Normal | Loading          | Empty                      | Recoverable Error       | Blocking Permission |
+| -------------------- | ------ | ---------------- | -------------------------- | ----------------------- | ------------------- |
+| Welcome              | Yes    | No               | N/A                        | Rare                    | N/A                 |
+| Home                 | Yes    | Session restore  | No photos                  | Session load issue      | Yes                 |
+| Source Selection     | Yes    | Picker load      | 0 selected                 | Asset load              | Yes                 |
+| Selection Summary    | Yes    | Asset validation | N/A                        | Validation issue        | Yes                 |
+| Processing           | Yes    | Core state       | N/A                        | Yes                     | Yes                 |
+| Review Overview      | Yes    | Result load      | Zero result = abnormal     | Yes                     | Maybe               |
+| Curated Grid         | Yes    | Thumbnail load   | Empty after manual removal | Thumbnail/result load   | Maybe               |
+| Photo Detail         | Yes    | Full image load  | N/A                        | Asset unavailable       | Maybe               |
+| Similar Group Review | Yes    | Group load       | No groups                  | Yes                     | Maybe               |
+| Removed Photos       | Yes    | Thumbnail load   | Nothing removed            | Yes                     | Maybe               |
+| Final Review         | Yes    | Preview load     | No selected photos         | Yes                     | Maybe               |
+| Saving               | Yes    | Core state       | N/A                        | Yes                     | Yes                 |
+| Completion           | Yes    | N/A              | N/A                        | Destination unavailable | N/A                 |
+| Settings             | Yes    | Permission read  | N/A                        | Rare                    | N/A                 |
+
 
 ---
 
@@ -2512,19 +2524,21 @@ The goal is to keep the MVP focused on **selection**, not become a general photo
 
 The following are intentionally identified but should not be guessed inside the UX implementation.
 
-| Decision | Owner document |
-|---|---|
-| Exact supported source-photo hard limit | `08_Performance_Spec.md` |
-| Whether all analysis is guaranteed on-device | `04_Selection_Engine_Design.md`, `09_Privacy_and_Permissions.md` |
-| Rules for exact duplicates and near-duplicates | `03_Photo_Selection_Rules.md` |
-| Definition of a "moment" | `03_Photo_Selection_Rules.md` |
-| Selection target size / ratio | `03_Photo_Selection_Rules.md` |
-| Whether partial processing is allowed with unavailable assets | `04_Selection_Engine_Design.md` |
-| Cache persistence and invalidation | `05_iOS_Architecture.md`, `08_Performance_Spec.md` |
-| PhotoKit permission implementation details | `07_Apple_Framework_Integration.md` |
-| Exact save destination behavior in Apple Photos | `07_Apple_Framework_Integration.md` |
-| Temporary face/embedding data retention | `09_Privacy_and_Permissions.md` |
-| Analytics events for funnel/drop-off | `11_Analytics_and_Metrics.md` |
+
+| Decision                                                      | Owner document                                                   |
+| ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Exact supported source-photo hard limit                       | `08_Performance_Spec.md`                                         |
+| Whether all analysis is guaranteed on-device                  | `04_Selection_Engine_Design.md`, `09_Privacy_and_Permissions.md` |
+| Rules for exact duplicates and near-duplicates                | `03_Photo_Selection_Rules.md`                                    |
+| Definition of a "moment"                                      | `03_Photo_Selection_Rules.md`                                    |
+| Selection target size / ratio                                 | `03_Photo_Selection_Rules.md`                                    |
+| Whether partial processing is allowed with unavailable assets | `04_Selection_Engine_Design.md`                                  |
+| Cache persistence and invalidation                            | `05_iOS_Architecture.md`, `08_Performance_Spec.md`               |
+| PhotoKit permission implementation details                    | `07_Apple_Framework_Integration.md`                              |
+| Exact save destination behavior in Apple Photos               | `07_Apple_Framework_Integration.md`                              |
+| Temporary face/embedding data retention                       | `09_Privacy_and_Permissions.md`                                  |
+| Analytics events for funnel/drop-off                          | `11_Analytics_and_Metrics.md`                                    |
+
 
 ---
 
