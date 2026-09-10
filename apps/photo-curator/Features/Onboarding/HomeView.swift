@@ -13,12 +13,12 @@ struct HomeView: View {
                 + "Photos Curator will find the strongest set for you to review.")
             switch appModel.authorization {
             case .authorized, .limited:
-                // TODO(feat-003B): navigate to SourceSelection (S05); disabled until then.
+                // TODO(feat-003): navigate to SourceSelection (S05); disabled until then.
                 Button("Curate Photos") {}
                     .buttonStyle(.borderedProminent)
                     .disabled(true)
                 if appModel.authorization == .limited {
-                    // Picker lives in the guidance sheet (wired feat-002INT);
+                    // Picker lives in the guidance sheet (wired in feat-002);
                     // this entry only opens the sheet.
                     Button("Limited Photos Access — Choose More Photos") {
                         showsAccessGuidance = true

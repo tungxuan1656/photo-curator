@@ -74,14 +74,14 @@ Start at [`docs/index.md`](docs/index.md) → `AGENTS.md` → one owner doc per 
 | Pick rules and sizing | `docs/product-specs/selection-rules.md` |
 | Pipeline stages | `docs/design-docs/selection-engine.md` |
 | Build order P0–P8 | `docs/exec-plans/roadmap.md` |
-| Team execution (lanes, INT, git) | `docs/exec-plans/team-build-plan.md` |
+| Execution (sequential feats, git) | `feature_index.json` + `features/feat-template.md` |
 | Privacy and retention | `docs/ship-gates/privacy.md` |
 | Manual QA | `docs/ship-gates/manual-qa.md` |
 
 ## Build status and plan
 
-* Current state: foundation stage (G0). See `feature_index.json` for the 18-feat plan across G0–G6 and `progress.md` for the latest result.
-* Execution: two parallel lanes (A = Engine/Data, B = App/UI) inside each sequential stage, merged by a leader-owned `*INT` feat. Branch flow is `lane-*/feat-xxx` → `int/<stage>` → `main`. Detail: `docs/exec-plans/team-build-plan.md`.
+* Current state: foundation (feat-001, feat-002 done). See `feature_index.json` for the 14-feat sequential plan and `progress.md` for the latest result.
+* Execution: one agent builds sequential feats from `feature_index.json` (1 active at a time). Branch flow is `feat/<id>` → `main` (squash). Detail: `features/feat-template.md`.
 * Success looks like: 1,000 messy photos become a shortlist the user keeps with only small fixes; duplicates suppressed; moments covered; originals untouched.
 
 ## Privacy
@@ -91,8 +91,8 @@ On-device analysis. No photo pixels, face data, embeddings, GPS, or asset IDs ar
 ## Contributing
 
 1. Pick a `todo` feat whose `depends_on` feats are `done`; mark it `active`.
-2. Branch `lane-A/feat-xxx` or `lane-B/feat-xxx`; touch only your `owns` files.
-3. Run `./init.sh` before opening a PR into `int/<stage>`.
+2. Branch `feat/<id>` from `main`; touch only your `owns` files.
+3. Run `./init.sh` before opening a PR into `main`.
 4. Keep scope inside the active feat; record evidence and handoff in `features/feat-<id>.md`.
 5. Never add test targets, `*Test*.swift` files, or test-only architecture.
 

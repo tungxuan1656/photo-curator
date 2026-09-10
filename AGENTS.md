@@ -24,7 +24,7 @@ If baseline verification fails, record the failure. Fix it only when the current
 
 ## Working rules
 
-- Keep at most one feature `active` per lane. Within one stage, lanes A and B may each have one `active` feat when `owns` does not overlap (controlled exception per `docs/exec-plans/team-build-plan.md` §3); one `INT` owner per stage. Zero active features means the repository is idle.
+- Keep at most one feature `active` at a time. Zero active features means the repository is idle.
 - Use only `todo`, `active`, `blocked`, or `done` as feature status.
 - Start `todo` work only after the user selects or approves it.
 - Keep feature work inside the active feature's scope and acceptance criteria.
@@ -39,7 +39,7 @@ If baseline verification fails, record the failure. Fix it only when the current
 - Keep the plan inside `features/feat-<id>.md` for bounded tracked work (1-3 files, 1 workspace, <200 lines).
 - Create `docs/plans/feat-<id>.md` only for substantial work (>=4 files or >=2 workspaces, DB migration/breaking API, or needs phases/rollback — requires >=2 signals). Default to inline.
 - Link the external plan from the feature file.
-- Define agent and file ownership before parallel work starts.
+- Use the active feature's owns list before work starts.
 
 ## Escalation
 
