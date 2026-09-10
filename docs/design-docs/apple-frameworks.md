@@ -29,13 +29,14 @@ Related docs:
 Only this section uses requirement keywords. All other sections use plain verbs.
 
 - The app MUST keep `PHAsset` objects behind services; SwiftUI and scoring code MUST NOT call PhotoKit or Vision directly.
-- The app MUST treat limited library access as a valid state, not an error.
+- The app treats limited library access as a valid state, not an error.
 - The app treats a missing asset identifier as a normal state; it does not crash.
 - The app MUST NOT analyze full-resolution originals unless a feature needs original pixels.
 - The app supports cancellation of image requests and analysis tasks.
 - The app MUST NOT upload photo pixels, face data, or embeddings to app servers.
 - The app MUST NOT delete, edit, hide, or favorite originals; the only write is a user-approved album.
 - The app MUST release decoded images after analysis; it MUST NOT hold large batches in memory.
+- The app MUST NOT persist face boxes, precise location, or feature-print blobs beyond bounded temp working memory.
 
 ---
 
@@ -53,6 +54,8 @@ Only this section uses requirement keywords. All other sections use plain verbs.
 | AVFoundation | Video work | Not for MVP (photo-only) |
 
 Primary path is direct PhotoKit access. `PhotosPicker` is optional for small explicit subsets only. Large sets (trip, event, date range, album, 100–2,000 photos) need `PHAsset` fetch plus metadata, which a picker alone does not give.
+
+Minimum deployment target is iOS 26 (see [decision-log DEC-TBD-001](decision-log.md)).
 
 Service boundary:
 
@@ -204,7 +207,7 @@ PHAsset -> decode once -> CGImage -> feature print + faces + sharpness + exposur
 |---|---|---|
 | PhotoKit image cache | `PHCachingImageManager` | Preheat visible plus slightly-ahead assets with `startCachingImages`; `stopCachingImages` for far-behind; never preheat thousands at once |
 | Decoded image | Per-asset scope (`autoreleasepool`) | Short life; never hold hundreds of `UIImage`/`CGImage` |
-| Persisted analysis | App store per 06 | Small fields plus version; reuse when inputs unchanged; never full images, crops, or blobs |
+| Persisted analysis | App store per 06 | Small fields plus version; reuse when inputs unchanged; face boxes, precise location, and feature-print blobs stay in bounded temp working memory only, see 09; never full images, crops, or blobs |
 
 Priority order: visible UI, then current asset, then near-future analysis, then speculative prefetch. Background work never starves the review grid. On pressure: cut concurrency, stop preheat, release images, pause optional Vision steps. Thresholds: [08](../ship-gates/performance.md). Do not build a custom disk image cache; PhotoKit owns the pixels.
 
@@ -264,7 +267,7 @@ CGImage + orientation -> feature print + face rects + face quality (+ optional l
 
 Rules:
 
-- Store derived values (counts, boxes, quality summaries, feature-print blob, version, timestamp). Never store source images or face crops.
+- Store derived values (counts, quality summaries, version, timestamp) per 06. Face boxes and feature-print blobs stay in bounded temp working memory only and are released after use; retention and redaction: [09](../ship-gates/privacy.md). Never store source images or face crops.
 - Thresholds, group scoring, face buckets, and final-score mixing are owned by [03](../product-specs/selection-rules.md). Removed from this doc by design. Similarity-threshold tuning plus QA: 03 and [10](../ship-gates/manual-qa.md).
 - No identity: detect faces, never name people, never keep an identity store. Privacy limits: [09](../ship-gates/privacy.md).
 - Version cached analysis (`analysisVersion`). On algorithm change, bump and recompute; do not migrate ephemeral AI fields. Vision revision pinning beyond the app version is out of scope for MVP.
@@ -310,7 +313,7 @@ On change: invalidate the affected fetch, refresh references, notify the workflo
 
 ## 11. Export
 
-Creating an album is references only. No file copies, no reimport.
+Creating a new album is references only (non-destructive, collision-safe per [decision-log DEC-TBD-005](decision-log.md)). No file copies, no reimport.
 
 Flow:
 
@@ -349,9 +352,7 @@ Batch rule: one failed asset never fails the job. Finish the batch, then report 
 
 ## 13. Logging and privacy pointers
 
-Redaction rules are owned by [09](../ship-gates/privacy.md). This doc states only the API-side list.
-
-Never log: image bytes, face crops, raw feature-print contents, full file paths, precise location, full `localIdentifier`. Safe to log: redacted ID or hash, request type, target size, duration, success or failure, iCloud-needed flag, Vision error category. Face results stay on device for selection only. Persisted fields: IDs, metadata, scalar scores, counts, normalized boxes, feature-print blob, version. Full list: 06 and 09.
+Logging redaction and face-data handling: see [09](../ship-gates/privacy.md).
 
 ---
 

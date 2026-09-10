@@ -93,10 +93,10 @@ Home → Choose Photos → Configure Curation → Processing
 ```
 
 The user should spend most time on the shortlist, not the source set.
-Goal: 1,000 source photos → review about 50–150 picks plus a few
-alternatives, instead of reviewing all 1,000.
+Goal (illustrative only; sizing policy in 03): 1,000 source photos → review
+roughly 50–150 picks plus a few alternatives, instead of reviewing all 1,000.
 
-Example: 1,024 trip photos → 80-photo proposal → user removes 4, replaces 6,
+Example (illustrative): 1,024 trip photos → 80-photo proposal → user removes 4, replaces 6,
 restores 2 → saves "Japan Trip — Curated" (78 photos). The other ~946
 source photos stay untouched.
 
@@ -236,7 +236,7 @@ and metric targets live in 10; timing budgets live in 08.
 - **Gate 2 — Safe photo handling.** No normal workflow modifies or deletes
   original photos.
 - **Gate 3 — Meaningful reduction.** A 1,000-photo set becomes a
-  user-requested shortlist (e.g. about 50–150 photos).
+  user-requested shortlist (illustrative range about 50–150 photos; policy in 03).
 - **Gate 4 — Duplicate suppression.** Obvious near-duplicate groups do not
   dominate the final album.
 - **Gate 5 — Reviewable result.** Users can understand and fix the proposal

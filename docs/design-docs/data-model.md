@@ -13,8 +13,10 @@ PhotoKit stays the source of truth for photos. The app stores IDs, light metadat
 | Kind | What | Lives where |
 |---|---|---|
 | Stored | `SelectionSession`, `SelectionResult`, `SelectionDecision`, `PhotoAnalysis`, `UserOverride`, `UserFeedback`, minimal cache-validation metadata | App local store |
-| Cached, evictable | `PhotoMoment`, `PhotoCluster`, feature prints, thumbnails | App cache; safe to rebuild |
-| Transient only | `UIImage` / `CGImage` / `CIImage` / `CVPixelBuffer`, `PHAsset` objects, Vision requests, similarity matrix, ranking scratch arrays, UI state (`isExpanded`, scroll, zoom) | Memory; released after use |
+| Cached, evictable | `PhotoMoment`, `PhotoCluster`, thumbnails | App cache; safe to rebuild |
+| Transient only | `UIImage` / `CGImage` / `CIImage` / `CVPixelBuffer`, `PHAsset` objects, Vision requests, similarity matrix, ranking scratch arrays, face boxes, precise location, feature prints, UI state (`isExpanded`, scroll, zoom) | Memory; released after use |
+
+Face boxes, precise location, and feature-print blobs stay in bounded temp working memory only. Retention and redaction: [09](../ship-gates/privacy.md).
 
 Data ownership:
 
@@ -23,7 +25,7 @@ Data ownership:
 | Original photo bytes | PhotoKit |
 | Identifier and metadata snapshot | Photos Curator store |
 | Thumbnail | Image cache |
-| Analysis, moment assignment, cluster assignment, AI choice | Selection engine + app store |
+| Analysis, cluster assignment, moment assignment, AI choice | Selection engine + app store |
 | User override and final pick | User |
 | Library change (album write) | PhotoKit layer; see [07](apple-frameworks.md) |
 
@@ -36,16 +38,16 @@ Loading rule: loading 1,000–5,000 assets means loading IDs, dates, sizes, favo
 ```text
 SelectionSession
 ├── sourceAssetIDs: [AssetID]
-├── configuration: SelectionConfiguration
+├── configuration: StoredConfigReference
 ├── progress: SessionProgress
-├── moments: [PhotoMoment]        (cached)
-├── clusters: [PhotoCluster]      (cached)
+├── clusters: [PhotoCluster]      (cached, dups first)
+├── moments: [PhotoMoment]        (cached, built from cluster representatives)
 └── result: SelectionResult?
      └── decisions: [SelectionDecision]
             └── assetID ─┬─ PhotoAsset
                          ├─ PhotoAnalysis
-                         ├─ PhotoMoment (via lookup)
-                         └─ PhotoCluster (via lookup)
+                         ├─ PhotoCluster (via lookup)
+                         └─ PhotoMoment (via lookup)
 
 UserFeedback (sessionID + assetID + action + timestamp)
 UserOverride (sessionID + assetID + forceKeep/forceRemove/none)
@@ -54,10 +56,10 @@ CuratedAlbum (sessionID + assetIDs in chrono order + createdAt)
 
 Rule: relations use IDs, not nested objects. A moment holds `[AssetID]`, not copies of `PhotoAsset`. A decision holds `assetID` plus `competingAssetIDs`, not photo objects. This keeps the graph flat and rebuildable.
 
-Core pipeline in storage terms:
+Core pipeline in storage terms (dups before moments, per [04](selection-engine.md)):
 
 ```text
-PhotoAsset → PhotoAnalysis → Moment / Cluster refs → SelectionDecision → SelectionResult → CuratedAlbum + UserFeedback
+PhotoAsset → PhotoAnalysis → Cluster refs → Moment refs → SelectionDecision → SelectionResult → CuratedAlbum + UserFeedback
 ```
 
 Key storage rule: photo, analysis, and decision are three separate records. Re-ranking writes new decisions from stored analyses without re-running image work. See [04](selection-engine.md) for the run order.
@@ -82,10 +84,12 @@ Do not invent typed IDs for minor objects unless ID mix-ups are a real risk.
 ## 4. Invariants
 
 - Store MUST be `PHAsset.localIdentifier` wrapped as `AssetID`. Models MUST never persist `PHAsset`, `UIImage`, `CGImage`, `CIImage`, or `CVPixelBuffer`.
+- Store MUST never persist face boxes, precise location, or feature-print blobs beyond bounded temp working memory.
+- Face, location, and feature cache rows stay session-temp with immediate release where used, never durable rows.
 - Scores use `Double` in `0.0 ... 1.0` unless a field states otherwise.
 - Missing analysis MUST be `nil`, never a fake `0` or `0.5`.
 - One asset MUST map to at most one `PhotoAnalysis` per `analysisVersion`.
-- One asset MUST map to at most one primary `Moment`.
+- One asset maps to at most one primary `Moment`.
 - One asset maps to at most one primary `PhotoCluster` per clustering pass.
 - One asset MUST map to at most one active `SelectionDecision` per session and `engineVersion`.
 - One asset maps to at most one effective `UserOverride` per session; history lives in `UserFeedback` events.
@@ -105,7 +109,6 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
     let pixelHeight: Int
     let mediaSubtype: PhotoMediaSubtype
     let isFavorite: Bool
-    let location: GeoCoordinate?
     let source: AssetSource
 }
 ```
@@ -116,8 +119,9 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
 | `pixelWidth/Height` | Basis for derived `aspectRatio` and `orientation`; orientation is derived, not stored separately. |
 | `mediaSubtype` | Only values that change behavior (`standard`, `livePhoto`, `screenshot`, `panorama`, `hdr`, `portrait`, `unknown`). Eligibility policy: [03](../product-specs/selection-rules.md). |
 | `isFavorite` | Soft bonus flag only; see [03](../product-specs/selection-rules.md). |
-| `location` | `GeoCoordinate(latitude, longitude)`, optional. Store only when needed for grouping. No place history; see [09](../ship-gates/privacy.md). |
 | `source` | `local` / `iCloud` / `unknown`. Hint for progress and retry only; iCloud state can change. API detail: [07](apple-frameworks.md). |
+
+Precise location is never stored here; it stays in bounded temp working memory only for grouping, then released. Retention and redaction: [09](../ship-gates/privacy.md).
 
 Ephemeral analysis input (never persisted):
 
@@ -165,11 +169,11 @@ Name fields so direction is clear (`sharpnessScore` vs `blurProbability`). Never
 ```swift
 struct PeopleAnalysis: Codable, Sendable {
     let faceCount: Int
-    let faces: [FaceAnalysis]
     let groupPhotoScore: Double?
     var containsPeople: Bool { faceCount > 0 }
 }
-struct FaceAnalysis: Codable, Sendable {
+// Session-temp only, never persisted; released after analysis:
+struct FaceAnalysis: Sendable {
     let boundingBox: NormalizedRect   // 0.0 ... 1.0, resolution independent
     let qualityScore: Double          // 0.0 ... 1.0
     let eyesOpenScore: Double?
@@ -178,7 +182,7 @@ struct FaceAnalysis: Codable, Sendable {
 }
 ```
 
-Privacy limits: anonymous faces only. No `personName`, `personID`, identity embedding, or contact link in MVP. Face boxes and embeddings stay in memory or temp session scope. See [09](../ship-gates/privacy.md). Group and portrait scoring policy: [03](../product-specs/selection-rules.md).
+Stored shape holds counts and summary scores only. Face boxes live in bounded temp working memory and are released after use. Privacy limits: anonymous faces only. No `personName`, `personID`, identity embedding, or contact link in MVP. Retention and redaction: [09](../ship-gates/privacy.md). Group and portrait scoring policy: [03](../product-specs/selection-rules.md).
 
 ### 6.3 CompositionAnalysis
 
@@ -216,34 +220,32 @@ Scene meanings and diversity use: [03](../product-specs/selection-rules.md). Kee
 
 ---
 
-## 7. Moment and Cluster representation
+## 7. Cluster and Moment representation
 
-Definitions, grouping thresholds, time windows, per-moment keeper counts, and worked cases are owned by [03](../product-specs/selection-rules.md). Detection mechanics are owned by [04](selection-engine.md). This file defines only stored shape and membership.
+Definitions, grouping thresholds, time windows, per-moment keeper counts, and worked cases are owned by [03](../product-specs/selection-rules.md). Detection mechanics are owned by [04](selection-engine.md), which runs duplicate clustering before moment segmentation. This file defines only stored shape and membership.
 
 ```swift
+struct PhotoCluster: Identifiable, Codable, Sendable {
+    let id: ClusterID
+    let type: ClusterType
+    let assetIDs: [AssetID]
+    let representativeAssetID: AssetID?
+    let similarityScore: Double?
+}
 struct PhotoMoment: Identifiable, Codable, Sendable {
     let id: MomentID
     let assetIDs: [AssetID]
     let startDate: Date?
     let endDate: Date?
     let representativeAssetID: AssetID?
-    let locationCenter: GeoCoordinate?
     let sceneDistribution: [SceneType: Double]
-}
-struct PhotoCluster: Identifiable, Codable, Sendable {
-    let id: ClusterID
-    let momentID: MomentID?
-    let type: ClusterType
-    let assetIDs: [AssetID]
-    let representativeAssetID: AssetID?
-    let similarityScore: Double?
 }
 enum ClusterType: String, Codable, Sendable {
     case nearDuplicate, burstLike, sameScene, samePose, groupPhotoSequence
 }
 ```
 
-Membership: asset → at most 1 primary moment (MVP stays many-to-one). Asset → 1 primary cluster per pass. References only; no embedded `PhotoAsset` copies.
+Membership: asset → at most 1 primary cluster per pass, then moments group cluster representatives in time order (dups before moments, per [04](selection-engine.md)). References only; no embedded `PhotoAsset` copies.
 
 Similarity storage rule: never persist an N×N matrix (5,000² = 25M pairs). Persist cluster results only. Pairwise edges are transient:
 
@@ -255,7 +257,7 @@ struct SimilarityEdge: Sendable {
 }
 ```
 
-Feature prints (Vision or equivalent) are cache data keyed by `AssetID`, not domain entities, so the similarity backend can change without touching UI models. API detail: [07](apple-frameworks.md).
+Feature prints (Vision or equivalent) stay in bounded temp working memory keyed by `AssetID` for the pairwise step, then released; they are never durable rows. Retention: [09](../ship-gates/privacy.md). API detail: [07](apple-frameworks.md).
 
 ---
 
@@ -326,6 +328,23 @@ struct RankedCandidate: Identifiable, Sendable {
 }
 ```
 
+Persisted shortlist and alternative shape (IDs + rank refs only, no pixels or faces):
+
+```swift
+struct StoredShortlist: Codable, Sendable {
+    let sessionID: SessionID
+    let assetIDs: [AssetID]
+    let rankByAssetID: [AssetID: Int]
+    let momentIDByAssetID: [AssetID: MomentID]
+    let clusterIDByAssetID: [AssetID: ClusterID]
+}
+struct StoredAlternative: Codable, Sendable {
+    let assetID: AssetID
+    let clusterID: ClusterID
+    let rank: Int
+}
+```
+
 Review-surface order, shortlist sizing, and accept semantics: [02](../product-specs/ux-flows.md). Album sizing targets: [03 §14](../product-specs/selection-rules.md). Debug extras (`candidateRank`, `clusterRank`, raw score maps) stay dev-only and out of prod persistence.
 
 ---
@@ -342,10 +361,10 @@ struct SelectionSession: Identifiable, Codable, Sendable {
     let targetPhotoCount: Int?
     var progress: SessionProgress
     var result: SelectionResult?
-    let configuration: SelectionConfiguration
+    let configuration: StoredConfigReference
 }
 enum SessionStatus: String, Codable, Sendable {
-    case created, loadingAssets, analyzing, groupingMoments, clustering
+    case created, loadingAssets, analyzing, clustering, groupingMoments
     case ranking, generatingAlbum, readyForReview, completed, interrupted, failed
 }
 struct SessionProgress: Codable, Sendable {
@@ -355,20 +374,16 @@ struct SessionProgress: Codable, Sendable {
     let message: String?
 }
 enum ProcessingStage: String, Codable, Sendable {
-    case loading, analysis, momentDetection, clustering, ranking, finalSelection
+    case loading, analysis, clustering, momentDetection, ranking, finalSelection
 }
-struct SelectionConfiguration: Codable, Sendable {
-    let targetPhotoCount: Int?
-    let minimumPhotoCount: Int?
-    let maximumPhotoCount: Int?
-    let duplicateSensitivity: Double
-    let qualityPreference: Double
-    let diversityPreference: Double
-    let peoplePreference: Double
+// SelectionConfiguration struct owned by selection-engine.md §12; not repeated here.
+struct StoredConfigReference: Codable, Sendable {
+    let configVersion: Int
+    let snapshotRef: String   // opaque config snapshot ref for session reproduce
 }
 ```
 
-Notes: `SessionStatus` mirrors pipeline phases at coarse grain; stage mechanics and retry live in [04](selection-engine.md) and [08](../ship-gates/performance.md). `SelectionConfiguration` exists for reproducibility and experiment tracking; most fields use internal defaults in MVP. Tunable defaults and sizing math: [03 §14, §17](../product-specs/selection-rules.md). Progress text is non-localized; user wording: [02](../product-specs/ux-flows.md). Progress fraction (`processedCount / totalCount`) is derived.
+Notes: `SessionStatus` mirrors pipeline phases at coarse grain; stage mechanics and retry live in [04](selection-engine.md) and [08](../ship-gates/performance.md). Stored config is a version plus an opaque snapshot ref; the engine struct lives in [04 §12](selection-engine.md). Tunable defaults and sizing math: [03 §14, §17](../product-specs/selection-rules.md). Progress text is non-localized; user wording: [02](../product-specs/ux-flows.md). Progress fraction (`processedCount / totalCount`) is derived.
 
 ---
 
@@ -480,7 +495,7 @@ Changing rank weights re-ranks stored analyses into new decisions with no Vision
 
 ## 15. Persistence shape
 
-Persist: session, result, decisions, analyses + cache, overrides, feedback, minimal validation metadata. Cache-only: moments, clusters, features, thumbnails. Never: pixel buffers, Vision objects, matrices, UI state.
+Persist: session, result, decisions, stored shortlist and alternatives, analyses + cache, overrides, feedback, minimal validation metadata. Persistence is file-based Codable with no database for MVP (see [decision-log](decision-log.md) DEC-TBD-002). Cache-only: moments, clusters, thumbnails. Temp-only with immediate release: face boxes, precise location, feature prints. Never: pixel buffers, Vision objects, matrices, UI state.
 
 Domain models stay persistence-agnostic: `Persistence → Domain → Engine → Domain → Persistence`. Start with one model type; add DTOs only if the store forces it. Folder layout is owned by [05](ios-architecture.md); suggested code grouping is Asset / Analysis / Grouping / Selection / Session / Feedback, flattened while small.
 
@@ -499,7 +514,7 @@ PhotoKit changes: PhotoKit wins. If an `AssetID` no longer resolves, drop or inv
 Lifecycle (stored `SessionStatus`):
 
 ```text
-created → loadingAssets → analyzing → groupingMoments → clustering
+created → loadingAssets → analyzing → clustering → groupingMoments
   → ranking → generatingAlbum → readyForReview → completed
   ↳ interrupted → resume from cached analyses → continue
   ↳ failed (any stage)
@@ -517,7 +532,7 @@ Conventions: arrays where order matters (`[AssetID]` for albums), sets for revie
 
 Non-goals for MVP: Photos-database replacement, cloud sync of app state, shared albums, named-person or biometric stores, lasting similarity matrices, custom photo files, event ontology, taste profiles, event sourcing, per-model repository abstractions, over-normalized schema.
 
-Minimum start schema: `PhotoAsset`, `PhotoAnalysis`, `PhotoMoment`, `PhotoCluster`, `SelectionDecision`, `SelectionSession`, `UserFeedback`. Implement in pipeline order: IDs → asset → analysis → moment → cluster → decision → result → session → override/feedback → cache.
+Minimum start schema: `PhotoAsset`, `PhotoAnalysis`, `PhotoCluster`, `PhotoMoment`, `SelectionDecision`, `SelectionSession`, `UserFeedback`. Implement in pipeline order: IDs → asset → analysis → cluster → moment → decision → result → session → override/feedback → cache.
 
 ---
 

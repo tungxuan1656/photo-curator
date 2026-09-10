@@ -54,7 +54,8 @@ Behave like a careful human curator after a trip: remove duplicates and failed f
 | Class | Rule |
 |---|---|
 | Eligible | Accept standard photos, Live Photo stills, portraits, panoramas, edited photos, analyzable RAW derivatives. |
-| Excluded by default | Exclude videos, screen recordings, screenshots, non-photographic system images, undecodable assets. Record a reason code so UI can explain. |
+| Excluded by default | Exclude videos, screen recordings, non-photographic system images, undecodable assets. Record a reason code so UI can explain. |
+| Deprioritized (not excluded) | Deprioritize screenshots for the curated album; never force-exclude uncertain cases (see [decision-log OPEN-P06](../design-docs/decision-log.md); scene detail in §11). |
 | Hidden assets | Exclude hidden assets unless the selected source explicitly includes them. |
 | Favorites | Treat favorite as soft bonus only. It never forces selection of a duplicate or unusable frame. |
 
@@ -103,7 +104,7 @@ Bursts: find the strongest frame, not preserve the burst. Ordinary burst keeps 1
 | 45–180 s | Same moment only with visual/context similarity |
 | >180 s | Presume a new moment |
 
-Time windows are tunable defaults (see §17), not invariants. Confirm with shared people, scene, and composition.
+Time windows are tunable defaults (see §17), not invariants. Confirm with shared people, scene, and composition. These ~45 s / ~180 s same-moment-evidence windows are a different concept from the engine's ~3 min / ~15 min segmentation gaps (mechanic in [04](../design-docs/selection-engine.md) §7); both numbers are kept, each defined once in its owner section.
 
 ### 8.2 Representatives per moment
 
@@ -205,15 +206,20 @@ Quality-versus-diversity test: prefer a Good unique-activity photo over an Excel
 
 ## 14. Album sizing and user-intent override (owned here)
 
-Sizing policy is executable and owned here; [01](product.md) states the goal only.
+Sizing is quality-adaptive and owned here; [01](product.md) states the goal only.
+Album size adapts to usable-quality moment count: ~10% of input and the
+30–40 minimum / 120–150 maximum clamps are DEFAULT STARTS, not quotas.
+Never pad with Poor/Unusable photos to hit a number; never cut good
+unique-moment photos to hit a %.
 
-| Parameter | Default (tunable) |
+| Parameter | Default start (tunable) |
 |---|---|
 | Target album size | ~10% of input count, clamped to 30–40 minimum and 120–150 maximum. |
 | Shortlist for review | ~2× final target, feeding the review surface ([02](ux-flows.md)). |
 | Undersupply | Return fewer than target rather than promote Poor/Unusable assets. |
 | Small target | Favor strongest moments, best representatives, broad coverage first; drop repeats first. |
 | Large target | Add secondary rich-moment picks, alternate compositions, strong candids; never pad with obvious duplicates. |
+| Protected picks (defined once, here) | The sole usable representative of a distinct moment that diversity fill must keep (unique-moment protection policy). Diversity fill adds around protected picks; it never displaces one for a redundant second pick from an already-represented moment. Mechanics mirror this term via link only — see [04](../design-docs/selection-engine.md). |
 
 User intent:
 
@@ -250,10 +256,10 @@ Example: primary `bestGroupPhoto` with secondaries `betterFaceQuality`, `nearDup
 
 All numbers below are starting defaults. Centralize them in selection configuration; scatter no threshold in code. Score weights stay symbolic here (no invented constants); engineering sets values per [04](../design-docs/selection-engine.md) and validates per [10](../ship-gates/manual-qa.md).
 
-| Parameter | Default |
+| Parameter | Default start |
 |---|---|
-| `targetCountRatio` | ~0.10 of eligible inputs |
-| `targetCountMin` / `targetCountMax` | 30–40 / 120–150 |
+| `targetCountRatio` | ~0.10 of eligible inputs (default start; adapts per §14) |
+| `targetCountMin` / `targetCountMax` | 30–40 / 120–150 (default starts; adapts per §14) |
 | `shortlistMultiplier` | ~2× final |
 | `shortlistMultiplierRange` | 1.5×–2.5× of final target (default ~2×) |
 | `exactDuplicateRepresentatives` | 1 |
@@ -308,4 +314,4 @@ Remaining Uncertain items (evidence conflicts or needs QA tuning):
 4. Eye-closed and motion-blur intent detection reliability.
 5. Utility-versus-scene boundary for signs and plaques.
 6. Relative weights of diversity, coverage, repetition, favorite, and edit bonuses.
-7. Minimum/maximum clamp edges (30–40 and 120–150) across small and very large libraries.
+7. Minimum/maximum clamp default-start edges (30–40 and 120–150) across small and very large libraries; sizing stays quality-adaptive per §14.

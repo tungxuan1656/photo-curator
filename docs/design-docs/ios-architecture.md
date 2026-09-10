@@ -64,15 +64,15 @@ Rules:
 | Area | Decision |
 |---|---|
 | UI | SwiftUI + Observation (`@Observable`), `NavigationStack` with typed routes |
-| App shape | One iOS app target, iOS 18+; folders bound behavior, no MVP packages |
+| App shape | One iOS app target, iOS 26+ per [07](apple-frameworks.md); folders bound behavior, no MVP packages |
 | Composition | `PhotosCuratorApp` builds `AppContainer.live()` once, injects `AppModel` |
 | UI state | `@MainActor @Observable` models; explicit enums, not boolean soup |
 | Shared mutable background state | Actors (coordinator, cache, file store) |
 | Concurrency | Swift structured concurrency: tasks, task groups, actors |
 | Processing | Foreground-first, resumable at stage edges; no dependence on long background execution |
-| Persistence | Light files and cache only; no database for MVP |
+| Persistence | File-based Codable, light files and cache only; no database for MVP (see [decision-log](decision-log.md) DEC-TBD-002) |
 | Logging | OSLog `Logger` with subsystem and category |
-| Analytics | Thin internal interface; provider deferred; schemas in [11](../ship-gates/analytics.md) |
+| Analytics | If enabled, thin internal interface; provider deferred; schemas in [11](../ship-gates/analytics.md) |
 | Validation | Manual QA per [10](../ship-gates/manual-qa.md); no test targets in repo |
 
 Invariants (only use of MUST in this doc):
@@ -81,7 +81,7 @@ Invariants (only use of MUST in this doc):
 - The session MUST NOT retain decoded full-resolution images for the whole job.
 - Every long-running loop and expensive stage MUST cooperate with Swift task cancellation.
 - The selection engine MUST NOT import SwiftUI.
-- Photo pixels, face data, and embeddings MUST NOT leave the device through app code; see [09](../ship-gates/privacy.md).
+- On-device handling of photo pixels, face data, and embeddings: [09](../ship-gates/privacy.md).
 
 ---
 
@@ -180,14 +180,14 @@ Each service owns one seam. Call shapes and API facts live in [07](apple-framewo
 | `ImageAnalysisService` | Image → `PhotoAnalysis` (feature print, faces, technical signals) | Albums, SwiftUI, final picks |
 | `AnalysisCache` | Actor-isolated store of recomputable derived analysis, versioned and bounded | Original photo bytes |
 | `AlbumExportService` | Create or reuse album, add selected assets, map write errors | Image copies, scoring |
-| `AnalyticsService` | `track(_:)` for semantic events only | Image pixels, face data |
+| `AnalyticsService` | If analytics is enabled, `track(_:)` for events defined in [11](../ship-gates/analytics.md) | Image pixels, face data |
 
 Contract notes:
 
 - Consumers ask for an *analysis representation*, not the original. The loader picks request parameters. Full-resolution use needs a stated feature reason; see [04](selection-engine.md) and [07](apple-frameworks.md).
 - The cache holds derived values only, in the app cache directory, safe to delete. Key shape and fingerprint rule: [06](data-model.md). Disk budget: [08](../ship-gates/performance.md).
 - Export writes existing assets into an album through PhotoKit changes. Naming and reuse rules follow product docs; API mechanics: [07](apple-frameworks.md).
-- Analytics receives events and counts only as [09](../ship-gates/privacy.md) permits. It never receives pixels by default. Event schemas: [11](../ship-gates/analytics.md).
+- If analytics is enabled, it receives only what [09](../ship-gates/privacy.md) permits; event schemas: [11](../ship-gates/analytics.md).
 
 ---
 
@@ -402,9 +402,9 @@ struct AppConfiguration: Sendable {
 
 Use `Logger` with subsystem and category separation. Suggested categories: `app`, `photos`, `analysis`, `selection`, `cache`, `export`, `performance`.
 
-Log session starts, finishes, cancellations, asset counts by stage, cache hits and misses, stage durations, skipped counts, memory-pressure events, and export outcomes. Keep identifiers privacy-aware.
+Log session starts, finishes, cancellations, asset counts by stage, cache hits and misses, stage durations, skipped counts, memory-pressure events, and export outcomes. Identifier format per redaction rules: [09](../ship-gates/privacy.md).
 
-Do not log image bytes, face images, or sensitive metadata. Redaction and retention rules: [09](../ship-gates/privacy.md). Analytics stays separate: logging answers what happened on this device; analytics answers product behavior within the approved model. Analytics schemas: [11](../ship-gates/analytics.md).
+Redaction and retention rules: [09](../ship-gates/privacy.md). If analytics is enabled, it stays separate from logging: logging answers what happened on this device; analytics answers product behavior within the approved model. Event contract: [11](../ship-gates/analytics.md).
 
 ---
 

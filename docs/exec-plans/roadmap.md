@@ -46,7 +46,7 @@ Rules:
 | P3 — Functional MVP | Normal user completes Select → Analyze → Review → Save | Can a normal user use it? | New user completes full flow alone: pick, process, review, fix mistakes, save. Scope: [01](../product-specs/product.md) |
 | P4 — Quality hardening | Fix worst real failure modes | Is the result actually good? | Most albums need small fixes, not rebuilds. Method: [10](../ship-gates/manual-qa.md) |
 | P5 — Reliability | Handle large libraries, interruptions, memory | Can it handle real libraries? | Targets in [08](../ship-gates/performance.md) pass; no crashes, lost state, or stuck progress |
-| P6 — Beta | Real users outside the team | Do users trust it? | Curation completes; corrections are small; saved albums confirmed by [11](../ship-gates/analytics.md) |
+| P6 — Beta | Real users outside the team | Do users trust it? | Curation completes; corrections are small; saved albums confirmed (by [11](../ship-gates/analytics.md) only if analytics is decided, else by manual review per [10](../ship-gates/manual-qa.md)) |
 | P7 — Personalization | Learn per-user taste from corrections | Can it learn this user? | Repeat corrections fall over sessions; bad photos never beat sharp ones on taste alone |
 | P8 — Future intelligence | Story-aware albums, language controls | Can it curate stories? | Only after P0–P6 pass. No gate defined yet |
 

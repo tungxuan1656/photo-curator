@@ -150,7 +150,7 @@ sort by date → walk gaps in order
   gap ≥ hard gap → new moment
 ```
 
-Defaults live in config: `momentSoftGap` (~3 min), `momentHardGap` (~15 min). Time is the primary signal because it is cheap and always present; visual similarity adjusts borderline gaps; location adjusts only when present and never blocks grouping. Moment/duplicate definitions and per-moment keeper policy: [03](../product-specs/selection-rules.md). Stored moment shape: [06](data-model.md).
+Defaults live in config: `momentSoftGap` (~3 min), `momentHardGap` (~15 min). These segmentation gaps are a mechanic owned here and are a different concept from the ~45 s / ~180 s same-moment-evidence windows (policy owned in [03](../product-specs/selection-rules.md) §8.1); both numbers are kept, each defined once in its owner section. Time is the primary signal because it is cheap and always present; visual similarity adjusts borderline gaps; location adjusts only when present and never blocks grouping. Moment/duplicate definitions and per-moment keeper policy: [03](../product-specs/selection-rules.md). Stored moment shape: [06](data-model.md).
 
 ## 8. Stage 6 — Rank (within moment)
 
@@ -165,7 +165,7 @@ Collect moment candidates into one pool sized per [03 §17](../product-specs/sel
 Build the final album from the shortlist in passes:
 
 ```text
-protected picks (structural keeps per 03)
+protected picks (defined once in 03 §14; mirrored here via link only)
   → one core representative per remaining meaningful moment
   → greedy fill of leftover slots by marginal utility
   → stop when target reached or utility falls below floor

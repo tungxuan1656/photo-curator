@@ -30,7 +30,7 @@ Small set only. Use `snake_case`. Describe product meaning, not button names.
 | 4 | `review_started` | User opens the picks | `selected_photo_count` |
 | 5 | `photo_removed_from_selection` | User drops a pick | `reason_category` if known (else `unknown`) |
 | 6 | `photo_restored_to_selection` | User adds back a skipped photo | `original_rejection_category` if known (else `unknown`) |
-| 7 | `selection_regenerated` | User asks for a new set | `previous_selected_count`, `requested_selected_count`, `reason` if known |
+| 7 | `selection_regenerated` | FUTURE — no UX flow yet; keep row reserved | `previous_selected_count`, `requested_selected_count`, `reason` if known |
 | 8 | `album_saved` | User saves the final album | `initial_selected_count`, `final_selected_count`, `removed_count`, `restored_count`, `review_duration_seconds`, `regeneration_count` |
 | 9 | `selection_abandoned` | Run ends with no save | `stage` (`analysis`, `selection`, `review`) |
 | 10 | `processing_interrupted` | Run stops but can resume | `processed_photo_count`, `input_photo_count`, `stage`, `reason` |
@@ -141,7 +141,7 @@ Compare engine versions with the same table each time: acceptance, restore, edit
 Pass when:
 
 - AC-01: A full run sends events 1–4 and 8 with counts and engine version.
-- AC-02: Removals, restores, and regens (5–7) link to the same `session_id`.
+- AC-02: Removals, restores, and regens (5–7) link to the same `session_id`. Regen metrics apply only if event 7 leaves FUTURE.
 - AC-03: All core rates in §3 can be built from stored events.
 - AC-04: Results group by `engine_version` and `input_size_bucket`.
 - AC-05: With analytics off or offline, pick, review, and save still work with no error.

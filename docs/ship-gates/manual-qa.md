@@ -163,13 +163,13 @@ Perf smoke (budgets: 08): try 100, 500, 1,000, and 5,000 inputs. Watch: run star
 
 Memory: test large sets on device. Watch for OS kills, hangs, lost thumbs, long pauses, slowdown over time, repeat decoding. Use Instruments only when a real problem shows. No continuous profiling rig for MVP.
 
-Privacy checklist (rules: 09, link only): no surprise uploads; no remote image or face calls unless documented; face data stays on device per 09; temp files cleared; logs carry no image data or needless IDs; reset clears app analysis data; denied permission respected at once.
+Privacy checklist (rules: [09](privacy.md)): run the privacy spot-check per 09 and record the result.
 
 Error states: photo missing, iCloud failure, revoked permission, asset lost mid-run, low storage, cancel, background, analysis error, save failure. Each case: no state corruption, clear message when the user must act, retry where useful, other photos continue where possible.
 
 Edge cases to cover over time: 1–5 photo inputs; 100 near-identical frames; zero duplicates (do not invent cuts); mostly bad photos (keep the best meaningful ones); mostly great photos (do not over-cut); no faces; all faces; mixed orientations; multi-day; wrong or missing timestamps; edited assets; iCloud-only assets; limited access; panoramas; screenshots if supported; dark night scenes; strong HDR.
 
-Logging while testing: keep session start, input count, analyzed/skipped counts, cluster and moment counts, shortlist and final counts, stage timing, cancel, and load errors. Redaction rules belong to 09; never log pixels, filenames, full asset IDs, or face data. Stored field reference: 06.
+Logging while testing: keep session start, input count, analyzed/skipped counts, cluster and moment counts, shortlist and final counts, stage timing, cancel, and load errors. Redaction rules: [09](privacy.md). Stored field reference: 06.
 
 ---
 
@@ -227,7 +227,7 @@ Tag reports with one or more: `IMPORTANT_PHOTO_MISSED`, `BAD_PHOTO_SELECTED`, `D
 
 ### 7.3 Release validation and blockers
 
-Before a milestone build, run: A smoke pass; Golden regression with no big surprise; one real trip that reads as useful; permission trio (full, limited, denied); 1,000-photo run without critical fail; cancel run; review add/remove; save run; privacy spot-check (no surprise transfer or sensitive logging).
+Before a milestone build, run: A smoke pass; Golden regression with no big surprise; one real trip that reads as useful; permission trio (full, limited, denied); 1,000-photo run without critical fail; cancel run; review add/remove; save run; privacy spot-check per 09.
 
 Do not release with: lost or changed originals; steady crash or hang; unsavable album; cross-session photo mix-up; misleading permission behavior; privacy break; common 1,000-photo run fails; whole moments missing on tap; clearly worse picks than the last good build.
 
@@ -246,7 +246,7 @@ Input count / Final count:
 Failure tag(s):
 Expected:
 Actual:
-Photo IDs (short hash or index, per 09 — never full IDs or filenames):
+Photo IDs (format per [09](privacy.md)):
 Moment / cluster:
 Why human view differs:
 Suspected part (quality / duplicate / face / moment / diversity / ranking / unknown):

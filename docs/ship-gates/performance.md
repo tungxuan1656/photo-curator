@@ -125,7 +125,7 @@ Stored checkpoint shape lives in [06](../design-docs/data-model.md). iCloud fetc
 
 ## 7. Measurement
 
-QA steps live in [10](manual-qa.md). Event names live in [11](analytics.md). Redaction rules live in [09](privacy.md); never log pixels, file names, face data, GPS, or full asset IDs for perf notes.
+QA steps live in [10](manual-qa.md). Event names live in [11](analytics.md). Redaction rules: [09](privacy.md).
 
 Capture per run at minimum:
 

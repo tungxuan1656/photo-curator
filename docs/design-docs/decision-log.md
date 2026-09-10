@@ -18,7 +18,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 ## 1. Status table (first — full index)
 
-### 1a. Accepted (27 kept)
+### 1a. Accepted (35 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -49,18 +49,28 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 | DEC-025 | Deterministic rules around model outputs | 03, 04 |
 | DEC-026 | Never auto-delete rejected photos | 01, 02 |
 | DEC-027 | Speed of development over purity | 05 |
+| DEC-TBD-001 | Min iOS 26 | 07 |
+| DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
+| DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
+| OPEN-P06 | Screenshots deprioritized, not forced | 03 |
+| OPEN-P07 | Live Photo stills eligible | 03 |
+| OPEN-P08 | Edited version soft bonus only | 03 |
+| OPEN-P09 | Favorite soft bonus only | 03 |
+| OPEN-N05 | Album clamps as quality-adaptive default starts | 03 |
 
-### 1b. Deferred TBDs (7 kept, structured)
+### 1b. Deferred TBDs (4 kept, structured)
 
 | ID | Topic | Owner | Status |
 |---|---|---|---|
-| DEC-TBD-001 | Min iOS version | 07 | Deferred |
-| DEC-TBD-002 | Persistent storage tech | 05, 06 | Deferred |
 | DEC-TBD-003 | Analytics provider | 11 | Deferred |
 | DEC-TBD-004 | Monetization model | 01 | Deferred |
-| DEC-TBD-005 | Final album export behavior | 02, 07 | Deferred |
 | DEC-TBD-006 | Advanced ML models | 03, 04, 07 | Deferred |
 | DEC-TBD-007 | Personalization strategy | 03, 06 | Deferred |
+
+Promoted to Accepted (values owned in linked docs, not duplicated here):
+DEC-TBD-001 (min iOS 26 → 07), DEC-TBD-002 (file-based Codable persistence,
+no database for MVP → 05, 06), DEC-TBD-005 (new Photos album export,
+non-destructive, collision-safe → 02, 07). See §3.
 
 ### 1c. Open product questions (from 01 §57 — no answers yet)
 
@@ -71,11 +81,12 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 | OPEN-P03 | Auto-suggest album size? | 01, 03 | Deferred |
 | OPEN-P04 | How much alternative browsing in review? | 02 | Deferred |
 | OPEN-P05 | Mandatory-include mark before curation? | 02, 03 | Deferred |
-| OPEN-P06 | Screenshots: exclude or deprioritize? | 03 | Deferred |
-| OPEN-P07 | Live Photos representation in MVP? | 02, 07 | Deferred |
-| OPEN-P08 | Prefer edited versions? | 03 | Deferred |
-| OPEN-P09 | Do Apple Photos favorites boost rank? | 03 | Deferred |
 | OPEN-P10 | Feedback persistence across sessions? | 06, 03 | Deferred |
+
+Promoted to Accepted (rules owned in 03, linked not duplicated):
+OPEN-P06 (screenshots deprioritized, not forced), OPEN-P07 (Live Photo stills
+eligible), OPEN-P08 (edited version = soft bonus only), OPEN-P09 (Favorite =
+soft bonus only). See §4.
 
 ### 1d. Open UX pointers (owned by 02 §16 — grouped, ~20 questions)
 
@@ -97,10 +108,12 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 | OPEN-N02 | Similarity thresholds (dup/near-dup) | 03 | 04, 10 | Deferred |
 | OPEN-N03 | Moment windows (45s/180s, dense events) | 03 | 04, 10 | Deferred |
 | OPEN-N04 | Ordinary/rich/high-count boundaries | 03 | 04, 10 | Deferred |
-| OPEN-N05 | Clamp edges (min 30–40, max 120–150) | 03 | 04, 10 | Deferred |
 | OPEN-N06 | Weight set (diversity/coverage/repetition/bonus) | 03 | 04, 10 | Deferred |
 | OPEN-N07 | Batch sweet spot (16–64), concurrency caps | 08 | 04, 05 | Deferred |
 | OPEN-N08 | Vision edge cases (eyes, blur intent, small faces, signs) | 03 | 07, 10 | Deferred |
+
+Promoted to Accepted: OPEN-N05 (album clamps as quality-adaptive default
+starts per 03 §14). See §6.
 
 ---
 
@@ -208,13 +221,18 @@ Owner: 05.
 
 ## 3. Deferred TBDs (structured — no answers invented)
 
-**DEC-TBD-001 — Min iOS version (Deferred).**
-Owner: 07. Affected: 05, 08. Decide from needed Vision/SwiftUI/PhotoKit APIs + store distribution.
-Risk: too low = API gaps; too high = lost users. Trigger: first device-matrix pass.
+**DEC-TBD-001 — Min iOS 26 (Accepted).**
+Owner: 07. Affected: 05, 08. Decision: MVP targets iOS 26 minimum, per needed
+Vision/SwiftUI/PhotoKit APIs and store distribution evidence in original docs.
+Rationale: avoids API gaps from targeting lower; values/APIs owned in 07.
+Risk: lost users on older OS. Reconsider when: device-matrix data says otherwise.
 
-**DEC-TBD-002 — Storage tech (Deferred).**
-Owner: 05, 06. Options: Codable files / SwiftData / Core Data / tiny DB.
-Rule: simplest that fits volume + lifecycle (see OPEN-N data questions). Risk: over-build. Trigger: persistence need.
+**DEC-TBD-002 — File-based Codable persistence, no database for MVP (Accepted).**
+Owner: 05, 06. Decision: simplest persistence that fits MVP volume +
+lifecycle; no SwiftData/Core Data/tiny DB for MVP. Rationale: evidence-backed
+from original docs — over-build risk outweighs benefit at MVP scale; shapes
+owned in 06. Risk: migration later if volume forces it. Reconsider when:
+persistence need outgrows files.
 
 **DEC-TBD-003 — Analytics provider (Deferred).**
 Owner: 11. Options: none → Apple metrics → light custom → third-party. Must satisfy 09 + DEC-018.
@@ -224,9 +242,12 @@ Risk: privacy breach. Trigger: first metrics need.
 Owner: 01. Options: paid / unlock / sub / freemium / free-cap. Must not warp MVP arch.
 Risk: paywall rework. Trigger: pre-launch.
 
-**DEC-TBD-005 — Export behavior (Deferred).**
-Owner: 02, 07. Options: Photos album / internal collection / file export / several.
-Driven by MVP UX (see OPEN-UX05). Risk: permission surprise. Trigger: save-flow build.
+**DEC-TBD-005 — Export to new Photos album, non-destructive, collision-safe (Accepted).**
+Owner: 02, 07. Decision: save the approved result as a new Photos album;
+never modify/delete originals; handle name collisions safely. Rationale:
+evidence-backed from original docs — matches MVP save flow and DEC-005/026
+trust posture; mechanics owned in 02, 07. Risk: permission surprise.
+Reconsider when: save-flow build proves otherwise.
 
 **DEC-TBD-006 — Advanced ML (Deferred).**
 Owner: 03, 04, 07. Options: custom quality/aesthetic model, embeddings, expression analysis.
@@ -257,17 +278,29 @@ Risk: cluttered review. Trigger: review prototype (see OPEN-UX04).
 **OPEN-P05 — Mandatory mark (Deferred).** Pin photo pre-curation? Owner 02, 03.
 Risk: hard constraints distort diversity. Trigger: review testing. Rule → 03.
 
-**OPEN-P06 — Screenshots (Deferred).** Exclude vs deprioritize? Owner 03.
-Risk: junk keepers or lost context. Trigger: QA on mixed libraries. Rule → 03.
+**OPEN-P06 — Screenshots deprioritized, not forced (Accepted).** Owner 03.
+Decision: deprioritize screenshots for the curated album; never force-exclude
+uncertain cases. Rationale: evidence-backed from original docs — avoids junk
+keepers without losing context. Rule owned in 03 §4/§11. Risk: junk keepers
+or lost context. Reconsider when: QA on mixed libraries says otherwise.
 
-**OPEN-P07 — Live Photos (Deferred).** Still vs loop vs badge? Owner 02, 07.
-Risk: API/perf cost. Trigger: asset-type pass in 07.
+**OPEN-P07 — Live Photo stills eligible (Accepted).** Owner 03 (mech 02, 07).
+Decision: Live Photo stills are eligible inputs like standard photos.
+Rationale: evidence-backed from original docs; representation/badge behavior
+owned in 02, 07. Risk: API/perf cost. Reconsider when: asset-type pass says
+otherwise.
 
-**OPEN-P08 — Edited versions (Deferred).** Prefer edits? Owner 03.
-Risk: double-keeping twins. Trigger: QA on edited sets. Rule → 03.
+**OPEN-P08 — Prefer edited twin, soft bonus only (Accepted).** Owner 03.
+Decision: intentional edit earns a small preference over the unedited twin;
+never keep both. Rationale: evidence-backed from original docs; rule owned in
+03 §6/§14. Risk: double-keeping twins. Reconsider when: QA on edited sets
+says otherwise.
 
-**OPEN-P09 — Favorites (Deferred).** Boost Apple-Photos favorites? Owner 03.
-Risk: bias vs delight. Trigger: QA. Weight → 03 (see OPEN-N06).
+**OPEN-P09 — Favorites are a soft bonus only (Accepted).** Owner 03.
+Decision: Apple Photos favorite boosts rank slightly; never forces selection
+of a duplicate or unusable frame. Rationale: evidence-backed from original
+docs; weight owned in 03 §14/§17. Risk: bias vs delight. Reconsider when: QA
+says otherwise.
 
 **OPEN-P10 — Feedback persistence (Deferred).** Per-session vs cross-session? Owner 06, 03.
 Risk: storage/privacy weight. Trigger: repeat-use data. Shape → 06.
@@ -309,8 +342,13 @@ Risk: split events or merged days. Trigger: temporal QA.
 **OPEN-N04 — Moment-size bounds (Deferred).** Ordinary 1 / rich 2–3 / high-count caps. Owner 03 (04, 10).
 Risk: heavy-day dominance. Trigger: balance QA.
 
-**OPEN-N05 — Album clamps (Deferred).** Min 30–40, max 120–150, ratio ~10%. Owner 03 (04, 10).
-Risk: tiny inputs padded, huge inputs starved. Trigger: small/large library QA.
+**OPEN-N05 — Album clamps as quality-adaptive default starts (Accepted).** Owner 03 (04, 10).
+Decision: ratio ~10% with min 30–40 / max 120–150 are default starts only;
+album size adapts to usable-quality moment count per 03 §14 — never pad with
+poor photos, never cut good unique photos. Values owned in 03; this log holds
+state only.
+Risk: tiny inputs padded, huge inputs starved. Reconsider when: small/large
+library QA says otherwise.
 
 **OPEN-N06 — Weights/bonuses (Deferred).** Diversity/coverage/repetition/favorite/edit. Owner 03 (04, 10).
 Symbolic here; numbers only in config. Risk: quota-like bias. Trigger: diversity QA.
