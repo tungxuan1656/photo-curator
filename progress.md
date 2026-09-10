@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-10 — feat-002A/B (G1 lanes A+B)
+
+**State**: done
+**Done**: Merged lane A (PR #5: FileStore + CheckpointStore + AnalysisCache) and lane B (PR #4: Onboarding + Permission + Home skeleton) to int/G1, plus leader chore cd35852 (project settings: display name, category, portrait/iPhone-only); opened + merged PR #6 int/G1 → main (merge commit).
+**Evidence**: ./init.sh PASS on int/G1 HEAD (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test]); import/boundary greps clean; overall review NOT READY accepted as documented deviation (INT pending, dead CTA + picker TODOs + manifest gaps deferred, tracked in PR #6 comment).
+**Blockers**: none
+**Next**: feat-002INT (leader) — wire real DI + full/limited/denied flow with device smoke.
+
 ## 2026-09-10 — feat-001 (G0 Contract + shell)
 
 **State**: done

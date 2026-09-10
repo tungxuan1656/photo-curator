@@ -331,9 +331,9 @@ git commit -m "feat-002A: record foundation store verification evidence"
 
 ## Handoff
 
-- State: active
-- Evidence: ./init.sh PASS (BUILD SUCCEEDED, SKIP [test]) + skeleton proof green, temp file removed
-- Blockers: none
-- Next: open PR lane-A/feat-002A into int/G1
+- State: done
+- Evidence: PR #5 squash-merged to int/G1 (a8ecf10); PR #6 int/G1 → main merged; ./init.sh PASS on int/G1 HEAD (format + strict lint + BUILD SUCCEEDED, SKIP [test]); skeleton proof green, temp file removed
+- Blockers: none (real DI wiring belongs to feat-002INT, still todo)
+- Next: feat-002INT (leader) wires checkpointStore/cache into AppContainer.live()
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->

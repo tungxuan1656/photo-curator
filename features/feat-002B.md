@@ -591,9 +591,10 @@ git commit -m "feat-002B: add permission key, privacy manifest, evidence"
 
 ## Handoff
 
-- State: active
-- Evidence: `./init.sh PASS (format + strict lint + build, SKIP [test])` after PR-review follow-up; all 5 blocking findings fixed (disabled Curate CTA + TODO feat-003B, picker TODOs feat-002INT, ContentView.swift deleted, double-tap guard, reserved-route comments); PrivacyInfo.xcprivacy verified bundled in .app; oracle re-review MERGE-READY carries over (no new logic, only guards/TODOs/deletion).
-- Blockers: none
-- Next: Re-request review on PR #4.
+- State: done
+- Evidence: PR #4 squash-merged to int/G1 (cfee7db); PR #6 int/G1 → main merged; ./init.sh PASS on int/G1 HEAD (format + strict lint + BUILD SUCCEEDED, SKIP [test]); PrivacyInfo.xcprivacy bundled in .app
+- Blockers: none (real permission flow belongs to feat-002INT, still todo)
+- Known deviations accepted by user at merge: Curate Photos renders as disabled CTA with TODO(feat-003B) (acceptance said no dead button); picker wiring TODO(feat-002INT); privacy manifest lacks NSPrivacyAccessedAPITypes until ship; double-tap request guard deferred to INT — all tracked in PR #6 review comment
+- Next: feat-002INT (leader) wires real PhotoLibraryService + full/limited/denied flow
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
