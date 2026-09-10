@@ -44,10 +44,10 @@
       "depends_on": [
         "feat-002"
       ],
-      "gate": "1k local assets load; missing asset means unavailable",
+      "gate": "real services wired; ./init.sh passes; launch smoke no crash (1k-load exercise in feat-004)",
       "id": "feat-003",
       "owns": [
-        "Services/Photos/PhotoLibraryService.swift",
+        "Services/Photos/PhotoLibraryPermissionService.swift",
         "Services/Photos/ImageLoaderService.swift"
       ],
       "status": "todo",
@@ -57,7 +57,7 @@
       "depends_on": [
         "feat-003"
       ],
-      "gate": "S05/S06 run on 50 real assets; real source reaches real summary",
+      "gate": "S05/S06 run on 50 real assets; real source reaches real summary; 1k local assets load with missing meaning unavailable",
       "id": "feat-004",
       "owns": [
         "Features/SourceSelection/",
