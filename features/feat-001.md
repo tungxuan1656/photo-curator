@@ -795,8 +795,8 @@ git commit -m "feat-001: record G0 verification evidence"
 ## Handoff
 
 - State: active
-- Evidence: —
+- Evidence: ./init.sh PASS (BUILD SUCCEEDED, SKIP [test]) + A/B temp import check green, temp files removed
 - Blockers: none
-- Next: Execute Plan Tasks 1–10, then open PR `joint/feat-001` → `int/G0`.
+- Next: open PR joint/feat-001 → int/G0.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
