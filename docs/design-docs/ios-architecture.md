@@ -206,8 +206,8 @@ struct SelectionEngine: Sendable {
     let finalAlbumBuilder: FinalAlbumBuilder
 
     func select(
-        assets: [PhotoAssetRecord],
-        analyses: [PhotoAssetID: PhotoAnalysis],
+        assets: [PhotoAsset],
+        analyses: [AssetID: PhotoAnalysis],
         configuration: SelectionConfiguration,
         feedback: SelectionFeedback?
     ) throws -> SelectionResult
@@ -302,7 +302,7 @@ Concurrency shape (bounded workers; exact limits in [08](../ship-gates/performan
 ```swift
 // Conceptual: bounded worker pool over a task group.
 var iterator = assets.makeIterator()
-return try await withThrowingTaskGroup(of: (PhotoAssetID, PhotoAnalysis).self) { group in
+return try await withThrowingTaskGroup(of: (AssetID, PhotoAnalysis).self) { group in
     for _ in 0..<maxConcurrent {
         if let asset = iterator.next() { group.addTask { try await analyzeOne(asset) } }
     }
