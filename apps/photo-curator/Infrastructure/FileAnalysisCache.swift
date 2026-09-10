@@ -36,7 +36,14 @@ actor FileAnalysisCache: AnalysisCache {
     }
 
     func store(_ analysis: PhotoAnalysis) async {
+        guard analysis.analysisVersion == analysisVersion else {
+            return
+        }
         memory[analysis.assetID] = analysis
-        try? await files.save(analysis, to: path(for: analysis.assetID))
+        do {
+            try await files.save(analysis, to: path(for: analysis.assetID))
+        } catch {
+            memory[analysis.assetID] = nil
+        }
     }
 }
