@@ -11,8 +11,8 @@ struct AccessGuidanceSheet: View {
             switch appModel.authorization {
             case .limited:
                 Text("Photos Curator can only use the photos currently shared with the app.")
-                // TODO(feat-002INT): call presentLimitedLibraryPicker instead of dismissing.
                 Button("Choose More Photos") {
+                    appModel.presentPicker()
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
@@ -29,7 +29,7 @@ struct AccessGuidanceSheet: View {
                 Button("Done") {
                     dismiss()
                 }
-            default:
+            case .notDetermined, .authorized:
                 Text("Photo analysis is performed on this device.")
                 Button("Done") {
                     dismiss()
