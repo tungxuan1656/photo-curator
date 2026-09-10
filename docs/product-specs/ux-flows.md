@@ -520,8 +520,8 @@ date range, or "Curated Photos"; no AI trip naming), **Save Album**, and
 **Back to Review**. Note near the action: "Your original photos will not
 be changed." Empty selection disables Save with **Add at least one photo
 to save this album.** Duplicate names never block: create a
-collision-safe new Photos album or explicitly ask to reuse an existing one
-(prefer the former; see `decision-log.md` DEC-TBD-005).
+collision-safe new Photos album (see `decision-log.md` DEC-TBD-005).
+Reuse of an existing album is out of scope unless a new DEC approves it.
 
 ### 9.2 S15 — Saving
 

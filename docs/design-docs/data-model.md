@@ -383,7 +383,18 @@ struct StoredConfigReference: Codable, Sendable {
 }
 ```
 
-Notes: `SessionStatus` mirrors pipeline phases at coarse grain; stage mechanics and retry live in [04](selection-engine.md) and [08](../ship-gates/performance.md). Stored config is a version plus an opaque snapshot ref; the engine struct lives in [04 §12](selection-engine.md). Tunable defaults and sizing math: [03 §14, §17](../product-specs/selection-rules.md). Progress text is non-localized; user wording: [02](../product-specs/ux-flows.md). Progress fraction (`processedCount / totalCount`) is derived.
+Notes: `SessionStatus` mirrors pipeline phases at coarse grain; stage mechanics and retry live in [04](selection-engine.md) and [08](../ship-gates/performance.md). `ProcessingStage` is the single canonical stored stage enum; the coordinator writes it and the UI derives progress from it. Engine (10 stages), orchestration, and user phases are layer-specific labels that map onto it as below. Stored config is a version plus an opaque snapshot ref; the engine struct lives in [04 §12](selection-engine.md). Tunable defaults and sizing math: [03 §14, §17](../product-specs/selection-rules.md). Progress text is non-localized; user wording: [02](../product-specs/ux-flows.md). Progress fraction (`processedCount / totalCount`) is derived.
+
+Stage mapping (canonical — write `ProcessingStage`, display layer labels):
+
+| Stored `ProcessingStage` | Engine stages ([04 §2](selection-engine.md)) | Orchestration ([05 §12](ios-architecture.md)) | User phases ([02 §7](../product-specs/ux-flows.md)) |
+|---|---|---|---|
+| `loading` | Ingest, Eligible | preparing | Preparing photos |
+| `analysis` | Analyze | analyzing | Analyzing photos |
+| `clustering` | Dups | selecting | Grouping similar shots |
+| `momentDetection` | Moments | selecting | Grouping similar shots |
+| `ranking` | Rank, Shortlist | selecting | Choosing the best photos |
+| `finalSelection` | Diversity, Verify, Order | selecting → readyForReview | Choosing the best photos → Finishing your album |
 
 ---
 

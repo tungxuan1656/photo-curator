@@ -213,7 +213,7 @@ This table is the single source for how long data lives. 08 links here for resum
 
 Rules:
 
-- Select, Maybe, and Skip are picks. They are not delete orders.
+- Selected and Removed are picks (vocabulary in `ux-flows.md` §3). They are not delete orders.
 - The app holds no delete-asset path in normal runs. AI suggests. The user acts.
 - Reset Analysis clears cache, moments, dup groups, and history. It keeps originals.
 - Session delete clears picks and temp files. It keeps originals.
@@ -280,7 +280,7 @@ Pass when all hold. Full test steps live in 10. Event names live in 11.
 - AC-06: No pixel or thumb bytes reach Photos Curator servers.
 - AC-07: Face notes stay on device.
 - AC-08: No face gets a real-world name or link.
-- AC-09: Skip does not delete library assets.
+- AC-09: Removing from the album does not delete library assets.
 - AC-10: Reset clears app cache and keeps originals.
 - AC-11: Metrics hold no pixels, thumbs, faces, GPS, names, or asset IDs.
 - AC-12: Core pick runs offline once local bytes are ready.

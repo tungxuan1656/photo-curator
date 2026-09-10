@@ -13,7 +13,7 @@ Related docs:
 - `manual-qa.md` — QA steps
 - `analytics.md` — event names
 
-Execution work does not live here. Tracked work lives in `features/feature_index.json` and `docs/plans/feat-<id>.md` per `AGENTS.md`.
+Execution work does not live here. Tracked work lives in `feature_index.json` and `docs/plans/feat-<id>.md` per `AGENTS.md`.
 
 ---
 
@@ -93,7 +93,7 @@ If none is yes, keep it deferred.
 
 ## 5. Deferred and non-goals
 
-Not in MVP. Detailed execution, if ever approved, moves to `features/feature_index.json` + `docs/plans/feat-<id>.md`.
+Not in MVP. Detailed execution, if ever approved, moves to `feature_index.json` + `docs/plans/feat-<id>.md`.
 
 | Item | Status |
 |---|---|
@@ -114,6 +114,6 @@ Do not build deferred items to "save time later." Timing matters more than the i
 
 This doc stays thin and stable. It never holds task lists, file changes, or dates.
 
-- Current and planned work: `features/feature_index.json`
+- Current and planned work: `feature_index.json`
 - Bounded work (1–3 files, <200 lines): plan inside `features/feat-<id>.md`
 - Large work (4+ files, migration, phases, rollback): `docs/plans/feat-<id>.md`, linked from the feature file

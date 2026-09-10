@@ -155,6 +155,8 @@ struct AppContainer: Sendable {
 }
 ```
 
+`selectionEngine` and `checkpointStore` stay concrete by intent: the engine is pure deterministic value logic with no Apple-framework boundary to vary or isolate, and the checkpoint store is the single file-based implementation per DEC-TBD-002. Adding protocols for them would be speculative abstraction (see §3, DEC-015).
+
 Dependency direction:
 
 ```text
@@ -179,14 +181,14 @@ Each service owns one seam. Call shapes and API facts live in [07](apple-framewo
 | `PhotoImageLoader` | Sized image delivery (thumbnail, analysis image), request choice, cancellation | Ranking, duplicates, moments |
 | `ImageAnalysisService` | Image → `PhotoAnalysis` (feature print, faces, technical signals) | Albums, SwiftUI, final picks |
 | `AnalysisCache` | Actor-isolated store of recomputable derived analysis, versioned and bounded | Original photo bytes |
-| `AlbumExportService` | Create or reuse album, add selected assets, map write errors | Image copies, scoring |
+| `AlbumExportService` | Create a new collision-safe album, add selected assets, map write errors (reuse only if a future DEC approves; see DEC-TBD-005) | Image copies, scoring |
 | `AnalyticsService` | If analytics is enabled, `track(_:)` for events defined in [11](../ship-gates/analytics.md) | Image pixels, face data |
 
 Contract notes:
 
 - Consumers ask for an *analysis representation*, not the original. The loader picks request parameters. Full-resolution use needs a stated feature reason; see [04](selection-engine.md) and [07](apple-frameworks.md).
 - The cache holds derived values only, in the app cache directory, safe to delete. Key shape and fingerprint rule: [06](data-model.md). Disk budget: [08](../ship-gates/performance.md).
-- Export writes existing assets into an album through PhotoKit changes. Naming and reuse rules follow product docs; API mechanics: [07](apple-frameworks.md).
+- Export writes existing assets into a new collision-safe album through PhotoKit changes. Naming follows product docs (new album per DEC-TBD-005); API mechanics: [07](apple-frameworks.md).
 - If analytics is enabled, it receives only what [09](../ship-gates/privacy.md) permits; event schemas: [11](../ship-gates/analytics.md).
 
 ---
@@ -374,7 +376,7 @@ struct ProcessingProgress: Sendable, Equatable {
 ```
 
 - Overall fraction never moves backward. Updates are throttled (rate: [08](../ship-gates/performance.md)) so the main actor is not flooded. Cancellation is separate from progress.
-- Stage names here are orchestration labels. Selection-stage semantics: [04](selection-engine.md). User-facing labels and copy: [02](../product-specs/ux-flows.md).
+- `ProcessingStage` is defined once in [06 §10](data-model.md) and reused here; do not redefine it. Stage names here are orchestration labels. Selection-stage semantics: [04](selection-engine.md). Stored-to-engine-to-UI mapping: [06 §10](data-model.md). User-facing labels and copy: [02](../product-specs/ux-flows.md).
 - Typed internal errors per layer map to actionable UI categories (permission, unavailable, iCloud, interrupted, too few eligible, export, storage, unexpected). Never show raw errors. Copy: [02](../product-specs/ux-flows.md).
 
 ---

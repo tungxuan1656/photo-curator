@@ -254,22 +254,22 @@ Example: primary `bestGroupPhoto` with secondaries `betterFaceQuality`, `nearDup
 
 ## 17. Tunable parameters (single table)
 
-All numbers below are starting defaults. Centralize them in selection configuration; scatter no threshold in code. Score weights stay symbolic here (no invented constants); engineering sets values per [04](../design-docs/selection-engine.md) and validates per [10](../ship-gates/manual-qa.md).
+All numbers below are starting defaults. Centralize them in selection configuration; scatter no threshold in code. Code key names are canonical in [04 §12](../design-docs/selection-engine.md); this table uses the same names. Score weights stay symbolic here (no invented constants); engineering sets values per [04](../design-docs/selection-engine.md) and validates per [10](../ship-gates/manual-qa.md).
 
 | Parameter | Default start |
 |---|---|
-| `targetCountRatio` | ~0.10 of eligible inputs (default start; adapts per §14) |
-| `targetCountMin` / `targetCountMax` | 30–40 / 120–150 (default starts; adapts per §14) |
+| `targetSelectionRatio` | ~0.10 of eligible inputs (default start; adapts per §14) |
+| `minimumFinalCount` / `maximumFinalCount` | 30–40 / 120–150 (default starts; adapts per §14) |
 | `shortlistMultiplier` | ~2× final |
 | `shortlistMultiplierRange` | 1.5×–2.5× of final target (default ~2×) |
 | `exactDuplicateRepresentatives` | 1 |
 | `nearDuplicateRepresentatives` / exceptional max | 1 / 2 |
 | `ordinaryMomentRepresentatives` / rich max | 1 / 2–3 |
 | `momentStrongWindow_s` / extended window | ~45 s / ~180 s with similarity |
-| `minimumQualityThreshold` (floor: Acceptable) | configured cutoff; below rejects |
-| `duplicateSimilarityThreshold`, `nearDuplicateSimilarityThreshold` | configured cutoffs |
-| `diversityWeight`, `coverageWeight`, `repetitionPenalty` | symbolic weights |
-| `favoriteBonus`, `editedBonus` | small soft bonuses |
+| `lowQualityThreshold` (floor: Acceptable; policy name `minimumQualityThreshold`) | configured cutoff; below rejects |
+| `duplicateSimilarityThreshold`, `nearDuplicateSimilarityThreshold` | configured cutoffs (mechanics in [04 §6, §12](../design-docs/selection-engine.md)) |
+| `diversityWeight`, `coverageWeight`, `redundancyPenaltyWeight` | symbolic weights (greedy-fill repetition cost in [04 §10, §12](../design-docs/selection-engine.md)) |
+| `favoriteBonus`, `editedBonus` | small soft bonuses (wired in [04 §12](../design-docs/selection-engine.md)) |
 | `userOverride` | hard override |
 
 Keep the parameter count small; add new knobs only when manual evaluation proves need.

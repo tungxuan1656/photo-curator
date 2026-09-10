@@ -68,7 +68,7 @@ Each stage shrinks the working set for the next stage. Cheap work runs first; im
 | 9 | Verify | Final picks | Checked picks | Small subset re-check at most |
 | 10 | Order | Checked picks | Chrono-ordered result | Rank decides inclusion; date decides order |
 
-Engine input is a session (asset IDs + config); engine output is a result (picks + shortlist + alternatives + decisions). Stored field shapes: [06](data-model.md). What each score means and which photo should win: [03](../product-specs/selection-rules.md).
+Engine input is a session (asset IDs + config); engine output is a result (picks + shortlist + alternatives + decisions). Stored field shapes: [06](data-model.md). What each score means and which photo should win: [03](../product-specs/selection-rules.md). Stored `ProcessingStage` mapping: each engine stage maps to one stored `ProcessingStage` per [06 §10](data-model.md); orchestration labels per [05](ios-architecture.md); user phases per [02 §7](../product-specs/ux-flows.md).
 
 Typical reduction for ~1,000 inputs (illustration, not a quota):
 
@@ -220,20 +220,22 @@ One struct holds every tuning knob. No threshold is scattered through stage code
 |---|---|
 | `analysisImageMaxDimension` | Downscale long edge (default 512) |
 | `duplicateTimeWindow` | Pairwise candidate window (default ~90 s) |
-| `duplicateSimilarityThreshold` | Pair distance cutoff for near-duplicate |
+| `duplicateSimilarityThreshold` / `nearDuplicateSimilarityThreshold` | Pair distance cutoffs for duplicate / near-duplicate (policy in 03 §17) |
 | `momentSoftGap` / `momentHardGap` | Moment cut gaps (defaults ~3 min / ~15 min) |
 | `maxPhotosPerMoment` | Cap on keepers per moment |
-| `targetSelectionRatio` / `minimumFinalCount` / `maximumFinalCount` | Final-size target inputs (policy in 03) |
+| `targetSelectionRatio` / `minimumFinalCount` / `maximumFinalCount` | Final-size target inputs (policy in 03 §14, §17) |
 | `shortlistMultiplier` | Shortlist pool as multiple of final target (~2×) |
-| `technicalQualityWeight`, `humanImportanceWeight`, `representativenessWeight`, `uniquenessWeight` | Score mix (values in 03) |
-| `redundancyPenaltyWeight` | Greedy-fill repetition cost |
-| `lowQualityThreshold` / `hardRejectThreshold` | Penalty floor vs reject floor (tiers in 03) |
+| `technicalQualityWeight`, `humanImportanceWeight`, `representativenessWeight`, `uniquenessWeight` | Score mix (values in 03 §17) |
+| `diversityWeight`, `coverageWeight`, `redundancyPenaltyWeight` | Diversity / coverage / repetition weights (values in 03 §17) |
+| `favoriteBonus`, `editedBonus` | Small soft bonuses (policy in 03 §14, §17) |
+| `lowQualityThreshold` / `hardRejectThreshold` | Penalty floor vs reject floor (tiers in 03 §9, §17) |
 
 ```swift
 struct SelectionConfiguration {
     var analysisImageMaxDimension: Int
     var duplicateTimeWindow: TimeInterval
     var duplicateSimilarityThreshold: Double
+    var nearDuplicateSimilarityThreshold: Double
     var momentSoftGap: TimeInterval
     var momentHardGap: TimeInterval
     var maxPhotosPerMoment: Int
@@ -245,7 +247,11 @@ struct SelectionConfiguration {
     var humanImportanceWeight: Double
     var representativenessWeight: Double
     var uniquenessWeight: Double
+    var diversityWeight: Double
+    var coverageWeight: Double
     var redundancyPenaltyWeight: Double
+    var favoriteBonus: Double
+    var editedBonus: Double
     var lowQualityThreshold: Double
     var hardRejectThreshold: Double
 }

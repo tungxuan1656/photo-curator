@@ -46,7 +46,7 @@ A later stage starts only after the previous stage is `done`. Within one stage, 
 
 ### G3 — Analysis
 
-* **feat-004A (A):** `VisionAnalysisService.swift`, `PhotoAnalysis.swift`, batch pipeline (batch size 32, Vision concurrency 2–4, checkpoint every ~25 assets or 10s).
+* **feat-004A (A):** `VisionAnalysisService.swift`, `PhotoAnalysis.swift`, batch pipeline (batch, concurrency, and checkpoint per `performance.md` §1).
 * **feat-004B (B):** `Features/Processing/*` (S07/S08 on fake progress), settings skeleton.
 * **feat-004INT:** fake progress becomes the real coordinator. Gate: every asset has versioned `PhotoAnalysis`.
 
@@ -54,7 +54,7 @@ A later stage starts only after the previous stage is `done`. Within one stage, 
 
 * **feat-005A (A):** `DuplicateResolver.swift`, `MomentBuilder.swift`.
 * **feat-005B (B):** `ReviewOverview`, `CuratedGrid`, `PhotoDetail` on a mock `SelectionResult` (S09/S10/S11).
-* **feat-006A (A):** `QualityScorer`, `DiversitySelector`, `FinalAlbumBuilder` (tiers, greedy fill, sizing ~10% clamped to 30–40/120–150, reason codes, verify plus chronological order).
+* **feat-006A (A):** `QualityScorer`, `DiversitySelector`, `FinalAlbumBuilder` (tiers, greedy fill, sizing per `selection-rules.md` §14, reason codes, verify plus chronological order).
 * **feat-006B (B):** `SimilarGroups`, `RemovedPhotos`, `FinalReview` mocks (S12/S13/S14).
 * Lane B needs only the G0 contract, not the finished lane A. Gate: sensible engine output on dataset B/Golden; review flow operable on mocks.
 
@@ -65,7 +65,7 @@ A later stage starts only after the previous stage is `done`. Within one stage, 
 
 ### G6 — Ship gates
 
-* **feat-008A (A):** interruption and resume, memory pressure drops concurrency to 1, RSS ≤350/500MB, 1k assets ≤5min, OSLog plus signposts.
+* **feat-008A (A):** interruption and resume, memory / concurrency / completion budgets per `performance.md` §1, OSLog plus signposts.
 * **feat-008B (B):** log redaction, retention plus Reset Analysis, calm copy, accessibility, S18 plus S20, privacy AC-01..12.
 * **feat-009 (joint):** datasets A–H plus Golden, release blockers per `manual-qa.md` §7.3, 13 analytics events only when a provider is selected (DEC-TBD-003).
 

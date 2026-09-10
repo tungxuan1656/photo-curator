@@ -18,6 +18,8 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 ## 1. Status table (first — full index)
 
+Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
+
 ### 1a. Accepted (35 kept)
 
 | ID | Decision | Owner doc |

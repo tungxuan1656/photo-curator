@@ -22,6 +22,26 @@ Start at `AGENTS.md`. Then read one owner doc below. Then code.
 
 Rule: read the owner doc only. Links inside point to other docs. Do not copy text between docs.
 
+## Numeric refs (history)
+
+Older docs use bare numbers 01–13. Use filenames for new refs; the table below is a reading aid only.
+
+| N | File |
+|---|---|
+| 01 | `product-specs/product.md` |
+| 02 | `product-specs/ux-flows.md` |
+| 03 | `product-specs/selection-rules.md` |
+| 04 | `design-docs/selection-engine.md` |
+| 05 | `design-docs/ios-architecture.md` |
+| 06 | `design-docs/data-model.md` |
+| 07 | `design-docs/apple-frameworks.md` |
+| 08 | `ship-gates/performance.md` |
+| 09 | `ship-gates/privacy.md` |
+| 10 | `ship-gates/manual-qa.md` |
+| 11 | `ship-gates/analytics.md` |
+| 12 | `exec-plans/roadmap.md` |
+| 13 | `design-docs/decision-log.md` |
+
 ## Ownership (doc → owns → read when)
 
 | Doc | Owns | Read when |
