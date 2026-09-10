@@ -794,9 +794,9 @@ git commit -m "feat-001: record G0 verification evidence"
 
 ## Handoff
 
-- State: active
-- Evidence: ./init.sh PASS (BUILD SUCCEEDED, SKIP [test]) + A/B temp import check green, temp files removed
+- State: done
+- Evidence: ./init.sh PASS (BUILD SUCCEEDED, SKIP [test]) + A/B temp import check green, temp files removed; PR #2 (joint/feat-001 → int/G0) merged as f9f43c0; ./init.sh re-verified green on int/G0 post-merge
 - Blockers: none
-- Next: open PR joint/feat-001 → int/G0.
+- Next: open PR int/G0 → main; then kick off G1 (feat-002A + feat-002B in parallel).
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->

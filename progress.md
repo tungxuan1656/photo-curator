@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-10 — feat-001 (G0 Contract + shell)
+
+**State**: done
+**Done**: Froze G0 contracts (IDs, PhotoAsset/PhotoAnalysis/SelectionResult, 6 service protocols + Noops, concrete SelectionEngine stub, AppConfiguration.default, AppContainer.live) + PhotosCurator→PhotoCurator rename + DEC-028; PR #2 merged to int/G0.
+**Evidence**: ./init.sh PASS on int/G0 post-merge (BUILD SUCCEEDED, SKIP [test]); per-task oracle reviews clean; final review MERGE-READY.
+**Blockers**: none
+**Next**: Open PR int/G0 → main, then start G1 feat-002A + feat-002B.
+
 ## 2026-09-10 — docs-standardization (no feature, user-directed)
 
 **State**: done
