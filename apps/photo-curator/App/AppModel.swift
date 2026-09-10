@@ -20,7 +20,9 @@ final class AppModel {
     }
 
     func showPermissionEducation() {
-        path.append(.permissionEducation)
+        if !path.contains(.permissionEducation) {
+            path.append(.permissionEducation)
+        }
     }
 
     func skipPermission() {

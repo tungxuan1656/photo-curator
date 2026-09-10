@@ -82,9 +82,14 @@ S02/S03/S04/S19 skeleton runs on Noop mocks: first-run Welcome → Permission ed
 
 ```swift
 /// Typed navigation routes for the G1 skeleton. Full route set grows in later stages.
+/// Only `.permissionEducation` is pushed in G1; `.welcome` and `.home` are reserved
+/// for later stages (do not treat them as dead code).
 enum AppRoute: Hashable, Sendable {
+    /// Reserved: first-run entry, shown as root (never pushed) in G1.
     case welcome
+    /// Pushed from Welcome/Get Started and Home/Continue in G1.
     case permissionEducation
+    /// Reserved: Home is the root (never pushed) in G1; later stages push it.
     case home
 }
 ```
@@ -135,7 +140,9 @@ final class AppModel {
     }
 
     func showPermissionEducation() {
-        path.append(.permissionEducation)
+        if !path.contains(.permissionEducation) {
+            path.append(.permissionEducation)
+        }
     }
 
     func skipPermission() {
@@ -388,9 +395,13 @@ struct HomeView: View {
                 + "Photos Curator will find the strongest set for you to review.")
             switch appModel.authorization {
             case .authorized, .limited:
+                // TODO(feat-003B): navigate to SourceSelection (S05); disabled until then.
                 Button("Curate Photos") {}
                     .buttonStyle(.borderedProminent)
+                    .disabled(true)
                 if appModel.authorization == .limited {
+                    // TODO(feat-002INT): present the limited-library picker here;
+                    // G1 skeleton only opens the guidance sheet.
                     Button("Limited Photos Access — Choose More Photos") {
                         showsAccessGuidance = true
                     }
@@ -477,6 +488,7 @@ struct AccessGuidanceSheet: View {
             switch appModel.authorization {
             case .limited:
                 Text("Photos Curator can only use the photos currently shared with the app.")
+                // TODO(feat-002INT): call presentLimitedLibraryPicker instead of dismissing.
                 Button("Choose More Photos") {
                     dismiss()
                 }
@@ -580,8 +592,8 @@ git commit -m "feat-002B: add permission key, privacy manifest, evidence"
 ## Handoff
 
 - State: active
-- Evidence: `./init.sh PASS (format + strict lint + build, SKIP [test])` on lane-B/feat-002B; joint oracle review CHANGES-REQUESTED addressed in one fix wave (scenePhase recheck on return from Settings, restricted copy split, notDetermined access-required card, UserDefaults first-run flag, path=[] root switch); `.swiftformat --indentcase false` per user decision (leader to confirm at INT).
+- Evidence: `./init.sh PASS (format + strict lint + build, SKIP [test])` after PR-review follow-up; all 5 blocking findings fixed (disabled Curate CTA + TODO feat-003B, picker TODOs feat-002INT, ContentView.swift deleted, double-tap guard, reserved-route comments); PrivacyInfo.xcprivacy verified bundled in .app; oracle re-review MERGE-READY carries over (no new logic, only guards/TODOs/deletion).
 - Blockers: none
-- Next: Scoped re-review → commit → open PR `[feat-002B][lane-B]` into `int/G1`.
+- Next: Re-request review on PR #4.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
