@@ -10,9 +10,9 @@ DIAWI_STATUS_ENDPOINT = 'https://upload.diawi.com/status'
 # Export locally before uploading: export DIAWI_TOKEN=...
 
 PROJECT_ROOT = File.expand_path('..', __dir__)
-XCODEPROJ_PATH = File.join(PROJECT_ROOT, 'apps', 'novels.xcodeproj')
-SCHEME_NAME = 'novels'
-TARGET_NAME = 'novels'
+XCODEPROJ_PATH = File.join(PROJECT_ROOT, 'apps', 'photo-curator.xcodeproj')
+SCHEME_NAME = 'photo-curator'
+TARGET_NAME = 'photo-curator'
 BUILD_DIR = File.join(PROJECT_ROOT, 'build', 'ios')
 DEFAULT_IPA_NAME = 'app-release.ipa'
 
@@ -39,6 +39,7 @@ def poll_diawi_status(token:, job:, interval_seconds: 2, max_retries: 120)
     )
 
     status_json = parse_diawi_response!(status_raw, 'status check')
+    UI.user_error!("Diawi status check failed: #{status_raw}") if status_json['status'].nil?
     status_code = status_json['status'].to_i
 
     if status_code == 2000
@@ -46,10 +47,6 @@ def poll_diawi_status(token:, job:, interval_seconds: 2, max_retries: 120)
       UI.message("Diawi QR: #{status_json['qrcode']}") if status_json['qrcode']
       UI.message("Diawi extra links: #{status_json['links'].join(', ')}") if status_json['links'].is_a?(Array)
       return status_json
-    end
-
-    if status_code == 4000
-      UI.user_error!("Diawi processing failed: #{status_json['message']}")
     end
 
     if status_code >= 4000
