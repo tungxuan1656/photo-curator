@@ -36,6 +36,7 @@ Package.resolved
 # Env / secrets
 *.env
 .env.*
+!.env.example
 
 # Fastlane
 fastlane/report.xml
