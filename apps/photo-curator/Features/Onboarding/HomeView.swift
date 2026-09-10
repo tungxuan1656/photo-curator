@@ -62,8 +62,5 @@ struct HomeView: View {
         .sheet(isPresented: $showsAccessGuidance) {
             AccessGuidanceSheet()
         }
-        .task {
-            await appModel.refreshAuthorization()
-        }
     }
 }
