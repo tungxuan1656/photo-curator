@@ -121,10 +121,11 @@ final class ProcessingModel {
         }
         do {
             // Live permission gate at processing start: a cached AppModel flag
-            // can go stale when access is revoked mid-flow, which would
-            // otherwise degrade silently into per-asset failures.
+            // can go stale when access is revoked (or was never determined)
+            // mid-flow, which would otherwise degrade silently into
+            // per-asset failures.
             let status = await authorization()
-            if status == .denied || status == .restricted {
+            if status == .denied || status == .restricted || status == .notDetermined {
                 state = .failed(SelectionSessionCoordinator.permissionError())
                 return
             }

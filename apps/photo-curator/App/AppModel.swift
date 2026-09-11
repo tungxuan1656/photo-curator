@@ -20,6 +20,12 @@ final class AppModel {
     var unavailableCount = 0
     var confirmedSourceIDs: [AssetID] = []
     var activeSessionID: SessionID?
+    /// Most recent session, retained across completion so late cleanup (discard)
+    /// still finds its data. Cleared only when that session's data is deleted.
+    private var lastSessionID: SessionID?
+    /// In-flight partial finalization (Continue Without Them), scoped per
+    /// session: first tap owns it, repeat taps join it.
+    private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
     let processing: ProcessingModel
     private var isRequesting = false
     private var sourceGeneration = 0
@@ -186,18 +192,16 @@ final class AppModel {
         let live = sourceByID
         return confirmedSourceIDs.compactMap { live[$0] }
     }
+}
 
-    // MARK: - feat-006 curation intents
+// MARK: - feat-006 curation intents
 
+extension AppModel {
     /// S06 Start: takes NO asset args (reads the feat-004 frozen chrono snapshot),
     /// creates the request ID here, persists a loading shell BEFORE navigating so
     /// termination before the first batch still resumes, then always appends
     /// `.processing` with the session ID attached.
     func startCuration() {
-        // Double-tap guard: a session task is already starting/running, so a
-        // second Start would mint a new session + route the old task rejects —
-        // desync. Ignore while the run task exists.
-        guard !processing.isRunning else { return }
         guard authorization == .authorized || authorization == .limited else {
             showPermissionEducation()
             return
@@ -210,7 +214,35 @@ final class AppModel {
             sourceAssetIDs: confirmedSourceIDs,
             config: .default
         )
+        let supersededID = activeSessionID
+        // Supersede rule: exactly one owned session, no multi-session support.
+        // A new start replaces the retained session: cancel the old task if
+        // running, clean its checkpoint + result (abandoned session, logged),
+        // then run the new session.
         activeSessionID = request.sessionID
+        lastSessionID = request.sessionID
+        finalizeFlight?.task.cancel()
+        finalizeFlight = nil
+        if processing.isRunning {
+            processing.cancel()
+            Task {
+                await processing.awaitTermination()
+                await deleteSessionData(supersededID, context: "Superseded curation")
+                beginRun(request: request, assets: assets)
+            }
+        } else {
+            if supersededID != nil {
+                Task { await deleteSessionData(supersededID, context: "Superseded curation") }
+            }
+            beginRun(request: request, assets: assets)
+        }
+    }
+
+    /// Shared run opener: starts the model, persists a loading shell BEFORE
+    /// navigating so termination before the first batch still resumes, then
+    /// appends `.processing` with the session ID attached — but only while
+    /// still owned (a supersede/discard in flight must not append a stale route).
+    private func beginRun(request: SelectionRequest, assets: [PhotoAsset]) {
         processing.start(request: request, sourceAssets: assets)
         let store = container.checkpointStore
         let shell = SessionCheckpoint(
@@ -224,8 +256,36 @@ final class AppModel {
         )
         Task {
             try? await store.save(shell)
+            guard request.sessionID == activeSessionID else { return }
             path.append(.processing(sessionID: request.sessionID))
         }
+    }
+
+    /// Session cleanup: BOTH deletes always attempted independently, each
+    /// failure logged. Absent files already count as success (idempotent),
+    /// so cleanup never short-circuits. Returns true when both succeeded.
+    private func deleteSessionData(_ sessionID: SessionID?, context: String) async -> Bool {
+        guard let sessionID else { return true }
+        var cleaned = true
+        do {
+            try await container.checkpointStore.delete(sessionID: sessionID)
+        } catch {
+            cleaned = false
+            logger
+                .error(
+                    "\(context, privacy: .public) checkpoint cleanup failed: \(error.localizedDescription, privacy: .public)"
+                )
+        }
+        do {
+            try await container.checkpointStore.deleteResult(sessionID: sessionID)
+        } catch {
+            cleaned = false
+            logger
+                .error(
+                    "\(context, privacy: .public) result cleanup failed: \(error.localizedDescription, privacy: .public)"
+                )
+        }
+        return cleaned
     }
 
     func cancelProcessing() {
@@ -233,6 +293,10 @@ final class AppModel {
     }
 
     func retryProcessing() {
+        // A partial finalization racing a retry must not persist under it:
+        // cancel the flight (its race gate aborts before any save/route).
+        finalizeFlight?.task.cancel()
+        finalizeFlight = nil
         processing.retry()
     }
 
@@ -270,9 +334,35 @@ final class AppModel {
     /// Partial-result finalizer for Continue Without Them: builds a persisted
     /// SelectionResult from the available cached analyses so ReviewReady has
     /// data, then routes. No-op when nothing analyzable exists (the attention
-    /// screen stays put).
+    /// screen stays put). Re-entrant safe: the first tap per session owns
+    /// finalization; repeat taps for the SAME session join it (never duplicate
+    /// saves/routes). Keep 5-action limit: no new actions.
     func continueWithoutUnavailable() async {
         guard let sessionID = activeSessionID else { return }
+        if let flight = finalizeFlight {
+            // Same session: join the owner. A different session mid-flight is
+            // impossible from the UI; ignore defensively so it can never
+            // interfere with the owned finalization.
+            if flight.session == sessionID {
+                await flight.task.value
+            }
+            return
+        }
+        let flight = Task {
+            await finalizePartial(sessionID: sessionID)
+        }
+        finalizeFlight = (session: sessionID, task: flight)
+        await flight.value
+        if finalizeFlight?.session == sessionID {
+            finalizeFlight = nil
+        }
+    }
+
+    /// Owned finalization body. Aborts with no save and no route when
+    /// cancelled by a superseding start/retry, or when the run is no longer
+    /// sitting in `.failed` (a normal retry resumed it).
+    private func finalizePartial(sessionID: SessionID) async {
+        guard !Task.isCancelled else { return }
         do {
             let checkpoint = try? await container.checkpointStore.load(sessionID: sessionID)
             let completedIDs = Set(checkpoint?.completedAssetIDs ?? [])
@@ -292,6 +382,8 @@ final class AppModel {
                 configuration: AppConfiguration.default.selection,
                 feedback: nil
             )
+            // Race gate: a retry resumed the run — never persist under it.
+            guard !Task.isCancelled, case .failed = processing.state else { return }
             let partial = SelectionResult(
                 sessionID: sessionID,
                 selectedAssetIDs: engineOut.selectedAssetIDs,
@@ -327,22 +419,22 @@ final class AppModel {
     /// Discard: cancel the run, await its termination, delete the checkpoint +
     /// persisted result, go home. Termination is awaited BEFORE deletion: the
     /// pipeline's cancel path writes a final checkpoint that would otherwise
-    /// recreate data after deletion. Cleanup failures are logged, never silent.
-    /// The §4.3 confirmation lives in the view.
+    /// recreate data after deletion. BOTH deletes are always attempted
+    /// independently (absent files count as success — idempotent), never gated
+    /// on ownership and never short-circuited: completion clears ownership but
+    /// the data still needs cleanup, so fall back to the most recent session.
+    /// Each cleanup failure is logged. The §4.3 confirmation lives in the view.
     func discardCuration() {
         processing.cancel()
-        let sessionID = activeSessionID
+        let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
         path.removeAll()
         guard let sessionID else { return }
-        let store = container.checkpointStore
         Task {
             await processing.awaitTermination()
-            do {
-                try await store.delete(sessionID: sessionID)
-                try await store.deleteResult(sessionID: sessionID)
-            } catch {
-                logger.error("Discarding curation failed: \(error.localizedDescription, privacy: .public)")
+            let cleaned = await deleteSessionData(sessionID, context: "Discarding curation")
+            if cleaned, lastSessionID == sessionID {
+                lastSessionID = nil
             }
         }
     }
