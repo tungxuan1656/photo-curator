@@ -27,5 +27,8 @@ struct AsyncPhotoThumbnail: View {
                 self.cgImage = nil
             }
         }
+        .onDisappear {
+            cgImage = nil
+        }
     }
 }

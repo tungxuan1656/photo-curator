@@ -30,13 +30,23 @@ struct SourceSelectionView: View {
             content
             Button("Continue") { appModel.continueToSummary() }
                 .buttonStyle(.borderedProminent)
-                .disabled(appModel.selectedIDs.isEmpty)
+                .disabled(!appModel.canContinueToSummary)
         }
         .navigationTitle("Choose source photos")
         .task { await appModel.loadSource() }
-        .onReceive(NotificationCenter.default.publisher(for: .photoLibraryDidChange)) { _ in
-            Task { await appModel.refreshSourceAfterLibraryChange() }
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: .photoLibraryDidChange) {
+                await appModel.refreshSourceAfterLibraryChange()
+            }
         }
+    }
+
+    private func selectionLabel(isSelected: Bool, isFavorite: Bool) -> String {
+        let state = isSelected ? "selected" : "not selected"
+        if isFavorite {
+            return "Photo, favorite, \(state)"
+        }
+        return "Photo, \(state)"
     }
 
     @ViewBuilder
@@ -65,10 +75,14 @@ struct SourceSelectionView: View {
                         ZStack(alignment: .topTrailing) {
                             AsyncPhotoThumbnail(assetID: asset.id, targetSizePixels: thumbPixels)
                                 .aspectRatio(1, contentMode: .fill)
-                            Image(systemName: appModel.selectedIDs
-                                .contains(asset.id) ? "checkmark.circle.fill" : "circle")
-                                .onTapGesture { appModel.toggleSelection(asset.id) }
-                                .accessibilityLabel(asset.isFavorite ? "Photo, favorite, selected" : "Photo, selected")
+                            let isSelected = appModel.selectedIDs.contains(asset.id)
+                            Button {
+                                appModel.toggleSelection(asset.id)
+                            } label: {
+                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(selectionLabel(isSelected: isSelected, isFavorite: asset.isFavorite))
                         }
                     }
                 }

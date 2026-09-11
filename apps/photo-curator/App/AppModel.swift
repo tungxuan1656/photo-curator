@@ -18,6 +18,7 @@ final class AppModel {
     var unavailableCount = 0
     var confirmedSourceIDs: [AssetID] = []
     private var isRequesting = false
+    private var sourceGeneration = 0
 
     private let container: AppContainer
 
@@ -77,7 +78,14 @@ final class AppModel {
         )
     }
 
+    /// Continue is valid only against fresh loaded source with a non-empty
+    /// selection; mid-refresh/error states must not freeze a stale snapshot.
+    var canContinueToSummary: Bool {
+        sourceState == .loaded && !selectedIDs.isEmpty
+    }
+
     func showSourceSelection() {
+        guard path.last != .sourceSelection else { return }
         path.append(.sourceSelection)
     }
 
@@ -90,9 +98,12 @@ final class AppModel {
     }
 
     func loadSource() async {
+        sourceGeneration += 1
+        let generation = sourceGeneration
         sourceState = .loading
         do {
             let assets = try await container.photoLibrary.fetchAssets()
+            guard generation == sourceGeneration else { return }
             allAssets = assets
             let live = Set(assets.map(\.id))
             let missing = selectedIDs.subtracting(live)
@@ -104,6 +115,7 @@ final class AppModel {
                 sourceState = .loaded
             }
         } catch {
+            guard generation == sourceGeneration else { return }
             let status = await container.photoLibrary.authorizationStatus()
             if status == .denied || status == .restricted {
                 sourceState = .denied
@@ -114,10 +126,7 @@ final class AppModel {
     }
 
     func refreshSourceAfterLibraryChange() async {
-        let priorSelected = selectedIDs
         await loadSource()
-        let live = Set(allAssets.map(\.id))
-        unavailableCount = priorSelected.subtracting(live).count
     }
 
     /// Freeze-only handoff for the feat-006 coordinator. No navigation here:
@@ -125,6 +134,9 @@ final class AppModel {
     /// (Processing transition is owned by feat-006).
     func freezeConfirmedSource() {
         let live = sourceByID
+        let missing = selectedIDs.subtracting(Set(live.keys))
+        selectedIDs.subtract(missing)
+        unavailableCount += missing.count
         let liveAssets = selectedIDs.compactMap { live[$0] }
         confirmedSourceIDs = liveAssets.sorted {
             let left = $0.creationDate ?? .distantPast
@@ -139,6 +151,7 @@ final class AppModel {
     /// S05 Continue: freeze the snapshot, then push S06.
     func continueToSummary() {
         freezeConfirmedSource()
+        guard path.last != .summary else { return }
         path.append(.summary)
     }
 
