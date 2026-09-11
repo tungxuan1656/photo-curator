@@ -10,4 +10,7 @@ enum AppRoute: Hashable, Sendable {
     case home
     case sourceSelection
     case summary
+    case processing(sessionID: SessionID)
+    case settings
+    case reviewReady(sessionID: SessionID)
 }

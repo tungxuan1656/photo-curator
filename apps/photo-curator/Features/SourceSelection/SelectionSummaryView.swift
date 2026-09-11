@@ -19,7 +19,7 @@ struct SelectionSummaryView: View {
                     .font(.footnote)
             }
             Button("Start Curation") {
-                appModel.freezeConfirmedSource()
+                appModel.startCuration()
             }
             .buttonStyle(.borderedProminent)
             .disabled(appModel.summary.selectedCount == 0)
