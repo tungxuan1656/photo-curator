@@ -75,7 +75,6 @@ struct UserFacingError: Equatable {
 }
 
 actor SelectionSessionCoordinator {
-    private let photoLibrary: any PhotoLibraryService
     private let imageLoader: any PhotoImageLoader
     private let analyzer: any ImageAnalysisService
     private let analysisCache: any AnalysisCache
@@ -88,11 +87,11 @@ actor SelectionSessionCoordinator {
 
     private var lastEmit = Date.distantPast
     private var lastFraction = 0.0
+    private var lastStage: ProcessingStage?
     private var pendingDownloadIDs = Set<String>()
     private var downloadObserver: NSObjectProtocol?
 
     init(
-        photoLibrary: any PhotoLibraryService,
         imageLoader: any PhotoImageLoader,
         analyzer: any ImageAnalysisService,
         analysisCache: any AnalysisCache,
@@ -100,7 +99,6 @@ actor SelectionSessionCoordinator {
         engine: SelectionEngine,
         config: AppConfiguration = .default
     ) {
-        self.photoLibrary = photoLibrary
         self.imageLoader = imageLoader
         self.analyzer = analyzer
         self.analysisCache = analysisCache
@@ -122,6 +120,7 @@ actor SelectionSessionCoordinator {
     ) async throws -> SelectionResult {
         try Task.checkCancellation()
         let interval = 1.0 / request.config.performance.progressMaxHertz
+        resetRunState()
         subscribeToDownloadProgress()
         defer { unsubscribeFromDownloadProgress() }
         logger.info("Starting curation session")
@@ -234,16 +233,34 @@ actor SelectionSessionCoordinator {
         try await checkpointStore.save(done)
     }
 
+    private func resetRunState() {
+        lastEmit = .distantPast
+        lastFraction = 0
+        lastStage = nil
+        pendingDownloadIDs = []
+    }
+
     private func emit(
         _ progress: ProcessingProgress,
         interval: TimeInterval,
         onProgress: @Sendable @escaping (ProcessingProgress) async -> Void
     ) async {
         let now = Date()
-        let isComplete = progress.completedUnits == progress.totalUnits
-        guard progress.overallFraction + 0.0001 >= lastFraction,
-              now.timeIntervalSince(lastEmit) >= interval || isComplete
-        else { return }
+        if progress.stage != lastStage {
+            // Stage transitions always emit: the grouping/select phases would otherwise be
+            // swallowed by the monotonic baseline (their fraction resets to 0). Transitions are
+            // rare discrete events (a few per run), so this never defeats the 4 Hz throttle on
+            // continuous determinate progress.
+            lastStage = progress.stage
+            lastEmit = now
+            lastFraction = progress.overallFraction
+            await onProgress(progress)
+            return
+        }
+        // Terminal bypass requires a real denominator: indeterminate totalUnits == 0 never counts.
+        let isTerminal = progress.totalUnits > 0 && progress.completedUnits == progress.totalUnits
+        let timeDue = now.timeIntervalSince(lastEmit) >= interval
+        guard progress.overallFraction + 0.0001 >= lastFraction, timeDue || isTerminal else { return }
         lastEmit = now
         lastFraction = max(lastFraction, progress.overallFraction)
         await onProgress(progress)
