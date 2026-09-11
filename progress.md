@@ -51,3 +51,27 @@
 **Evidence**: Sampling 30/30 rules preserved vs git HEAD; 0 broken links; `./init.sh` PASS (BUILD SUCCEEDED, SKIP [test]).
 **Blockers**: none
 **Next**: Commit working tree when user approves (moves staged via `git mv`, history kept).
+
+## 2026-09-11 — feat-004
+
+**State**: done (provisional gate, user-approved)
+**Done**: SDD Tasks 1→4 implemented + reviewed clean on feat/feat-004 (5 commits df6b236..29a1471): value types; routes + AppModel state + Home CTA; thumbnail + S05; S06 + RootView; final fix wave (refresh race, stale freeze, duplicate routes, thumbnail lifetime, selection a11y). Final review NOT READY → wave → re-review 4/5 + 1 parked residual.
+**Evidence**: ./init.sh PASS every task (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test]); simulator install/launch no-crash + Welcome screenshot; stacked branch feat/feat-005 cut from 29a1471.
+**Blockers**: deferred follow-ups — (1) real-device QA: 50-asset S05→S06 tap-through, limited/denied, change-refresh, 1k scroll/Instruments; (2) parked: error-path refresh may write stale denied/failed after a concurrent load (transient, self-heals; freeze reconciliation prevents corrupt snapshots).
+**Next**: SDD feat-005 (Vision core + batch pipeline) on feat/feat-005.
+
+## 2026-09-11 — feat-005
+
+**State**: done
+**Done**: SDD Tasks 1→3 + reviews on stacked feat/feat-005 (29a1471..eebeadb): versioned PhotoAnalysis shape (+waiver kept); VisionAnalysisService (review fail → fix R1 ALL ADDRESSED: SelectionError-only, structured cancel, nil-face rule); BatchPipeline (matrix 5/5 synthetic: invalidation, cancel-after-checkpoint, FULL resume, unavailable split, 3.64Hz); final wave for 2 blockers → re-review I1 addressed, M1 parked.
+**Evidence**: ./init.sh PASS every step (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test]); exact feat-006 contract (run/resume → BatchResult, 4-field progress); loader/feat-004 untouched; Noop DI intact for feat-006.
+**Blockers**: follow-ups — real-device PhotoKit/Vision 100-asset pass; parked M1: forced-final may double-fire terminal callback on cache-only edge (harmless duplicate; feat-006 idempotent).
+**Next**: SDD feat-006 (Processing UI + coordinator + Settings) on feat/feat-006.
+
+## 2026-09-11 — feat-006
+
+**State**: done (provisional gate, adjudicated)
+**Done**: SDD Tasks 1→4 + reviews on stacked feat/feat-006 (eebeadb..2af0e90, 7 commits): coordinator actor + store seam (+R1); AppModel/routes/DI/seams; ProcessingModel/views/ReviewReady (+R1); Settings + smoke; final wave-1 (9 blockers → 4 fixed) + user-authorized wave-2 (discard + permission gate fixed; 2 items residual).
+**Evidence**: ./init.sh PASS every step (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test]); sim install/launch + Settings render OK; exact feat-005 contract consumed; Noop gone from S06→S07→reviewReady path.
+**Blockers**: parked → feat-012 hardening: session-ownership interleavings (finalize gate-vs-await atomicity, completed-session supersede cleanup, shell-save tracking, completion-vs-supersede ordering), transient cross-session note leakage, cancel-vs-persist micro-race, auto-retry-after-Settings; 100-asset device QA open; ReviewReady grid wiring is feat-009. Single-session gate path review-clean.
+**Next**: feat-007 (Duplicates + moments) — starts on user selection; stacked branch feat/feat-007 from feat-006 HEAD 2af0e90 when approved.

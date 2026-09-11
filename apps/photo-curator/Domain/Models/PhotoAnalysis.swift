@@ -78,3 +78,49 @@ struct AnalysisInput: @unchecked Sendable {
     let assetID: AssetID
     let image: CGImage
 }
+
+extension PhotoAnalysis {
+    static var currentVersion: Int {
+        AppConfiguration.default.analysis.analysisVersion
+    }
+
+    /// Single normalization rule. Internal so VisionAnalysisService shares it.
+    static func clamped01(_ value: Double) -> Double {
+        min(1.0, max(0.0, value))
+    }
+
+    // swiftlint:disable function_parameter_count - factory assembles the six analysis facts in one call.
+    /// Shared factory: clamps scores once and stamps the version.
+    /// VisionAnalysisService calls this; it defines no clamp.
+    static func make(
+        assetID: AssetID,
+        technical: TechnicalAnalysis,
+        faceCount: Int,
+        groupPhotoScore: Double?,
+        subjectPlacementScore: Double?,
+        sceneType: SceneType
+    ) -> PhotoAnalysis {
+        let sharp = clamped01(technical.sharpnessScore)
+        let expo = clamped01(technical.exposureScore)
+        let total = clamped01(0.6 * sharp + 0.4 * expo)
+        return PhotoAnalysis(
+            assetID: assetID,
+            technical: technical,
+            people: PeopleAnalysis(faceCount: max(0, faceCount), groupPhotoScore: groupPhotoScore.map(clamped01)),
+            composition: CompositionAnalysis(
+                aestheticScore: nil,
+                subjectPlacementScore: subjectPlacementScore.map(clamped01),
+                horizonScore: nil,
+                visualBalanceScore: nil
+            ),
+            content: ContentAnalysis(sceneType: sceneType, tags: [], hasText: nil, screenshotProbability: nil),
+            qualityScore: total,
+            qualityBreakdown: QualityScoreBreakdown(
+                technical: total, people: nil, composition: nil, content: nil, total: total
+            ),
+            analyzedAt: Date(),
+            analysisVersion: currentVersion
+        )
+    }
+    // swiftlint:enable function_parameter_count
+}

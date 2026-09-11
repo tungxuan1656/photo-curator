@@ -8,4 +8,9 @@ enum AppRoute: Hashable, Sendable {
     case permissionEducation
     /// Reserved: Home is the root (never pushed) in G1; later stages push it.
     case home
+    case sourceSelection
+    case summary
+    case processing(sessionID: SessionID)
+    case settings
+    case reviewReady(sessionID: SessionID)
 }

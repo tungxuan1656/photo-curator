@@ -13,10 +13,10 @@ struct HomeView: View {
                 + "Photos Curator will find the strongest set for you to review.")
             switch appModel.authorization {
             case .authorized, .limited:
-                // TODO(feat-003): navigate to SourceSelection (S05); disabled until then.
-                Button("Curate Photos") {}
-                    .buttonStyle(.borderedProminent)
-                    .disabled(true)
+                Button("Curate Photos") {
+                    appModel.showSourceSelection()
+                }
+                .buttonStyle(.borderedProminent)
                 if appModel.authorization == .limited {
                     // Picker lives in the guidance sheet (wired in feat-002);
                     // this entry only opens the sheet.
@@ -59,6 +59,13 @@ struct HomeView: View {
         }
         .padding()
         .navigationTitle("Photos Curator")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Settings", systemImage: "gearshape") {
+                    appModel.openSettings()
+                }
+            }
+        }
         .sheet(isPresented: $showsAccessGuidance) {
             AccessGuidanceSheet()
         }
