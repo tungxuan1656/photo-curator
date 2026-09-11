@@ -13,15 +13,18 @@ import Vision
 /// this file defines no clamp.
 final class VisionAnalysisService: ImageAnalysisService, Sendable {
     func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis {
-        try Task.checkCancellation()
-        // Pixels arrive upright from ImageLoaderService.normalizedCGImage;
-        // always pass .up so no orientation side-channel exists.
-        // NOTE: plain child Task (not Task.detached) so cancellation and
-        // priority propagate from the pipeline lane.
-        return try await Task(priority: .userInitiated) {
+        // Structured execution: no Task{} wrapper, so the pipeline lane's
+        // cancellation — and its userInitiated priority — propagate directly
+        // into the Vision work. The do/catch translates every CancellationError
+        // from the checks below so only SelectionError ever escapes.
+        do {
             try Task.checkCancellation()
-            return try await self.performAll(input: input)
-        }.value
+            // Pixels arrive upright from ImageLoaderService.normalizedCGImage;
+            // always pass .up so no orientation side-channel exists.
+            return try await performAll(input: input)
+        } catch is CancellationError {
+            throw SelectionError.cancelled
+        }
     }
 }
 
@@ -37,7 +40,9 @@ private extension VisionAnalysisService {
     /// Runs every Vision request plus the CPU heuristic pass for one asset.
     /// Asset-level throws are limited to `.cancelled` and whole-decode
     /// `.internal` (loader owns ID resolution, so `.invalidInput` never
-    /// originates here).
+    /// originates here). Entry/exit cancellation checks are translated to
+    /// `.cancelled` by the do/catch in `analyze`, so raw CancellationError
+    /// never escapes this service.
     func performAll(input: AnalysisInput) async throws -> PhotoAnalysis {
         try Task.checkCancellation()
         // Each request runs independently: one request failing degrades its
@@ -68,16 +73,18 @@ private extension VisionAnalysisService {
             throw SelectionError.cancelled
         }
         // Unknown-vs-zero: nil results degrade to zero-count with nil quality,
-        // a valid analysis — not a throw.
+        // a valid analysis — not a throw. Nil face detection additionally
+        // forces subjectPlacementScore nil even if the quality request
+        // returned scores (unknown quality).
         let faceObservations = faceRects.results ?? []
+        let faceCount = faceObservations.count
         var bestFaceQuality: Double?
-        if let qualityResults = faceQuality.results {
+        if faceCount > 0, let qualityResults = faceQuality.results {
             bestFaceQuality = qualityResults.compactMap(\.faceCaptureQuality).map { Double($0) }.max()
         }
         // faceQuality failing (nil results) leaves bestFaceQuality nil: per-field degrade.
         try Task.checkCancellation()
         let technical = Self.heuristics(on: input.image)
-        let faceCount = faceObservations.count
         // Shared factory owned by PhotoAnalysis.swift — no local clamp.
         return PhotoAnalysis.make(
             assetID: input.assetID,
