@@ -19,7 +19,7 @@ struct ProcessingView: View {
                     Text(progress.stage.userPhase).font(.headline)
                     if progress.totalUnits > 0 {
                         ProgressView(value: progress.overallFraction)
-                        Text("\(progress.completedUnits) of \(progress.totalUnits) analyzed")
+                        Text("\(progress.analyzedCount) of \(progress.totalUnits) analyzed")
                             .font(.subheadline).monospacedDigit()
                     } else {
                         ProgressView().accessibilityLabel("Working") // indeterminate: loading/select/final
@@ -115,9 +115,7 @@ struct AttentionView: View {
         case .retry: appModel.retryProcessing()
         case .openSettings: appModel.openSettingsURL()
         case .continueWithoutUnavailable:
-            if let id = appModel.activeSessionID {
-                appModel.showReview(for: id)
-            }
+            Task { await appModel.continueWithoutUnavailable() }
         case .discard: appModel.discardCuration()
         case .goHome: appModel.goHome()
         }
@@ -159,7 +157,12 @@ struct ReviewReadyView: View {
                     Text("We couldn't load your selection.").font(.title2.bold())
                     Text("Your progress is saved.").font(.footnote).foregroundStyle(.secondary)
                     Button("Try Again") {
-                        Task { result = await appModel.loadResult(for: sessionID) }
+                        // Retry-from-checkpoint: resume via the pipeline resume
+                        // path (never a bare reload); the state change below
+                        // reloads the result when the run completes.
+                        didLoad = false
+                        result = nil
+                        appModel.retryProcessing()
                     }
                     .buttonStyle(.borderedProminent)
                     Button("Back to Home") { appModel.goHome() }
@@ -172,6 +175,16 @@ struct ReviewReadyView: View {
         .task {
             result = await appModel.loadResult(for: sessionID)
             didLoad = true
+        }
+        .onChange(of: appModel.processing.state) { _, newState in
+            if case let .completed(id, _, _) = newState, id == sessionID {
+                Task {
+                    result = await appModel.loadResult(for: sessionID)
+                    didLoad = true
+                }
+            } else if case .failed = newState {
+                didLoad = true
+            }
         }
     }
 

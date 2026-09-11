@@ -38,11 +38,12 @@ struct ProcessingProgress: Sendable, Equatable {
     var totalUnits: Int
     var downloadingCount: Int
     var unavailableCount: Int
+    var analyzedCount: Int
     var overallFraction: Double
     static var zero: Self {
         Self(
             stage: .loading, completedUnits: 0, totalUnits: 0,
-            downloadingCount: 0, unavailableCount: 0, overallFraction: 0
+            downloadingCount: 0, unavailableCount: 0, analyzedCount: 0, overallFraction: 0
         )
     }
 }
@@ -88,8 +89,14 @@ actor SelectionSessionCoordinator {
     private var lastEmit = Date.distantPast
     private var lastFraction = 0.0
     private var lastStage: ProcessingStage?
+    private var lastProgress: ProcessingProgress?
     private var pendingDownloadIDs = Set<String>()
     private var downloadObserver: NSObjectProtocol?
+    /// Run-lifetime scope: bumped per run() so late deliveries from a previous
+    /// run (or after a terminal transition) are dropped, never applied.
+    private var runGeneration = 0
+    private var runInterval: TimeInterval = 0.25
+    private var runProgressHandler: (@Sendable (ProcessingProgress) async -> Void)?
 
     init(
         imageLoader: any PhotoImageLoader,
@@ -120,9 +127,16 @@ actor SelectionSessionCoordinator {
     ) async throws -> SelectionResult {
         try Task.checkCancellation()
         let interval = 1.0 / request.config.performance.progressMaxHertz
+        runGeneration += 1
+        let generation = runGeneration
         resetRunState()
-        subscribeToDownloadProgress()
-        defer { unsubscribeFromDownloadProgress() }
+        runInterval = interval
+        runProgressHandler = onProgress
+        subscribeToDownloadProgress(generation: generation)
+        defer {
+            unsubscribeFromDownloadProgress()
+            runProgressHandler = nil
+        }
         logger.info("Starting curation session")
         await emit(
             ProcessingProgress.zero,
@@ -134,8 +148,11 @@ actor SelectionSessionCoordinator {
             assets: sourceAssets,
             request: request,
             interval: interval,
-            onProgress: onProgress
+            onProgress: onProgress,
+            generation: generation
         )
+        // Delivery from analyze() is fully drained before this stage switch,
+        // so no stale analysis update can land after the grouping emit.
         try Task.checkCancellation()
         await emit(
             ProcessingProgress(
@@ -144,6 +161,7 @@ actor SelectionSessionCoordinator {
                 totalUnits: 0,
                 downloadingCount: 0,
                 unavailableCount: batchResult.unavailableIDs.count,
+                analyzedCount: batchResult.analyses.count,
                 overallFraction: 0
             ),
             interval: interval,
@@ -154,11 +172,15 @@ actor SelectionSessionCoordinator {
             assets: sourceAssets,
             batchResult: batchResult
         )
+        // Cancel-after-analysis checkpoints via the pipeline path below and
+        // surfaces as .cancelled — never a persisted success.
+        try Task.checkCancellation()
         try await persist(
             request: request,
             batchResult: batchResult,
             result: result
         )
+        try Task.checkCancellation()
         logger.info("Finished curation session")
         return result
     }
@@ -181,16 +203,41 @@ actor SelectionSessionCoordinator {
         assets: [PhotoAsset],
         request: SelectionRequest,
         interval: TimeInterval,
-        onProgress: @Sendable @escaping (ProcessingProgress) async -> Void
+        onProgress: @Sendable @escaping (ProcessingProgress) async -> Void,
+        generation: Int
     ) async throws -> BatchResult {
         let hasCheckpoint = (try? await checkpointStore.load(sessionID: request.sessionID)) != nil
-        if hasCheckpoint {
-            return try await pipeline.resume(assets: assets, sessionID: request.sessionID) { [weak self] batch in
-                Task { await self?.forwardBatch(batch, stage: .analysis, interval: interval, onProgress: onProgress) }
+        // Structured delivery: pipeline progress fans into a per-run stream and
+        // a single consumer forwards it. The consumer is awaited before every
+        // return/throw, so no unstructured delivery task outlives this run to
+        // resurrect a terminal state.
+        let (stream, source) = AsyncStream<BatchProgress>.makeStream()
+        let consumer = Task {
+            for await batch in stream {
+                await self.forwardBatch(
+                    batch, stage: .analysis, interval: interval, onProgress: onProgress, generation: generation
+                )
             }
         }
-        return try await pipeline.run(assets: assets, sessionID: request.sessionID) { [weak self] batch in
-            Task { await self?.forwardBatch(batch, stage: .analysis, interval: interval, onProgress: onProgress) }
+        do {
+            if hasCheckpoint {
+                let output = try await pipeline.resume(assets: assets, sessionID: request.sessionID) {
+                    source.yield($0)
+                }
+                source.finish()
+                await consumer.value
+                return output
+            }
+            let output = try await pipeline.run(assets: assets, sessionID: request.sessionID) {
+                source.yield($0)
+            }
+            source.finish()
+            await consumer.value
+            return output
+        } catch {
+            source.finish()
+            await consumer.value
+            throw error
         }
     }
 
@@ -237,6 +284,7 @@ actor SelectionSessionCoordinator {
         lastEmit = .distantPast
         lastFraction = 0
         lastStage = nil
+        lastProgress = nil
         pendingDownloadIDs = []
     }
 
@@ -254,6 +302,7 @@ actor SelectionSessionCoordinator {
             lastStage = progress.stage
             lastEmit = now
             lastFraction = progress.overallFraction
+            lastProgress = progress
             await onProgress(progress)
             return
         }
@@ -263,6 +312,7 @@ actor SelectionSessionCoordinator {
         guard progress.overallFraction + 0.0001 >= lastFraction, timeDue || isTerminal else { return }
         lastEmit = now
         lastFraction = max(lastFraction, progress.overallFraction)
+        lastProgress = progress
         await onProgress(progress)
     }
 
@@ -270,8 +320,12 @@ actor SelectionSessionCoordinator {
         _ batch: BatchProgress,
         stage: ProcessingStage,
         interval: TimeInterval,
-        onProgress: @Sendable @escaping (ProcessingProgress) async -> Void
+        onProgress: @Sendable @escaping (ProcessingProgress) async -> Void,
+        generation: Int
     ) async {
+        // Run-lifetime scope: a delivery racing a terminal transition (or a
+        // previous run) is dropped here, before it can resurrect state.
+        guard generation == runGeneration else { return }
         let total = max(batch.total, 1)
         let fraction = Double(batch.completed) / Double(total)
         await emit(
@@ -281,6 +335,7 @@ actor SelectionSessionCoordinator {
                 totalUnits: batch.total,
                 downloadingCount: pendingDownloadIDs.count,
                 unavailableCount: batch.unavailable,
+                analyzedCount: batch.analyzed,
                 overallFraction: fraction
             ),
             interval: interval,
@@ -288,13 +343,13 @@ actor SelectionSessionCoordinator {
         )
     }
 
-    private func subscribeToDownloadProgress() {
+    private func subscribeToDownloadProgress(generation: Int) {
         downloadObserver = NotificationCenter.default.addObserver(
             forName: .imageDownloadProgress,
             object: nil,
             queue: nil
         ) { [weak self] note in
-            Task { await self?.handleDownloadNote(note) }
+            Task { [weak self] in await self?.handleDownloadNote(note, generation: generation) }
         }
     }
 
@@ -305,7 +360,10 @@ actor SelectionSessionCoordinator {
         downloadObserver = nil
     }
 
-    private func handleDownloadNote(_ note: Notification) async {
+    private func handleDownloadNote(_ note: Notification, generation: Int) async {
+        // Active-session scope: notes racing a terminal transition or from a
+        // previous run never emit, so no cross-session leakage.
+        guard generation == runGeneration else { return }
         guard let assetID = note.userInfo?["assetID"] as? String else { return }
         let fraction = note.userInfo?["fraction"] as? Double ?? 0
         if fraction >= 1.0 {
@@ -313,12 +371,21 @@ actor SelectionSessionCoordinator {
         } else {
             pendingDownloadIDs.insert(assetID)
         }
+        // Throttled iCloud-wait line: re-emit the last snapshot with the fresh
+        // count through the same 4 Hz gate, so "Waiting for N photos" appears
+        // during stalls without spamming determinate progress.
+        guard let handler = runProgressHandler, var waiting = lastProgress else { return }
+        waiting.downloadingCount = pendingDownloadIDs.count
+        await emit(waiting, interval: runInterval, onProgress: handler)
     }
 }
 
 extension SelectionSessionCoordinator {
-    nonisolated static func userError(for error: Error, unavailable: Int) -> UserFacingError {
-        _ = unavailable
+    nonisolated static func userError(
+        for error: Error,
+        unavailable: Int,
+        analyzed: Int
+    ) -> UserFacingError {
         if case SelectionError.cancelled = error {
             return UserFacingError(
                 title: "Curation Paused",
@@ -336,11 +403,16 @@ extension SelectionSessionCoordinator {
             )
         }
         if (error as NSError).domain == NSURLErrorDomain {
+            // Partial rule: Continue Without Them needs something to skip AND
+            // the minimum-analyzable bar (at least one analyzed photo that can
+            // anchor a partial result). Otherwise the only stable exit is Home.
+            let secondary: RecoveryAction =
+                (unavailable > 0 && analyzed > 0) ? .continueWithoutUnavailable : .goHome
             return UserFacingError(
                 title: "Connection Needed",
                 message: "Some photos need to download from iCloud. Connect and try again — saved work is kept.",
                 primary: .retry,
-                secondary: .continueWithoutUnavailable
+                secondary: secondary
             )
         }
         return UserFacingError(

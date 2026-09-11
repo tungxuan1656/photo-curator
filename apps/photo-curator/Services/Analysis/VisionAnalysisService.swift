@@ -12,7 +12,11 @@ import Vision
 /// no print request runs here. Normalization lives in `PhotoAnalysis.make`;
 /// this file defines no clamp.
 final class VisionAnalysisService: ImageAnalysisService, Sendable {
-    func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis {
+    /// Off-main boundary: nonisolated, so the synchronous Vision + CPU work in
+    /// `performAll` runs on the cooperative pool, never blocking SwiftUI on
+    /// 100-asset runs. No shared mutable state crosses here (`AnalysisInput`
+    /// is a value snapshot; everything else is a local).
+    nonisolated func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis {
         // Structured execution: no Task{} wrapper, so the pipeline lane's
         // cancellation — and its userInitiated priority — propagate directly
         // into the Vision work. The do/catch translates every CancellationError
@@ -29,11 +33,24 @@ final class VisionAnalysisService: ImageAnalysisService, Sendable {
 }
 
 /// Sampled luma grid backing the CPU heuristics. Plain value box so the
-/// heuristic helpers stay short without a 3-member tuple.
-private struct LumaGrid: Sendable {
+/// heuristic helpers stay short without a 3-member tuple. Nonisolated so the
+/// off-main CPU pass can use it without hopping back to the MainActor.
+private nonisolated struct LumaGrid: Sendable {
     let values: [Double]
     let cols: Int
     let rows: Int
+}
+
+/// Component scores from the luma pass. Plain value box so the nonisolated
+/// helpers never construct MainActor-isolated model values off-main; the
+/// single `TechnicalAnalysis` hop happens once at the async boundary.
+private nonisolated struct LumaScores: Sendable {
+    let sharpness: Double
+    let exposure: Double
+    let resolution: Double
+    let blur: Double
+    let under: Double
+    let over: Double
 }
 
 private extension VisionAnalysisService {
@@ -43,11 +60,18 @@ private extension VisionAnalysisService {
     /// originates here). Entry/exit cancellation checks are translated to
     /// `.cancelled` by the do/catch in `analyze`, so raw CancellationError
     /// never escapes this service.
-    func performAll(input: AnalysisInput) async throws -> PhotoAnalysis {
+    /// Nonisolated: the synchronous Vision + CPU work executes off the main
+    /// actor. Hops back happen only for isolated value construction
+    /// (`TechnicalAnalysis`, `PhotoAnalysis.make`, config reads).
+    nonisolated func performAll(input: AnalysisInput) async throws -> PhotoAnalysis {
         try Task.checkCancellation()
+        // Snapshot the sendable input once: the image + ID are locals from
+        // here on, so no shared state crosses executors below.
+        let assetID = input.assetID
+        let image = input.image
         // Each request runs independently: one request failing degrades its
         // own field only via try?.
-        let handler = VNImageRequestHandler(cgImage: input.image, orientation: .up, options: [:])
+        let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
         let faceRects = VNDetectFaceRectanglesRequest()
         let faceQuality = VNDetectFaceCaptureQualityRequest()
 
@@ -84,10 +108,11 @@ private extension VisionAnalysisService {
         }
         // faceQuality failing (nil results) leaves bestFaceQuality nil: per-field degrade.
         try Task.checkCancellation()
-        let technical = Self.heuristics(on: input.image)
+        let maxEdge = await AppConfiguration.default.selection.analysisImageMaxDimension
+        let technical = await Self.heuristics(on: image, edge: Double(maxEdge))
         // Shared factory owned by PhotoAnalysis.swift — no local clamp.
-        let result = PhotoAnalysis.make(
-            assetID: input.assetID,
+        let result = await PhotoAnalysis.make(
+            assetID: assetID,
             technical: technical,
             faceCount: faceCount,
             groupPhotoScore: faceCount >= 2 ? Double(faceCount) / 6.0 : nil,
@@ -103,13 +128,13 @@ private extension VisionAnalysisService {
     /// Synchronous CPU pass on the 512 px `CGImage` returning a
     /// `TechnicalAnalysis`: Laplacian variance → sharpness/blur, luma-histogram
     /// tails → exposure/under/over, pixel dims vs the configured analysis edge
-    /// → resolution. No await; `PhotoAnalysis.make` clamps once.
-    static func heuristics(on image: CGImage) -> TechnicalAnalysis {
+    /// → resolution. No await inside the pixel loop; `PhotoAnalysis.make`
+    /// clamps once. The model hop is isolated to the two construction sites.
+    nonisolated static func heuristics(on image: CGImage, edge: Double) async -> TechnicalAnalysis {
         let longEdge = max(image.width, image.height)
-        let edge = Double(AppConfiguration.default.selection.analysisImageMaxDimension)
         let resolution = longEdge >= Int(edge) ? 1.0 : Double(longEdge) / edge
         guard longEdge > 0, let grid = lumaGrid(for: image) else {
-            return TechnicalAnalysis(
+            return await TechnicalAnalysis(
                 sharpnessScore: 0,
                 exposureScore: 0.5,
                 resolutionScore: resolution,
@@ -118,13 +143,21 @@ private extension VisionAnalysisService {
                 overexposureProbability: 0
             )
         }
-        return scores(luma: grid.values, cols: grid.cols, rows: grid.rows, resolution: resolution)
+        let scored = scores(luma: grid.values, cols: grid.cols, rows: grid.rows, resolution: resolution)
+        return await TechnicalAnalysis(
+            sharpnessScore: scored.sharpness,
+            exposureScore: scored.exposure,
+            resolutionScore: scored.resolution,
+            blurProbability: scored.blur,
+            underexposureProbability: scored.under,
+            overexposureProbability: scored.over
+        )
     }
 
     /// Samples luma (0...1) on a ~128 px stride grid in a caller-owned RGBA8
     /// buffer. Returns nil when the image cannot be decoded; the caller
-    /// degrades to fallback technical facts.
-    static func lumaGrid(for image: CGImage) -> LumaGrid? {
+    /// degrades to fallback technical facts. Nonisolated: pure pixel math.
+    nonisolated static func lumaGrid(for image: CGImage) -> LumaGrid? {
         let width = image.width
         let height = image.height
         guard width > 0, height > 0 else { return nil }
@@ -159,9 +192,15 @@ private extension VisionAnalysisService {
         return LumaGrid(values: values, cols: cols, rows: rows)
     }
 
-    /// Maps a luma grid to technical facts. All outputs are naturally bounded
+    /// Maps a luma grid to component scores. All outputs are naturally bounded
     /// (tail fractions of the sample count; variance ratio), so no clamp here.
-    static func scores(luma values: [Double], cols: Int, rows: Int, resolution: Double) -> TechnicalAnalysis {
+    /// Returns components (not the model value) to stay off-main.
+    nonisolated static func scores(
+        luma values: [Double],
+        cols: Int,
+        rows: Int,
+        resolution: Double
+    ) -> LumaScores {
         let total = Double(values.count)
         var dark = 0.0
         var bright = 0.0
@@ -177,18 +216,19 @@ private extension VisionAnalysisService {
         let over = bright / total
         let variance = laplacianVariance(values: values, cols: cols, rows: rows)
         let sharpness = variance / (variance + 0.01)
-        return TechnicalAnalysis(
-            sharpnessScore: sharpness,
-            exposureScore: 1.0 - under - over,
-            resolutionScore: resolution,
-            blurProbability: 1.0 - sharpness,
-            underexposureProbability: under,
-            overexposureProbability: over
+        return LumaScores(
+            sharpness: sharpness,
+            exposure: 1.0 - under - over,
+            resolution: resolution,
+            blur: 1.0 - sharpness,
+            under: under,
+            over: over
         )
     }
 
     /// Variance of the 4-neighbour Laplacian over the luma grid interior.
-    static func laplacianVariance(values: [Double], cols: Int, rows: Int) -> Double {
+    /// Nonisolated: pure arithmetic.
+    nonisolated static func laplacianVariance(values: [Double], cols: Int, rows: Int) -> Double {
         var sum = 0.0
         var sumSquares = 0.0
         var count = 0.0

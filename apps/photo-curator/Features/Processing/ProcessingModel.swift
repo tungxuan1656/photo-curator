@@ -16,6 +16,7 @@ final class ProcessingModel {
     private var task: Task<Void, Never>?
     private let coordinator: SelectionSessionCoordinator
     private let checkpointStore: SessionCheckpointStore
+    private let authorization: @Sendable () async -> PhotoLibraryAuthorization
     private var request: SelectionRequest?
     private var sourceAssets: [PhotoAsset] = []
     private var backgrounded = false
@@ -23,13 +24,30 @@ final class ProcessingModel {
     /// owns automatic result-present routing). Task 2/feat-009 semantics preserved.
     var onCompleted: ((SessionID) -> Void)?
 
-    init(coordinator: SelectionSessionCoordinator, checkpointStore: SessionCheckpointStore) {
+    init(
+        coordinator: SelectionSessionCoordinator,
+        checkpointStore: SessionCheckpointStore,
+        authorization: @escaping @Sendable () async -> PhotoLibraryAuthorization
+    ) {
         self.coordinator = coordinator
         self.checkpointStore = checkpointStore
+        self.authorization = authorization
     }
 
     var sessionID: SessionID? {
         request?.sessionID
+    }
+
+    /// True while a run task exists (starting, running, or finishing).
+    /// AppModel's start gate reads this so a double-tap cannot desync the route.
+    var isRunning: Bool {
+        task != nil
+    }
+
+    /// Discard path: waits for the run task to finish so the pipeline's final
+    /// cancel checkpoint lands BEFORE the caller deletes data.
+    func awaitTermination() async {
+        await task?.value
     }
 
     func start(request: SelectionRequest, sourceAssets: [PhotoAsset]) {
@@ -97,20 +115,36 @@ final class ProcessingModel {
     }
 
     private func execute(request: SelectionRequest, sourceAssets: [PhotoAsset]) async {
+        defer {
+            backgrounded = false
+            task = nil
+        }
         do {
-            let result = try await coordinator.run(request: request, sourceAssets: sourceAssets) { [weak self] update in
+            // Live permission gate at processing start: a cached AppModel flag
+            // can go stale when access is revoked mid-flow, which would
+            // otherwise degrade silently into per-asset failures.
+            let status = await authorization()
+            if status == .denied || status == .restricted {
+                state = .failed(SelectionSessionCoordinator.permissionError())
+                return
+            }
+            // Counts come from coordinator progress end-to-end: the real
+            // analyzed tally (BatchProgress.analyzed) and the unavailable
+            // bucket. The run result carries neither count (unavailable assets
+            // land in the engine's rejected set), so engine counts are never
+            // used here. Fallback is the last known progress count, never a literal.
+            _ = try await coordinator.run(request: request, sourceAssets: sourceAssets) { [weak self] update in
                 await self?.apply(update)
             }
-            // Unavailable is sourced from BatchResult via coordinator progress —
-            // SelectionResult carries no unavailable count, so never derive it here.
-            // Fallback is the last known progress count, never a literal.
+            let analyzed: Int
             let unavailable: Int
             if case let .running(current) = state {
+                analyzed = current.analyzedCount
                 unavailable = current.unavailableCount
             } else {
+                analyzed = progress.analyzedCount
                 unavailable = progress.unavailableCount
             }
-            let analyzed = result.selectedAssetIDs.count + result.rejectedAssetIDs.count
             state = .completed(sessionID: request.sessionID, analyzed: analyzed, unavailable: unavailable)
             onCompleted?(request.sessionID)
         } catch {
@@ -127,25 +161,48 @@ final class ProcessingModel {
                     state = .cancelled
                 }
             } else {
-                // Failure mapping carries the last known progress count, never a literal.
+                // Failure mapping carries the last known progress counts, never literals.
+                let analyzed: Int
                 let unavailable: Int
                 if case let .running(current) = state {
+                    analyzed = current.analyzedCount
                     unavailable = current.unavailableCount
                 } else {
+                    analyzed = progress.analyzedCount
                     unavailable = progress.unavailableCount
                 }
-                state = .failed(SelectionSessionCoordinator.userError(for: error, unavailable: unavailable))
+                state = .failed(SelectionSessionCoordinator.userError(
+                    for: error,
+                    unavailable: unavailable,
+                    analyzed: analyzed
+                ))
             }
         }
-        backgrounded = false
-        task = nil
     }
 
     private func apply(_ update: ProcessingProgress) {
-        if case let .running(current) = state, update.overallFraction + 0.0001 < current.overallFraction {
+        // Terminal states never accept running updates: a late delivery racing
+        // completion/cancel must not revert to .running (which would hide
+        // Continue, break cancel, and corrupt counts). Terminal states exit
+        // only via explicit retry/discard/start.
+        switch state {
+        case .completed, .cancelled, .failed, .cancelling, .paused:
             return
+        case .idle, .preparing:
+            progress = update
+            state = .running(update)
+        case let .running(current):
+            // Stage transitions always win and re-baseline the fraction, so the
+            // grouping emit (fraction 0) is never rejected by the determinate
+            // gate. Same-stage determinate updates stay monotonic.
+            if update.stage != current.stage {
+                progress = update
+                state = .running(update)
+                return
+            }
+            guard update.overallFraction + 0.0001 >= current.overallFraction else { return }
+            progress = update
+            state = .running(update)
         }
-        progress = update
-        state = .running(update)
     }
 }
