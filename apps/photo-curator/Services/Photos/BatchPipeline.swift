@@ -54,13 +54,15 @@ final class BatchPipeline: Sendable {
         let total = assets.count
         guard total > 0 else { throw SelectionError.invalidInput }
         var state = RunState(total: total, progressInterval: progressInterval)
-        // Resume-first WITHOUT dropping work: checkpoint IDs reload from cache.
-        // Cache hit → FULL analyses (kept). Checkpoint ID with no cache row →
-        // prior unavailable (preserved, never re-fetched). Only the remainder queues.
-        let queue = await restore(assets: assets, sessionID: sessionID, state: &state)
-        progress(state.snapshot)
-        state.lastProgressDate = Date()
         do {
+            // Resume-first WITHOUT dropping work: checkpoint IDs reload from cache.
+            // Cache hit → FULL analyses (kept). Checkpoint ID with no cache row →
+            // prior unavailable (preserved, never re-fetched). Only the remainder queues.
+            let queue = await restore(assets: assets, sessionID: sessionID, state: &state)
+            emitProgress(state: &state, progress: progress)
+            // Post-restore check THROUGH the catch path: a cache-only cancelled
+            // run checkpoints first, then throws — never returns BatchResult.
+            try Task.checkCancellation()
             for batchStart in stride(from: 0, to: queue.count, by: config.performance.analysisBatchSize) {
                 try Task.checkCancellation()
                 let batch = Array(queue[batchStart ..< min(
@@ -70,19 +72,26 @@ final class BatchPipeline: Sendable {
                 try await drain(batch, state: &state, progress: progress)
                 await checkpointIfDue(sessionID: sessionID, state: &state)
             }
+            // Late-cancel check THROUGH the catch path: cancel after the final
+            // batch still checkpoints first, then throws — never success.
+            try Task.checkCancellation()
+            // Spec'd final update: force-fires so completed == total is always
+            // delivered; every other emission respects the 4 Hz gate.
+            emitProgress(state: &state, progress: progress, force: true)
+            await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
+            // Cancel during the final save routes through the catch path too.
+            try Task.checkCancellation()
+            return BatchResult(analyses: state.analyses, unavailableIDs: state.unavailable)
         } catch {
             // Cancel-after-checkpoint: completed work is checkpointed before the
             // throw so resume keeps it. Cancellation maps exactly to .cancelled.
             await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
-            progress(state.snapshot)
+            emitProgress(state: &state, progress: progress)
             if error is CancellationError {
                 throw SelectionError.cancelled
             }
             throw error
         }
-        progress(state.snapshot)
-        await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
-        return BatchResult(analyses: state.analyses, unavailableIDs: state.unavailable)
     }
 
     func resume(
@@ -121,6 +130,19 @@ final class BatchPipeline: Sendable {
 
     private var progressInterval: TimeInterval {
         1.0 / max(1.0, config.performance.progressMaxHertz)
+    }
+
+    /// Single 4 Hz gate for EVERY progress emission. Initial, per-result, and
+    /// cancel/error paths use force:false; only the spec'd final update forces.
+    private func emitProgress(
+        state: inout RunState,
+        progress: (BatchProgress) -> Void,
+        force: Bool = false
+    ) {
+        let now = Date()
+        guard force || now.timeIntervalSince(state.lastProgressDate) >= state.progressInterval else { return }
+        progress(state.snapshot)
+        state.lastProgressDate = now
     }
 
     private func restore(assets: [PhotoAsset], sessionID: SessionID, state: inout RunState) async -> [PhotoAsset] {
@@ -165,12 +187,9 @@ final class BatchPipeline: Sendable {
                     group.cancelAll()
                 }
                 await record(outcome, state: &state)
-                // 4 Hz gate: local timestamp check in the single
-                // result-collection loop; progress emitted from the parent.
-                if Date().timeIntervalSince(state.lastProgressDate) >= state.progressInterval {
-                    progress(state.snapshot)
-                    state.lastProgressDate = Date()
-                }
+                // 4 Hz gate: single fire-if-due helper in the result-collection
+                // loop; progress emitted from the parent.
+                emitProgress(state: &state, progress: progress)
                 if Task.isCancelled {
                     group.cancelAll(); throw SelectionError.cancelled
                 }
@@ -224,6 +243,9 @@ final class BatchPipeline: Sendable {
         let input = AnalysisInput(assetID: asset.id, image: cgImage)
         do {
             let analysis = try await analyzer.analyze(input)
+            // Post-analysis cancel check: a cancel landing during Vision work
+            // must not record as success — route through .cancelled.
+            try Task.checkCancellation()
             return .analyzed(analysis)
         } catch SelectionError.cancelled {
             throw SelectionError.cancelled

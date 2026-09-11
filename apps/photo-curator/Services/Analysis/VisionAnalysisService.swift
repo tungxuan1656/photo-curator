@@ -86,7 +86,7 @@ private extension VisionAnalysisService {
         try Task.checkCancellation()
         let technical = Self.heuristics(on: input.image)
         // Shared factory owned by PhotoAnalysis.swift — no local clamp.
-        return PhotoAnalysis.make(
+        let result = PhotoAnalysis.make(
             assetID: input.assetID,
             technical: technical,
             faceCount: faceCount,
@@ -94,6 +94,10 @@ private extension VisionAnalysisService {
             subjectPlacementScore: bestFaceQuality,
             sceneType: faceCount > 0 ? .people : .unknown
         )
+        // Post-analysis cancel check: a cancel landing during the sync CPU
+        // pass must not return success — map through .cancelled in analyze.
+        try Task.checkCancellation()
+        return result
     }
 
     /// Synchronous CPU pass on the 512 px `CGImage` returning a
