@@ -19,7 +19,9 @@ final class ProcessingModel {
     private var request: SelectionRequest?
     private var sourceAssets: [PhotoAsset] = []
     private var backgrounded = false
-    var onCompleted: ((SessionID) -> Void)? // AppModel sets: routes to reviewReady.
+    /// Deferred completion hook, currently unassigned (no auto-routing; feat-012
+    /// owns automatic result-present routing). Task 2/feat-009 semantics preserved.
+    var onCompleted: ((SessionID) -> Void)?
 
     init(coordinator: SelectionSessionCoordinator, checkpointStore: SessionCheckpointStore) {
         self.coordinator = coordinator
@@ -101,11 +103,12 @@ final class ProcessingModel {
             }
             // Unavailable is sourced from BatchResult via coordinator progress —
             // SelectionResult carries no unavailable count, so never derive it here.
+            // Fallback is the last known progress count, never a literal.
             let unavailable: Int
             if case let .running(current) = state {
                 unavailable = current.unavailableCount
             } else {
-                unavailable = 0
+                unavailable = progress.unavailableCount
             }
             let analyzed = result.selectedAssetIDs.count + result.rejectedAssetIDs.count
             state = .completed(sessionID: request.sessionID, analyzed: analyzed, unavailable: unavailable)
@@ -124,11 +127,12 @@ final class ProcessingModel {
                     state = .cancelled
                 }
             } else {
+                // Failure mapping carries the last known progress count, never a literal.
                 let unavailable: Int
                 if case let .running(current) = state {
                     unavailable = current.unavailableCount
                 } else {
-                    unavailable = 0
+                    unavailable = progress.unavailableCount
                 }
                 state = .failed(SelectionSessionCoordinator.userError(for: error, unavailable: unavailable))
             }

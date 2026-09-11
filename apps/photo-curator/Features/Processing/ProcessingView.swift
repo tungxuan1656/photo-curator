@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// S07 processing screen. Reads the live run via `AppModel.processing` and
 /// calls ONLY AppModel intents — never the coordinator directly. The explicit
@@ -114,10 +113,7 @@ struct AttentionView: View {
     private func perform(_ action: RecoveryAction) {
         switch action {
         case .retry: appModel.retryProcessing()
-        case .openSettings:
-            if let url = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(url)
-            }
+        case .openSettings: appModel.openSettingsURL()
         case .continueWithoutUnavailable:
             if let id = appModel.activeSessionID {
                 appModel.showReview(for: id)
@@ -179,11 +175,12 @@ struct ReviewReadyView: View {
         }
     }
 
-    /// Unavailable bucket from this session's terminal processing state.
+    /// Unavailable bucket from this session's terminal processing state;
+    /// fallback is the last known progress count, never a literal.
     private var unavailable: Int {
         if case let .completed(id, _, count) = appModel.processing.state, id == sessionID {
             return count
         }
-        return 0
+        return appModel.processing.progress.unavailableCount
     }
 }
