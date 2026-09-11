@@ -54,37 +54,10 @@ struct RootView: View {
     }
 }
 
-// TEMP(feat-006-task-2): minimal destinations so the additive routes compile before
-// Task 3 delivers the real views. Task 3 deletes these stubs when adding the real
-// ProcessingView/SettingsView/ReviewReadyView files (same type names).
-
-/// Minimal processing destination. Reads the live run from the environment model;
-/// the full progress/cancel/retry/error-gate UI arrives in Task 3.
-struct ProcessingView: View {
-    @Environment(AppModel.self) private var appModel
-
-    var body: some View {
-        VStack(spacing: 16) {
-            if appModel.activeSessionID != nil {
-                Text("Curating your photos…")
-                    .font(.title2)
-                Text("Analysis happens on this iPhone. You can leave the app; progress is saved.")
-                    .font(.body)
-                Button("Cancel") {
-                    appModel.cancelProcessing()
-                }
-            } else {
-                Text("No active curation session.")
-                    .font(.body)
-                Button("Back to Home") {
-                    appModel.goHome()
-                }
-            }
-        }
-        .padding()
-        .navigationTitle("Processing")
-    }
-}
+// TEMP(feat-006-task-2, kept for Task 4): minimal settings destination so the
+// additive `.settings` route compiles before Task 4 delivers the real
+// SettingsView. Task 3 deleted the ProcessingView/ReviewReadyView stubs here
+// when adding the real same-named views in Features/Processing.
 
 /// Minimal settings destination. Full copy/controls arrive in Task 4.
 struct SettingsView: View {
@@ -97,37 +70,5 @@ struct SettingsView: View {
         }
         .padding()
         .navigationTitle("Settings")
-    }
-}
-
-/// Minimal review-ready destination. Loads the persisted result for its session;
-/// the full review UI arrives in Task 3 and reuses this route without renaming.
-struct ReviewReadyView: View {
-    @Environment(AppModel.self) private var appModel
-
-    let sessionID: SessionID
-
-    @State private var result: SelectionResult?
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Your album is ready")
-                .font(.title2)
-            if let result {
-                Text("\(result.selectedAssetIDs.count) photos selected.")
-                    .font(.body)
-            } else {
-                Text("Loading your selection…")
-                    .font(.body)
-            }
-            Button("Back to Home") {
-                appModel.goHome()
-            }
-        }
-        .padding()
-        .navigationTitle("Review")
-        .task {
-            result = await appModel.loadResult(for: sessionID)
-        }
     }
 }
