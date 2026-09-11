@@ -11,6 +11,12 @@ final class AppModel {
     var path: [AppRoute] = []
     var authorization: PhotoLibraryAuthorization = .notDetermined
     var hasSeenWelcome: Bool
+    var sourceState: SourceLoadState = .idle
+    var allAssets: [PhotoAsset] = []
+    var selectedIDs = Set<AssetID>()
+    var filter = SourceFilter()
+    var unavailableCount = 0
+    var confirmedSourceIDs: [AssetID] = []
     private var isRequesting = false
 
     private let container: AppContainer
@@ -46,6 +52,101 @@ final class AppModel {
 
     func presentPicker() {
         container.photoLibrary.presentLimitedLibraryPicker()
+    }
+
+    var photoLibrary: any PhotoLibraryService {
+        container.photoLibrary
+    }
+
+    var imageLoader: any PhotoImageLoader {
+        container.imageLoader
+    }
+
+    var sourceByID: [AssetID: PhotoAsset] {
+        Dictionary(uniqueKeysWithValues: allAssets.map { ($0.id, $0) })
+    }
+
+    var filteredAssets: [PhotoAsset] {
+        filter.apply(to: allAssets)
+    }
+
+    var summary: SelectionSummary {
+        SelectionSummary(
+            selectedCount: selectedIDs.count,
+            unavailableCount: unavailableCount
+        )
+    }
+
+    func showSourceSelection() {
+        path.append(.sourceSelection)
+    }
+
+    func toggleSelection(_ id: AssetID) {
+        if selectedIDs.contains(id) {
+            selectedIDs.remove(id)
+        } else {
+            selectedIDs.insert(id)
+        }
+    }
+
+    func loadSource() async {
+        sourceState = .loading
+        do {
+            let assets = try await container.photoLibrary.fetchAssets()
+            allAssets = assets
+            let live = Set(assets.map(\.id))
+            let missing = selectedIDs.subtracting(live)
+            unavailableCount = missing.count
+            selectedIDs.subtract(missing)
+            if assets.isEmpty {
+                sourceState = .empty
+            } else {
+                sourceState = .loaded
+            }
+        } catch {
+            let status = await container.photoLibrary.authorizationStatus()
+            if status == .denied || status == .restricted {
+                sourceState = .denied
+            } else {
+                sourceState = .failed
+            }
+        }
+    }
+
+    func refreshSourceAfterLibraryChange() async {
+        let priorSelected = selectedIDs
+        await loadSource()
+        let live = Set(allAssets.map(\.id))
+        unavailableCount = priorSelected.subtracting(live).count
+    }
+
+    /// Freeze-only handoff for the feat-006 coordinator. No navigation here:
+    /// S05 navigates via `continueToSummary()`; S06 Start calls this and stops
+    /// (Processing transition is owned by feat-006).
+    func freezeConfirmedSource() {
+        let live = sourceByID
+        let liveAssets = selectedIDs.compactMap { live[$0] }
+        confirmedSourceIDs = liveAssets.sorted {
+            let left = $0.creationDate ?? .distantPast
+            let right = $1.creationDate ?? .distantPast
+            if left != right {
+                return left < right
+            }
+            return $0.id.rawValue < $1.id.rawValue
+        }.map(\.id)
+    }
+
+    /// S05 Continue: freeze the snapshot, then push S06.
+    func continueToSummary() {
+        freezeConfirmedSource()
+        path.append(.summary)
+    }
+
+    /// Snapshot in frozen order: maps the frozen IDs back to assets so the
+    /// coordinator consumes the same stable chrono order that was confirmed.
+    func confirmedSourceAssets() -> [PhotoAsset] {
+        let live = sourceByID
+        return confirmedSourceIDs.compactMap { live[$0] }
     }
 
     private func markSeen() {

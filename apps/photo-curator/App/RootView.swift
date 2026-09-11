@@ -24,6 +24,12 @@ struct RootView: View {
                     PermissionEducationView()
                 case .home:
                     HomeView()
+                case .sourceSelection:
+                    // Task 3 replaces with SourceSelectionView; placeholder keeps Task 2 building.
+                    Text("Source selection")
+                case .summary:
+                    // Task 4 replaces with SelectionSummaryView; placeholder keeps Task 2 building.
+                    Text("Summary")
                 }
             }
         }
