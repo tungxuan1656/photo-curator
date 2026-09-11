@@ -59,6 +59,13 @@ struct HomeView: View {
         }
         .padding()
         .navigationTitle("Photos Curator")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Settings", systemImage: "gearshape") {
+                    appModel.openSettings()
+                }
+            }
+        }
         .sheet(isPresented: $showsAccessGuidance) {
             AccessGuidanceSheet()
         }

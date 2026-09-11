@@ -53,22 +53,3 @@ struct RootView: View {
         }
     }
 }
-
-// TEMP(feat-006-task-2, kept for Task 4): minimal settings destination so the
-// additive `.settings` route compiles before Task 4 delivers the real
-// SettingsView. Task 3 deleted the ProcessingView/ReviewReadyView stubs here
-// when adding the real same-named views in Features/Processing.
-
-/// Minimal settings destination. Full copy/controls arrive in Task 4.
-struct SettingsView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Settings")
-                .font(.title2)
-            Text("Curation settings will live here.")
-                .font(.body)
-        }
-        .padding()
-        .navigationTitle("Settings")
-    }
-}
