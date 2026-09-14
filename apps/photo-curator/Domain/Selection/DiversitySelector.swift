@@ -129,9 +129,15 @@ private struct DiversityState {
     var selectedClusters = Set<ClusterID>()
 
     mutating func insertForced(_ ids: Set<AssetID>) {
+        // One pick per cluster even for explicit restores: the first forced ID
+        // (stable AssetID order) claims the cluster; a second forced ID from
+        // the same cluster is skipped so verify() never throws a session
+        // failure on contradictory user input.
         for id in ids.sorted(by: { $0.rawValue < $1.rawValue }) {
+            guard let candidate = pool.first(where: { $0.asset.id == id }) else { continue }
+            guard !isTaken(candidate) else { continue }
             selected.insert(id)
-            if let cluster = pool.first(where: { $0.asset.id == id })?.clusterID {
+            if let cluster = candidate.clusterID {
                 selectedClusters.insert(cluster)
             }
         }

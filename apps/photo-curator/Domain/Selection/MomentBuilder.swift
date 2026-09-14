@@ -65,12 +65,19 @@ struct MomentBuilder: Sendable {
             if closePairs.contains(EdgeKey(previous.id, next.id)) {
                 return true
             }
-            guard let leftScene = analyses[previous.id]?.content.sceneType,
-                  let rightScene = analyses[next.id]?.content.sceneType
-            else {
-                return false
+            // Missing signals never force a boundary: unknown/missing scenes
+            // continue the moment; only two known differing scenes split it.
+            let leftScene = analyses[previous.id]?.content.sceneType
+            let rightScene = analyses[next.id]?.content.sceneType
+            switch (leftScene, rightScene) {
+            case let (left?, right?):
+                if left == .unknown || right == .unknown {
+                    return true
+                }
+                return left == right
+            default:
+                return true
             }
-            return leftScene != .unknown && leftScene == rightScene
         default:
             if closePairs.contains(EdgeKey(previous.id, next.id)) {
                 return true
@@ -95,6 +102,9 @@ struct MomentBuilder: Sendable {
             let rightScore = analyses[$1.id]?.qualityScore ?? -1
             if leftScore != rightScore {
                 return leftScore < rightScore
+            }
+            if $0.isEdited != $1.isEdited {
+                return !$0.isEdited
             }
             if $0.isFavorite != $1.isFavorite {
                 return !$0.isFavorite

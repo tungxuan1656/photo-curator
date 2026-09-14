@@ -91,7 +91,7 @@ struct SelectionEngine: Sendable {
         )
         return try finalAlbumBuilder.build(
             sourceAssets: assets, analyses: analyses, clusters: effectiveClusters(
-                clusters: resolution.clusters, feedback: feedback
+                clusters: resolution.clusters, scored: overridden, feedback: feedback
             ),
             moments: moments, scored: overridden, selectedIDs: picked, configuration: configuration
         )
@@ -110,6 +110,10 @@ struct SelectionEngine: Sendable {
             guard let swaps = feedback?.swapWinner, !swaps.isEmpty else { return scored }
             let byID = Dictionary(uniqueKeysWithValues: available.map { ($0.id, $0) })
             var overridden = scored
+            // The automatic representative leaves the pool only when a usable
+            // swap winner exists for its cluster; otherwise the cluster keeps
+            // its representative and the unusable swap is ignored downstream
+            // (effectiveClusters only rewrites usable swaps — see below).
             for (clusterID, winnerID) in swaps.sorted(by: { $0.key.rawValue.uuidString < $1.key.rawValue.uuidString }) {
                 guard let cluster = clusters.first(where: { $0.id == clusterID }),
                       cluster.assetIDs.contains(winnerID),
@@ -167,10 +171,14 @@ struct SelectionEngine: Sendable {
         return merged
     }
 
-    private func effectiveClusters(clusters: [PhotoCluster], feedback: SelectionFeedback?) -> [PhotoCluster] {
+    private func effectiveClusters(
+        clusters: [PhotoCluster], scored: [ScoredCandidate], feedback: SelectionFeedback?
+    ) -> [PhotoCluster] {
         guard let swaps = feedback?.swapWinner, !swaps.isEmpty else { return clusters }
+        let usableIDs = Set(scored.filter { $0.disposition == .usable }.map(\.asset.id))
         return clusters.map { cluster in
-            guard let winner = swaps[cluster.id], cluster.assetIDs.contains(winner) else { return cluster }
+            guard let winner = swaps[cluster.id], cluster.assetIDs.contains(winner),
+                  usableIDs.contains(winner) else { return cluster }
             return PhotoCluster(
                 id: cluster.id, type: cluster.type, assetIDs: cluster.assetIDs,
                 representativeAssetID: winner, similarityScore: cluster.similarityScore
