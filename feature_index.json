@@ -119,7 +119,7 @@
         "Services/Session/SelectionSessionCoordinator.swift",
         "docs/design-docs/data-model.md"
       ],
-      "status": "active",
+      "status": "done",
       "title": "Duplicates + moments"
     },
     {
@@ -131,10 +131,14 @@
       "owns": [
         "Domain/Scoring/QualityScorer.swift",
         "Domain/Selection/DiversitySelector.swift",
-        "Domain/Selection/FinalAlbumBuilder.swift"
+        "Domain/Selection/FinalAlbumBuilder.swift",
+        "Domain/Selection/SelectionEngine.swift",
+        "Services/Session/SelectionSessionCoordinator.swift",
+        "Features/Processing/ProcessingModel.swift",
+        "App/AppModel.swift",
+        "docs/design-docs/data-model.md"
       ],
-      "status": "todo",
-      "title": "Scoring + diversity + verify"
+      "status": "active"
     },
     {
       "depends_on": [

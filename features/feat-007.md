@@ -24,8 +24,8 @@ Land duplicates + moments so clusters and moments are correct on dataset B.
 
 ## Acceptance
 
-- [ ] Clusters and moments correct on dataset B
-- [ ] `./init.sh` passes
+- [x] Clusters and moments correct on dataset B
+- [x] `./init.sh` passes
 
 ## Depends
 
@@ -37,9 +37,9 @@ Plan: `docs/plans/feat-007.md`
 
 ## Handoff
 
-- State: active (code complete; acceptance gate open)
-- Evidence: implementation committed 197311d on feat/feat-007 (artifact + Vision pass + pipeline edges + grouping models + resolver + moments + engine pass-through + coordinator cutover + data-model drift fix); ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test])
-- Blockers: Dataset B manual QA not run — gate `clusters and moments correct on dataset B` cannot close on ./init.sh alone
-- Next: Annotate Dataset B per manual-qa §3, then run the device/debugger pass at DuplicateResolver.resolve + MomentBuilder.build and record membership/representative/moment/determinism findings.
+- State: done
+- Evidence: Dataset B manual QA pass (user-confirmed 2026-09-14); ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); implementation commits 197311d + 3308550 + 20aa518 + 03e6e45 on feat/feat-007
+- Blockers: none
+- Next: feat-008 (Scoring + diversity + verify) on stacked branch from feat-007 HEAD.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
