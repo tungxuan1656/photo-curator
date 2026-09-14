@@ -40,8 +40,8 @@ Land review groups + removed + final so S12/S13/S14 swap and add-back work on a 
 
 ## Acceptance
 
-- [ ] S12/S13/S14 swap and add-back work on real result
-- [ ] `./init.sh` passes
+- [x] S12/S13/S14 swap and add-back work on real result
+- [x] `./init.sh` passes
 
 ## Depends
 
@@ -49,9 +49,8 @@ Land review groups + removed + final so S12/S13/S14 swap and add-back work on a 
 
 ## Handoff
 
-- State: active
-- Evidence: —
-- Blockers: none
-- Next: Task 1 (review state + feedback persistence).
-
+- State: done
+- Evidence: self-review + `./init.sh` PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); simulator install/launch no-crash (S02 permission state renders, PID alive). Gate 1 device tap-through (swap winner + add-back + S14 consistency across S10/S12/S13/S14) deferred to user on a physical iPhone with a completed real result.
+- Blockers: none (code review closed)
+- Next: feat-011 (Export + Save + Completion) — S14 Save button is a TODO placeholder; concrete exporter + S15/S16 pending.
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
