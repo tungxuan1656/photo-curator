@@ -82,16 +82,24 @@ private struct BuilderContext {
                 qualityBreakdown: analyses[asset.id]?.qualityBreakdown, reasons: reasons, competingIDs: []
             )
         }
+        // Decision priority follows selection-rules §1: eligibility, then hard
+        // quality rejection, then duplicate suppression, then diversity cuts.
+        // A low-quality duplicate reports lowQuality first; the cluster winner
+        // stays as secondary competingIDs data for QA/swap use.
+        if scoreByID[asset.id]?.disposition != .usable {
+            var competing: [AssetID] = []
+            if let winner = winnerByCluster[asset.id], winner != asset.id {
+                competing = [winner]
+            }
+            return Decision(
+                assetID: asset.id, status: .rejected, score: nil,
+                qualityBreakdown: nil, reasons: ["lowQuality"], competingIDs: competing
+            )
+        }
         if let winner = winnerByCluster[asset.id], winner != asset.id {
             return Decision(
                 assetID: asset.id, status: .rejected, score: nil,
                 qualityBreakdown: nil, reasons: ["nearDuplicate"], competingIDs: [winner]
-            )
-        }
-        if scoreByID[asset.id]?.disposition != .usable {
-            return Decision(
-                assetID: asset.id, status: .rejected, score: nil,
-                qualityBreakdown: nil, reasons: ["lowQuality"], competingIDs: []
             )
         }
         let candidate = scoreByID[asset.id]

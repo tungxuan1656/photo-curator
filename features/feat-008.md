@@ -9,11 +9,12 @@ Land scoring + diversity + verify per selection-rules §14 with reason codes.
 - `Domain/Scoring/QualityScorer.swift` (new: weighted score + disposition + per-moment rank + round-robin shortlist)
 - `Domain/Selection/DiversitySelector.swift` (new: protected-first greedy utility fill)
 - `Domain/Selection/FinalAlbumBuilder.swift` (new: one-decision-per-source + invariants, engineVersion 2)
-- `Domain/Selection/SelectionEngine.swift` (full pipeline replacing pass-through)
+- `Domain/Selection/SelectionEngine.swift` (full pipeline + feedback overrides replacing pass-through)
 - `Services/Session/SelectionSessionCoordinator.swift` (shared finalizeAvailable entry point)
 - `Services/Session/SimilarityRebuilder.swift` (new: bounded partial-path artifact rebuild)
 - `Features/Processing/ProcessingModel.swift` (finalizeAvailable forwarding)
-
+- `App/AppModel.swift` (finalizePartial via coordinator)
+- `docs/design-docs/data-model.md` (decision/reason mapping only)
 ## Non-goals
 
 - Review UI (feat-009); threshold tuning beyond existing config values.

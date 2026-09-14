@@ -78,8 +78,16 @@
 
 ## 2026-09-14 — feat-007
 
+**State**: done (user-confirmed Dataset B pass)
+**Done**: feat-007 closed on feat/feat-007: Dataset B manual QA pass recorded; ./init.sh PASS; branch feat/feat-008 stacked from its HEAD.
+**Evidence**: features/feat-007.md acceptance checked; close commit 654f111; ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]).
+**Blockers**: none
+**Next**: feat-008 engine QA (Dataset B + Golden).
+
+## 2026-09-14 — feat-008
+
 **State**: active (code complete; acceptance gate open)
-**Done**: feat-007 implementation on feat/feat-007 (197311d): transient ImageSimilarityArtifact + ImageAnalysisOutput contract, Vision single-pass print + cache-hit rebuild path, pipeline run-local artifacts + similarityEdges, SelectionGrouping with SHA-256 UUIDv5 IDs, windowed union-find DuplicateResolver, gap-scan MomentBuilder, engine candidates/edges + chrono pass-through, async coordinator cutover, data-model distance correction. Separate plans written and linked: docs/plans/feat-007/008/009.
-**Evidence**: ./init.sh PASS each slice (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); feature_index.json feat-007 active with expanded owns; features/feat-007.md links docs/plans/feat-007.md.
-**Blockers**: Dataset B manual QA not run — gate `clusters and moments correct on dataset B` cannot close on ./init.sh alone.
-**Next**: Annotate Dataset B per manual-qa §3, run the physical-device pass with debugger at DuplicateResolver.resolve + MomentBuilder.build, record membership/representative/moment/determinism findings in features/feat-007.md.
+**Done**: feat-008 implementation on feat/feat-008: QualityScorer weighted score + disposition + per-moment rank + round-robin shortlist; DiversitySelector protected-first greedy utility fill with similarityEdges and compareRank ties; FinalAlbumBuilder one-decision-per-source with engineVersion 2 and quality-first decision priority; full engine pipeline with swapWinner/restoredIDs overrides; shared finalizeAvailable partial path via ProcessingModel + SimilarityRebuilder; decision/reason data-model mapping.
+**Evidence**: ./init.sh PASS each slice (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); feature_index.json feat-008 active with expanded owns; features/feat-008.md links docs/plans/feat-008.md.
+**Blockers**: Dataset B + Golden manual QA not run — gate `sizing per selection-rules §14; reason codes; chronological order` cannot close on ./init.sh alone.
+**Next**: Run Dataset B + Golden device/debugger pass (partition, chronology, reasons, cluster invariant, target sizing), record metrics per manual-qa template in features/feat-008.md.
