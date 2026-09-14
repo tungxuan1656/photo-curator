@@ -222,8 +222,10 @@ extension AppModel {
     }
 
     private static func shouldResume(existing: SaveState, requestedIDs: [AssetID]) -> Bool {
-        guard Set(existing.requestedIDs) == Set(requestedIDs) else { return false }
-        return !existing.addedIDs.isEmpty || !existing.missingIDs.isEmpty
+        // Same requested set keeps the persisted album even when nothing is
+        // recorded as added/missing yet (interrupted between createAlbum and
+        // the first add); resumeSave then adds the full remaining set.
+        Set(existing.requestedIDs) == Set(requestedIDs)
     }
 
     private static func outcome(for state: SaveState) -> SaveOutcome {

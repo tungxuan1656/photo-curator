@@ -85,14 +85,16 @@ final class BatchPipeline: Sendable {
             // run checkpoints first, then throws — never returns BatchResult.
             try Task.checkCancellation()
             try await throwIfMemoryCritical(sessionID: sessionID, state: &state)
-            // Frozen per run: `stride(by:)` must not change mid-loop, and the
-            // slice below must use the same size it stepped with.
-            let batchSize = effectiveBatchSize()
-            for batchStart in stride(from: 0, to: queue.count, by: batchSize) {
+            // Pressure-aware stride: batch size re-read at every boundary so a
+            // warning arriving mid-run shrinks the next batch (32→16).
+            var cursor = 0
+            while cursor < queue.count {
                 try Task.checkCancellation()
                 try await throwIfMemoryCritical(sessionID: sessionID, state: &state)
                 applyPressurePolicy()
-                let batch = Array(queue[batchStart ..< min(batchStart + batchSize, queue.count)])
+                let batchSize = effectiveBatchSize()
+                let batch = Array(queue[cursor ..< min(cursor + batchSize, queue.count)])
+                cursor += batch.count
                 try await drain(batch, state: &state, progress: progress)
                 await checkpointIfDue(sessionID: sessionID, state: &state)
             }
