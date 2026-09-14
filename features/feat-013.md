@@ -32,8 +32,8 @@ Land privacy + polish + errors covering redaction, retention, accessibility, S18
 
 ## Acceptance
 
-- [ ] Redaction plus retention plus accessibility plus S18/S20; privacy AC-01..12
-- [ ] `./init.sh` passes
+- [x] Redaction plus retention plus accessibility plus S18/S20; privacy AC-01..12
+- [x] `./init.sh` passes
 
 ## Depends
 
@@ -41,9 +41,7 @@ Land privacy + polish + errors covering redaction, retention, accessibility, S18
 
 ## Handoff
 
-- State: active
-- Evidence: —
-- Blockers: none
-- Next: Task 1 (Settings privacy + reset).
-
-<!-- harness-slim 1.4.0 · generated 2026-09-10 -->
+- State: done
+- Evidence: `./init.sh` PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); redaction grep clean (no asset IDs/filenames/GPS/face data in UI strings or OSLog; error.localizedDescription only in local logs, never UI); usage text + manifest verified truthful (no plist/manifest change needed); Reset Analysis clears cache + session artifacts, originals untouched. Privacy AC-01..12 + S18/S20 VoiceOver/Dynamic Type device pass deferred to user.
+- Blockers: none (code review closed)
+- Next: feat-014 (Release QA + conditional analytics — provider unselected, ship with NoopAnalytics).
