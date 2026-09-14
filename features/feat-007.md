@@ -32,9 +32,9 @@ Land duplicates + moments so clusters and moments are correct on dataset B.
 - feat-006
 ## Handoff
 
-- State: active
-- Evidence: baseline ./init.sh PASS (2026-09-14; format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test])
-- Blockers: none
-- Next: Task 1 — create ImageSimilarityArtifact + ImageAnalysisService contract.
+- State: active (code complete; acceptance gate open)
+- Evidence: implementation committed 197311d on feat/feat-007 (artifact + Vision pass + pipeline edges + grouping models + resolver + moments + engine pass-through + coordinator cutover + data-model drift fix); ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test])
+- Blockers: Dataset B manual QA not run — gate `clusters and moments correct on dataset B` cannot close on ./init.sh alone
+- Next: Annotate Dataset B per manual-qa §3, then run the device/debugger pass at DuplicateResolver.resolve + MomentBuilder.build and record membership/representative/moment/determinism findings.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
