@@ -257,7 +257,7 @@
       "owns": [
         "Services/Analytics/"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Release: QA plus conditional analytics"
     }
   ],
