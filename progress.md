@@ -75,3 +75,11 @@
 **Evidence**: ./init.sh PASS every step (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test]); sim install/launch + Settings render OK; exact feat-005 contract consumed; Noop gone from S06→S07→reviewReady path.
 **Blockers**: parked → feat-012 hardening: session-ownership interleavings (finalize gate-vs-await atomicity, completed-session supersede cleanup, shell-save tracking, completion-vs-supersede ordering), transient cross-session note leakage, cancel-vs-persist micro-race, auto-retry-after-Settings; 100-asset device QA open; ReviewReady grid wiring is feat-009. Single-session gate path review-clean.
 **Next**: feat-007 (Duplicates + moments) — starts on user selection; stacked branch feat/feat-007 from feat-006 HEAD 2af0e90 when approved.
+
+## 2026-09-14 — feat-007
+
+**State**: active (code complete; acceptance gate open)
+**Done**: feat-007 implementation on feat/feat-007 (197311d): transient ImageSimilarityArtifact + ImageAnalysisOutput contract, Vision single-pass print + cache-hit rebuild path, pipeline run-local artifacts + similarityEdges, SelectionGrouping with SHA-256 UUIDv5 IDs, windowed union-find DuplicateResolver, gap-scan MomentBuilder, engine candidates/edges + chrono pass-through, async coordinator cutover, data-model distance correction. Separate plans written and linked: docs/plans/feat-007/008/009.
+**Evidence**: ./init.sh PASS each slice (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); feature_index.json feat-007 active with expanded owns; features/feat-007.md links docs/plans/feat-007.md.
+**Blockers**: Dataset B manual QA not run — gate `clusters and moments correct on dataset B` cannot close on ./init.sh alone.
+**Next**: Annotate Dataset B per manual-qa §3, run the physical-device pass with debugger at DuplicateResolver.resolve + MomentBuilder.build, record membership/representative/moment/determinism findings in features/feat-007.md.

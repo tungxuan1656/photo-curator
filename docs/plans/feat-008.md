@@ -266,9 +266,8 @@ struct FinalAlbumBuilder: Sendable {
                 decisions.append(Decision(assetID: asset.id, status: .selected, score: scored.first(where: { $0.asset.id == asset.id })?.score, qualityBreakdown: analyses[asset.id]?.qualityBreakdown, reasons: reasons, competingIDs: []))
             } else if let winner = winnerByCluster[asset.id], winner != asset.id {
                 decisions.append(Decision(assetID: asset.id, status: .rejected, score: nil, qualityBreakdown: nil, reasons: ["nearDuplicate"], competingIDs: [winner]))
-            } else {
-                // Quality-floor cut and diversity-cut share canonical `lowQuality`; score/disposition distinguishes them for QA.
             } else if scored.first(where: { $0.asset.id == asset.id })?.disposition != .usable {
+                // Quality-floor cut: truthful lowQuality for hardRejected/lowQuality dispositions.
                 decisions.append(Decision(assetID: asset.id, status: .rejected, score: nil, qualityBreakdown: nil, reasons: ["lowQuality"], competingIDs: []))
             } else {
                 // Usable but cut by shortlist/diversity: no false quality claim. Attribute the surviving
@@ -300,6 +299,15 @@ struct FinalAlbumBuilder: Sendable {
         }
         if order[left] != order[right] { return order[left]! < order[right]! }
         return left.rawValue < right.rawValue
+    }
+
+    private func diversityCutReason(for id: AssetID, scored: [ScoredCandidate], selectedIDs: Set<AssetID>) -> String {
+        guard let candidate = scored.first(where: { $0.asset.id == id }) else { return "compositionDiversity" }
+        let selected = scored.filter { selectedIDs.contains($0.asset.id) }
+        if selected.contains(where: { $0.momentID == candidate.momentID }) { return "temporalCoverage" }
+        if selected.contains(where: { $0.sceneType == candidate.sceneType }) { return "sceneDiversity" }
+        if selected.contains(where: { $0.containsPeople == candidate.containsPeople }) { return "peopleDiversity" }
+        return "compositionDiversity"
     }
 }
 ```
