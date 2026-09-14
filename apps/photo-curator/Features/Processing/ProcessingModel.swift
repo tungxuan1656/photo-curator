@@ -168,6 +168,11 @@ final class ProcessingModel {
                 } else {
                     state = .cancelled
                 }
+            } else if case SelectionError.memoryCritical = error {
+                // Memory-critical pause: checkpoint already persisted at the
+                // batch boundary; resume continues without redo. Same plain
+                // copy as background pause, no memory vocabulary.
+                state = .paused(reason: "Curation paused. Progress is saved.")
             } else if error is CancellationError {
                 if backgrounded {
                     state = .paused(reason: "Curation paused. Progress is saved.")
@@ -175,7 +180,6 @@ final class ProcessingModel {
                     state = .cancelled
                 }
             } else {
-                // Failure mapping carries the last known progress counts, never literals.
                 let analyzed: Int
                 let unavailable: Int
                 if case let .running(current) = state {

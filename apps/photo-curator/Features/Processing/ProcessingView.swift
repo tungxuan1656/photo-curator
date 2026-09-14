@@ -90,14 +90,14 @@ struct AttentionView: View {
     @Environment(AppModel.self) private var appModel
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text(error.title).font(.title2.bold())
-            Text(error.message).font(.body).multilineTextAlignment(.center)
-            Text("Your progress is safe.").font(.footnote).foregroundStyle(.secondary)
-            Button(label(for: error.primary)) { perform(error.primary) }
-                .buttonStyle(.borderedProminent)
-            Button(label(for: error.secondary)) { perform(error.secondary) }
-        }.padding()
+        ErrorStateView(
+            title: error.title,
+            message: error.message,
+            primaryTitle: label(for: error.primary),
+            primary: { perform(error.primary) },
+            secondaryTitle: label(for: error.secondary),
+            secondary: { perform(error.secondary) }
+        )
     }
 
     private func label(for action: RecoveryAction) -> String {
@@ -136,16 +136,14 @@ struct ReviewReadyView: View {
     var body: some View {
         Group {
             if let result, result.selectedAssetIDs.isEmpty {
-                VStack(spacing: 12) {
-                    Text("We couldn't build a selection").font(.title2.bold())
-                    Text("Try processing this set again or choose different photos.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Button("Try Again") {
-                        appModel.retryProcessing()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button("Choose Different Photos") { appModel.goHome() }
-                }.padding()
+                ErrorStateView(
+                    title: "We couldn't build a selection",
+                    message: "Try processing this set again or choose different photos.",
+                    primaryTitle: "Try Again",
+                    primary: { appModel.retryProcessing() },
+                    secondaryTitle: "Choose Different Photos",
+                    secondary: { appModel.goHome() }
+                )
             } else if let result {
                 let total = result.selectedAssetIDs.count + result.rejectedAssetIDs.count
                 VStack(spacing: 12) {
@@ -168,20 +166,21 @@ struct ReviewReadyView: View {
                     .buttonStyle(.borderedProminent)
                 }.padding()
             } else if didLoad {
-                VStack(spacing: 12) {
-                    Text("We couldn't load your selection.").font(.title2.bold())
-                    Text("Your progress is saved.").font(.footnote).foregroundStyle(.secondary)
-                    Button("Try Again") {
+                ErrorStateView(
+                    title: "We couldn't load your selection.",
+                    message: "Your progress is saved.",
+                    primaryTitle: "Try Again",
+                    primary: {
                         // Retry-from-checkpoint: resume via the pipeline resume
                         // path (never a bare reload); the state change below
                         // reloads the result when the run completes.
                         didLoad = false
                         result = nil
                         appModel.retryProcessing()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button("Back to Home") { appModel.goHome() }
-                }.padding()
+                    },
+                    secondaryTitle: "Back to Home",
+                    secondary: { appModel.goHome() }
+                )
             } else {
                 ProgressView("Loading your selection…")
             }

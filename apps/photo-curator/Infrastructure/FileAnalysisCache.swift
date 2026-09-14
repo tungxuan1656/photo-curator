@@ -48,4 +48,11 @@ actor FileAnalysisCache: AnalysisCache {
         // Best effort: retain memory on transient I/O failure rather than forcing re-analysis.
         try? await files.save(analysis, to: path(for: analysis.assetID))
     }
+
+    /// Reset Analysis: drops in-memory rows plus every persisted analysis
+    /// file. Originals in Apple Photos are untouched.
+    func reset() async {
+        memory = [:]
+        await files.removeDirectory(relativePath: directory)
+    }
 }

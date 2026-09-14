@@ -26,6 +26,9 @@ final class AppModel {
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
+    /// In-flight PhotoKit save, scoped per session: S14 Save claims it
+    /// atomically; repeated taps join or stay disabled, never a second export.
+    var saveFlight: (session: SessionID, task: Task<SaveOutcome, Never>)?
     let processing: ProcessingModel
     private var isRequesting = false
     private var sourceGeneration = 0
@@ -33,18 +36,20 @@ final class AppModel {
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "session"
     )
 
-    private let container: AppContainer
+    let container: AppContainer
 
     init(container: AppContainer) {
         self.container = container
         hasSeenWelcome = UserDefaults.standard.bool(forKey: Self.seenWelcomeKey)
+        container.memoryPressure.start()
         let coordinator = SelectionSessionCoordinator(
             imageLoader: container.imageLoader,
             analyzer: container.analyzer,
             analysisCache: container.analysisCache,
             checkpointStore: container.checkpointStore,
             engine: container.selectionEngine,
-            config: .default
+            config: .default,
+            pressure: container.memoryPressure
         )
         processing = ProcessingModel(
             coordinator: coordinator,
@@ -194,7 +199,7 @@ final class AppModel {
     }
 
     /// Session-owned review state for S09–S11. Nil until beginReview succeeds.
-    private(set) var reviewModel: ReviewModel?
+    var reviewModel: ReviewModel?
 }
 
 // MARK: - feat-006 curation intents
@@ -221,7 +226,8 @@ extension AppModel {
         // Supersede rule: exactly one owned session, no multi-session support.
         // A new start replaces the retained session: cancel the old task if
         // running, clean its checkpoint + result (abandoned session, logged),
-        // then run the new session.
+        // then run the new session. An in-flight save for the superseded
+        // session is cancelled too: no orphan export may write into it.
         activeSessionID = request.sessionID
         lastSessionID = request.sessionID
         finalizeFlight?.task.cancel()
@@ -229,13 +235,19 @@ extension AppModel {
         if processing.isRunning {
             processing.cancel()
             Task {
+                // The save flight's final SaveState write must land before the
+                // old files are deleted, or it resurrects a deleted file.
+                await cancelSave(for: supersededID)
                 await processing.awaitTermination()
                 await deleteSessionData(supersededID, context: "Superseded curation")
                 beginRun(request: request, assets: assets)
             }
         } else {
             if supersededID != nil {
-                Task { await deleteSessionData(supersededID, context: "Superseded curation") }
+                Task {
+                    await cancelSave(for: supersededID)
+                    await deleteSessionData(supersededID, context: "Superseded curation")
+                }
             }
             beginRun(request: request, assets: assets)
         }
@@ -264,9 +276,9 @@ extension AppModel {
         }
     }
 
-    /// Session cleanup: BOTH deletes always attempted independently, each
+    /// Session cleanup: ALL deletes always attempted independently, each
     /// failure logged. Absent files already count as success (idempotent),
-    /// so cleanup never short-circuits. Returns true when both succeeded.
+    /// so cleanup never short-circuits. Returns true when all succeeded.
     private func deleteSessionData(_ sessionID: SessionID?, context: String) async -> Bool {
         guard let sessionID else { return true }
         var cleaned = true
@@ -286,6 +298,24 @@ extension AppModel {
             logger
                 .error(
                     "\(context, privacy: .public) result cleanup failed: \(error.localizedDescription, privacy: .public)"
+                )
+        }
+        do {
+            try await container.checkpointStore.deleteFeedback(sessionID: sessionID)
+        } catch {
+            cleaned = false
+            logger
+                .error(
+                    "\(context, privacy: .public) feedback cleanup failed: \(error.localizedDescription, privacy: .public)"
+                )
+        }
+        do {
+            try await container.checkpointStore.deleteSaveState(sessionID: sessionID)
+        } catch {
+            cleaned = false
+            logger
+                .error(
+                    "\(context, privacy: .public) save-state cleanup failed: \(error.localizedDescription, privacy: .public)"
                 )
         }
         return cleaned
@@ -322,32 +352,6 @@ extension AppModel {
     /// ReviewReadyView caller: persisted result when the run finished, nil otherwise.
     func loadResult(for sessionID: SessionID) async -> SelectionResult? {
         try? await container.checkpointStore.loadResult(sessionID: sessionID)
-    }
-
-    /// S09 entry: builds the session-owned ReviewModel from the persisted
-    /// result plus frozen source metadata, then routes. Returns true on success.
-    /// Reuses the existing model (preserving remove/restore edits) and never
-    /// pushes a duplicate overview when one is already on top. Returns false
-    /// when the result is missing, mismatched, or empty; the ReviewReady caller
-    /// surfaces inline retry feedback while the failed-route Try Again caller
-    /// already shows the recoverable state.
-    func beginReview(for sessionID: SessionID) async -> Bool {
-        if let existing = reviewModel, existing.sessionID == sessionID {
-            if path.last != .reviewOverview(sessionID: sessionID) {
-                path.append(.reviewOverview(sessionID: sessionID))
-            }
-            return true
-        }
-        guard let result = await loadResult(for: sessionID),
-              result.sessionID == sessionID,
-              !result.selectedAssetIDs.isEmpty
-        else { return false }
-        let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
-        reviewModel = ReviewModel(sessionID: sessionID, result: result, sourceByID: live)
-        if path.last != .reviewOverview(sessionID: sessionID) {
-            path.append(.reviewOverview(sessionID: sessionID))
-        }
-        return true
     }
 
     func openSettings() {
@@ -449,20 +453,43 @@ extension AppModel {
     /// recreate data after deletion. BOTH deletes are always attempted
     /// independently (absent files count as success — idempotent), never gated
     /// on ownership and never short-circuited: completion clears ownership but
-    /// the data still needs cleanup, so fall back to the most recent session.
-    /// Each cleanup failure is logged. The §4.3 confirmation lives in the view.
     func discardCuration() {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
+        if reviewModel?.sessionID == sessionID {
+            reviewModel = nil
+        }
         path.removeAll()
         guard let sessionID else { return }
         Task {
+            await cancelSave(for: sessionID)
             await processing.awaitTermination()
             let cleaned = await deleteSessionData(sessionID, context: "Discarding curation")
             if cleaned, lastSessionID == sessionID {
                 lastSessionID = nil
             }
+        }
+    }
+
+    /// Reset Analysis (Settings → retention): clears the derived-analysis
+    /// cache plus every persisted session artifact (checkpoints, results,
+    /// feedback, save states) for the current session. Apple Photos
+    /// originals are untouched. Cancels in-flight work first.
+    func resetAnalysis() {
+        processing.cancel()
+        let sessionID = activeSessionID ?? lastSessionID
+        activeSessionID = nil
+        reviewModel = nil
+        path.removeAll()
+        Task {
+            await cancelSave(for: sessionID)
+            await processing.awaitTermination()
+            await container.analysisCache.reset()
+            if sessionID != nil {
+                _ = await deleteSessionData(sessionID, context: "Resetting analysis")
+            }
+            lastSessionID = nil
         }
     }
 

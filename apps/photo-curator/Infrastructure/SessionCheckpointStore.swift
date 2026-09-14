@@ -85,6 +85,14 @@ actor SessionCheckpointStore {
         "\(resultsDirectory)/\(sessionID.rawValue.uuidString).json"
     }
 
+    private func feedbackPath(for sessionID: SessionID) -> String {
+        "feedback/\(sessionID.rawValue.uuidString).json"
+    }
+
+    private func saveStatePath(for sessionID: SessionID) -> String {
+        "savestate/\(sessionID.rawValue.uuidString).json"
+    }
+
     func save(_ checkpoint: SessionCheckpoint) async throws {
         try await files.save(checkpoint, to: path(for: checkpoint.sessionID))
     }
@@ -116,6 +124,48 @@ actor SessionCheckpointStore {
     func deleteResult(sessionID: SessionID) async throws {
         do {
             try await files.remove(relativePath: resultPath(for: sessionID))
+        } catch {
+            let nsError = error as NSError
+            guard nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileNoSuchFileError else {
+                throw error
+            }
+            // Already absent; treat as success.
+        }
+    }
+
+    func saveFeedback(_ feedback: SelectionFeedback, for sessionID: SessionID) async throws {
+        try await files.save(feedback, to: feedbackPath(for: sessionID))
+    }
+
+    /// Missing or unreadable feedback means a fresh session: nil, never a throw.
+    func loadFeedback(sessionID: SessionID) async -> SelectionFeedback? {
+        try? await files.load(SelectionFeedback.self, from: feedbackPath(for: sessionID))
+    }
+
+    func deleteFeedback(sessionID: SessionID) async throws {
+        do {
+            try await files.remove(relativePath: feedbackPath(for: sessionID))
+        } catch {
+            let nsError = error as NSError
+            guard nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileNoSuchFileError else {
+                throw error
+            }
+            // Already absent; treat as success.
+        }
+    }
+
+    func saveSaveState(_ state: SaveState) async throws {
+        try await files.save(state, to: saveStatePath(for: state.sessionID))
+    }
+
+    /// No persisted save means no save in flight: nil, never a throw.
+    func loadSaveState(sessionID: SessionID) async -> SaveState? {
+        try? await files.load(SaveState.self, from: saveStatePath(for: sessionID))
+    }
+
+    func deleteSaveState(sessionID: SessionID) async throws {
+        do {
+            try await files.remove(relativePath: saveStatePath(for: sessionID))
         } catch {
             let nsError = error as NSError
             guard nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileNoSuchFileError else {

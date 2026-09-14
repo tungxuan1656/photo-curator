@@ -11,10 +11,11 @@ struct AppContainer: Sendable {
     let selectionEngine: SelectionEngine
     let exporter: any AlbumExportService
     let analytics: any AnalyticsService
+    let memoryPressure: MemoryPressureObserver
 
     /// G1 wiring: real permission service + file-backed cache/checkpoint + real
-    /// analysis pipeline (feat-006 flips the analyzer switch); export/analytics
-    /// stay Noop until their owning stages.
+    /// analysis pipeline (feat-006 flips the analyzer switch); analytics stays
+    /// Noop until its owning stage. Export is concrete since feat-011.
     static func live() -> Self {
         let dirs = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
         let base =
@@ -34,8 +35,9 @@ struct AppContainer: Sendable {
             ),
             checkpointStore: SessionCheckpointStore(files: files),
             selectionEngine: SelectionEngine(),
-            exporter: NoopAlbumExporter(),
-            analytics: NoopAnalytics()
+            exporter: PhotoKitAlbumExporter(),
+            analytics: NoopAnalytics(),
+            memoryPressure: MemoryPressureObserver()
         )
     }
 }

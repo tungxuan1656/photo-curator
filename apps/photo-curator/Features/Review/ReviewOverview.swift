@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// S09 review overview: counts plus entry into the curated grid.
+/// S09 review overview: counts plus entries into all correction surfaces.
 ///
-/// Reads the session-owned ReviewModel; Similar and Removed entries stay
-/// hidden until feat-010 supplies their real state. Shows no raw scores,
-/// Vision terms, or deletion vocabulary.
+/// Reads the session-owned ReviewModel shared by every review surface.
+/// The Similar entry hides when no group data exists (ux-flows §8.1).
+/// Shows no raw scores, Vision terms, or deletion vocabulary.
 struct ReviewOverview: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
@@ -17,6 +17,12 @@ struct ReviewOverview: View {
                     Text("Your curated album is ready").font(.title2.bold())
                     Text("\(model.selectedIDs.count) selected from \(total) photos")
                     Button("Review Selection") { appModel.path.append(.curatedGrid(sessionID: sessionID)) }
+                        .buttonStyle(.borderedProminent)
+                    if !model.similarGroups.isEmpty {
+                        Button("Review Similar Photos") { appModel.path.append(.similarGroups(sessionID: sessionID)) }
+                    }
+                    Button("Review Removed") { appModel.path.append(.removedPhotos(sessionID: sessionID)) }
+                    Button("Review & Save") { appModel.path.append(.finalReview(sessionID: sessionID)) }
                         .buttonStyle(.borderedProminent)
                 }.padding()
             } else {
@@ -34,16 +40,14 @@ struct ReviewLoadFailedView: View {
     @Environment(AppModel.self) private var appModel
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text("We couldn't load your selection.").font(.title2.bold())
-            Text("Your progress is saved.").font(.footnote).foregroundStyle(.secondary)
-            Button("Try Again") {
-                Task { await appModel.beginReview(for: sessionID) }
-            }
-            .buttonStyle(.borderedProminent)
-            Button("Back to Home") { appModel.goHome() }
-        }
-        .padding()
+        ErrorStateView(
+            title: "We couldn't load your selection.",
+            message: "Your progress is saved.",
+            primaryTitle: "Try Again",
+            primary: { Task { await appModel.beginReview(for: sessionID) } },
+            secondaryTitle: "Back to Home",
+            secondary: { appModel.goHome() }
+        )
         .navigationTitle("Review")
     }
 }

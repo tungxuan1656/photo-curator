@@ -174,11 +174,19 @@
       "gate": "S12/S13/S14 swap and add-back work on real result",
       "id": "feat-010",
       "owns": [
+        "Features/Review/ReviewModel.swift",
         "Features/Review/SimilarGroups.swift",
         "Features/Review/RemovedPhotos.swift",
-        "Features/Review/FinalReview.swift"
+        "Features/Review/FinalReview.swift",
+        "Features/Review/ReviewOverview.swift",
+        "Features/Review/CuratedGrid.swift",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Infrastructure/SessionCheckpointStore.swift",
+        "Domain/Models/SelectionResult.swift"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Review groups + removed + final"
     },
     {
@@ -190,9 +198,16 @@
       "owns": [
         "Services/Export/AlbumExportService.swift",
         "Features/Review/Saving.swift",
-        "Features/Review/Completion.swift"
+        "Features/Review/Completion.swift",
+        "Features/Review/FinalReview.swift",
+        "Services/ServiceProtocols.swift",
+        "App/AppContainer.swift",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Infrastructure/SessionCheckpointStore.swift"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Export + Save + Completion"
     },
     {
@@ -203,9 +218,15 @@
       "id": "feat-012",
       "owns": [
         "Infrastructure/MemoryPressureObserver.swift",
-        "Services/Photos/BatchPipeline.swift"
+        "Services/Photos/BatchPipeline.swift",
+        "Features/Processing/ProcessingModel.swift",
+        "Services/Session/SelectionSessionCoordinator.swift",
+        "App/AppContainer.swift",
+        "App/AppModel.swift",
+        "App/AppModel+Save.swift",
+        "Services/Photos/ImageLoaderService.swift"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Reliability + performance"
     },
     {
@@ -216,9 +237,15 @@
       "id": "feat-013",
       "owns": [
         "Features/Settings/",
-        "SharedUI/ErrorStateView.swift"
+        "SharedUI/ErrorStateView.swift",
+        "App/AppModel.swift",
+        "App/AppModel+Save.swift",
+        "Features/Processing/ProcessingView.swift",
+        "Features/Review/ReviewOverview.swift",
+        "Features/Review/PhotoDetail.swift",
+        "Features/Review/Saving.swift"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Privacy + polish + errors"
     },
     {
@@ -230,7 +257,7 @@
       "owns": [
         "Services/Analytics/"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Release: QA plus conditional analytics"
     }
   ],

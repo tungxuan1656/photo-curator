@@ -49,19 +49,22 @@ final class BatchPipeline: Sendable {
     private let cache: any AnalysisCache
     private let checkpoints: SessionCheckpointStore
     private let config: AppConfiguration
+    private let pressure: MemoryPressureObserver?
 
     init(
         imageLoader: any PhotoImageLoader,
         analyzer: any ImageAnalysisService,
         cache: any AnalysisCache,
         checkpoints: SessionCheckpointStore,
-        config: AppConfiguration = .default
+        config: AppConfiguration = .default,
+        pressure: MemoryPressureObserver? = nil
     ) {
         self.imageLoader = imageLoader
         self.analyzer = analyzer
         self.cache = cache
         self.checkpoints = checkpoints
         self.config = config
+        self.pressure = pressure
     }
 
     func run(
@@ -71,6 +74,9 @@ final class BatchPipeline: Sendable {
     ) async throws -> BatchResult {
         let total = assets.count
         guard total > 0 else { throw SelectionError.invalidInput }
+        // Fresh pressure baseline per run: a sticky warning/critical from a
+        // prior run must not throttle this one; mid-run warnings re-escalate.
+        pressure?.markRecovered()
         var state = RunState(total: total, progressInterval: progressInterval)
         do {
             // Resume-first WITHOUT dropping work: checkpoint IDs reload from cache.
@@ -81,12 +87,17 @@ final class BatchPipeline: Sendable {
             // Post-restore check THROUGH the catch path: a cache-only cancelled
             // run checkpoints first, then throws — never returns BatchResult.
             try Task.checkCancellation()
-            for batchStart in stride(from: 0, to: queue.count, by: config.performance.analysisBatchSize) {
+            try await throwIfMemoryCritical(sessionID: sessionID, state: &state)
+            // Pressure-aware stride: batch size re-read at every boundary so a
+            // warning arriving mid-run shrinks the next batch (32→16).
+            var cursor = 0
+            while cursor < queue.count {
                 try Task.checkCancellation()
-                let batch = Array(queue[batchStart ..< min(
-                    batchStart + config.performance.analysisBatchSize,
-                    queue.count
-                )])
+                try await throwIfMemoryCritical(sessionID: sessionID, state: &state)
+                applyPressurePolicy()
+                let batchSize = effectiveBatchSize()
+                let batch = Array(queue[cursor ..< min(cursor + batchSize, queue.count)])
+                cursor += batch.count
                 try await drain(batch, state: &state, progress: progress)
                 await checkpointIfDue(sessionID: sessionID, state: &state)
             }
@@ -194,7 +205,7 @@ final class BatchPipeline: Sendable {
     /// existing bounded lanes. Failures store nothing and never touch
     /// completed counts, checkpoints, or unavailable.
     private func rebuildSimilarities(_ assets: [PhotoAsset], state: inout RunState) async {
-        let laneCount = max(1, config.performance.maxConcurrentImageRequests)
+        let laneCount = max(1, effectiveLaneCount())
         for start in stride(from: 0, to: assets.count, by: laneCount) {
             let end = min(start + laneCount, assets.count)
             await withTaskGroup(of: (AssetID, ImageSimilarityArtifact?).self) { group in
@@ -230,7 +241,7 @@ final class BatchPipeline: Sendable {
         state: inout RunState,
         progress: (BatchProgress) -> Void
     ) async throws {
-        let laneCount = config.performance.maxConcurrentImageRequests
+        let laneCount = effectiveLaneCount()
         try await withThrowingTaskGroup(of: AssetOutcome.self) { group in
             var index = 0
             func submitNext() {
@@ -283,6 +294,46 @@ final class BatchPipeline: Sendable {
         await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
         state.completedSinceCheckpoint = 0
         state.lastCheckpoint = Date()
+    }
+
+    // MARK: - Memory pressure policy (performance §3: slow speed, never quality)
+
+    /// Batch size under pressure: warning shrinks toward 16 (the low end of
+    /// the 16–64 tuning span); critical never starts a new batch (the caller
+    /// throws `.memoryCritical` first). Completed analysis is never dropped.
+    private func effectiveBatchSize() -> Int {
+        guard pressure?.level == .warning else {
+            return config.performance.analysisBatchSize
+        }
+        return min(config.performance.analysisBatchSize, 16)
+    }
+
+    /// Lane count under pressure: warning collapses toward 1 (the constrained
+    /// concurrency); completed analysis is never dropped and selection quality
+    /// never changes — only speed degrades.
+    private func effectiveLaneCount() -> Int {
+        guard pressure?.level == .warning else {
+            return config.performance.maxConcurrentImageRequests
+        }
+        return 1
+    }
+
+    /// Warning policy: stop speculative preheat. Decoded images already
+    /// release by scope exit in `processOne`; nothing retained to clear here.
+    private func applyPressurePolicy() {
+        guard pressure?.level != .normal else { return }
+        (imageLoader as? ImageLoaderService)?.stopPreheat()
+    }
+
+    /// Critical policy: checkpoint completed work, then throw `.memoryCritical`
+    /// so the run pauses resumably instead of running until an OS kill.
+    private func throwIfMemoryCritical(sessionID: SessionID, state: inout RunState) async throws {
+        guard pressure?.level == .critical else { return }
+        (imageLoader as? ImageLoaderService)?.stopPreheat()
+        await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
+        state.completedSinceCheckpoint = 0
+        state.lastCheckpoint = Date()
+        throw SelectionError.memoryCritical
     }
 
     private func processOne(_ asset: PhotoAsset) async throws -> AssetOutcome {

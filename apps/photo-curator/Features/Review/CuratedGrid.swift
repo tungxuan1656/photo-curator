@@ -3,9 +3,11 @@ import UIKit
 
 /// S10 curated grid over the session ReviewModel.
 ///
-/// Removed items dim in place (never vanish or shift layout). The thumbnail
-/// navigates to detail; the overlaid checkmark button toggles inclusion
-/// without navigating. Cells receive only ID + selection state.
+/// Iterates `curatedDisplayIDs` (engine picks plus currently selected) so
+/// removed items dim in place (never vanish or shift layout). Rejected
+/// non-selected photos never enter this grid; they live on S13. The
+/// thumbnail navigates to detail; the overlaid checkmark button toggles
+/// inclusion without navigating. Cells receive only ID + selection state.
 struct CuratedGrid: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
@@ -25,7 +27,7 @@ struct CuratedGrid: View {
                     Text("\(model.selectedIDs.count) selected").font(.headline)
                     ScrollView {
                         LazyVGrid(columns: columns, spacing: 2) {
-                            ForEach(model.displayIDs, id: \.self) { id in
+                            ForEach(model.curatedDisplayIDs, id: \.self) { id in
                                 ReviewCell(
                                     assetID: id,
                                     isSelected: model.isSelected(id),
@@ -40,7 +42,7 @@ struct CuratedGrid: View {
                     }
                 }
                 .navigationDestination(for: AssetID.self) { id in
-                    PhotoDetail(assetID: id, sessionID: sessionID)
+                    PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: model.curatedDisplayIDs)
                 }
             } else {
                 ProgressView("Loading your selection…")

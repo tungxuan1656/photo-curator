@@ -13,6 +13,12 @@ extension Notification.Name {
 final class ImageLoaderService: PhotoImageLoader, @unchecked Sendable {
     private let manager = PHCachingImageManager()
 
+    /// Memory-pressure hook: stops speculative preheat. The request path
+    /// itself never prefetches, so this is the only guess-ahead work to stop.
+    func stopPreheat() {
+        manager.stopCachingImagesForAllAssets()
+    }
+
     func thumbnail(for id: AssetID, targetSize: CGSize) async throws -> CGImage {
         try await requestImage(for: id, targetSize: targetSize, contentMode: .aspectFill, fast: true)
     }
