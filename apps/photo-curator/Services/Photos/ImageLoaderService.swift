@@ -23,6 +23,13 @@ final class ImageLoaderService: PhotoImageLoader, @unchecked Sendable {
             for: id, targetSize: CGSize(width: edge, height: edge), contentMode: .aspectFit, fast: false
         )
     }
+
+    func preview(for id: AssetID, targetSize: CGSize) async throws -> CGImage {
+        let edge = min(max(targetSize.width, targetSize.height), 2048)
+        return try await requestImage(
+            for: id, targetSize: CGSize(width: edge, height: edge), contentMode: .aspectFit, fast: false
+        )
+    }
 }
 
 /// Per-request mutable state. All access is under `NSLock`; the single

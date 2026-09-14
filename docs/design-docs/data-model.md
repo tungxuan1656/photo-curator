@@ -109,6 +109,7 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
     let pixelHeight: Int
     let mediaSubtype: PhotoMediaSubtype
     let isFavorite: Bool
+    let isEdited: Bool
     let source: AssetSource
 }
 ```
@@ -119,6 +120,7 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
 | `pixelWidth/Height` | Basis for derived `aspectRatio` and `orientation`; orientation is derived, not stored separately. |
 | `mediaSubtype` | Only values that change behavior (`standard`, `livePhoto`, `screenshot`, `panorama`, `hdr`, `portrait`, `unknown`). Eligibility policy: [03](../product-specs/selection-rules.md). |
 | `isFavorite` | Soft bonus flag only; see [03](../product-specs/selection-rules.md). |
+| `isEdited` | Mapped from `PHAsset.hasAdjustments`; intentional-edit soft bonus and edited-twin tie-break per [03](../product-specs/selection-rules.md) §6/§15. |
 | `source` | `local` / `iCloud` / `unknown`. Hint for progress and retry only; iCloud state can change. API detail: [07](apple-frameworks.md). |
 
 Precise location is never stored here; it stays in bounded temp working memory only for grouping, then released. Retention and redaction: [09](../ship-gates/privacy.md).
@@ -247,15 +249,21 @@ enum ClusterType: String, Codable, Sendable {
 
 Membership: asset → at most 1 primary cluster per pass, then moments group cluster representatives in time order (dups before moments, per [04](selection-engine.md)). References only; no embedded `PhotoAsset` copies.
 
-Similarity storage rule: never persist an N×N matrix (5,000² = 25M pairs). Persist cluster results only. Pairwise edges are transient:
+Similarity storage rule: never persist an N×N matrix (5,000² = 25M pairs). Persist cluster results only. Windowed candidate pairs and pairwise edges are transient:
 
 ```swift
-struct SimilarityEdge: Sendable {
+struct SimilarityCandidate: Sendable, Hashable {
     let first: AssetID
     let second: AssetID
-    let similarity: Double
+}
+struct SimilarityEdge: Sendable, Hashable {
+    let first: AssetID
+    let second: AssetID
+    let distance: Double
 }
 ```
+
+`distance` is the raw Vision feature-print distance (lower means more similar); it is not a normalized similarity score. Cluster `similarityScore` is a display-only `1 / (1 + meanDistance)` derived after grouping and never feeds threshold decisions.
 
 Feature prints (Vision or equivalent) stay in bounded temp working memory keyed by `AssetID` for the pairwise step, then released; they are never durable rows. Retention: [09](../ship-gates/privacy.md). API detail: [07](apple-frameworks.md).
 
@@ -265,36 +273,41 @@ Feature prints (Vision or equivalent) stay in bounded temp working memory keyed 
 
 One recorded choice per asset per session. Score math and keeper rules: [03](../product-specs/selection-rules.md).
 
+In-code representation is `Decision` (`Domain/Models/SelectionResult.swift`): `status` is
+`selected`/`rejected` (rejected means excluded from this album, never deletion), `score` and
+`qualityBreakdown` are optional, `reasons` carries canonical [03 §16](../product-specs/selection-rules.md)
+strings, and `competingIDs` holds the duplicate winner a rejected asset lost to. `SelectionResult`
+persists `selectedAssetIDs` in chronological capture order, the complementary `rejectedAssetIDs`,
+one `Decision` per source ID, and `engineVersion`. `engineVersion 1` was the feat-007 pass-through;
+`engineVersion 2` marks the first real pipeline (duplicates → moments → rank → shortlist → diversity →
+verify → order). Edited twins resolve by `PhotoAsset.isEdited` (mapped from
+`PHAsset.hasAdjustments`): the edited copy earns a soft bonus and wins the
+near-duplicate tie-break, so only it survives when both twins land in one
+cluster — but twins outside the time window or similarity threshold stay
+separate and may both be kept. Clusters and moments remain cached-evictable
+inputs to decisions, rebuilt deterministically per run. Stored `AssetID`s may
+no longer resolve; PhotoKit is authoritative.
+
 ```swift
-struct SelectionDecision: Identifiable, Codable, Sendable {
-    var id: AssetID { assetID }
+struct Decision: Codable, Sendable {
     let assetID: AssetID
-    let status: SelectionStatus       // selected / rejected / undecided
-    let score: Double
-    let scoreBreakdown: SelectionScoreBreakdown
-    let reasons: [SelectionReason]
-    let competingAssetIDs: [AssetID]  // winner(s) this asset lost to; debug gold
-    let engineVersion: Int
+    let status: DecisionStatus       // selected / rejected
+    let score: Double?
+    let qualityBreakdown: QualityScoreBreakdown?
+    let reasons: [String]            // canonical selection-rules §16 codes
+    let competingIDs: [AssetID]      // winner this asset lost to; debug gold
 }
-struct SelectionScoreBreakdown: Codable, Sendable {
-    let quality: Double
-    let uniqueness: Double
-    let momentImportance: Double
-    let people: Double
-    let diversity: Double
-    let redundancyPenalty: Double
-    let finalScore: Double
+enum DecisionStatus: String, Codable, Sendable {
+    case selected, rejected
+}
+struct QualityScoreBreakdown: Codable, Sendable {
+    let technical: Double
+    let people: Double?
+    let composition: Double?
+    let content: Double?
+    let total: Double
 }
 ```
-
-| Stored item | Owner of meaning |
-|---|---|
-| Keep/reject policy, tier cutoffs, weights, diversity and coverage model | [03](../product-specs/selection-rules.md) |
-| Rank and assemble order | [04](selection-engine.md) |
-| `SelectionReason` code list (e.g. `exactDuplicate`, `bestInMoment`, `userSelected`) | [03 §16](../product-specs/selection-rules.md); this file stores the codes |
-| Analytics use of reasons | [11](../ship-gates/analytics.md) |
-
-Keep `SelectionStatus` to three cases; put nuance in `reasons`. Never mutate the engine record for a user edit — write `UserOverride` + `UserFeedback` instead (§11).
 
 ---
 
@@ -305,10 +318,11 @@ struct SelectionResult: Codable, Sendable {
     let sessionID: SessionID
     let selectedAssetIDs: [AssetID]   // chrono order for review by default
     let rejectedAssetIDs: [AssetID]
-    let decisions: [SelectionDecision]
+    let decisions: [Decision]
     let generatedAt: Date
     let engineVersion: Int
 }
+```
 struct CuratedAlbum: Identifiable, Codable, Sendable {
     let id: UUID
     let sessionID: SessionID

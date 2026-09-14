@@ -167,7 +167,7 @@ actor SelectionSessionCoordinator {
             interval: interval,
             onProgress: onProgress
         )
-        let result = try selectResult(
+        let result = try await selectResult(
             request: request,
             assets: sourceAssets,
             batchResult: batchResult
@@ -241,16 +241,37 @@ actor SelectionSessionCoordinator {
         }
     }
 
+    /// Shared partial-result entry point for Continue Without Them. Regenerates
+    /// transient similarity artifacts for the available IDs through the
+    /// pipeline's loader + analyzer in bounded lanes, then runs the same
+    /// engine pipeline as the normal path.
+    func finalizeAvailable(
+        assets: [PhotoAsset],
+        analyses: [AssetID: PhotoAnalysis],
+        configuration: SelectionConfiguration,
+        laneCount: Int
+    ) async throws -> SelectionResult {
+        let candidates = engine.duplicateCandidates(for: assets, configuration: configuration)
+        let edges = try await rebuildSimilarityEdges(for: assets, candidates: candidates, laneCount: laneCount)
+        return try engine.select(
+            assets: assets, analyses: analyses, configuration: configuration,
+            feedback: nil, similarityEdges: edges
+        )
+    }
+
     private func selectResult(
         request: SelectionRequest,
         assets: [PhotoAsset],
         batchResult: BatchResult
-    ) throws -> SelectionResult {
+    ) async throws -> SelectionResult {
+        let candidates = engine.duplicateCandidates(for: assets, configuration: request.config.selection)
+        let edges = try batchResult.similarityEdges(for: candidates)
         let engineOut = try engine.select(
             assets: assets,
             analyses: batchResult.analyses,
             configuration: request.config.selection,
-            feedback: nil
+            feedback: nil,
+            similarityEdges: edges
         )
         return SelectionResult(
             sessionID: request.sessionID,
@@ -262,6 +283,28 @@ actor SelectionSessionCoordinator {
         )
     }
 
+    /// Bounded artifact rebuild for the partial path: analysis images only for
+    /// available IDs, existing lane count, failures skipped, cancel-aware.
+    private func rebuildSimilarityEdges(
+        for assets: [PhotoAsset], candidates: [SimilarityCandidate], laneCount: Int
+    ) async throws -> [SimilarityEdge] {
+        let lanes = max(1, laneCount)
+        let artifacts = try await SimilarityRebuilder(imageLoader: imageLoader, analyzer: analyzer, laneCount: lanes)
+            .rebuild(for: assets.map(\.id))
+        try Task.checkCancellation()
+        var edges: [SimilarityEdge] = []
+        edges.reserveCapacity(candidates.count)
+        for candidate in candidates {
+            try Task.checkCancellation()
+            guard let left = artifacts[candidate.first], let right = artifacts[candidate.second] else { continue }
+            guard let distance = try? left.distance(to: right) else { continue }
+            edges.append(SimilarityEdge(first: candidate.first, second: candidate.second, distance: distance))
+        }
+        return edges
+    }
+}
+
+extension SelectionSessionCoordinator {
     private func persist(
         request: SelectionRequest,
         batchResult: BatchResult,

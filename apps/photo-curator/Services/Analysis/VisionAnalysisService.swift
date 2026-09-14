@@ -8,15 +8,15 @@ import Vision
 /// already baked), so the handler always passes `.up` and no orientation
 /// side-channel exists. Each Vision request runs independently: one request
 /// failing degrades its own field only (nil results → zero-count with nil
-/// quality, never a throw). Feature-print generation is deferred to feat-007;
-/// no print request runs here. Normalization lives in `PhotoAnalysis.make`;
-/// this file defines no clamp.
+/// quality, never a throw). Feature prints are transient run-local evidence:
+/// never persisted, cached, or logged; released after edge computation.
+/// Normalization lives in `PhotoAnalysis.make`; this file defines no clamp.
 final class VisionAnalysisService: ImageAnalysisService, Sendable {
     /// Off-main boundary: nonisolated, so the synchronous Vision + CPU work in
     /// `performAll` runs on the cooperative pool, never blocking SwiftUI on
     /// 100-asset runs. No shared mutable state crosses here (`AnalysisInput`
     /// is a value snapshot; everything else is a local).
-    nonisolated func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis {
+    nonisolated func analyze(_ input: AnalysisInput) async throws -> ImageAnalysisOutput {
         // Structured execution: no Task{} wrapper, so the pipeline lane's
         // cancellation — and its userInitiated priority — propagate directly
         // into the Vision work. The do/catch translates every CancellationError
@@ -28,6 +28,24 @@ final class VisionAnalysisService: ImageAnalysisService, Sendable {
             return try await performAll(input: input)
         } catch is CancellationError {
             throw SelectionError.cancelled
+        }
+    }
+
+    /// Cache-hit path: rebuilds only the deliberately non-persisted feature
+    /// print. Non-cancellation Vision failure degrades to nil (singleton in
+    /// grouping), never a throw.
+    nonisolated func similarityArtifact(for input: AnalysisInput) async throws -> ImageSimilarityArtifact? {
+        do {
+            try Task.checkCancellation()
+            let handler = VNImageRequestHandler(cgImage: input.image, orientation: .up, options: [:])
+            let request = VNGenerateImageFeaturePrintRequest()
+            try handler.perform([request])
+            guard let observation = request.results?.first as? VNFeaturePrintObservation else { return nil }
+            return ImageSimilarityArtifact(observation: observation)
+        } catch is CancellationError {
+            throw SelectionError.cancelled
+        } catch {
+            return nil
         }
     }
 }
@@ -63,7 +81,7 @@ private extension VisionAnalysisService {
     /// Nonisolated: the synchronous Vision + CPU work executes off the main
     /// actor. Hops back happen only for isolated value construction
     /// (`TechnicalAnalysis`, `PhotoAnalysis.make`, config reads).
-    nonisolated func performAll(input: AnalysisInput) async throws -> PhotoAnalysis {
+    nonisolated func performAll(input: AnalysisInput) async throws -> ImageAnalysisOutput {
         try Task.checkCancellation()
         // Snapshot the sendable input once: the image + ID are locals from
         // here on, so no shared state crosses executors below.
@@ -74,6 +92,7 @@ private extension VisionAnalysisService {
         let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
         let faceRects = VNDetectFaceRectanglesRequest()
         let faceQuality = VNDetectFaceCaptureQualityRequest()
+        let printRequest = VNGenerateImageFeaturePrintRequest()
 
         // Synchronous Vision work only inside autoreleasepool (no await
         // inside). Cancellation is checked between requests, never inside
@@ -87,6 +106,10 @@ private extension VisionAnalysisService {
             try Task.checkCancellation()
             autoreleasepool {
                 try? handler.perform([faceQuality])
+            }
+            try Task.checkCancellation()
+            autoreleasepool {
+                try? handler.perform([printRequest])
             }
         } catch is CancellationError {
             throw SelectionError.cancelled
@@ -111,7 +134,7 @@ private extension VisionAnalysisService {
         let maxEdge = await AppConfiguration.default.selection.analysisImageMaxDimension
         let technical = await Self.heuristics(on: image, edge: Double(maxEdge))
         // Shared factory owned by PhotoAnalysis.swift — no local clamp.
-        let result = await PhotoAnalysis.make(
+        let analysis = await PhotoAnalysis.make(
             assetID: assetID,
             technical: technical,
             faceCount: faceCount,
@@ -119,10 +142,12 @@ private extension VisionAnalysisService {
             subjectPlacementScore: bestFaceQuality,
             sceneType: faceCount > 0 ? .people : .unknown
         )
+        let similarity = (printRequest.results?.first as? VNFeaturePrintObservation)
+            .map(ImageSimilarityArtifact.init(observation:))
         // Post-analysis cancel check: a cancel landing during the sync CPU
         // pass must not return success — map through .cancelled in analyze.
         try Task.checkCancellation()
-        return result
+        return ImageAnalysisOutput(analysis: analysis, similarity: similarity)
     }
 
     /// Synchronous CPU pass on the 512 px `CGImage` returning a

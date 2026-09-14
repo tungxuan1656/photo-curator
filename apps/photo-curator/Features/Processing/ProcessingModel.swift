@@ -60,6 +60,19 @@ final class ProcessingModel {
         task = Task { await execute(request: request, sourceAssets: sourceAssets) }
     }
 
+    /// Partial-result path for Continue Without Them: forwards to the
+    /// coordinator's shared entry point so partial and normal results use the
+    /// same engine pipeline. No state mutation here; AppModel owns the
+    /// cancellation/race gate, result save, checkpoint, and route.
+    func finalizeAvailable(
+        assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis], configuration: SelectionConfiguration,
+        laneCount: Int
+    ) async throws -> SelectionResult {
+        try await coordinator.finalizeAvailable(
+            assets: assets, analyses: analyses, configuration: configuration, laneCount: laneCount
+        )
+    }
+
     /// Synchronous <250 ms UI ack: `.cancelling` renders before the run Task
     /// observes cancellation. No new expensive work starts after cancel.
     func cancel() {

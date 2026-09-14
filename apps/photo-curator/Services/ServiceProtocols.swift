@@ -26,11 +26,18 @@ protocol PhotoLibraryService: Sendable {
 protocol PhotoImageLoader: Sendable {
     func thumbnail(for id: AssetID, targetSize: CGSize) async throws -> CGImage
     func analysisImage(for id: AssetID) async throws -> CGImage
+    /// Bounded detail preview (capped at 2048 px, aspect-fit). Reuses the
+    /// single manager/request state, final-quality delivery, iCloud handling,
+    /// and cancellation; honors a smaller caller targetSize.
+    func preview(for id: AssetID, targetSize: CGSize) async throws -> CGImage
 }
 
-/// Image facts in, `PhotoAnalysis` out. No albums, no SwiftUI, no final picks.
+/// Image facts in, `ImageAnalysisOutput` (durable analysis + transient similarity) out.
+/// No albums, no SwiftUI, no final picks. `similarityArtifact(for:)` rebuilds only
+/// the deliberately non-persisted feature print for cache/resume hits.
 protocol ImageAnalysisService: Sendable {
-    func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis
+    func analyze(_ input: AnalysisInput) async throws -> ImageAnalysisOutput
+    func similarityArtifact(for input: AnalysisInput) async throws -> ImageSimilarityArtifact?
 }
 
 /// Actor-isolated store of recomputable derived analysis. Original photo bytes never enter.
@@ -76,11 +83,19 @@ struct NoopImageLoader: PhotoImageLoader {
     func analysisImage(for id: AssetID) async throws -> CGImage {
         throw SelectionError.internal
     }
+
+    func preview(for id: AssetID, targetSize: CGSize) async throws -> CGImage {
+        throw SelectionError.internal
+    }
 }
 
 struct NoopImageAnalyzer: ImageAnalysisService {
-    func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis {
+    func analyze(_ input: AnalysisInput) async throws -> ImageAnalysisOutput {
         throw SelectionError.internal
+    }
+
+    func similarityArtifact(for input: AnalysisInput) async throws -> ImageSimilarityArtifact? {
+        nil
     }
 }
 

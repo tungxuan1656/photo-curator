@@ -75,3 +75,27 @@
 **Evidence**: ./init.sh PASS every step (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test]); sim install/launch + Settings render OK; exact feat-005 contract consumed; Noop gone from S06→S07→reviewReady path.
 **Blockers**: parked → feat-012 hardening: session-ownership interleavings (finalize gate-vs-await atomicity, completed-session supersede cleanup, shell-save tracking, completion-vs-supersede ordering), transient cross-session note leakage, cancel-vs-persist micro-race, auto-retry-after-Settings; 100-asset device QA open; ReviewReady grid wiring is feat-009. Single-session gate path review-clean.
 **Next**: feat-007 (Duplicates + moments) — starts on user selection; stacked branch feat/feat-007 from feat-006 HEAD 2af0e90 when approved.
+
+## 2026-09-14 — feat-007
+
+**State**: done (user-confirmed Dataset B pass)
+**Done**: feat-007 closed on feat/feat-007: Dataset B manual QA pass recorded; ./init.sh PASS; branch feat/feat-008 stacked from its HEAD.
+**Evidence**: features/feat-007.md acceptance checked; close commit 654f111; ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]).
+**Blockers**: none
+**Next**: feat-008 engine QA (Dataset B + Golden).
+
+## 2026-09-14 — feat-008
+
+**State**: done (self-reviewed; device QA moves to feat-009 instrument)
+**Done**: feat-008 closed on feat/feat-008: scorer + shortlist, diversity selector, final builder engineVersion 2, full pipeline with swap/restore overrides, shared partial path, decision mapping, plus review-fix wave (moment continuity, edited rep, forced-cluster guard, usable-only swaps, loser-moment inheritance). Self-review: engine-logic 6 FAIL→fixed, service-boundary 10/10 PASS.
+**Evidence**: ./init.sh PASS final (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); features/feat-008.md acceptance checked; feature_index.json feat-008 done.
+**Blockers**: none (code review closed; Dataset B + Golden evaluation runs on feat-009 S09–S11 grid/detail)
+**Next**: feat-009 Review core (S09/S10/S11) on stacked branch from feat-008 HEAD.
+
+## 2026-09-14 — feat-009
+
+**State**: done (self-reviewed; device tap-through deferred to user)
+**Done**: feat-009 closed on feat/feat-009: session-owned ReviewModel, beginReview + reviewOverview/curatedGrid routes with load-failed fallback, ReviewReady Continue wiring + zero-pick abnormal state, S09 overview, S10 lazy grid (dim-don't-shift + Undo), bounded 2048px preview seam + S11 local pager detail. Self-review: UX 16/16 PASS; SwiftUI 12 PASS/2 FAIL→fixed (cell onToggle closure, stale-preview guard).
+**Evidence**: ./init.sh PASS final (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); features/feat-009.md acceptance checked; feature_index.json feat-009 done.
+**Blockers**: none (code review closed)
+**Next**: feat-010 (groups + removed + final) — needs bounded cluster/moment export seam; Dataset B/Golden/G2 evaluation now runnable on S09–S11 when user QA passes.

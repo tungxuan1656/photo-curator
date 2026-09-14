@@ -132,10 +132,21 @@ struct ReviewReadyView: View {
     @Environment(AppModel.self) private var appModel
     @State private var result: SelectionResult?
     @State private var didLoad = false
-
+    @State private var beginFailed = false
     var body: some View {
         Group {
-            if let result {
+            if let result, result.selectedAssetIDs.isEmpty {
+                VStack(spacing: 12) {
+                    Text("We couldn't build a selection").font(.title2.bold())
+                    Text("Try processing this set again or choose different photos.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button("Try Again") {
+                        appModel.retryProcessing()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    Button("Choose Different Photos") { appModel.goHome() }
+                }.padding()
+            } else if let result {
                 let total = result.selectedAssetIDs.count + result.rejectedAssetIDs.count
                 VStack(spacing: 12) {
                     Text("Your curated album is ready").font(.title2.bold())
@@ -144,13 +155,17 @@ struct ReviewReadyView: View {
                         Text("\(unavailable) photos were unavailable and could not be analyzed.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
+                    if beginFailed {
+                        Text("We couldn't open your selection. Try again.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                     Button("Continue") {
-                        // Feat-009 wires this to the curated grid; until then it
-                        // stays a guarded acknowledgment (never auto-routes).
-                        // Rendered only after the persisted result loads.
+                        Task {
+                            beginFailed = false
+                            beginFailed = await !appModel.beginReview(for: sessionID)
+                        }
                     }
                     .buttonStyle(.borderedProminent)
-                    Button("Back to Home") { appModel.goHome() }
                 }.padding()
             } else if didLoad {
                 VStack(spacing: 12) {

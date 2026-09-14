@@ -70,6 +70,7 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
             pixelHeight: ph.pixelHeight,
             mediaSubtype: mapSubtype(ph.mediaSubtypes),
             isFavorite: ph.isFavorite,
+            isEdited: ph.hasAdjustments,
             source: .unknown
         )
     }

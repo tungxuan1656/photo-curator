@@ -192,6 +192,9 @@ final class AppModel {
         let live = sourceByID
         return confirmedSourceIDs.compactMap { live[$0] }
     }
+
+    /// Session-owned review state for S09–S11. Nil until beginReview succeeds.
+    private(set) var reviewModel: ReviewModel?
 }
 
 // MARK: - feat-006 curation intents
@@ -321,6 +324,32 @@ extension AppModel {
         try? await container.checkpointStore.loadResult(sessionID: sessionID)
     }
 
+    /// S09 entry: builds the session-owned ReviewModel from the persisted
+    /// result plus frozen source metadata, then routes. Returns true on success.
+    /// Reuses the existing model (preserving remove/restore edits) and never
+    /// pushes a duplicate overview when one is already on top. Returns false
+    /// when the result is missing, mismatched, or empty; the ReviewReady caller
+    /// surfaces inline retry feedback while the failed-route Try Again caller
+    /// already shows the recoverable state.
+    func beginReview(for sessionID: SessionID) async -> Bool {
+        if let existing = reviewModel, existing.sessionID == sessionID {
+            if path.last != .reviewOverview(sessionID: sessionID) {
+                path.append(.reviewOverview(sessionID: sessionID))
+            }
+            return true
+        }
+        guard let result = await loadResult(for: sessionID),
+              result.sessionID == sessionID,
+              !result.selectedAssetIDs.isEmpty
+        else { return false }
+        let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
+        reviewModel = ReviewModel(sessionID: sessionID, result: result, sourceByID: live)
+        if path.last != .reviewOverview(sessionID: sessionID) {
+            path.append(.reviewOverview(sessionID: sessionID))
+        }
+        return true
+    }
+
     func openSettings() {
         path.append(.settings)
     }
@@ -376,11 +405,9 @@ extension AppModel {
             // Minimum-analyzable rule: no partial result without at least one analysis.
             guard !analyses.isEmpty else { return }
             let available = assets.filter { analyses[$0.id] != nil }
-            let engineOut = try container.selectionEngine.select(
-                assets: available,
-                analyses: analyses,
-                configuration: AppConfiguration.default.selection,
-                feedback: nil
+            let engineOut = try await processing.finalizeAvailable(
+                assets: available, analyses: analyses, configuration: AppConfiguration.default.selection,
+                laneCount: AppConfiguration.default.performance.maxConcurrentImageRequests
             )
             // Race gate: a retry resumed the run — never persist under it.
             guard !Task.isCancelled, case .failed = processing.state else { return }

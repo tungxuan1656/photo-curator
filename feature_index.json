@@ -107,10 +107,19 @@
       "gate": "clusters and moments correct on dataset B",
       "id": "feat-007",
       "owns": [
+        "Domain/Models/PhotoAnalysis.swift",
+        "Domain/Models/SelectionGrouping.swift",
         "Domain/Selection/DuplicateResolver.swift",
-        "Domain/Selection/MomentBuilder.swift"
+        "Domain/Selection/MomentBuilder.swift",
+        "Domain/Selection/SelectionEngine.swift",
+        "Services/Analysis/ImageSimilarityArtifact.swift",
+        "Services/Analysis/VisionAnalysisService.swift",
+        "Services/Photos/BatchPipeline.swift",
+        "Services/ServiceProtocols.swift",
+        "Services/Session/SelectionSessionCoordinator.swift",
+        "docs/design-docs/data-model.md"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Duplicates + moments"
     },
     {
@@ -122,9 +131,19 @@
       "owns": [
         "Domain/Scoring/QualityScorer.swift",
         "Domain/Selection/DiversitySelector.swift",
-        "Domain/Selection/FinalAlbumBuilder.swift"
+        "Domain/Selection/FinalAlbumBuilder.swift",
+        "Domain/Selection/SelectionEngine.swift",
+        "Services/Session/SelectionSessionCoordinator.swift",
+        "Services/Session/SimilarityRebuilder.swift",
+        "Features/Processing/ProcessingModel.swift",
+        "App/AppModel.swift",
+        "docs/design-docs/data-model.md",
+        "Domain/Models/PhotoAsset.swift",
+        "Services/Photos/PhotoLibraryPermissionService.swift",
+        "Domain/Selection/DuplicateResolver.swift",
+        "Domain/Selection/MomentBuilder.swift"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Scoring + diversity + verify"
     },
     {
@@ -134,11 +153,18 @@
       "gate": "S09/S10/S11 operable on real result",
       "id": "feat-009",
       "owns": [
+        "Features/Review/ReviewModel.swift",
         "Features/Review/ReviewOverview.swift",
         "Features/Review/CuratedGrid.swift",
-        "Features/Review/PhotoDetail.swift"
+        "Features/Review/PhotoDetail.swift",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Features/Processing/ProcessingView.swift",
+        "Services/ServiceProtocols.swift",
+        "Services/Photos/ImageLoaderService.swift"
       ],
-      "status": "todo",
+      "status": "done",
       "title": "Review core on real result (overview/grid/detail)"
     },
     {
