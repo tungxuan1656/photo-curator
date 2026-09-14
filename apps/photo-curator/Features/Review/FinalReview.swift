@@ -3,9 +3,10 @@ import UIKit
 
 /// S14 final review: count, bounded preview, editable album name, save.
 ///
-/// Reads the shared `ReviewModel` (same counts as S10/S12/S13). Save
-/// execution belongs to feat-011: the button is a TODO placeholder there.
-/// Empty selection disables Save with the exact guidance copy.
+/// Reads the shared `ReviewModel` (same counts as S10/S12/S13). Save pushes
+/// S15, which joins the atomically claimed session save; repeated taps land
+/// on the same in-flight save, never a second export. Save stays disabled on
+/// an empty selection with the exact guidance copy.
 struct FinalReview: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
@@ -49,9 +50,14 @@ struct FinalReview: View {
                     Text("Saves to a new album in Photos.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    Button("Save Album") {}
-                        .buttonStyle(.borderedProminent)
-                        .disabled(selected.isEmpty)
+                    Text("Your original photos will not be changed.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Button("Save Album") {
+                        appModel.path.append(.saving(sessionID: sessionID))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(selected.isEmpty || appModel.isSaving(sessionID: sessionID))
                     Button("Back to Review") { appModel.path.removeLast() }
                 }
                 .padding()

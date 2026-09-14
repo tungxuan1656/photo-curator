@@ -64,6 +64,10 @@ struct RootView: View {
                     } else {
                         ReviewLoadFailedView(sessionID: id)
                     }
+                case let .saving(id):
+                    Saving(sessionID: id)
+                case let .completion(id):
+                    Completion(sessionID: id)
                 }
             }
         }

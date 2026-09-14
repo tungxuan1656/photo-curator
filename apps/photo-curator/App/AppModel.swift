@@ -26,6 +26,9 @@ final class AppModel {
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
+    /// In-flight PhotoKit save, scoped per session: S14 Save claims it
+    /// atomically; repeated taps join or stay disabled, never a second export.
+    var saveFlight: (session: SessionID, task: Task<SaveOutcome, Never>)?
     let processing: ProcessingModel
     private var isRequesting = false
     private var sourceGeneration = 0
@@ -33,7 +36,7 @@ final class AppModel {
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "session"
     )
 
-    private let container: AppContainer
+    let container: AppContainer
 
     init(container: AppContainer) {
         self.container = container
@@ -194,7 +197,7 @@ final class AppModel {
     }
 
     /// Session-owned review state for S09–S11. Nil until beginReview succeeds.
-    private(set) var reviewModel: ReviewModel?
+    var reviewModel: ReviewModel?
 }
 
 // MARK: - feat-006 curation intents
@@ -297,6 +300,15 @@ extension AppModel {
                     "\(context, privacy: .public) feedback cleanup failed: \(error.localizedDescription, privacy: .public)"
                 )
         }
+        do {
+            try await container.checkpointStore.deleteSaveState(sessionID: sessionID)
+        } catch {
+            cleaned = false
+            logger
+                .error(
+                    "\(context, privacy: .public) save-state cleanup failed: \(error.localizedDescription, privacy: .public)"
+                )
+        }
         return cleaned
     }
 
@@ -331,39 +343,6 @@ extension AppModel {
     /// ReviewReadyView caller: persisted result when the run finished, nil otherwise.
     func loadResult(for sessionID: SessionID) async -> SelectionResult? {
         try? await container.checkpointStore.loadResult(sessionID: sessionID)
-    }
-
-    /// S09 entry: builds the session-owned ReviewModel from the persisted
-    /// result plus frozen source metadata, then routes. Returns true on success.
-    /// Reuses the existing model (preserving remove/restore edits) and never
-    /// pushes a duplicate overview when one is already on top. Reloads the
-    /// persisted `SelectionFeedback` so review edits survive relaunch; the
-    /// engine never reruns. Returns false when the result is missing,
-    /// mismatched, or empty; the ReviewReady caller surfaces inline retry
-    /// feedback while the failed-route Try Again caller already shows the
-    /// recoverable state.
-    func beginReview(for sessionID: SessionID) async -> Bool {
-        if let existing = reviewModel, existing.sessionID == sessionID {
-            if path.last != .reviewOverview(sessionID: sessionID) {
-                path.append(.reviewOverview(sessionID: sessionID))
-            }
-            return true
-        }
-        guard let result = await loadResult(for: sessionID),
-              result.sessionID == sessionID,
-              !result.selectedAssetIDs.isEmpty
-        else { return false }
-        let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
-        let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
-        let model = ReviewModel(sessionID: sessionID, result: result, sourceByID: live, feedback: feedback)
-        model.setFeedbackHook { [store = container.checkpointStore, sessionID] snapshot in
-            Task { try? await store.saveFeedback(snapshot, for: sessionID) }
-        }
-        reviewModel = model
-        if path.last != .reviewOverview(sessionID: sessionID) {
-            path.append(.reviewOverview(sessionID: sessionID))
-        }
-        return true
     }
 
     func openSettings() {

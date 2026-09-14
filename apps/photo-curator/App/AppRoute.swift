@@ -18,4 +18,6 @@ enum AppRoute: Hashable, Sendable {
     case similarGroups(sessionID: SessionID)
     case removedPhotos(sessionID: SessionID)
     case finalReview(sessionID: SessionID)
+    case saving(sessionID: SessionID)
+    case completion(sessionID: SessionID)
 }

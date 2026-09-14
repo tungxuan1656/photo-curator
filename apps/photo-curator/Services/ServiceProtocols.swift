@@ -48,7 +48,36 @@ protocol AnalysisCache: Actor {
 
 /// Creates a new collision-safe album from existing assets. Never modifies or deletes originals.
 protocol AlbumExportService: Sendable {
-    func exportAlbum(name: String, assetIDs: [AssetID]) async throws
+    /// Creates a new collision-safe album (`name`, `name 2`, …). Never reuses
+    /// a pre-existing album. Throws `permissionLost` / `creationFailed`.
+    func createAlbum(name: String) async throws -> CreatedAlbum
+    /// Adds exactly these IDs to the existing album in one change request.
+    /// Missing IDs resolve to no `PHAsset` and return as missing data, never
+    /// a crash. Throws `permissionLost` / `creationFailed` / `assetsUnavailable`.
+    func addToAlbum(albumLocalIdentifier: String, assetIDs: [AssetID]) async throws -> ExportResult
+}
+
+/// Identity of one newly created output album.
+struct CreatedAlbum: Sendable {
+    let localIdentifier: String
+    let title: String
+}
+
+/// What one add call created or filled, and what actually landed. Missing IDs
+/// resolved to no `PHAsset` (deleted, revoked, changed limited set); the album
+/// still holds every resolvable asset. UI copy never shows raw error text.
+struct ExportResult: Sendable {
+    let albumLocalIdentifier: String
+    let albumTitle: String
+    let addedIDs: [AssetID]
+    let missingIDs: [AssetID]
+}
+
+/// Typed export failures for S15 mapping. No raw `NSError` text reaches UI.
+enum ExportError: Error, Sendable {
+    case permissionLost
+    case creationFailed
+    case assetsUnavailable
 }
 
 /// Product-behavior logging within the approved privacy model. Stays separate from OSLog logging.
@@ -105,10 +134,6 @@ actor NoopAnalysisCache: AnalysisCache {
     }
 
     func store(_ analysis: PhotoAnalysis) async {}
-}
-
-struct NoopAlbumExporter: AlbumExportService {
-    func exportAlbum(name: String, assetIDs: [AssetID]) async throws {}
 }
 
 struct NoopAnalytics: AnalyticsService {

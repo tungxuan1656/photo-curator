@@ -198,9 +198,16 @@
       "owns": [
         "Services/Export/AlbumExportService.swift",
         "Features/Review/Saving.swift",
-        "Features/Review/Completion.swift"
+        "Features/Review/Completion.swift",
+        "Features/Review/FinalReview.swift",
+        "Services/ServiceProtocols.swift",
+        "App/AppContainer.swift",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Infrastructure/SessionCheckpointStore.swift"
       ],
-      "status": "todo",
+      "status": "active",
       "title": "Export + Save + Completion"
     },
     {
