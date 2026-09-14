@@ -48,6 +48,16 @@ struct SelectionEngine: Sendable {
         let momentByID = Dictionary(uniqueKeysWithValues: moments.flatMap { moment in
             moment.assetIDs.map { ($0, moment.id) }
         })
+        // Every duplicate loser inherits its representative's moment so restored
+        // losers and swap winners resolve to a real moment even though moments
+        // are built from representatives only. Existing entries win.
+        let memberMomentByID = Dictionary(uniqueKeysWithValues: resolution.clusters.flatMap { cluster in
+            guard let rep = cluster.representativeAssetID, let momentID = momentByID[rep] else {
+                return [] as [(AssetID, MomentID)]
+            }
+            return cluster.assetIDs.map { ($0, momentID) }
+        })
+        let fullMomentByID = momentByID.merging(memberMomentByID) { current, _ in current }
         let scored = repAssets.compactMap { asset -> ScoredCandidate? in
             guard let analysis = analyses[asset.id], let momentID = momentByID[asset.id] else { return nil }
             return qualityScorer.score(
@@ -61,7 +71,7 @@ struct SelectionEngine: Sendable {
         // when the shortlist cap would omit them. Both paths stay deterministic
         // (sorted IDs, same tie order) and usable-only.
         let overridden = OverrideContext(
-            available: available, analyses: analyses, momentByID: momentByID, configuration: configuration
+            available: available, analyses: analyses, momentByID: fullMomentByID, configuration: configuration
         ).applySwaps(scored: scored, clusters: resolution.clusters, feedback: feedback)
         let usableCount = overridden.filter { $0.disposition == .usable }.count
         let scaled = Int((Double(usableCount) * configuration.targetSelectionRatio).rounded(.up))
@@ -73,7 +83,7 @@ struct SelectionEngine: Sendable {
         )
         shortlist = unionRestoredCandidates(
             scored: overridden, shortlist: shortlist, feedback: feedback, available: available,
-            analyses: analyses, momentByID: momentByID, clusterByID: clusterByID, configuration: configuration
+            analyses: analyses, momentByID: fullMomentByID, clusterByID: clusterByID, configuration: configuration
         )
         let picked = diversitySelector.select(
             shortlist: shortlist, allMomentIDs: moments.map(\.id), targetCount: target,
