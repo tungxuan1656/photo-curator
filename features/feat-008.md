@@ -31,7 +31,7 @@ Plan: `docs/plans/feat-008.md`
 
 ## Handoff
 
-- State: active
-- Evidence: baseline ./init.sh PASS on feat-007 HEAD (2026-09-14; format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test])
-- Blockers: none
-- Next: Task 1 — create QualityScorer + shortlist.
+- State: active (code complete; acceptance gate open)
+- Evidence: implementation commits 3a74355 + 11fc065 + c4db568 + fb8e280 + b1102e6 on feat/feat-008 (scorer + shortlist, diversity selector, final builder engineVersion 2, full engine pipeline + shared finalizeAvailable partial path, decision mapping); ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test])
+- Blockers: Dataset B + Golden manual QA not run — gate `sizing per selection-rules §14; reason codes; chronological order` cannot close on ./init.sh alone
+- Next: Run Dataset B + Golden device/debugger pass (partition, chronology, reasons, cluster invariant, target sizing), record metrics per manual-qa template in features/feat-008.md.
