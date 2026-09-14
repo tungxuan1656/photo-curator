@@ -94,8 +94,8 @@
 
 ## 2026-09-14 — feat-009
 
-**State**: active
-**Done**: — (branch stacked from feat-008 HEAD; implementation starts with ReviewModel)
-**Evidence**: baseline ./init.sh PASS on feat-008 HEAD (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); feature_index.json feat-009 active with expanded owns; features/feat-009.md links docs/plans/feat-009.md.
-**Blockers**: none
-**Next**: Task 1 — create ReviewModel.
+**State**: done (self-reviewed; device tap-through deferred to user)
+**Done**: feat-009 closed on feat/feat-009: session-owned ReviewModel, beginReview + reviewOverview/curatedGrid routes with load-failed fallback, ReviewReady Continue wiring + zero-pick abnormal state, S09 overview, S10 lazy grid (dim-don't-shift + Undo), bounded 2048px preview seam + S11 local pager detail. Self-review: UX 16/16 PASS; SwiftUI 12 PASS/2 FAIL→fixed (cell onToggle closure, stale-preview guard).
+**Evidence**: ./init.sh PASS final (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); features/feat-009.md acceptance checked; feature_index.json feat-009 done.
+**Blockers**: none (code review closed)
+**Next**: feat-010 (groups + removed + final) — needs bounded cluster/moment export seam; Dataset B/Golden/G2 evaluation now runnable on S09–S11 when user QA passes.
