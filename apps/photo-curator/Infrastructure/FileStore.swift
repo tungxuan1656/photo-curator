@@ -46,6 +46,19 @@ actor FileStore {
         try FileManager.default.removeItem(at: target)
     }
 
+    /// Removes every file under one relative directory (Reset Analysis).
+    /// Absent directory counts as success; failures on individual files are
+    /// ignored so one bad file never blocks the reset.
+    func removeDirectory(relativePath: String) {
+        guard let target = try? url(for: relativePath) else { return }
+        guard let items = try? FileManager.default.contentsOfDirectory(
+            at: target, includingPropertiesForKeys: nil
+        ) else { return }
+        for item in items {
+            try? FileManager.default.removeItem(at: item)
+        }
+    }
+
     func exists(relativePath: String) -> Bool {
         guard let target = try? url(for: relativePath) else {
             return false

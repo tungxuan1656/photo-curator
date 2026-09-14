@@ -82,22 +82,21 @@ struct PhotoDetail: View {
                     ProgressView("Loading photo…")
                 }
             } else {
-                VStack(spacing: 12) {
-                    Text("We couldn't load this photo.").font(.title2.bold())
-                    Text("Your progress is saved.").font(.footnote).foregroundStyle(.secondary)
-                    if beginFailed {
-                        Text("Reload didn't work. Try again or go home.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                    Button("Try Again") {
+                ErrorStateView(
+                    title: "We couldn't load this photo.",
+                    message: beginFailed
+                        ? "Reload didn't work. Your progress is saved."
+                        : "Your progress is saved.",
+                    primaryTitle: "Try Again",
+                    primary: {
                         Task {
                             beginFailed = false
                             beginFailed = await !appModel.beginReview(for: sessionID)
                         }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    Button("Back to Home") { appModel.goHome() }
-                }
+                    },
+                    secondaryTitle: "Back to Home",
+                    secondary: { appModel.goHome() }
+                )
                 .padding()
             }
         }

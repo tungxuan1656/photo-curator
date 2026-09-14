@@ -40,16 +40,14 @@ struct ReviewLoadFailedView: View {
     @Environment(AppModel.self) private var appModel
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text("We couldn't load your selection.").font(.title2.bold())
-            Text("Your progress is saved.").font(.footnote).foregroundStyle(.secondary)
-            Button("Try Again") {
-                Task { await appModel.beginReview(for: sessionID) }
-            }
-            .buttonStyle(.borderedProminent)
-            Button("Back to Home") { appModel.goHome() }
-        }
-        .padding()
+        ErrorStateView(
+            title: "We couldn't load your selection.",
+            message: "Your progress is saved.",
+            primaryTitle: "Try Again",
+            primary: { Task { await appModel.beginReview(for: sessionID) } },
+            secondaryTitle: "Back to Home",
+            secondary: { appModel.goHome() }
+        )
         .navigationTitle("Review")
     }
 }

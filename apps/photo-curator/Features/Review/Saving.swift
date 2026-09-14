@@ -18,48 +18,42 @@ struct Saving: View {
                 case let .saved(state):
                     SavedRedirect(state: state, sessionID: sessionID)
                 case let .partial(state):
-                    VStack(spacing: 12) {
-                        Text("Album partially saved").font(.title2.bold())
-                        Text("\(state.addedIDs.count) of \(state.requestedIDs.count) photos were added.")
-                        Button("Retry Remaining") {
+                    ErrorStateView(
+                        title: "Album partially saved",
+                        message: "\(state.addedIDs.count) of \(state.requestedIDs.count) photos were added.",
+                        primaryTitle: "Retry Remaining",
+                        primary: {
                             Task {
                                 self.outcome = nil
                                 self.outcome = await appModel.retryRemainingSave(for: sessionID)
                             }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        Button("Finish Anyway") {
-                            appModel.path.append(.completion(sessionID: sessionID))
-                        }
-                    }
-                    .padding()
+                        },
+                        secondaryTitle: "Finish Anyway",
+                        secondary: { appModel.path.append(.completion(sessionID: sessionID)) }
+                    )
                 case .permissionLost:
-                    VStack(spacing: 12) {
-                        Text("Can't Save Album").font(.title2.bold())
-                        Text("Photos access changed before the album could be saved.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        Button("Open Settings") { appModel.openSettingsURL() }
-                            .buttonStyle(.borderedProminent)
-                        Button("Back to Review") { appModel.path.removeLast() }
-                    }
-                    .padding()
+                    ErrorStateView(
+                        title: "Can't Save Album",
+                        message: "Photos access changed before the album could be saved.",
+                        primaryTitle: "Open Settings",
+                        primary: { appModel.openSettingsURL() },
+                        secondaryTitle: "Back to Review",
+                        secondary: { appModel.path.removeLast() }
+                    )
                 case .failed:
-                    VStack(spacing: 12) {
-                        Text("Couldn't Save Album").font(.title2.bold())
-                        Text("Your selection is kept. Try again when ready.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        Button("Try Again") {
+                    ErrorStateView(
+                        title: "Couldn't Save Album",
+                        message: "Your selection is kept. Try again when ready.",
+                        primaryTitle: "Try Again",
+                        primary: {
                             Task {
                                 self.outcome = nil
                                 self.outcome = await appModel.saveAlbum(for: sessionID)
                             }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        Button("Back to Review") { appModel.path.removeLast() }
-                    }
-                    .padding()
+                        },
+                        secondaryTitle: "Back to Review",
+                        secondary: { appModel.path.removeLast() }
+                    )
                 }
             } else {
                 VStack(spacing: 12) {

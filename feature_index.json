@@ -237,9 +237,15 @@
       "id": "feat-013",
       "owns": [
         "Features/Settings/",
-        "SharedUI/ErrorStateView.swift"
+        "SharedUI/ErrorStateView.swift",
+        "App/AppModel.swift",
+        "App/AppModel+Save.swift",
+        "Features/Processing/ProcessingView.swift",
+        "Features/Review/ReviewOverview.swift",
+        "Features/Review/PhotoDetail.swift",
+        "Features/Review/Saving.swift"
       ],
-      "status": "todo",
+      "status": "active",
       "title": "Privacy + polish + errors"
     },
     {

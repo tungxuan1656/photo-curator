@@ -467,6 +467,27 @@ extension AppModel {
         }
     }
 
+    /// Reset Analysis (Settings → retention): clears the derived-analysis
+    /// cache plus every persisted session artifact (checkpoints, results,
+    /// feedback, save states) for the current session. Apple Photos
+    /// originals are untouched. Cancels in-flight work first.
+    func resetAnalysis() {
+        processing.cancel()
+        let sessionID = activeSessionID ?? lastSessionID
+        activeSessionID = nil
+        cancelSave(for: sessionID)
+        reviewModel = nil
+        path.removeAll()
+        Task {
+            await processing.awaitTermination()
+            await container.analysisCache.reset()
+            if sessionID != nil {
+                _ = await deleteSessionData(sessionID, context: "Resetting analysis")
+            }
+            lastSessionID = nil
+        }
+    }
+
     private func markSeen() {
         hasSeenWelcome = true
         UserDefaults.standard.set(true, forKey: Self.seenWelcomeKey)

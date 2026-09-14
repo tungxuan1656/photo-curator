@@ -44,6 +44,8 @@ protocol ImageAnalysisService: Sendable {
 protocol AnalysisCache: Actor {
     func analysis(for id: AssetID) async -> PhotoAnalysis?
     func store(_ analysis: PhotoAnalysis) async
+    /// Reset Analysis: drops cached rows; originals untouched.
+    func reset() async
 }
 
 /// Creates a new collision-safe album from existing assets. Never modifies or deletes originals.
@@ -134,6 +136,8 @@ actor NoopAnalysisCache: AnalysisCache {
     }
 
     func store(_ analysis: PhotoAnalysis) async {}
+
+    func reset() async {}
 }
 
 struct NoopAnalytics: AnalyticsService {
