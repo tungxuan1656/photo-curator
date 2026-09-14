@@ -34,6 +34,18 @@ struct RootView: View {
                     SettingsView()
                 case let .reviewReady(id):
                     ReviewReadyView(sessionID: id)
+                case let .reviewOverview(id):
+                    if appModel.reviewModel?.sessionID == id {
+                        ReviewOverview(sessionID: id)
+                    } else {
+                        ReviewLoadFailedView(sessionID: id)
+                    }
+                case let .curatedGrid(id):
+                    if appModel.reviewModel?.sessionID == id {
+                        CuratedGrid(sessionID: id)
+                    } else {
+                        ReviewLoadFailedView(sessionID: id)
+                    }
                 }
             }
         }

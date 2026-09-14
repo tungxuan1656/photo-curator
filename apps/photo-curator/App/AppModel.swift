@@ -192,6 +192,9 @@ final class AppModel {
         let live = sourceByID
         return confirmedSourceIDs.compactMap { live[$0] }
     }
+
+    /// Session-owned review state for S09–S11. Nil until beginReview succeeds.
+    private(set) var reviewModel: ReviewModel?
 }
 
 // MARK: - feat-006 curation intents
@@ -319,6 +322,19 @@ extension AppModel {
     /// ReviewReadyView caller: persisted result when the run finished, nil otherwise.
     func loadResult(for sessionID: SessionID) async -> SelectionResult? {
         try? await container.checkpointStore.loadResult(sessionID: sessionID)
+    }
+
+    /// S09 entry: builds the session-owned ReviewModel from the persisted
+    /// result plus frozen source metadata, then routes. No-op when the result
+    /// is missing, mismatched, or empty (the caller shows the abnormal state).
+    func beginReview(for sessionID: SessionID) async {
+        guard let result = await loadResult(for: sessionID),
+              result.sessionID == sessionID,
+              !result.selectedAssetIDs.isEmpty
+        else { return }
+        let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
+        reviewModel = ReviewModel(sessionID: sessionID, result: result, sourceByID: live)
+        path.append(.reviewOverview(sessionID: sessionID))
     }
 
     func openSettings() {

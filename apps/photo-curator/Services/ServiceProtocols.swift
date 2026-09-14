@@ -26,6 +26,10 @@ protocol PhotoLibraryService: Sendable {
 protocol PhotoImageLoader: Sendable {
     func thumbnail(for id: AssetID, targetSize: CGSize) async throws -> CGImage
     func analysisImage(for id: AssetID) async throws -> CGImage
+    /// Bounded detail preview (capped at 2048 px, aspect-fit). Reuses the
+    /// single manager/request state, final-quality delivery, iCloud handling,
+    /// and cancellation; honors a smaller caller targetSize.
+    func preview(for id: AssetID, targetSize: CGSize) async throws -> CGImage
 }
 
 /// Image facts in, `ImageAnalysisOutput` (durable analysis + transient similarity) out.
@@ -77,6 +81,10 @@ struct NoopImageLoader: PhotoImageLoader {
     }
 
     func analysisImage(for id: AssetID) async throws -> CGImage {
+        throw SelectionError.internal
+    }
+
+    func preview(for id: AssetID, targetSize: CGSize) async throws -> CGImage {
         throw SelectionError.internal
     }
 }
