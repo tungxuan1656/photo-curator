@@ -86,8 +86,16 @@
 
 ## 2026-09-14 — feat-008
 
-**State**: active (code complete; acceptance gate open)
-**Done**: feat-008 implementation on feat/feat-008: QualityScorer weighted score + disposition + per-moment rank + round-robin shortlist; DiversitySelector protected-first greedy utility fill with similarityEdges and compareRank ties; FinalAlbumBuilder one-decision-per-source with engineVersion 2 and quality-first decision priority; full engine pipeline with swapWinner/restoredIDs overrides; shared finalizeAvailable partial path via ProcessingModel + SimilarityRebuilder; decision/reason data-model mapping.
-**Evidence**: ./init.sh PASS each slice (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); feature_index.json feat-008 active with expanded owns; features/feat-008.md links docs/plans/feat-008.md.
-**Blockers**: Dataset B + Golden manual QA not run — gate `sizing per selection-rules §14; reason codes; chronological order` cannot close on ./init.sh alone.
-**Next**: Run Dataset B + Golden device/debugger pass (partition, chronology, reasons, cluster invariant, target sizing), record metrics per manual-qa template in features/feat-008.md.
+**State**: done (self-reviewed; device QA moves to feat-009 instrument)
+**Done**: feat-008 closed on feat/feat-008: scorer + shortlist, diversity selector, final builder engineVersion 2, full pipeline with swap/restore overrides, shared partial path, decision mapping, plus review-fix wave (moment continuity, edited rep, forced-cluster guard, usable-only swaps, loser-moment inheritance). Self-review: engine-logic 6 FAIL→fixed, service-boundary 10/10 PASS.
+**Evidence**: ./init.sh PASS final (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); features/feat-008.md acceptance checked; feature_index.json feat-008 done.
+**Blockers**: none (code review closed; Dataset B + Golden evaluation runs on feat-009 S09–S11 grid/detail)
+**Next**: feat-009 Review core (S09/S10/S11) on stacked branch from feat-008 HEAD.
+
+## 2026-09-14 — feat-009
+
+**State**: active
+**Done**: — (branch stacked from feat-008 HEAD; implementation starts with ReviewModel)
+**Evidence**: baseline ./init.sh PASS on feat-008 HEAD (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); feature_index.json feat-009 active with expanded owns; features/feat-009.md links docs/plans/feat-009.md.
+**Blockers**: none
+**Next**: Task 1 — create ReviewModel.

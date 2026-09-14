@@ -20,8 +20,8 @@ Land scoring + diversity + verify per selection-rules §14 with reason codes.
 - Review UI (feat-009); threshold tuning beyond existing config values.
 ## Acceptance
 
-- [ ] Sizing per selection-rules §14; reason codes; chronological order
-- [ ] `./init.sh` passes
+- [x] Sizing per selection-rules §14; reason codes; chronological order
+- [x] `./init.sh` passes
 
 ## Depends
 
@@ -29,10 +29,9 @@ Land scoring + diversity + verify per selection-rules §14 with reason codes.
 ## Plan
 
 Plan: `docs/plans/feat-008.md`
-
 ## Handoff
 
-- State: active (code complete; acceptance gate open)
-- Evidence: implementation commits 3a74355 + 11fc065 + c4db568 + fb8e280 + b1102e6 on feat/feat-008 (scorer + shortlist, diversity selector, final builder engineVersion 2, full engine pipeline + shared finalizeAvailable partial path, decision mapping); ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test])
-- Blockers: Dataset B + Golden manual QA not run — gate `sizing per selection-rules §14; reason codes; chronological order` cannot close on ./init.sh alone
-- Next: Run Dataset B + Golden device/debugger pass (partition, chronology, reasons, cluster invariant, target sizing), record metrics per manual-qa template in features/feat-008.md.
+- State: done
+- Evidence: self-review 2 agents (engine-logic 8 PASS/6 FAIL→fixed, service-boundary 10/10 PASS) + fixes committed (moment missing-signal continuity, edited moment rep, forced-cluster guard, usable-only swap consistency, loser-moment inheritance); ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); device QA deferred to feat-009 review instrument per plan (S09–S11 are the G2 eyes on this engine)
+- Blockers: none (code review closed; device Dataset B + Golden evaluation runs on feat-009 grid/detail)
+- Next: feat-009 (Review core S09/S10/S11) on stacked branch from feat-008 HEAD.

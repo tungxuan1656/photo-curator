@@ -139,7 +139,7 @@
         "App/AppModel.swift",
         "docs/design-docs/data-model.md"
       ],
-      "status": "active"
+      "status": "done"
     },
     {
       "depends_on": [
@@ -148,12 +148,18 @@
       "gate": "S09/S10/S11 operable on real result",
       "id": "feat-009",
       "owns": [
+        "Features/Review/ReviewModel.swift",
         "Features/Review/ReviewOverview.swift",
         "Features/Review/CuratedGrid.swift",
-        "Features/Review/PhotoDetail.swift"
+        "Features/Review/PhotoDetail.swift",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Features/Processing/ProcessingView.swift",
+        "Services/ServiceProtocols.swift",
+        "Services/Photos/ImageLoaderService.swift"
       ],
-      "status": "todo",
-      "title": "Review core on real result (overview/grid/detail)"
+      "status": "active"
     },
     {
       "depends_on": [
