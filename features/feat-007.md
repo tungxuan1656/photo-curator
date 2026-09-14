@@ -30,6 +30,11 @@ Land duplicates + moments so clusters and moments are correct on dataset B.
 ## Depends
 
 - feat-006
+
+## Plan
+
+Plan: `docs/plans/feat-007.md`
+
 ## Handoff
 
 - State: active (code complete; acceptance gate open)
