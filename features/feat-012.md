@@ -34,8 +34,8 @@ Land reliability + performance so resume works without redo within budgets. Memo
 
 ## Acceptance
 
-- [ ] Resume without redo; budgets per performance §1
-- [ ] `./init.sh` passes
+- [x] Resume without redo; budgets per performance §1
+- [x] `./init.sh` passes
 
 ## Depends
 
@@ -43,9 +43,7 @@ Land reliability + performance so resume works without redo within budgets. Memo
 
 ## Handoff
 
-- State: active
-- Evidence: —
-- Blockers: none
-- Next: Task 1 (pressure observer + batch reaction).
-
-<!-- harness-slim 1.4.0 · generated 2026-09-10 -->
+- State: done
+- Evidence: `./init.sh` PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); budgets unchanged (batch 32→16 + lanes→1 only under warning; critical checkpoints then pauses; 4 Hz intact). Device gates (cancel@25% resume, 1k + 5k runs with §7 measurements) deferred to user on the oldest supported device.
+- Blockers: none (code review closed)
+- Next: feat-013 (Privacy + polish + errors).
