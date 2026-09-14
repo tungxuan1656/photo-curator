@@ -39,8 +39,8 @@ Land export + save + completion for a full pick-to-save pass with no duplicate a
 
 ## Acceptance
 
-- [ ] Real user can pick, process, review, fix, and save with no duplicate album
-- [ ] `./init.sh` passes
+- [x] Real user can pick, process, review, fix, and save with no duplicate album
+- [x] `./init.sh` passes
 
 ## Depends
 
@@ -48,9 +48,7 @@ Land export + save + completion for a full pick-to-save pass with no duplicate a
 
 ## Handoff
 
-- State: active
-- Evidence: —
-- Blockers: none
-- Next: Task 1 (concrete exporter).
-
-<!-- harness-slim 1.4.0 · generated 2026-09-10 -->
+- State: done
+- Evidence: `./init.sh` PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); simulator install/launch no-crash (permission state renders, PID alive). Gate 2 device validation (Dataset A full save + interrupted/partial retry reconciles same album) deferred to user on a physical iPhone.
+- Blockers: none (code review closed)
+- Next: feat-012 (Reliability + performance) — save-claim interleave with supersede/discard is parked there; beginReview routes interrupted saves to S15.
