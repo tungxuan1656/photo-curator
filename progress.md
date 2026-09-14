@@ -99,3 +99,11 @@
 **Evidence**: ./init.sh PASS final (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); features/feat-009.md acceptance checked; feature_index.json feat-009 done.
 **Blockers**: none (code review closed)
 **Next**: feat-010 (groups + removed + final) — needs bounded cluster/moment export seam; Dataset B/Golden/G2 evaluation now runnable on S09–S11 when user QA passes.
+
+## 2026-09-14 — feat-010 through feat-014
+
+**State**: done (self-reviewed; device QA deferred to user)
+**Done**: Delivered feat-010→feat-014 on stacked branches feat/feat-010..feat/feat-014 (first end-to-end saved-album MVP): feat-010 shared review state + S12/S13/S14; feat-011 PhotoKit export + S15/S16 same-album retry; feat-012 pressure observer + terminal/save interleave hardening; feat-013 Settings privacy + Reset Analysis + S20 ErrorStateView; feat-014 release record with NoopAnalytics (no provider selected).
+**Evidence**: ./init.sh PASS on every close (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); simulator install/launch no-crash each feature (permission/S05 states render, PIDs alive); feature_index.json all 14 done.
+**Blockers**: none in code — user-owned device follow-up: Gate 1 correction consistency, Gate 2 Dataset A save + interrupted retry, 1k/5k + cancel@25% resume with §7 numbers, privacy AC-01..12 + a11y, datasets A-H/Golden/§7.3.
+**Next**: Merge stacked branches feat/feat-010 → feat/feat-014 in dependency order; run device QA list above.
