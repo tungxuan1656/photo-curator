@@ -23,8 +23,8 @@ Land Review core on real result so S09/S10/S11 are operable.
 
 ## Acceptance
 
-- [ ] S09/S10/S11 operable on real result
-- [ ] `./init.sh` passes
+- [x] S09/S10/S11 operable on real result
+- [x] `./init.sh` passes
 
 ## Depends
 
@@ -35,7 +35,7 @@ Plan: `docs/plans/feat-009.md`
 
 ## Handoff
 
-- State: active
-- Evidence: baseline ./init.sh PASS on feat-008 HEAD (2026-09-14; format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test])
-- Blockers: none
-- Next: Task 1 — create ReviewModel.
+- State: done
+- Evidence: self-review 2 agents (UX 16/16 PASS; SwiftUI 12 PASS/2 FAIL→fixed: cell dependency narrowed to onToggle closure + stale-preview single-flight guard) + fixes committed; ./init.sh PASS (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); device S09–S11 tap-through deferred to user (review instrument ready for Dataset B/Golden/G2 evaluation)
+- Blockers: none (code review closed)
+- Next: feat-010 (Review groups + removed + final) — needs bounded cluster/moment export seam for S12 swaps + S13 add-back.

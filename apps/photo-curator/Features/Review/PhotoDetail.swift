@@ -55,13 +55,19 @@ struct PhotoDetail: View {
                 }
                 .padding()
                 .task(id: currentAssetID) {
+                    let requested = currentAssetID
                     cgImage = nil
                     do {
-                        cgImage = try await appModel.imageLoader.preview(
-                            for: currentAssetID,
+                        let image = try await appModel.imageLoader.preview(
+                            for: requested,
                             targetSize: CGSize(width: 2048, height: 2048)
                         )
+                        // A cancelled predecessor must never overwrite the
+                        // successor: apply only when still on the same photo.
+                        guard requested == currentAssetID else { return }
+                        cgImage = image
                     } catch {
+                        guard requested == currentAssetID else { return }
                         cgImage = nil
                     }
                 }

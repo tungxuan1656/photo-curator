@@ -29,7 +29,8 @@ struct CuratedGrid: View {
                                 ReviewCell(
                                     assetID: id,
                                     isSelected: model.isSelected(id),
-                                    targetSizePixels: thumbPixels
+                                    targetSizePixels: thumbPixels,
+                                    onToggle: { model.toggle(id) }
                                 )
                             }
                         }
@@ -53,7 +54,7 @@ private struct ReviewCell: View {
     let assetID: AssetID
     let isSelected: Bool
     let targetSizePixels: CGSize
-    @Environment(AppModel.self) private var appModel
+    let onToggle: () -> Void
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -63,11 +64,10 @@ private struct ReviewCell: View {
                     .opacity(isSelected ? 1 : 0.35)
             }
             .buttonStyle(.plain)
-            Button(isSelected ? "Remove from album" : "Add to album") {
-                appModel.reviewModel?.toggle(assetID)
-            }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+            Button(isSelected ? "Remove from album" : "Add to album", action: onToggle)
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+                .accessibilityLabel(isSelected ? "Remove photo from album" : "Add photo to album")
         }
     }
 }
