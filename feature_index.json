@@ -134,6 +134,7 @@
         "Domain/Selection/FinalAlbumBuilder.swift",
         "Domain/Selection/SelectionEngine.swift",
         "Services/Session/SelectionSessionCoordinator.swift",
+        "Services/Session/SimilarityRebuilder.swift",
         "Features/Processing/ProcessingModel.swift",
         "App/AppModel.swift",
         "docs/design-docs/data-model.md"

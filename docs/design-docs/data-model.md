@@ -271,6 +271,16 @@ Feature prints (Vision or equivalent) stay in bounded temp working memory keyed 
 
 One recorded choice per asset per session. Score math and keeper rules: [03](../product-specs/selection-rules.md).
 
+In-code representation is `Decision` (`Domain/Models/SelectionResult.swift`): `status` is
+`selected`/`rejected` (rejected means excluded from this album, never deletion), `score` and
+`qualityBreakdown` are optional, `reasons` carries canonical [03 §16](../product-specs/selection-rules.md)
+strings, and `competingIDs` holds the duplicate winner a rejected asset lost to. `SelectionResult`
+persists `selectedAssetIDs` in chronological capture order, the complementary `rejectedAssetIDs`,
+one `Decision` per source ID, and `engineVersion`. `engineVersion 1` was the feat-007 pass-through;
+`engineVersion 2` marks the first real pipeline (duplicates → moments → rank → shortlist → diversity →
+verify → order). Clusters and moments remain cached-evictable inputs to decisions, rebuilt
+deterministically per run. Stored `AssetID`s may no longer resolve; PhotoKit is authoritative.
+
 ```swift
 struct SelectionDecision: Identifiable, Codable, Sendable {
     var id: AssetID { assetID }
@@ -292,15 +302,6 @@ struct SelectionScoreBreakdown: Codable, Sendable {
     let finalScore: Double
 }
 ```
-
-| Stored item | Owner of meaning |
-|---|---|
-| Keep/reject policy, tier cutoffs, weights, diversity and coverage model | [03](../product-specs/selection-rules.md) |
-| Rank and assemble order | [04](selection-engine.md) |
-| `SelectionReason` code list (e.g. `exactDuplicate`, `bestInMoment`, `userSelected`) | [03 §16](../product-specs/selection-rules.md); this file stores the codes |
-| Analytics use of reasons | [11](../ship-gates/analytics.md) |
-
-Keep `SelectionStatus` to three cases; put nuance in `reasons`. Never mutate the engine record for a user edit — write `UserOverride` + `UserFeedback` instead (§11).
 
 ---
 

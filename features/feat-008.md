@@ -11,9 +11,8 @@ Land scoring + diversity + verify per selection-rules §14 with reason codes.
 - `Domain/Selection/FinalAlbumBuilder.swift` (new: one-decision-per-source + invariants, engineVersion 2)
 - `Domain/Selection/SelectionEngine.swift` (full pipeline replacing pass-through)
 - `Services/Session/SelectionSessionCoordinator.swift` (shared finalizeAvailable entry point)
+- `Services/Session/SimilarityRebuilder.swift` (new: bounded partial-path artifact rebuild)
 - `Features/Processing/ProcessingModel.swift` (finalizeAvailable forwarding)
-- `App/AppModel.swift` (finalizePartial via coordinator)
-- `docs/design-docs/data-model.md` (decision/reason mapping only)
 
 ## Non-goals
 
