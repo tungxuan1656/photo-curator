@@ -24,6 +24,16 @@ struct RootView: View {
                     PermissionEducationView()
                 case .home:
                     HomeView()
+                case .sourceSelection:
+                    SourceSelectionView()
+                case .summary:
+                    SelectionSummaryView()
+                case .processing:
+                    ProcessingView()
+                case .settings:
+                    SettingsView()
+                case let .reviewReady(id):
+                    ReviewReadyView(sessionID: id)
                 }
             }
         }
@@ -31,9 +41,13 @@ struct RootView: View {
             await appModel.refreshAuthorization()
         }
         .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background {
+                Task { await appModel.checkpointForBackground() }
+            }
             if newPhase == .active {
                 Task {
                     await appModel.refreshAuthorization()
+                    await appModel.resumeIfPaused()
                 }
             }
         }

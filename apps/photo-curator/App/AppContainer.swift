@@ -12,8 +12,9 @@ struct AppContainer: Sendable {
     let exporter: any AlbumExportService
     let analytics: any AnalyticsService
 
-    /// G1 wiring: real permission service + file-backed cache/checkpoint;
-    /// everything else stays Noop until its owning stage.
+    /// G1 wiring: real permission service + file-backed cache/checkpoint + real
+    /// analysis pipeline (feat-006 flips the analyzer switch); export/analytics
+    /// stay Noop until their owning stages.
     static func live() -> Self {
         let dirs = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
         let base =
@@ -26,7 +27,7 @@ struct AppContainer: Sendable {
         return Self(
             photoLibrary: PhotoLibraryPermissionService(),
             imageLoader: ImageLoaderService(),
-            analyzer: NoopImageAnalyzer(),
+            analyzer: VisionAnalysisService(),
             analysisCache: FileAnalysisCache(
                 files: files,
                 analysisVersion: AppConfiguration.default.analysis.analysisVersion
