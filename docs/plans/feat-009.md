@@ -21,16 +21,16 @@
 
 ## File Structure
 
-- Create `apps/photo-curator/Features/Review/ReviewModel.swift` — `@MainActor @Observable` session state: `selectedIDs`, `displayIDs`, remove/restore/toggle/undo.
-- Modify `apps/photo-curator/App/AppModel.swift` — `reviewModel` plus `beginReview(for:)` from persisted result + frozen assets.
+- Create `apps/photo-curator/Features/Review/ReviewModel.swift` — `@MainActor @Observable` session state: `selectedIDs`, `displayIDs`, remove/restore/toggle/undo (restore clears `lastRemovedID` when it re-adds the pending undo ID).
+- Modify `apps/photo-curator/App/AppModel.swift` — `reviewModel` plus `beginReview(for:) -> Bool` from persisted result + frozen assets; reuses the existing model for the same session and never pushes a duplicate overview.
 - Modify `apps/photo-curator/App/AppRoute.swift` — add `.reviewOverview(sessionID:)` and `.curatedGrid(sessionID:)`.
 - Modify `apps/photo-curator/App/RootView.swift` — route both only on matching `reviewModel`; otherwise recoverable load state.
-- Modify `apps/photo-curator/Features/Processing/ProcessingView.swift:147-154` — Continue calls `beginReview`; add zero-pick abnormal state.
-- Create `apps/photo-curator/Features/Review/ReviewOverview.swift` — S09 counts plus two actions into `.curatedGrid`.
+- Modify `apps/photo-curator/Features/Processing/ProcessingView.swift:147-154` — Continue calls `beginReview` with inline retry feedback; add zero-pick abnormal state.
+- Create `apps/photo-curator/Features/Review/ReviewOverview.swift` — S09 counts plus single `Review Selection` entry into `.curatedGrid` (no duplicate `Review & Save`; save lives in feat-010/011).
 - Create `apps/photo-curator/Features/Review/CuratedGrid.swift` — S10 lazy grid, dim-don't-shift removal, count, Undo.
 - Modify `apps/photo-curator/Services/ServiceProtocols.swift:26-29` + `NoopImageLoader` — add `preview(for:targetSize:)`.
 - Modify `apps/photo-curator/Services/Photos/ImageLoaderService.swift:16-25` — implement bounded `.aspectFit` preview.
-- Create `apps/photo-curator/Features/Review/PhotoDetail.swift` — S11 local pager, bounded preview, In Album/Removed toggle.
+- Create `apps/photo-curator/Features/Review/PhotoDetail.swift` — S11 local pager `PhotoDetail(assetID:sessionID:)`, bounded preview, In Album/Removed toggle, session-gated recoverable fallback.
 - Modify `features/feat-009.md` — link this plan; record device evidence on close.
 
 ---
@@ -81,6 +81,7 @@ final class ReviewModel {
     func restore(_ id: AssetID) {
         guard displayIDs.contains(id) else { return }
         selectedIDs.insert(id)
+        if lastRemovedID == id { lastRemovedID = nil }
     }
 
     func toggle(_ id: AssetID) {
@@ -116,20 +117,26 @@ git commit -m "feat(009): add session review model"
 - Modify: `apps/photo-curator/App/AppRoute.swift:4-16`
 - Modify: `apps/photo-curator/App/RootView.swift:19-38`
 
-**Interfaces:**
 - Consumes: `ReviewModel`, `confirmedSourceAssets()`, `container.checkpointStore.loadResult`, `processing.progress.unavailableCount`.
-- Produces: `private(set) var reviewModel: ReviewModel?`; `func beginReview(for sessionID: SessionID) async`; routes `.reviewOverview(sessionID:)` and `.curatedGrid(sessionID:)`.
-
-- [ ] **Step 1: Add beginReview and routes**
+- Produces: `private(set) var reviewModel: ReviewModel?`; `func beginReview(for sessionID: SessionID) async -> Bool` (same-session reuse, no duplicate push, false on missing/mismatched/empty); routes `.reviewOverview(sessionID:)` and `.curatedGrid(sessionID:)`.
 
 ```swift
 private(set) var reviewModel: ReviewModel?
 
-func beginReview(for sessionID: SessionID) async {
-    guard let result = await loadResult(for: sessionID), result.sessionID == sessionID, !result.selectedAssetIDs.isEmpty else { return }
+func beginReview(for sessionID: SessionID) async -> Bool {
+    if let existing = reviewModel, existing.sessionID == sessionID {
+        if path.last != .reviewOverview(sessionID: sessionID) {
+            path.append(.reviewOverview(sessionID: sessionID))
+        }
+        return true
+    }
+    guard let result = await loadResult(for: sessionID), result.sessionID == sessionID, !result.selectedAssetIDs.isEmpty else { return false }
     let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
     reviewModel = ReviewModel(sessionID: sessionID, result: result, sourceByID: live)
-    path.append(.reviewOverview(sessionID: sessionID))
+    if path.last != .reviewOverview(sessionID: sessionID) {
+        path.append(.reviewOverview(sessionID: sessionID))
+    }
+    return true
 }
 ```
 
@@ -207,7 +214,6 @@ struct ReviewOverview: View {
                     Text("\(model.selectedIDs.count) selected from \(total) photos")
                     Button("Review Selection") { appModel.path.append(.curatedGrid(sessionID: sessionID)) }
                         .buttonStyle(.borderedProminent)
-                    Button("Review & Save") { appModel.path.append(.curatedGrid(sessionID: sessionID)) }
                 }.padding()
             } else {
                 ProgressView("Loading your selection…")
@@ -301,7 +307,7 @@ private struct ReviewCell: View {
 }
 ```
 
-Size `targetSizePixels` from display scale like SourceSelection (`UIScreen.main.bounds.width / 3 * scale`, clamped 200–500) instead of the fixed 400 above. Register `navigationDestination(for: AssetID.self)` for `PhotoDetail(assetID:)` at the grid level (or in `RootView` if the existing route switch is cleaner). Removed cells stay dimmed in place; the checkmark button never navigates.
+Size `targetSizePixels` from display scale like SourceSelection (`UIScreen.main.bounds.width / 3 * scale`, clamped 200–500) instead of the fixed 400 above. Register `navigationDestination(for: AssetID.self)` for `PhotoDetail(assetID:sessionID:)` at the grid level (or in `RootView` if the existing route switch is cleaner). Removed cells stay dimmed in place; the checkmark button never navigates.
 
 - [ ] **Step 2: Verify grid gate**
 
@@ -361,18 +367,20 @@ import SwiftUI
 
 struct PhotoDetail: View {
     let assetID: AssetID
+    let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
     @State private var currentAssetID: AssetID
     @State private var cgImage: CGImage?
 
-    init(assetID: AssetID) {
+    init(assetID: AssetID, sessionID: SessionID) {
         self.assetID = assetID
+        self.sessionID = sessionID
         _currentAssetID = State(initialValue: assetID)
     }
 
     var body: some View {
         Group {
-            if let model = appModel.reviewModel, let index = model.displayIDs.firstIndex(of: currentAssetID) {
+            if let model = appModel.reviewModel, model.sessionID == sessionID, let index = model.displayIDs.firstIndex(of: currentAssetID) {
                 VStack {
                     DetailImage(cgImage: cgImage)
                     Button(model.isSelected(currentAssetID) ? "In Album" : "Removed") {
@@ -398,7 +406,7 @@ struct PhotoDetail: View {
                     }
                 }
             } else {
-                ProgressView("Loading photo…")
+                ReviewLoadFailedView(sessionID: sessionID)
             }
         }
         .navigationTitle("Photo")

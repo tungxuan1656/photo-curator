@@ -24,8 +24,20 @@ struct DuplicateResolver: Sendable {
                 let left = ordered[indexI]
                 let right = ordered[indexJ]
                 let window = configuration.duplicateTimeWindow
-                guard withinWindow(left, right, indexByID: indexed, window: window) else { break }
-                out.append(SimilarityCandidate(first: left.id, second: right.id))
+                // Dated-dated pairs are monotonic in canonical order: an
+                // out-of-window gap only grows for later J, so break. Missing
+                // dates use frozen-index adjacency, which is non-monotonic in
+                // loop order, so a miss must continue to later genuinely
+                // adjacent pairs instead of hiding them.
+                if left.creationDate != nil, right.creationDate != nil {
+                    guard withinWindow(left, right, indexByID: indexed, window: window) else { break }
+                    out.append(SimilarityCandidate(first: left.id, second: right.id))
+                } else {
+                    if withinWindow(left, right, indexByID: indexed, window: window) {
+                        out.append(SimilarityCandidate(first: left.id, second: right.id))
+                    }
+                    continue
+                }
             }
         }
         return out
@@ -77,25 +89,19 @@ struct DuplicateResolver: Sendable {
         )
     }
 
-    /// Deterministic chronological order: capture date ascending; missing or
-    /// equal dates keep frozen input order via stable indices; final tie by ID.
+    /// Deterministic chronological order: capture date ascending with missing
+    /// dates first (matching SelectionEngine, FinalAlbumBuilder, and the frozen
+    /// source snapshot); equal dates break by stable asset ID per
+    /// selection-rules §15 so output never depends on caller input order.
     private func canonicalOrder(_ assets: [PhotoAsset]) -> [PhotoAsset] {
-        assets.enumerated().sorted {
-            let leftDate = $0.element.creationDate
-            let rightDate = $1.element.creationDate
+        assets.sorted {
+            let leftDate = $0.creationDate ?? .distantPast
+            let rightDate = $1.creationDate ?? .distantPast
             if leftDate != rightDate {
-                switch (leftDate, rightDate) {
-                case let (left?, right?): return left < right
-                case (nil, _?): return false
-                case (_?, nil): return true
-                default: break
-                }
+                return leftDate < rightDate
             }
-            if $0.offset != $1.offset {
-                return $0.offset < $1.offset
-            }
-            return $0.element.id.rawValue < $1.element.id.rawValue
-        }.map(\.element)
+            return $0.id.rawValue < $1.id.rawValue
+        }
     }
 
     /// Time-adjacent pairs only. Missing dates never block grouping: fall back

@@ -18,7 +18,6 @@ struct ReviewOverview: View {
                     Text("\(model.selectedIDs.count) selected from \(total) photos")
                     Button("Review Selection") { appModel.path.append(.curatedGrid(sessionID: sessionID)) }
                         .buttonStyle(.borderedProminent)
-                    Button("Review & Save") { appModel.path.append(.curatedGrid(sessionID: sessionID)) }
                 }.padding()
             } else {
                 ProgressView("Loading your selection…")

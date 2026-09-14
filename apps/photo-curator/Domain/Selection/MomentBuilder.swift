@@ -136,23 +136,17 @@ struct MomentBuilder: Sendable {
         )
     }
 
+    /// Same chronological order as DuplicateResolver/SelectionEngine:
+    /// missing dates first, equal dates by stable asset ID (§15).
     private func canonicalOrder(_ assets: [PhotoAsset]) -> [PhotoAsset] {
-        assets.enumerated().sorted {
-            let leftDate = $0.element.creationDate
-            let rightDate = $1.element.creationDate
+        assets.sorted {
+            let leftDate = $0.creationDate ?? .distantPast
+            let rightDate = $1.creationDate ?? .distantPast
             if leftDate != rightDate {
-                switch (leftDate, rightDate) {
-                case let (left?, right?): return left < right
-                case (nil, _?): return false
-                case (_?, nil): return true
-                default: break
-                }
+                return leftDate < rightDate
             }
-            if $0.offset != $1.offset {
-                return $0.offset < $1.offset
-            }
-            return $0.element.id.rawValue < $1.element.id.rawValue
-        }.map(\.element)
+            return $0.id.rawValue < $1.id.rawValue
+        }
     }
 }
 

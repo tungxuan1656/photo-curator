@@ -27,6 +27,7 @@
 - Create `apps/photo-curator/Domain/Selection/FinalAlbumBuilder.swift` — `build(sourceAssets:analyses:clusters:moments:scored:selectedIDs:configuration:)`.
 - Modify `apps/photo-curator/Domain/Selection/SelectionEngine.swift` — add scorer/selector/builder members; replace pass-through with full pipeline; `engineVersion = 2`.
 - Modify `apps/photo-curator/Services/Session/SelectionSessionCoordinator.swift` — add `finalizeAvailable(assets:analyses:configuration:)`; keep normal `selectResult` edge path.
+- Create `apps/photo-curator/Services/Session/SimilarityRebuilder.swift` — bounded transient artifact rebuild for the partial path (available IDs only, existing lane count, skip failures, cancel-aware).
 - Modify `apps/photo-curator/Features/Processing/ProcessingModel.swift` — add `finalizeAvailable(...)` forwarding method.
 - Modify `apps/photo-curator/App/AppModel.swift:364-411` — `finalizePartial` calls coordinator instead of `container.selectionEngine.select`.
 - Modify `docs/design-docs/data-model.md` — map real cluster/moment/decision/reason usage.

@@ -132,7 +132,7 @@ struct ReviewReadyView: View {
     @Environment(AppModel.self) private var appModel
     @State private var result: SelectionResult?
     @State private var didLoad = false
-
+    @State private var beginFailed = false
     var body: some View {
         Group {
             if let result, result.selectedAssetIDs.isEmpty {
@@ -155,8 +155,15 @@ struct ReviewReadyView: View {
                         Text("\(unavailable) photos were unavailable and could not be analyzed.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
+                    if beginFailed {
+                        Text("We couldn't open your selection. Try again.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                     Button("Continue") {
-                        Task { await appModel.beginReview(for: sessionID) }
+                        Task {
+                            beginFailed = false
+                            beginFailed = await !appModel.beginReview(for: sessionID)
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                 }.padding()

@@ -41,6 +41,9 @@ final class ReviewModel {
     func restore(_ id: AssetID) {
         guard displayIDs.contains(id) else { return }
         selectedIDs.insert(id)
+        if lastRemovedID == id {
+            lastRemovedID = nil
+        }
     }
 
     func toggle(_ id: AssetID) {

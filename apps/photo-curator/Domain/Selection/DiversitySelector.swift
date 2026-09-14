@@ -42,11 +42,6 @@ struct DiversitySelector: Sendable {
         return byMoment
     }
 
-    private func clustersTaken(_ candidate: ScoredCandidate, in selectedClusters: Set<ClusterID>) -> Bool {
-        guard let cluster = candidate.clusterID else { return false }
-        return selectedClusters.contains(cluster)
-    }
-
     // swiftlint:disable:next function_parameter_count
     static func utilityOrderStatic(
         _ left: ScoredCandidate, _ right: ScoredCandidate, selected: Set<AssetID>,

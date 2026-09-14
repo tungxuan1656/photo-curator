@@ -6,6 +6,10 @@ Land scoring + diversity + verify per selection-rules §14 with reason codes.
 
 ## Scope
 
+- `Domain/Models/PhotoAsset.swift` (isEdited flag for edited-twin preference)
+- `Domain/Selection/DuplicateResolver.swift` (edited-twin rank preference)
+- `Domain/Selection/MomentBuilder.swift` (edited-aware representative + continuity)
+- `Services/Photos/PhotoLibraryPermissionService.swift` (hasAdjustments mapping)
 - `Domain/Scoring/QualityScorer.swift` (new: weighted score + disposition + per-moment rank + round-robin shortlist)
 - `Domain/Selection/DiversitySelector.swift` (new: protected-first greedy utility fill)
 - `Domain/Selection/FinalAlbumBuilder.swift` (new: one-decision-per-source + invariants, engineVersion 2)

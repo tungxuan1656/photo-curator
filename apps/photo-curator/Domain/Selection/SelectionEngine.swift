@@ -110,6 +110,9 @@ struct SelectionEngine: Sendable {
             guard let swaps = feedback?.swapWinner, !swaps.isEmpty else { return scored }
             let byID = Dictionary(uniqueKeysWithValues: available.map { ($0.id, $0) })
             var overridden = scored
+            // Auto representatives replaced by a usable swap winner leave the
+            // pool so a swapped cluster contributes exactly one candidate.
+            var replacedAutoIDs = Set<AssetID>()
             // The automatic representative leaves the pool only when a usable
             // swap winner exists for its cluster; otherwise the cluster keeps
             // its representative and the unusable swap is ignored downstream
@@ -121,6 +124,13 @@ struct SelectionEngine: Sendable {
                       let analysis = analyses[winnerID],
                       let momentID = momentByID[cluster.representativeAssetID ?? winnerID] ?? momentByID[winnerID]
                 else { continue }
+                // A swap to the current representative is a no-op: keep the
+                // existing candidate instead of appending a duplicate.
+                if winnerID == cluster.representativeAssetID {
+                    if overridden.contains(where: { $0.asset.id == winnerID }) {
+                        continue
+                    }
+                }
                 // Score first: only replace the automatic representative when the
                 // swapped winner is actually usable. Otherwise the cluster keeps
                 // its automatic representative and the swap is ignored (the user
@@ -131,6 +141,12 @@ struct SelectionEngine: Sendable {
                 )
                 guard replacement.disposition == .usable else { continue }
                 overridden.append(replacement)
+                if let autoRep = cluster.representativeAssetID, autoRep != winnerID {
+                    replacedAutoIDs.insert(autoRep)
+                }
+            }
+            if !replacedAutoIDs.isEmpty {
+                overridden.removeAll { replacedAutoIDs.contains($0.asset.id) }
             }
             return overridden.sorted { QualityScorer.compareRank($0, $1) }
         }

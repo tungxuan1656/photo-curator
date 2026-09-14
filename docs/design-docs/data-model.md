@@ -109,6 +109,7 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
     let pixelHeight: Int
     let mediaSubtype: PhotoMediaSubtype
     let isFavorite: Bool
+    let isEdited: Bool
     let source: AssetSource
 }
 ```
@@ -119,6 +120,7 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
 | `pixelWidth/Height` | Basis for derived `aspectRatio` and `orientation`; orientation is derived, not stored separately. |
 | `mediaSubtype` | Only values that change behavior (`standard`, `livePhoto`, `screenshot`, `panorama`, `hdr`, `portrait`, `unknown`). Eligibility policy: [03](../product-specs/selection-rules.md). |
 | `isFavorite` | Soft bonus flag only; see [03](../product-specs/selection-rules.md). |
+| `isEdited` | Mapped from `PHAsset.hasAdjustments`; intentional-edit soft bonus and edited-twin tie-break per [03](../product-specs/selection-rules.md) §6/§15. |
 | `source` | `local` / `iCloud` / `unknown`. Hint for progress and retry only; iCloud state can change. API detail: [07](apple-frameworks.md). |
 
 Precise location is never stored here; it stays in bounded temp working memory only for grouping, then released. Retention and redaction: [09](../ship-gates/privacy.md).
@@ -278,28 +280,32 @@ strings, and `competingIDs` holds the duplicate winner a rejected asset lost to.
 persists `selectedAssetIDs` in chronological capture order, the complementary `rejectedAssetIDs`,
 one `Decision` per source ID, and `engineVersion`. `engineVersion 1` was the feat-007 pass-through;
 `engineVersion 2` marks the first real pipeline (duplicates → moments → rank → shortlist → diversity →
-verify → order). Clusters and moments remain cached-evictable inputs to decisions, rebuilt
-deterministically per run. Stored `AssetID`s may no longer resolve; PhotoKit is authoritative.
+verify → order). Edited twins resolve by `PhotoAsset.isEdited` (mapped from
+`PHAsset.hasAdjustments`): the edited copy earns a soft bonus and wins the
+near-duplicate tie-break, so only it survives when both twins land in one
+cluster — but twins outside the time window or similarity threshold stay
+separate and may both be kept. Clusters and moments remain cached-evictable
+inputs to decisions, rebuilt deterministically per run. Stored `AssetID`s may
+no longer resolve; PhotoKit is authoritative.
 
 ```swift
-struct SelectionDecision: Identifiable, Codable, Sendable {
-    var id: AssetID { assetID }
+struct Decision: Codable, Sendable {
     let assetID: AssetID
-    let status: SelectionStatus       // selected / rejected / undecided
-    let score: Double
-    let scoreBreakdown: SelectionScoreBreakdown
-    let reasons: [SelectionReason]
-    let competingAssetIDs: [AssetID]  // winner(s) this asset lost to; debug gold
-    let engineVersion: Int
+    let status: DecisionStatus       // selected / rejected
+    let score: Double?
+    let qualityBreakdown: QualityScoreBreakdown?
+    let reasons: [String]            // canonical selection-rules §16 codes
+    let competingIDs: [AssetID]      // winner this asset lost to; debug gold
 }
-struct SelectionScoreBreakdown: Codable, Sendable {
-    let quality: Double
-    let uniqueness: Double
-    let momentImportance: Double
-    let people: Double
-    let diversity: Double
-    let redundancyPenalty: Double
-    let finalScore: Double
+enum DecisionStatus: String, Codable, Sendable {
+    case selected, rejected
+}
+struct QualityScoreBreakdown: Codable, Sendable {
+    let technical: Double
+    let people: Double?
+    let composition: Double?
+    let content: Double?
+    let total: Double
 }
 ```
 
@@ -312,10 +318,11 @@ struct SelectionResult: Codable, Sendable {
     let sessionID: SessionID
     let selectedAssetIDs: [AssetID]   // chrono order for review by default
     let rejectedAssetIDs: [AssetID]
-    let decisions: [SelectionDecision]
+    let decisions: [Decision]
     let generatedAt: Date
     let engineVersion: Int
 }
+```
 struct CuratedAlbum: Identifiable, Codable, Sendable {
     let id: UUID
     let sessionID: SessionID

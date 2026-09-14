@@ -73,7 +73,7 @@
       "depends_on": [
         "feat-004"
       ],
-      "gate": "every asset has versioned PhotoAnalysis; batch + checkpoint per performance \u00a71",
+      "gate": "every asset has versioned PhotoAnalysis; batch + checkpoint per performance §1",
       "id": "feat-005",
       "owns": [
         "Services/Analysis/VisionAnalysisService.swift",
@@ -126,7 +126,7 @@
       "depends_on": [
         "feat-007"
       ],
-      "gate": "sizing per selection-rules \u00a714; reason codes; chronological order",
+      "gate": "sizing per selection-rules §14; reason codes; chronological order",
       "id": "feat-008",
       "owns": [
         "Domain/Scoring/QualityScorer.swift",
@@ -137,9 +137,14 @@
         "Services/Session/SimilarityRebuilder.swift",
         "Features/Processing/ProcessingModel.swift",
         "App/AppModel.swift",
-        "docs/design-docs/data-model.md"
+        "docs/design-docs/data-model.md",
+        "Domain/Models/PhotoAsset.swift",
+        "Services/Photos/PhotoLibraryPermissionService.swift",
+        "Domain/Selection/DuplicateResolver.swift",
+        "Domain/Selection/MomentBuilder.swift"
       ],
-      "status": "done"
+      "status": "done",
+      "title": "Scoring + diversity + verify"
     },
     {
       "depends_on": [
@@ -159,7 +164,8 @@
         "Services/ServiceProtocols.swift",
         "Services/Photos/ImageLoaderService.swift"
       ],
-      "status": "done"
+      "status": "done",
+      "title": "Review core on real result (overview/grid/detail)"
     },
     {
       "depends_on": [
@@ -193,7 +199,7 @@
       "depends_on": [
         "feat-011"
       ],
-      "gate": "resume without redo; budgets per performance \u00a71",
+      "gate": "resume without redo; budgets per performance §1",
       "id": "feat-012",
       "owns": [
         "Infrastructure/MemoryPressureObserver.swift",
@@ -228,5 +234,5 @@
       "title": "Release: QA plus conditional analytics"
     }
   ],
-  "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done; owns is per-feat scope, not an exclusive lock \u2014 a later feat may sequentially modify an earlier feat's file (e.g. BatchPipeline.swift, Settings/, ServiceProtocols.swift); single-active order means no concurrent overlap"
+  "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done; owns is per-feat scope, not an exclusive lock — a later feat may sequentially modify an earlier feat's file (e.g. BatchPipeline.swift, Settings/, ServiceProtocols.swift); single-active order means no concurrent overlap"
 }

@@ -40,7 +40,7 @@ struct CuratedGrid: View {
                     }
                 }
                 .navigationDestination(for: AssetID.self) { id in
-                    PhotoDetail(assetID: id)
+                    PhotoDetail(assetID: id, sessionID: sessionID)
                 }
             } else {
                 ProgressView("Loading your selection…")

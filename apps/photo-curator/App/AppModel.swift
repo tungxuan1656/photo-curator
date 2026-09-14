@@ -325,16 +325,29 @@ extension AppModel {
     }
 
     /// S09 entry: builds the session-owned ReviewModel from the persisted
-    /// result plus frozen source metadata, then routes. No-op when the result
-    /// is missing, mismatched, or empty (the caller shows the abnormal state).
-    func beginReview(for sessionID: SessionID) async {
+    /// result plus frozen source metadata, then routes. Returns true on success.
+    /// Reuses the existing model (preserving remove/restore edits) and never
+    /// pushes a duplicate overview when one is already on top. Returns false
+    /// when the result is missing, mismatched, or empty; the ReviewReady caller
+    /// surfaces inline retry feedback while the failed-route Try Again caller
+    /// already shows the recoverable state.
+    func beginReview(for sessionID: SessionID) async -> Bool {
+        if let existing = reviewModel, existing.sessionID == sessionID {
+            if path.last != .reviewOverview(sessionID: sessionID) {
+                path.append(.reviewOverview(sessionID: sessionID))
+            }
+            return true
+        }
         guard let result = await loadResult(for: sessionID),
               result.sessionID == sessionID,
               !result.selectedAssetIDs.isEmpty
-        else { return }
+        else { return false }
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
         reviewModel = ReviewModel(sessionID: sessionID, result: result, sourceByID: live)
-        path.append(.reviewOverview(sessionID: sessionID))
+        if path.last != .reviewOverview(sessionID: sessionID) {
+            path.append(.reviewOverview(sessionID: sessionID))
+        }
+        return true
     }
 
     func openSettings() {
