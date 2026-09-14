@@ -247,15 +247,21 @@ enum ClusterType: String, Codable, Sendable {
 
 Membership: asset → at most 1 primary cluster per pass, then moments group cluster representatives in time order (dups before moments, per [04](selection-engine.md)). References only; no embedded `PhotoAsset` copies.
 
-Similarity storage rule: never persist an N×N matrix (5,000² = 25M pairs). Persist cluster results only. Pairwise edges are transient:
+Similarity storage rule: never persist an N×N matrix (5,000² = 25M pairs). Persist cluster results only. Windowed candidate pairs and pairwise edges are transient:
 
 ```swift
-struct SimilarityEdge: Sendable {
+struct SimilarityCandidate: Sendable, Hashable {
     let first: AssetID
     let second: AssetID
-    let similarity: Double
+}
+struct SimilarityEdge: Sendable, Hashable {
+    let first: AssetID
+    let second: AssetID
+    let distance: Double
 }
 ```
+
+`distance` is the raw Vision feature-print distance (lower means more similar); it is not a normalized similarity score. Cluster `similarityScore` is a display-only `1 / (1 + meanDistance)` derived after grouping and never feeds threshold decisions.
 
 Feature prints (Vision or equivalent) stay in bounded temp working memory keyed by `AssetID` for the pairwise step, then released; they are never durable rows. Retention: [09](../ship-gates/privacy.md). API detail: [07](apple-frameworks.md).
 

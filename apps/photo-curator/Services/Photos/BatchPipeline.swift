@@ -11,9 +11,27 @@ struct BatchProgress: Sendable {
 }
 
 /// Batch outcome. One bad asset lands in `unavailableIDs` and never fails the batch.
+/// `similarities` holds transient run-local feature prints: never persisted, never
+/// cached, released after `similarityEdges(for:)` runs for selection.
 struct BatchResult: Sendable {
     let analyses: [AssetID: PhotoAnalysis]
     let unavailableIDs: [AssetID]
+    let similarities: [AssetID: ImageSimilarityArtifact]
+
+    /// Raw Vision distances in stable candidate order. Missing artifacts skip
+    /// that pair; per-pair distance failure skips that edge. Throws only on
+    /// task cancellation, so one bad signal never fails the session.
+    func similarityEdges(for candidates: [SimilarityCandidate]) throws -> [SimilarityEdge] {
+        var edges: [SimilarityEdge] = []
+        edges.reserveCapacity(candidates.count)
+        for candidate in candidates {
+            try Task.checkCancellation()
+            guard let left = similarities[candidate.first], let right = similarities[candidate.second] else { continue }
+            guard let distance = try? left.distance(to: right) else { continue }
+            edges.append(SimilarityEdge(first: candidate.first, second: candidate.second, distance: distance))
+        }
+        return edges
+    }
 }
 
 /// Bounded batch analysis with checkpoint/resume.
@@ -81,7 +99,11 @@ final class BatchPipeline: Sendable {
             await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
             // Cancel during the final save routes through the catch path too.
             try Task.checkCancellation()
-            return BatchResult(analyses: state.analyses, unavailableIDs: state.unavailable)
+            return BatchResult(
+                analyses: state.analyses,
+                unavailableIDs: state.unavailable,
+                similarities: state.similarities
+            )
         } catch {
             // Cancel-after-checkpoint: completed work is checkpointed before the
             // throw so resume keeps it. Cancellation maps exactly to .cancelled.
@@ -112,6 +134,7 @@ final class BatchPipeline: Sendable {
         let total: Int
         let progressInterval: TimeInterval
         var analyses: [AssetID: PhotoAnalysis] = [:]
+        var similarities: [AssetID: ImageSimilarityArtifact] = [:]
         var unavailable: [AssetID] = []
         var unavailableSet = Set<AssetID>()
         var completed = 0
@@ -148,19 +171,56 @@ final class BatchPipeline: Sendable {
     private func restore(assets: [PhotoAsset], sessionID: SessionID, state: inout RunState) async -> [PhotoAsset] {
         let done = await completedIDs(for: sessionID)
         var queue: [PhotoAsset] = []
+        var cacheHits: [PhotoAsset] = []
         for asset in assets {
             if done.contains(asset.id), let hit = await cache.analysis(for: asset.id) {
                 state.analyses[asset.id] = hit
+                cacheHits.append(asset)
             } else if done.contains(asset.id), state.unavailableSet.insert(asset.id).inserted {
                 state.unavailable.append(asset.id)
             } else if let hit = await cache.analysis(for: asset.id) {
                 state.analyses[asset.id] = hit
+                cacheHits.append(asset)
             } else {
                 queue.append(asset)
             }
         }
         state.completed = state.total - queue.count
+        await rebuildSimilarities(cacheHits, state: &state)
         return queue
+    }
+
+    /// Rebuilds deliberately non-persisted prints for cache hits in the
+    /// existing bounded lanes. Failures store nothing and never touch
+    /// completed counts, checkpoints, or unavailable.
+    private func rebuildSimilarities(_ assets: [PhotoAsset], state: inout RunState) async {
+        let laneCount = max(1, config.performance.maxConcurrentImageRequests)
+        for start in stride(from: 0, to: assets.count, by: laneCount) {
+            let end = min(start + laneCount, assets.count)
+            await withTaskGroup(of: (AssetID, ImageSimilarityArtifact?).self) { group in
+                for asset in assets[start ..< end] {
+                    group.addTask { [imageLoader, analyzer] in
+                        guard let cgImage = try? await imageLoader.analysisImage(for: asset.id) else { return (
+                            asset.id,
+                            nil
+                        ) }
+                        let artifact = try? await analyzer.similarityArtifact(for: AnalysisInput(
+                            assetID: asset.id,
+                            image: cgImage
+                        ))
+                        return (asset.id, artifact)
+                    }
+                }
+                for await(id, artifact) in group {
+                    if let artifact {
+                        state.similarities[id] = artifact
+                    }
+                }
+            }
+            if Task.isCancelled {
+                return
+            }
+        }
     }
 
     /// Drains one batch through bounded lanes, folding each outcome as it lands
@@ -200,9 +260,12 @@ final class BatchPipeline: Sendable {
 
     private func record(_ outcome: AssetOutcome, state: inout RunState) async {
         switch outcome {
-        case let .analyzed(analysis):
-            state.analyses[analysis.assetID] = analysis
-            await cache.store(analysis)
+        case let .analyzed(output):
+            state.analyses[output.analysis.assetID] = output.analysis
+            await cache.store(output.analysis)
+            if let similarity = output.similarity {
+                state.similarities[output.analysis.assetID] = similarity
+            }
         case let .unavailable(id):
             if state.unavailableSet.insert(id).inserted {
                 state.unavailable.append(id)
@@ -242,11 +305,11 @@ final class BatchPipeline: Sendable {
         // by scope exit: no stored CGImage outlives this call.
         let input = AnalysisInput(assetID: asset.id, image: cgImage)
         do {
-            let analysis = try await analyzer.analyze(input)
+            let output = try await analyzer.analyze(input)
             // Post-analysis cancel check: a cancel landing during Vision work
             // must not record as success — route through .cancelled.
             try Task.checkCancellation()
-            return .analyzed(analysis)
+            return .analyzed(output)
         } catch SelectionError.cancelled {
             throw SelectionError.cancelled
         } catch is CancellationError {
@@ -283,7 +346,7 @@ final class BatchPipeline: Sendable {
     }
 
     private enum AssetOutcome: Sendable {
-        case analyzed(PhotoAnalysis)
+        case analyzed(ImageAnalysisOutput)
         case unavailable(AssetID)
     }
 }

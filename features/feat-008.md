@@ -22,12 +22,11 @@ Land scoring + diversity + verify per selection-rules §14 with reason codes.
 ## Depends
 
 - feat-007
+## Plan
+
+Plan: `docs/plans/feat-008.md`
 
 ## Handoff
-
-- State: todo
-- Evidence: —
-- Blockers: none
 - Next: Open branch feat/feat-008 once feat-007 is done.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->

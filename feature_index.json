@@ -107,10 +107,19 @@
       "gate": "clusters and moments correct on dataset B",
       "id": "feat-007",
       "owns": [
+        "Domain/Models/PhotoAnalysis.swift",
+        "Domain/Models/SelectionGrouping.swift",
         "Domain/Selection/DuplicateResolver.swift",
-        "Domain/Selection/MomentBuilder.swift"
+        "Domain/Selection/MomentBuilder.swift",
+        "Domain/Selection/SelectionEngine.swift",
+        "Services/Analysis/ImageSimilarityArtifact.swift",
+        "Services/Analysis/VisionAnalysisService.swift",
+        "Services/Photos/BatchPipeline.swift",
+        "Services/ServiceProtocols.swift",
+        "Services/Session/SelectionSessionCoordinator.swift",
+        "docs/design-docs/data-model.md"
       ],
-      "status": "todo",
+      "status": "active",
       "title": "Duplicates + moments"
     },
     {

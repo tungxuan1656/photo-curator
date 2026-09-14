@@ -167,7 +167,7 @@ actor SelectionSessionCoordinator {
             interval: interval,
             onProgress: onProgress
         )
-        let result = try selectResult(
+        let result = try await selectResult(
             request: request,
             assets: sourceAssets,
             batchResult: batchResult
@@ -245,12 +245,15 @@ actor SelectionSessionCoordinator {
         request: SelectionRequest,
         assets: [PhotoAsset],
         batchResult: BatchResult
-    ) throws -> SelectionResult {
+    ) async throws -> SelectionResult {
+        let candidates = engine.duplicateCandidates(for: assets, configuration: request.config.selection)
+        let edges = try batchResult.similarityEdges(for: candidates)
         let engineOut = try engine.select(
             assets: assets,
             analyses: batchResult.analyses,
             configuration: request.config.selection,
-            feedback: nil
+            feedback: nil,
+            similarityEdges: edges
         )
         return SelectionResult(
             sessionID: request.sessionID,

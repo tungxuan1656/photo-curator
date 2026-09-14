@@ -28,9 +28,12 @@ protocol PhotoImageLoader: Sendable {
     func analysisImage(for id: AssetID) async throws -> CGImage
 }
 
-/// Image facts in, `PhotoAnalysis` out. No albums, no SwiftUI, no final picks.
+/// Image facts in, `ImageAnalysisOutput` (durable analysis + transient similarity) out.
+/// No albums, no SwiftUI, no final picks. `similarityArtifact(for:)` rebuilds only
+/// the deliberately non-persisted feature print for cache/resume hits.
 protocol ImageAnalysisService: Sendable {
-    func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis
+    func analyze(_ input: AnalysisInput) async throws -> ImageAnalysisOutput
+    func similarityArtifact(for input: AnalysisInput) async throws -> ImageSimilarityArtifact?
 }
 
 /// Actor-isolated store of recomputable derived analysis. Original photo bytes never enter.
@@ -79,8 +82,12 @@ struct NoopImageLoader: PhotoImageLoader {
 }
 
 struct NoopImageAnalyzer: ImageAnalysisService {
-    func analyze(_ input: AnalysisInput) async throws -> PhotoAnalysis {
+    func analyze(_ input: AnalysisInput) async throws -> ImageAnalysisOutput {
         throw SelectionError.internal
+    }
+
+    func similarityArtifact(for input: AnalysisInput) async throws -> ImageSimilarityArtifact? {
+        nil
     }
 }
 

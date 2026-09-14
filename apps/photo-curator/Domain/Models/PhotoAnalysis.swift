@@ -35,7 +35,7 @@ struct SemanticTag: Codable, Sendable {
     let confidence: Double
 }
 
-enum SceneType: String, Codable, Sendable {
+enum SceneType: String, Codable, Sendable, Hashable {
     case people, group, landscape, architecture, food, animal
     case indoor, outdoor, document, screenshot, other, unknown
 }

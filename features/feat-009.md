@@ -22,12 +22,11 @@ Land Review core on real result so S09/S10/S11 are operable.
 ## Depends
 
 - feat-008
+## Plan
+
+Plan: `docs/plans/feat-009.md`
 
 ## Handoff
-
-- State: todo
-- Evidence: —
-- Blockers: none
 - Next: Open branch feat/feat-009 once feat-008 is done.
 
 <!-- harness-slim 1.4.0 · generated 2026-09-10 -->
