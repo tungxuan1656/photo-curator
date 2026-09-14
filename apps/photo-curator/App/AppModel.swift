@@ -264,9 +264,9 @@ extension AppModel {
         }
     }
 
-    /// Session cleanup: BOTH deletes always attempted independently, each
+    /// Session cleanup: ALL deletes always attempted independently, each
     /// failure logged. Absent files already count as success (idempotent),
-    /// so cleanup never short-circuits. Returns true when both succeeded.
+    /// so cleanup never short-circuits. Returns true when all succeeded.
     private func deleteSessionData(_ sessionID: SessionID?, context: String) async -> Bool {
         guard let sessionID else { return true }
         var cleaned = true
@@ -286,6 +286,15 @@ extension AppModel {
             logger
                 .error(
                     "\(context, privacy: .public) result cleanup failed: \(error.localizedDescription, privacy: .public)"
+                )
+        }
+        do {
+            try await container.checkpointStore.deleteFeedback(sessionID: sessionID)
+        } catch {
+            cleaned = false
+            logger
+                .error(
+                    "\(context, privacy: .public) feedback cleanup failed: \(error.localizedDescription, privacy: .public)"
                 )
         }
         return cleaned
@@ -327,10 +336,12 @@ extension AppModel {
     /// S09 entry: builds the session-owned ReviewModel from the persisted
     /// result plus frozen source metadata, then routes. Returns true on success.
     /// Reuses the existing model (preserving remove/restore edits) and never
-    /// pushes a duplicate overview when one is already on top. Returns false
-    /// when the result is missing, mismatched, or empty; the ReviewReady caller
-    /// surfaces inline retry feedback while the failed-route Try Again caller
-    /// already shows the recoverable state.
+    /// pushes a duplicate overview when one is already on top. Reloads the
+    /// persisted `SelectionFeedback` so review edits survive relaunch; the
+    /// engine never reruns. Returns false when the result is missing,
+    /// mismatched, or empty; the ReviewReady caller surfaces inline retry
+    /// feedback while the failed-route Try Again caller already shows the
+    /// recoverable state.
     func beginReview(for sessionID: SessionID) async -> Bool {
         if let existing = reviewModel, existing.sessionID == sessionID {
             if path.last != .reviewOverview(sessionID: sessionID) {
@@ -343,7 +354,12 @@ extension AppModel {
               !result.selectedAssetIDs.isEmpty
         else { return false }
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
-        reviewModel = ReviewModel(sessionID: sessionID, result: result, sourceByID: live)
+        let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
+        let model = ReviewModel(sessionID: sessionID, result: result, sourceByID: live, feedback: feedback)
+        model.setFeedbackHook { [store = container.checkpointStore, sessionID] snapshot in
+            Task { try? await store.saveFeedback(snapshot, for: sessionID) }
+        }
+        reviewModel = model
         if path.last != .reviewOverview(sessionID: sessionID) {
             path.append(.reviewOverview(sessionID: sessionID))
         }
@@ -455,6 +471,9 @@ extension AppModel {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
+        if reviewModel?.sessionID == sessionID {
+            reviewModel = nil
+        }
         path.removeAll()
         guard let sessionID else { return }
         Task {

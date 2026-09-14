@@ -174,11 +174,19 @@
       "gate": "S12/S13/S14 swap and add-back work on real result",
       "id": "feat-010",
       "owns": [
+        "Features/Review/ReviewModel.swift",
         "Features/Review/SimilarGroups.swift",
         "Features/Review/RemovedPhotos.swift",
-        "Features/Review/FinalReview.swift"
+        "Features/Review/FinalReview.swift",
+        "Features/Review/ReviewOverview.swift",
+        "Features/Review/CuratedGrid.swift",
+        "App/AppModel.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Infrastructure/SessionCheckpointStore.swift",
+        "Domain/Models/SelectionResult.swift"
       ],
-      "status": "todo",
+      "status": "active",
       "title": "Review groups + removed + final"
     },
     {

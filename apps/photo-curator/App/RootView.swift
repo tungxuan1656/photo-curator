@@ -46,6 +46,24 @@ struct RootView: View {
                     } else {
                         ReviewLoadFailedView(sessionID: id)
                     }
+                case let .similarGroups(id):
+                    if appModel.reviewModel?.sessionID == id {
+                        SimilarGroups(sessionID: id)
+                    } else {
+                        ReviewLoadFailedView(sessionID: id)
+                    }
+                case let .removedPhotos(id):
+                    if appModel.reviewModel?.sessionID == id {
+                        RemovedPhotos(sessionID: id)
+                    } else {
+                        ReviewLoadFailedView(sessionID: id)
+                    }
+                case let .finalReview(id):
+                    if appModel.reviewModel?.sessionID == id {
+                        FinalReview(sessionID: id)
+                    } else {
+                        ReviewLoadFailedView(sessionID: id)
+                    }
                 }
             }
         }
