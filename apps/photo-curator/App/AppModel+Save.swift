@@ -14,6 +14,15 @@ extension AppModel {
     /// recoverable state.
     func beginReview(for sessionID: SessionID) async -> Bool {
         if let existing = reviewModel, existing.sessionID == sessionID {
+            // Interrupted-save reconciliation applies to the reuse path too:
+            // a persisted state with remaining IDs routes to S15 against the
+            // same album instead of the overview.
+            if await hasInterruptedSave(for: sessionID) {
+                if path.last != .saving(sessionID: sessionID) {
+                    path.append(.saving(sessionID: sessionID))
+                }
+                return true
+            }
             if path.last != .reviewOverview(sessionID: sessionID) {
                 path.append(.reviewOverview(sessionID: sessionID))
             }
@@ -26,8 +35,11 @@ extension AppModel {
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
         let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
         let model = ReviewModel(sessionID: sessionID, result: result, sourceByID: live, feedback: feedback)
-        model.setFeedbackHook { [store = container.checkpointStore, sessionID] snapshot in
-            Task { try? await store.saveFeedback(snapshot, for: sessionID) }
+        // Ordered writes: the latest snapshot always persists last, so rapid
+        // toggles cannot land out of order on disk.
+        let persist = PersistLatest(store: container.checkpointStore, sessionID: sessionID)
+        model.setFeedbackHook { snapshot in
+            Task { await persist.save(snapshot) }
         }
         reviewModel = model
         // Interrupted-save reconciliation: never a duplicate album. A
@@ -47,7 +59,7 @@ extension AppModel {
 
     /// S14 Save entry: atomically claims one save per session before touching
     /// PhotoKit. First tap owns the flight; repeat taps join it. Returns the
-    /// terminal outcome; S15 renders progress via `saveProgress` while waiting.
+    /// terminal outcome.
     func saveAlbum(for sessionID: SessionID) async -> SaveOutcome {
         if let flight = saveFlight, flight.session == sessionID {
             return await flight.task.value
@@ -77,15 +89,6 @@ extension AppModel {
         return outcome
     }
 
-    /// S15 progress hook: latest persisted added/total for the session save.
-    /// Nil while no save state exists (indeterminate, never a fake fraction).
-    func saveProgress(for sessionID: SessionID) async -> (added: Int, total: Int)? {
-        guard let state = await container.checkpointStore.loadSaveState(sessionID: sessionID) else {
-            return nil
-        }
-        return (state.addedIDs.count, state.requestedIDs.count)
-    }
-
     /// Retry-remaining entry: adds only IDs neither added nor missing to the
     /// persisted album, then re-runs the same terminal mapping as `saveAlbum`.
     func retryRemainingSave(for sessionID: SessionID) async -> SaveOutcome {
@@ -94,7 +97,7 @@ extension AppModel {
         }
         let remaining = state.remainingIDs
         guard !remaining.isEmpty else {
-            return .partial(state: state)
+            return Self.outcome(for: state)
         }
         do {
             let result = try await container.exporter.addToAlbum(
@@ -117,13 +120,18 @@ extension AppModel {
         saveFlight?.session == sessionID
     }
 
-    /// Supersede/discard hook: cancels the in-flight save claim for exactly
-    /// this session so no orphan export writes into a replaced session.
+    /// Supersede/discard hook: waits out the in-flight save claim for exactly
+    /// this session before the caller deletes data, so the flight's final
+    /// `SaveState` write cannot resurrect a deleted file. The PhotoKit add
+    /// itself stays cooperative — an in-flight add may still land while a new
+    /// album starts fresh on the changed selection.
     /// The persisted save state stays for reconciliation, never deleted here.
-    func cancelSave(for sessionID: SessionID?) {
+    func cancelSave(for sessionID: SessionID?) async {
         guard let sessionID, saveFlight?.session == sessionID else { return }
-        saveFlight?.task.cancel()
+        let flight = saveFlight?.task
+        flight?.cancel()
         saveFlight = nil
+        await flight?.value
     }
 
     /// S16 Done: clears the save claim, drops the session review state, and
@@ -247,5 +255,22 @@ extension AppModel {
         case .assetsUnavailable:
             .failed(.assetsUnavailable)
         }
+    }
+}
+
+/// Orders feedback writes so the newest snapshot always lands last. Each
+/// mutation captures a monotonically newer snapshot; the actor serializes
+/// the writes, so rapid toggles cannot persist out of order.
+private actor PersistLatest {
+    private let store: SessionCheckpointStore
+    private let sessionID: SessionID
+
+    init(store: SessionCheckpointStore, sessionID: SessionID) {
+        self.store = store
+        self.sessionID = sessionID
+    }
+
+    func save(_ snapshot: SelectionFeedback) async {
+        try? await store.saveFeedback(snapshot, for: sessionID)
     }
 }

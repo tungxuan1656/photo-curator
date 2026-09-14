@@ -3,29 +3,34 @@ import SwiftUI
 
 /// S11 photo detail with a local pager over the review display order.
 ///
-/// Keeps only one bounded preview `CGImage` at a time (cleared on ID change
-/// and disappearance; neutral placeholder on failure). Previous/next moves
-/// within `ReviewModel.displayIDs` without touching global navigation. The
-/// toggle mutates only ReviewModel; no scores, trash icon, custom gestures,
+/// `pagerIDs` scopes Previous/Next to the entry grid: the S10 curated order,
+/// the S13 removed order, or a single group on S12 — never the full result
+/// set. Keeps only one bounded preview `CGImage` at a time (cleared on ID
+/// change and disappearance; neutral placeholder on failure). The toggle
+/// mutates only ReviewModel; no scores, trash icon, custom gestures,
 /// persistence, or engine rerun.
 struct PhotoDetail: View {
     let assetID: AssetID
     let sessionID: SessionID
+    /// Scoped pager order from the entry grid (`[assetID]` freeforms to this).
+    var pagerIDs: [AssetID]?
     @Environment(AppModel.self) private var appModel
     @State private var currentAssetID: AssetID
     @State private var cgImage: CGImage?
     @State private var beginFailed = false
 
-    init(assetID: AssetID, sessionID: SessionID) {
+    init(assetID: AssetID, sessionID: SessionID, pagerIDs: [AssetID]? = nil) {
         self.assetID = assetID
         self.sessionID = sessionID
+        self.pagerIDs = pagerIDs
         _currentAssetID = State(initialValue: assetID)
     }
 
     var body: some View {
         Group {
             if let model = appModel.reviewModel, model.sessionID == sessionID {
-                if let index = model.displayIDs.firstIndex(of: currentAssetID) {
+                let order = pagerIDs ?? [currentAssetID]
+                if let index = order.firstIndex(of: currentAssetID) {
                     VStack(spacing: 12) {
                         Group {
                             if let cgImage {
@@ -44,15 +49,15 @@ struct PhotoDetail: View {
                         .buttonStyle(.borderedProminent)
                         .accessibilityValue(model.isSelected(currentAssetID) ? "In album" : "Removed")
                         HStack {
-                            Button("Previous") { currentAssetID = model.displayIDs[max(0, index - 1)] }
+                            Button("Previous") { currentAssetID = order[max(0, index - 1)] }
                                 .disabled(index == 0)
                             Button("Next") {
-                                currentAssetID = model.displayIDs[min(model.displayIDs.count - 1, index + 1)]
+                                currentAssetID = order[min(order.count - 1, index + 1)]
                             }
-                            .disabled(index == model.displayIDs.count - 1)
+                            .disabled(index == order.count - 1)
                         }
                         .accessibilityElement(children: .contain)
-                        .accessibilityLabel("Photo \(index + 1) of \(model.displayIDs.count)")
+                        .accessibilityLabel("Photo \(index + 1) of \(order.count)")
                         if let date = model.sourceByID[currentAssetID]?.creationDate {
                             Text(date, style: .date).font(.footnote).foregroundStyle(.secondary)
                         }

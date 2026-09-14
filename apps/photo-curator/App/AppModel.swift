@@ -232,17 +232,22 @@ extension AppModel {
         lastSessionID = request.sessionID
         finalizeFlight?.task.cancel()
         finalizeFlight = nil
-        cancelSave(for: supersededID)
         if processing.isRunning {
             processing.cancel()
             Task {
+                // The save flight's final SaveState write must land before the
+                // old files are deleted, or it resurrects a deleted file.
+                await cancelSave(for: supersededID)
                 await processing.awaitTermination()
                 await deleteSessionData(supersededID, context: "Superseded curation")
                 beginRun(request: request, assets: assets)
             }
         } else {
             if supersededID != nil {
-                Task { await deleteSessionData(supersededID, context: "Superseded curation") }
+                Task {
+                    await cancelSave(for: supersededID)
+                    await deleteSessionData(supersededID, context: "Superseded curation")
+                }
             }
             beginRun(request: request, assets: assets)
         }
@@ -452,13 +457,13 @@ extension AppModel {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
-        cancelSave(for: sessionID)
         if reviewModel?.sessionID == sessionID {
             reviewModel = nil
         }
         path.removeAll()
         guard let sessionID else { return }
         Task {
+            await cancelSave(for: sessionID)
             await processing.awaitTermination()
             let cleaned = await deleteSessionData(sessionID, context: "Discarding curation")
             if cleaned, lastSessionID == sessionID {
@@ -475,10 +480,10 @@ extension AppModel {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
-        cancelSave(for: sessionID)
         reviewModel = nil
         path.removeAll()
         Task {
+            await cancelSave(for: sessionID)
             await processing.awaitTermination()
             await container.analysisCache.reset()
             if sessionID != nil {

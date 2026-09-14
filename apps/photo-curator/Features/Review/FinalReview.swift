@@ -54,7 +54,11 @@ struct FinalReview: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     Button("Save Album") {
-                        appModel.path.append(.saving(sessionID: sessionID))
+                        // Claim-once: a second tap before S15 appears must not
+                        // push a duplicate saving route onto the same flight.
+                        if appModel.path.last != .saving(sessionID: sessionID) {
+                            appModel.path.append(.saving(sessionID: sessionID))
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(selected.isEmpty || appModel.isSaving(sessionID: sessionID))

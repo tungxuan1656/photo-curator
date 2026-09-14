@@ -74,6 +74,9 @@ final class BatchPipeline: Sendable {
     ) async throws -> BatchResult {
         let total = assets.count
         guard total > 0 else { throw SelectionError.invalidInput }
+        // Fresh pressure baseline per run: a sticky warning/critical from a
+        // prior run must not throttle this one; mid-run warnings re-escalate.
+        pressure?.markRecovered()
         var state = RunState(total: total, progressInterval: progressInterval)
         do {
             // Resume-first WITHOUT dropping work: checkpoint IDs reload from cache.

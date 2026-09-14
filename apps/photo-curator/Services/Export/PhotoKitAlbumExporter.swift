@@ -110,6 +110,14 @@ struct PhotoKitAlbumExporter: AlbumExportService, Sendable {
     }
 
     private static func addOneRequest(_ assets: [PHAsset], toAlbumID albumID: String) async throws {
+        // A vanished album (deleted mid-save) must surface as a failure, never
+        // a silent no-op the caller would report as added.
+        guard PHAssetCollection.fetchAssetCollections(
+            withLocalIdentifiers: [albumID],
+            options: nil
+        ).firstObject != nil else {
+            throw ExportError.creationFailed
+        }
         do {
             try await PHPhotoLibrary.shared().performChanges {
                 guard let album = PHAssetCollection.fetchAssetCollections(

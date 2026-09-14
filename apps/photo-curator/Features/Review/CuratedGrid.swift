@@ -42,7 +42,7 @@ struct CuratedGrid: View {
                     }
                 }
                 .navigationDestination(for: AssetID.self) { id in
-                    PhotoDetail(assetID: id, sessionID: sessionID)
+                    PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: model.curatedDisplayIDs)
                 }
             } else {
                 ProgressView("Loading your selection…")

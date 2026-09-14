@@ -40,9 +40,10 @@ final class MemoryPressureObserver: Sendable {
         }
     }
 
-    /// Test and recovery seam: pressure clears only via an explicit call,
+    /// Test and run-boundary seam: pressure clears only via an explicit call,
     /// never implicitly, so a transient warning cannot silently re-enable
-    /// full preheat mid-run.
+    /// full throughput mid-run. The batch loop resets at run start so one
+    /// sticky warning never throttles later sessions.
     func markRecovered() {
         lock.withLock { _level = .normal }
     }

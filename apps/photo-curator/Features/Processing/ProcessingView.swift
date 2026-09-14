@@ -181,6 +181,8 @@ struct ReviewReadyView: View {
                     secondaryTitle: "Back to Home",
                     secondary: { appModel.goHome() }
                 )
+            } else {
+                ProgressView("Loading your selection…")
             }
         }
         .navigationTitle("Review")

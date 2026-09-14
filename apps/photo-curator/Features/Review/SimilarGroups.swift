@@ -50,7 +50,7 @@ struct SimilarGroups: View {
                         .padding()
                     }
                     .navigationDestination(for: AssetID.self) { id in
-                        PhotoDetail(assetID: id, sessionID: sessionID)
+                        PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: similarOrder(for: id, in: groups))
                     }
                 }
             } else {
@@ -59,6 +59,12 @@ struct SimilarGroups: View {
         }
         .navigationTitle("Similar Photos")
     }
+}
+
+/// Pager order for deep-linked photos: the containing group, or the single
+/// photo when it belongs to no group.
+private func similarOrder(for id: AssetID, in groups: [SimilarGroup]) -> [AssetID] {
+    groups.first(where: { $0.memberIDs.contains(id) })?.memberIDs ?? [id]
 }
 
 private struct SimilarGroupCard: View {

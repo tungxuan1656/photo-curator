@@ -71,11 +71,19 @@ final class ReviewModel {
         removedEditIDs = removed
         restoredEditIDs = restored
         selectedIDs = engineSelectedIDs.subtracting(removed).union(restored).intersection(liveSet)
+        cachedSimilarGroups = Self.buildSimilarGroups(
+            result: result, displayIDs: displayIDs, sourceByID: sourceByID
+        )
     }
 
     func setFeedbackHook(_ hook: ((SelectionFeedback) -> Void)?) {
         onFeedbackChanged = hook
     }
+
+    /// Cached S12 grouping: the derivation (incl. UUIDs) runs once in init,
+    /// never per body evaluation (`SimilarGroups` and `ReviewOverview` both
+    /// read it per render). `@ObservationIgnored`: derived, never observed.
+    @ObservationIgnored private var cachedSimilarGroups: [SimilarGroup] = []
 
     var selectedAssetIDs: [AssetID] {
         displayIDs.filter(selectedIDs.contains)
@@ -92,7 +100,14 @@ final class ReviewModel {
 
     /// S12 groups from near-duplicate decisions via the `competingIDs` winner
     /// relation. Engine-stable IDs via `StableSelectionID(kind: "cluster")`.
+    /// Cached: `SimilarGroups` and `ReviewOverview` both read it per render.
     var similarGroups: [SimilarGroup] {
+        cachedSimilarGroups
+    }
+
+    private static func buildSimilarGroups(
+        result: SelectionResult, displayIDs: [AssetID], sourceByID: [AssetID: PhotoAsset]
+    ) -> [SimilarGroup] {
         let live = Set(sourceByID.keys)
         var membersByWinner: [AssetID: Set<AssetID>] = [:]
         for decision in result.decisions {
@@ -161,6 +176,11 @@ final class ReviewModel {
 
     func undoLastRemoval() {
         guard let id = lastRemovedID else { return }
+        // A winner swap names `prior` as the removal; undoing it must also
+        // drop the swap record, or the winner label and selection disagree.
+        for (groupID, winner) in swapWinnerByGroup where winner == id {
+            swapWinnerByGroup.removeValue(forKey: groupID)
+        }
         restore(id)
         lastRemovedID = nil
     }

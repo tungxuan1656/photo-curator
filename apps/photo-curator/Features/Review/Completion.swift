@@ -9,6 +9,7 @@ struct Completion: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
     @State private var state: SaveState?
+    @State private var didLoad = false
 
     var body: some View {
         Group {
@@ -20,10 +21,23 @@ struct Completion: View {
                         .buttonStyle(.borderedProminent)
                 }
                 .padding()
+            } else if didLoad {
+                ErrorStateView(
+                    title: "Couldn't load your saved album.",
+                    message: "Your photos are saved in Photos. Your progress is safe.",
+                    primaryTitle: "Try Again",
+                    primary: {
+                        didLoad = false
+                        state = nil
+                    },
+                    secondaryTitle: "Back to Home",
+                    secondary: { appModel.goHome() }
+                )
             } else {
                 ProgressView("Loading saved album…")
                     .task {
                         state = await appModel.savedAlbum(for: sessionID)
+                        didLoad = true
                     }
             }
         }

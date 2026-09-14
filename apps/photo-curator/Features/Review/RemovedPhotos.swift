@@ -58,7 +58,7 @@ struct RemovedPhotos: View {
                             .padding(.vertical, 8)
                     }
                     .navigationDestination(for: AssetID.self) { id in
-                        PhotoDetail(assetID: id, sessionID: sessionID)
+                        PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: removed)
                     }
                 }
             } else {

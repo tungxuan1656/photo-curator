@@ -47,8 +47,6 @@ struct SettingsView: View {
                 Text("Photo analysis happens on this iPhone. Your photos are not uploaded.")
                     .font(.footnote).foregroundStyle(.secondary)
                     .accessibilityLabel("Privacy: photo analysis happens on this iPhone. Photos are not uploaded.")
-                Link("Privacy Policy", destination: URL(string: "https://example.com/privacy")!)
-                    .accessibilityLabel("Open privacy policy")
             }
             Section("Storage") {
                 Text(
