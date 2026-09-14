@@ -41,13 +41,15 @@ final class AppModel {
     init(container: AppContainer) {
         self.container = container
         hasSeenWelcome = UserDefaults.standard.bool(forKey: Self.seenWelcomeKey)
+        container.memoryPressure.start()
         let coordinator = SelectionSessionCoordinator(
             imageLoader: container.imageLoader,
             analyzer: container.analyzer,
             analysisCache: container.analysisCache,
             checkpointStore: container.checkpointStore,
             engine: container.selectionEngine,
-            config: .default
+            config: .default,
+            pressure: container.memoryPressure
         )
         processing = ProcessingModel(
             coordinator: coordinator,
@@ -224,11 +226,13 @@ extension AppModel {
         // Supersede rule: exactly one owned session, no multi-session support.
         // A new start replaces the retained session: cancel the old task if
         // running, clean its checkpoint + result (abandoned session, logged),
-        // then run the new session.
+        // then run the new session. An in-flight save for the superseded
+        // session is cancelled too: no orphan export may write into it.
         activeSessionID = request.sessionID
         lastSessionID = request.sessionID
         finalizeFlight?.task.cancel()
         finalizeFlight = nil
+        cancelSave(for: supersededID)
         if processing.isRunning {
             processing.cancel()
             Task {
@@ -444,12 +448,11 @@ extension AppModel {
     /// recreate data after deletion. BOTH deletes are always attempted
     /// independently (absent files count as success — idempotent), never gated
     /// on ownership and never short-circuited: completion clears ownership but
-    /// the data still needs cleanup, so fall back to the most recent session.
-    /// Each cleanup failure is logged. The §4.3 confirmation lives in the view.
     func discardCuration() {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
+        cancelSave(for: sessionID)
         if reviewModel?.sessionID == sessionID {
             reviewModel = nil
         }

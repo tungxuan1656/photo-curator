@@ -117,6 +117,15 @@ extension AppModel {
         saveFlight?.session == sessionID
     }
 
+    /// Supersede/discard hook: cancels the in-flight save claim for exactly
+    /// this session so no orphan export writes into a replaced session.
+    /// The persisted save state stays for reconciliation, never deleted here.
+    func cancelSave(for sessionID: SessionID?) {
+        guard let sessionID, saveFlight?.session == sessionID else { return }
+        saveFlight?.task.cancel()
+        saveFlight = nil
+    }
+
     /// S16 Done: clears the save claim, drops the session review state, and
     /// returns Home with no unfinished session card.
     func finishSave(for sessionID: SessionID) {

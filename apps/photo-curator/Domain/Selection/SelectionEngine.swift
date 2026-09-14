@@ -3,6 +3,9 @@ import Foundation
 /// Minimal engine errors. Typed per-layer errors arrive with their owning stages.
 enum SelectionError: Error, Sendable {
     case invalidInput, cancelled, `internal`
+    /// Memory-critical pause: current safe unit finished, checkpoint persisted,
+    /// resume continues without redo. Maps to the same paused UI as cancel.
+    case memoryCritical
 }
 
 /// Pure deterministic selection facade. Same assets + analyses + configuration + feedback give the same

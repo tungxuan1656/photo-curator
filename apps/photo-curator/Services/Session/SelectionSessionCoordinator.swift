@@ -104,7 +104,8 @@ actor SelectionSessionCoordinator {
         analysisCache: any AnalysisCache,
         checkpointStore: SessionCheckpointStore,
         engine: SelectionEngine,
-        config: AppConfiguration = .default
+        config: AppConfiguration = .default,
+        pressure: MemoryPressureObserver? = nil
     ) {
         self.imageLoader = imageLoader
         self.analyzer = analyzer
@@ -116,7 +117,8 @@ actor SelectionSessionCoordinator {
             analyzer: analyzer,
             cache: analysisCache,
             checkpoints: checkpointStore,
-            config: config
+            config: config,
+            pressure: pressure
         )
     }
 

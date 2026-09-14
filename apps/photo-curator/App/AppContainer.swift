@@ -11,6 +11,7 @@ struct AppContainer: Sendable {
     let selectionEngine: SelectionEngine
     let exporter: any AlbumExportService
     let analytics: any AnalyticsService
+    let memoryPressure: MemoryPressureObserver
 
     /// G1 wiring: real permission service + file-backed cache/checkpoint + real
     /// analysis pipeline (feat-006 flips the analyzer switch); analytics stays
@@ -35,7 +36,8 @@ struct AppContainer: Sendable {
             checkpointStore: SessionCheckpointStore(files: files),
             selectionEngine: SelectionEngine(),
             exporter: PhotoKitAlbumExporter(),
-            analytics: NoopAnalytics()
+            analytics: NoopAnalytics(),
+            memoryPressure: MemoryPressureObserver()
         )
     }
 }

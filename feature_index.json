@@ -218,9 +218,15 @@
       "id": "feat-012",
       "owns": [
         "Infrastructure/MemoryPressureObserver.swift",
-        "Services/Photos/BatchPipeline.swift"
+        "Services/Photos/BatchPipeline.swift",
+        "Features/Processing/ProcessingModel.swift",
+        "Services/Session/SelectionSessionCoordinator.swift",
+        "App/AppContainer.swift",
+        "App/AppModel.swift",
+        "App/AppModel+Save.swift",
+        "Services/Photos/ImageLoaderService.swift"
       ],
-      "status": "todo",
+      "status": "active",
       "title": "Reliability + performance"
     },
     {
