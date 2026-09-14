@@ -377,7 +377,8 @@ extension AppModel {
             guard !analyses.isEmpty else { return }
             let available = assets.filter { analyses[$0.id] != nil }
             let engineOut = try await processing.finalizeAvailable(
-                assets: available, analyses: analyses, configuration: AppConfiguration.default.selection
+                assets: available, analyses: analyses, configuration: AppConfiguration.default.selection,
+                laneCount: AppConfiguration.default.performance.maxConcurrentImageRequests
             )
             // Race gate: a retry resumed the run — never persist under it.
             guard !Task.isCancelled, case .failed = processing.state else { return }

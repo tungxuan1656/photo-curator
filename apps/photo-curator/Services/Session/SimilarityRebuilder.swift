@@ -6,13 +6,14 @@ import Foundation
 struct SimilarityRebuilder: Sendable {
     let imageLoader: any PhotoImageLoader
     let analyzer: any ImageAnalysisService
+    let laneCount: Int
 
     func rebuild(for ids: [AssetID]) async throws -> [AssetID: ImageSimilarityArtifact] {
-        let laneCount = 2
+        let lanes = max(1, laneCount)
         var artifacts: [AssetID: ImageSimilarityArtifact] = [:]
-        for start in stride(from: 0, to: ids.count, by: laneCount) {
+        for start in stride(from: 0, to: ids.count, by: lanes) {
             try Task.checkCancellation()
-            let end = min(start + laneCount, ids.count)
+            let end = min(start + lanes, ids.count)
             await withTaskGroup(of: (AssetID, ImageSimilarityArtifact?).self) { group in
                 for id in ids[start ..< end] {
                     group.addTask { [imageLoader, analyzer] in

@@ -61,6 +61,9 @@ struct QualityScorer: Sendable {
         if asset.isFavorite {
             score += configuration.favoriteBonus
         }
+        if asset.isEdited {
+            score += configuration.editedBonus
+        }
         score = min(1.0, max(0.0, score))
         let disposition: QualityDisposition
         if score < configuration.hardRejectThreshold {
@@ -127,11 +130,14 @@ struct QualityScorer: Sendable {
         return out
     }
 
-    /// Canonical rank order: score desc, favorite desc, pixel area desc,
-    /// asset ID asc. Shared with DiversitySelector utility ties.
+    /// Canonical rank order: score desc, edited-twin preference, favorite desc,
+    /// pixel area desc, asset ID asc. Shared with DiversitySelector utility ties.
     static func compareRank(_ left: ScoredCandidate, _ right: ScoredCandidate) -> Bool {
         if left.score != right.score {
             return left.score > right.score
+        }
+        if left.asset.isEdited != right.asset.isEdited {
+            return left.asset.isEdited
         }
         if left.asset.isFavorite != right.asset.isFavorite {
             return left.asset.isFavorite

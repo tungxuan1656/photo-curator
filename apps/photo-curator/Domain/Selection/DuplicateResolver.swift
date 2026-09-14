@@ -112,13 +112,17 @@ struct DuplicateResolver: Sendable {
         }
     }
 
-    /// Local winner order: quality first, then favorite, pixel area, stable ID.
+    /// Local winner order: quality first, then edited-twin preference, favorite,
+    /// pixel area, stable ID.
     private func rank(_ group: [PhotoAsset], analyses: [AssetID: PhotoAnalysis]) -> [PhotoAsset] {
         group.sorted {
             let leftScore = analyses[$0.id]?.qualityScore ?? -1
             let rightScore = analyses[$1.id]?.qualityScore ?? -1
             if leftScore != rightScore {
                 return leftScore > rightScore
+            }
+            if $0.isEdited != $1.isEdited {
+                return $0.isEdited
             }
             if $0.isFavorite != $1.isFavorite {
                 return $0.isFavorite

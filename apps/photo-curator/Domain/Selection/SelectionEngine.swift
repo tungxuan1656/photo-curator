@@ -71,7 +71,10 @@ struct SelectionEngine: Sendable {
             targetCount: target,
             configuration: configuration
         )
-        shortlist = unionRestoredCandidates(scored: overridden, shortlist: shortlist, feedback: feedback)
+        shortlist = unionRestoredCandidates(
+            scored: overridden, shortlist: shortlist, feedback: feedback, available: available,
+            analyses: analyses, momentByID: momentByID, clusterByID: clusterByID, configuration: configuration
+        )
         let picked = diversitySelector.select(
             shortlist: shortlist, allMomentIDs: moments.map(\.id), targetCount: target,
             similarityEdges: similarityEdges, configuration: configuration, feedback: feedback
@@ -104,7 +107,10 @@ struct SelectionEngine: Sendable {
                       let analysis = analyses[winnerID],
                       let momentID = momentByID[cluster.representativeAssetID ?? winnerID] ?? momentByID[winnerID]
                 else { continue }
-                overridden.removeAll { $0.asset.id == cluster.representativeAssetID || $0.asset.id == winnerID }
+                // Score first: only replace the automatic representative when the
+                // swapped winner is actually usable. Otherwise the cluster keeps
+                // its automatic representative and the swap is ignored (the user
+                // cannot force an unusable frame into the album).
                 let replacement = SelectionEngine().qualityScorer.score(
                     asset: asset, analysis: analysis, clusterID: clusterID,
                     momentID: momentID, configuration: configuration
@@ -116,16 +122,37 @@ struct SelectionEngine: Sendable {
         }
     }
 
+    // swiftlint:disable:next function_parameter_count
     private func unionRestoredCandidates(
-        scored: [ScoredCandidate], shortlist: [ScoredCandidate], feedback: SelectionFeedback?
+        scored: [ScoredCandidate], shortlist: [ScoredCandidate], feedback: SelectionFeedback?,
+        available: [PhotoAsset], analyses: [AssetID: PhotoAnalysis],
+        momentByID: [AssetID: MomentID], clusterByID: [AssetID: ClusterID],
+        configuration: SelectionConfiguration
     ) -> [ScoredCandidate] {
         guard let restored = feedback?.restoredIDs, !restored.isEmpty else { return shortlist }
+        let byAvailableID = Dictionary(uniqueKeysWithValues: available.map { ($0.id, $0) })
+        let scoreByID = Dictionary(uniqueKeysWithValues: scored.map { ($0.asset.id, $0) })
         var merged = shortlist
         var seen = Set(shortlist.map(\.asset.id))
-        for candidate in scored where restored.contains(candidate.asset.id) && candidate.disposition == .usable {
-            guard !seen.contains(candidate.asset.id) else { continue }
+        for id in restored.sorted(by: { $0.rawValue < $1.rawValue }) {
+            guard !seen.contains(id) else { continue }
+            if let candidate = scoreByID[id], candidate.disposition == .usable {
+                merged.append(candidate)
+                seen.insert(id)
+                continue
+            }
+            // A restored duplicate loser was never scored: construct its
+            // candidate from the available analysis so §14 explicit-include
+            // survives unless the asset is unavailable or unusable.
+            guard let asset = byAvailableID[id], let analysis = analyses[id],
+                  let momentID = momentByID[id] else { continue }
+            let candidate = qualityScorer.score(
+                asset: asset, analysis: analysis, clusterID: clusterByID[id],
+                momentID: momentID, configuration: configuration
+            )
+            guard candidate.disposition == .usable else { continue }
             merged.append(candidate)
-            seen.insert(candidate.asset.id)
+            seen.insert(id)
         }
         return merged
     }

@@ -65,9 +65,12 @@ final class ProcessingModel {
     /// same engine pipeline. No state mutation here; AppModel owns the
     /// cancellation/race gate, result save, checkpoint, and route.
     func finalizeAvailable(
-        assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis], configuration: SelectionConfiguration
+        assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis], configuration: SelectionConfiguration,
+        laneCount: Int
     ) async throws -> SelectionResult {
-        try await coordinator.finalizeAvailable(assets: assets, analyses: analyses, configuration: configuration)
+        try await coordinator.finalizeAvailable(
+            assets: assets, analyses: analyses, configuration: configuration, laneCount: laneCount
+        )
     }
 
     /// Synchronous <250 ms UI ack: `.cancelling` renders before the run Task

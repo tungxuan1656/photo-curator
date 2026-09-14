@@ -84,9 +84,11 @@ private struct BuilderContext {
         }
         // Decision priority follows selection-rules §1: eligibility, then hard
         // quality rejection, then duplicate suppression, then diversity cuts.
+        // Only an actually scored non-usable candidate reports lowQuality; an
+        // unscored duplicate loser (never a representative) keeps nearDuplicate.
         // A low-quality duplicate reports lowQuality first; the cluster winner
         // stays as secondary competingIDs data for QA/swap use.
-        if scoreByID[asset.id]?.disposition != .usable {
+        if let candidate = scoreByID[asset.id], candidate.disposition != .usable {
             var competing: [AssetID] = []
             if let winner = winnerByCluster[asset.id], winner != asset.id {
                 competing = [winner]

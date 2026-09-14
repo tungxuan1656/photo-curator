@@ -11,6 +11,8 @@ enum AssetSource: String, Codable, Sendable {
 }
 
 /// Light view of one PhotoKit photo. Cheap fields only, no pixels. Precise location is never stored here.
+/// `isEdited` maps `PHAsset.hasAdjustments`: an intentional user edit earns a soft bonus and wins the
+/// edited-twin tie-break, but the unedited twin is never kept alongside it.
 struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
     let id: AssetID
     let creationDate: Date?
@@ -18,5 +20,6 @@ struct PhotoAsset: Identifiable, Codable, Hashable, Sendable {
     let pixelHeight: Int
     let mediaSubtype: PhotoMediaSubtype
     let isFavorite: Bool
+    let isEdited: Bool
     let source: AssetSource
 }

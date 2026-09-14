@@ -248,10 +248,11 @@ actor SelectionSessionCoordinator {
     func finalizeAvailable(
         assets: [PhotoAsset],
         analyses: [AssetID: PhotoAnalysis],
-        configuration: SelectionConfiguration
+        configuration: SelectionConfiguration,
+        laneCount: Int
     ) async throws -> SelectionResult {
         let candidates = engine.duplicateCandidates(for: assets, configuration: configuration)
-        let edges = try await rebuildSimilarityEdges(for: assets, candidates: candidates)
+        let edges = try await rebuildSimilarityEdges(for: assets, candidates: candidates, laneCount: laneCount)
         return try engine.select(
             assets: assets, analyses: analyses, configuration: configuration,
             feedback: nil, similarityEdges: edges
@@ -285,9 +286,10 @@ actor SelectionSessionCoordinator {
     /// Bounded artifact rebuild for the partial path: analysis images only for
     /// available IDs, existing lane count, failures skipped, cancel-aware.
     private func rebuildSimilarityEdges(
-        for assets: [PhotoAsset], candidates: [SimilarityCandidate]
+        for assets: [PhotoAsset], candidates: [SimilarityCandidate], laneCount: Int
     ) async throws -> [SimilarityEdge] {
-        let artifacts = try await SimilarityRebuilder(imageLoader: imageLoader, analyzer: analyzer)
+        let lanes = max(1, laneCount)
+        let artifacts = try await SimilarityRebuilder(imageLoader: imageLoader, analyzer: analyzer, laneCount: lanes)
             .rebuild(for: assets.map(\.id))
         try Task.checkCancellation()
         var edges: [SimilarityEdge] = []
