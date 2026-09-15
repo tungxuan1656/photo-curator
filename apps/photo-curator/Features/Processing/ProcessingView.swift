@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// S07 processing screen. Reads the live run via `AppModel.processing` and
-/// calls ONLY AppModel intents — never the coordinator directly. The explicit
-/// Continue-to-Review button calls `showReview(for:)`; there is no
-/// auto-routing (feat-012 owns automatic result-present routing).
+/// calls ONLY AppModel intents — never the coordinator directly. The
+/// Continue-to-Review button calls `showReview(for:)`, which builds the
+/// ReviewModel then routes directly to S09 (or S15 on an interrupted save).
 struct ProcessingView: View {
     @Environment(AppModel.self) private var appModel
     @State private var confirmingDiscard = false
@@ -119,95 +119,5 @@ struct AttentionView: View {
         case .discard: appModel.discardCuration()
         case .goHome: appModel.goHome()
         }
-    }
-}
-
-/// Review-ready transition/count screen ONLY. Loads the persisted
-/// SelectionResult via `appModel.loadResult` (checkpointStore seam); shows the
-/// selected count + unavailable line + Continue guarded until the result is
-/// present. Full grid/detail/groups arrive in feat-009 and reuse
-/// AppRoute.reviewReady unchanged.
-struct ReviewReadyView: View {
-    let sessionID: SessionID
-    @Environment(AppModel.self) private var appModel
-    @State private var result: SelectionResult?
-    @State private var didLoad = false
-    @State private var beginFailed = false
-    var body: some View {
-        Group {
-            if let result, result.selectedAssetIDs.isEmpty {
-                ErrorStateView(
-                    title: "We couldn't build a selection",
-                    message: "Try processing this set again or choose different photos.",
-                    primaryTitle: "Try Again",
-                    primary: { appModel.retryProcessing() },
-                    secondaryTitle: "Choose Different Photos",
-                    secondary: { appModel.goHome() }
-                )
-            } else if let result {
-                let total = result.selectedAssetIDs.count + result.rejectedAssetIDs.count
-                VStack(spacing: 12) {
-                    Text("Your curated album is ready").font(.title2.bold())
-                    Text("\(result.selectedAssetIDs.count) selected from \(total) photos")
-                    if unavailable > 0 {
-                        Text("\(unavailable) photos were unavailable and could not be analyzed.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                    if beginFailed {
-                        Text("We couldn't open your selection. Try again.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
-                    Button("Continue") {
-                        Task {
-                            beginFailed = false
-                            beginFailed = await !appModel.beginReview(for: sessionID)
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                }.padding()
-            } else if didLoad {
-                ErrorStateView(
-                    title: "We couldn't load your selection.",
-                    message: "Your progress is saved.",
-                    primaryTitle: "Try Again",
-                    primary: {
-                        // Retry-from-checkpoint: resume via the pipeline resume
-                        // path (never a bare reload); the state change below
-                        // reloads the result when the run completes.
-                        didLoad = false
-                        result = nil
-                        appModel.retryProcessing()
-                    },
-                    secondaryTitle: "Back to Home",
-                    secondary: { appModel.goHome() }
-                )
-            } else {
-                ProgressView("Loading your selection…")
-            }
-        }
-        .navigationTitle("Review")
-        .task {
-            result = await appModel.loadResult(for: sessionID)
-            didLoad = true
-        }
-        .onChange(of: appModel.processing.state) { _, newState in
-            if case let .completed(id, _, _) = newState, id == sessionID {
-                Task {
-                    result = await appModel.loadResult(for: sessionID)
-                    didLoad = true
-                }
-            } else if case .failed = newState {
-                didLoad = true
-            }
-        }
-    }
-
-    /// Unavailable bucket from this session's terminal processing state;
-    /// fallback is the last known progress count, never a literal.
-    private var unavailable: Int {
-        if case let .completed(id, _, count) = appModel.processing.state, id == sessionID {
-            return count
-        }
-        return appModel.processing.progress.unavailableCount
     }
 }

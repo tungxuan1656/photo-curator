@@ -464,7 +464,7 @@ extension AppModel {
 
     /// Review entry from Processing completed / Home Continue / load-failed retry:
     /// builds the ReviewModel (or reconciles an interrupted save), then routes
-    /// directly to S09 (or S15). Never pushes .reviewReady.
+    /// directly to S09 (or S15). Never pushes a review interstitial.
     func showReview(for sessionID: SessionID) {
         Task {
             if await hasInterruptedSave(for: sessionID) {
@@ -478,7 +478,7 @@ extension AppModel {
         }
     }
 
-    /// ReviewReadyView caller: persisted result when the run finished, nil otherwise.
+    /// Review entry caller: persisted result when the run finished, nil otherwise.
     func loadResult(for sessionID: SessionID) async -> SelectionResult? {
         try? await container.checkpointStore.loadResult(sessionID: sessionID)
     }
@@ -494,7 +494,7 @@ extension AppModel {
     }
 
     /// Partial-result finalizer for Continue Without Them: builds a persisted
-    /// SelectionResult from the available cached analyses so ReviewReady has
+    /// SelectionResult from the available cached analyses so review entry has
     /// data, then routes. No-op when nothing analyzable exists (the attention
     /// screen stays put). Re-entrant safe: the first tap per session owns
     /// finalization; repeat taps for the SAME session join it (never duplicate

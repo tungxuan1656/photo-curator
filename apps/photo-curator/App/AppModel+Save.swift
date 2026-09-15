@@ -9,7 +9,7 @@ extension AppModel {
     /// pushes a duplicate overview when one is already on top. Reloads the
     /// persisted `SelectionFeedback` so review edits survive relaunch; the
     /// engine never reruns. Returns false when the result is missing,
-    /// mismatched, or empty; the ReviewReady caller surfaces inline retry
+    /// mismatched, or empty; the review entry caller surfaces inline retry
     /// feedback while the failed-route Try Again caller already shows the
     /// recoverable state.
     func beginReview(for sessionID: SessionID) async -> Bool {
