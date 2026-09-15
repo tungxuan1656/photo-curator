@@ -16,6 +16,7 @@ struct SelectionToggle: View {
             }
             .padding(12)
             .contentShape(Rectangle())
+            .frame(minWidth: 44, minHeight: 44)
         }
         .buttonStyle(.plain)
         .overlay(

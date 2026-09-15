@@ -29,6 +29,10 @@ final class ReviewModel {
     let displayIDs: [AssetID]
     private(set) var lastRemovedID: AssetID?
     var albumName = "Curated Photos"
+    /// Persisted unavailable bucket (survives relaunch where the in-memory
+    /// progress counter resets). Assigned by the owner at review entry from
+    /// `unavailableCount(result:frozenSourceCount:)`; defaults to hidden.
+    var persistedUnavailableCount = 0
 
     private let engineSelected: Set<AssetID>
     private var removedEditIDs: Set<AssetID>
@@ -74,6 +78,19 @@ final class ReviewModel {
         cachedSimilarGroups = Self.buildSimilarGroups(
             result: result, displayIDs: displayIDs, sourceByID: sourceByID
         )
+    }
+
+    /// Persisted unavailable derivation from already-persisted shapes (no new
+    /// fields). `assetUnavailable` decisions cover analysis-missing assets in
+    /// full results (FinalAlbumBuilder emits one decision per source asset);
+    /// assets absent from a partial result (Continue Without Them builds from
+    /// available only) are counted via the frozen checkpoint source count.
+    /// Never filters by live resolution: the bucket is a historical run fact.
+    static func unavailableCount(result: SelectionResult, frozenSourceCount: Int?) -> Int {
+        let decided = result.selectedAssetIDs.count + result.rejectedAssetIDs.count
+        let missing = max(0, (frozenSourceCount ?? decided) - decided)
+        let flagged = result.decisions.filter { $0.reasons.contains("assetUnavailable") }.count
+        return flagged + missing
     }
 
     func setFeedbackHook(_ hook: ((SelectionFeedback) -> Void)?) {

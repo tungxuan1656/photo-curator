@@ -18,7 +18,7 @@ struct HomeView: View {
                     VStack(spacing: 8) {
                         Text("Continue Curation").font(.headline)
                         Text(
-                            "\(snapshot.sourceCount) photos · \(snapshot.stage) · \(snapshot.updatedAt, style: .relative)"
+                            "\(snapshot.sourceCount) photos · \(snapshot.stageDescription) · \(snapshot.updatedAt, style: .relative)"
                         )
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -27,7 +27,9 @@ struct HomeView: View {
                         Button("Start New") { appModel.requestNewSession() }
                     }
                     .accessibilityElement(children: .contain)
-                    .accessibilityLabel("Continue curation, \(snapshot.sourceCount) photos")
+                    .accessibilityLabel(
+                        "Continue curation, \(snapshot.sourceCount) photos, \(snapshot.stageDescription)"
+                    )
                 } else {
                     Button("Curate Photos") {
                         appModel.showSourceSelection()

@@ -108,6 +108,10 @@ struct PhotoDetail: View {
                     .onDisappear {
                         cgImage = nil
                     }
+                    .onChange(of: currentAssetID) {
+                        loadFailed = false
+                        cgImage = nil
+                    }
                 } else {
                     ErrorStateView(
                         title: "We couldn't load this photo.",

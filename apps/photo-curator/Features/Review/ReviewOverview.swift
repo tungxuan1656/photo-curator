@@ -14,7 +14,11 @@ struct ReviewOverview: View {
         Group {
             if let model = appModel.reviewModel, model.sessionID == sessionID {
                 let total = model.result.selectedAssetIDs.count + model.result.rejectedAssetIDs.count
-                let unavailable = appModel.processing.progress.unavailableCount
+                // Persisted bucket first (survives relaunch); live progress only
+                // fills the gap while the run's in-memory counter is fresh.
+                let unavailable = max(
+                    model.persistedUnavailableCount, appModel.processing.progress.unavailableCount
+                )
                 VStack(spacing: 12) {
                     Text("Your curated album is ready").font(.title2.bold())
                     Text("\(model.selectedIDs.count) selected from \(total) photos")
@@ -73,7 +77,9 @@ struct ReviewLoadFailedView: View {
     var body: some View {
         ErrorStateView(
             title: "We couldn't load your selection.",
-            message: "Your progress is saved.",
+            message: appModel.reviewLoadRetryFailed
+                ? "That didn't work either. Your progress is saved — try again or go home."
+                : "Your progress is saved.",
             primaryTitle: "Try Again",
             primary: { appModel.showReview(for: sessionID) },
             secondaryTitle: "Back to Home",
