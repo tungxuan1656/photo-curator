@@ -1,7 +1,20 @@
+// swiftlint:disable file_length - feat-015 resume snapshot pushed AppModel past 500; split in a later task.
 import Foundation
 import Observation
 import OSLog
 import UIKit
+
+/// Cold-start resume snapshot for the S17 Home card. In-memory only; it
+/// mirrors the newest on-disk checkpoint and clears once its session is
+/// owned, discarded, or completed.
+struct ResumeSnapshot: Sendable, Equatable {
+    let sessionID: SessionID
+    let stage: String
+    let sourceCount: Int
+    let updatedAt: Date
+    let hasResult: Bool
+    let hasSaveState: Bool
+}
 
 /// G1 skeleton session state. Runs on the `PhotoLibraryService` protocol (Noop in G1);
 /// real permission wiring landed in feat-002.
@@ -23,6 +36,8 @@ final class AppModel {
     /// Most recent session, retained across completion so late cleanup (discard)
     /// still finds its data. Cleared only when that session's data is deleted.
     private var lastSessionID: SessionID?
+    var resumeSnapshot: ResumeSnapshot?
+    var confirmingNewSession = false
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -230,6 +245,7 @@ extension AppModel {
         // session is cancelled too: no orphan export may write into it.
         activeSessionID = request.sessionID
         lastSessionID = request.sessionID
+        resumeSnapshot = nil
         finalizeFlight?.task.cancel()
         finalizeFlight = nil
         if processing.isRunning {
@@ -344,9 +360,122 @@ extension AppModel {
     func checkpointForBackground() async {
         await processing.pauseForBackground()
     }
+    /// Launch probe: remembers the newest unfinished session for the Home card.
+    /// A session with a persisted non-empty result or save-state counts as
+    /// unfinished even when the in-memory run already cleared ownership.
+    func refreshResumeSnapshot() async {
+        if activeSessionID != nil { resumeSnapshot = nil; return }
+        guard let found = await container.checkpointStore.latestCheckpoint() else {
+            resumeSnapshot = nil
+            return
+        }
+        let result = try? await container.checkpointStore.loadResult(sessionID: found.checkpoint.sessionID)
+        if let result, !result.selectedAssetIDs.isEmpty {
+            resumeSnapshot = ResumeSnapshot(
+                sessionID: found.checkpoint.sessionID,
+                stage: found.checkpoint.stage,
+                sourceCount: found.checkpoint.sourceAssetIDs.count,
+                updatedAt: found.checkpoint.updatedAt,
+                hasResult: true,
+                hasSaveState: found.hasSaveState
+            )
+            return
+        }
+        if found.hasSaveState {
+            resumeSnapshot = ResumeSnapshot(
+                sessionID: found.checkpoint.sessionID,
+                stage: found.checkpoint.stage,
+                sourceCount: found.checkpoint.sourceAssetIDs.count,
+                updatedAt: found.checkpoint.updatedAt,
+                hasResult: false,
+                hasSaveState: true
+            )
+            return
+        }
+        if found.checkpoint.stage == ProcessingStage.finalSelection.rawValue {
+            resumeSnapshot = nil
+            return
+        }
+        resumeSnapshot = ResumeSnapshot(
+            sessionID: found.checkpoint.sessionID,
+            stage: found.checkpoint.stage,
+            sourceCount: found.checkpoint.sourceAssetIDs.count,
+            updatedAt: found.checkpoint.updatedAt,
+            hasResult: false,
+            hasSaveState: false
+        )
+    }
 
+    /// Home "Start New" when a resume snapshot exists: ask first (ux-flows §4.3),
+    /// because starting supersedes and deletes the retained session's data.
+    func requestNewSession() {
+        if resumeSnapshot != nil || activeSessionID != nil {
+            confirmingNewSession = true
+            return
+        }
+        showSourceSelection()
+    }
+
+    func startNewSession(confirmed: Bool) {
+        confirmingNewSession = false
+        guard confirmed else { return }
+        resumeSnapshot = nil
+        showSourceSelection()
+    }
+
+    /// Home "Continue" for the retained session: re-enter at the right surface.
+    /// Processing/checkpointed work reopens Processing; a finished result (or an
+    /// interrupted save) opens review/saving via showReview; otherwise the run
+    /// resumes from its checkpoint.
+    func continueResumedSession() {
+        guard let snapshot = resumeSnapshot else { return }
+        resumeSnapshot = nil
+        activeSessionID = snapshot.sessionID
+        lastSessionID = snapshot.sessionID
+        if snapshot.hasSaveState || snapshot.hasResult {
+            showReview(for: snapshot.sessionID)
+            return
+        }
+        if processing.sessionID == snapshot.sessionID {
+            path.append(.processing(sessionID: snapshot.sessionID))
+            Task { await resumeIfPaused() }
+            return
+        }
+        Task {
+            do {
+                let checkpoint = try await container.checkpointStore.load(sessionID: snapshot.sessionID)
+                let assets = try await container.photoLibrary.fetchAssets()
+                let live = Dictionary(uniqueKeysWithValues: assets.map { ($0.id, $0) })
+                let ordered = checkpoint.sourceAssetIDs.compactMap { live[$0] }
+                guard !ordered.isEmpty else { return }
+                confirmedSourceIDs = checkpoint.sourceAssetIDs
+                let request = SelectionRequest(
+                    sessionID: snapshot.sessionID,
+                    sourceAssetIDs: checkpoint.sourceAssetIDs,
+                    config: .default
+                )
+                processing.start(request: request, sourceAssets: ordered)
+                path.append(.processing(sessionID: snapshot.sessionID))
+            } catch {
+                path.append(.processing(sessionID: snapshot.sessionID))
+            }
+        }
+    }
+
+    /// Review entry from Processing completed / Home Continue / load-failed retry:
+    /// builds the ReviewModel (or reconciles an interrupted save), then routes
+    /// directly to S09 (or S15). Never pushes .reviewReady.
     func showReview(for sessionID: SessionID) {
-        path.append(.reviewReady(sessionID: sessionID))
+        Task {
+            if await hasInterruptedSave(for: sessionID) {
+                _ = await beginReview(for: sessionID)
+                return
+            }
+            let ok = await beginReview(for: sessionID)
+            if !ok {
+                path.append(.reviewOverview(sessionID: sessionID))
+            }
+        }
     }
 
     /// ReviewReadyView caller: persisted result when the run finished, nil otherwise.
@@ -457,6 +586,7 @@ extension AppModel {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
+        resumeSnapshot = nil
         if reviewModel?.sessionID == sessionID {
             reviewModel = nil
         }
@@ -480,6 +610,7 @@ extension AppModel {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
+        resumeSnapshot = nil
         reviewModel = nil
         path.removeAll()
         Task {
