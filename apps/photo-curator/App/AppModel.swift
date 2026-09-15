@@ -486,7 +486,17 @@ extension AppModel {
         activeSessionID = snapshot.sessionID
         lastSessionID = snapshot.sessionID
         if snapshot.hasSaveState || snapshot.hasResult {
-            showReview(for: snapshot.sessionID)
+            Task {
+                do {
+                    let checkpoint = try await container.checkpointStore.load(sessionID: snapshot.sessionID)
+                    let assets = try await container.photoLibrary.fetchAssets()
+                    allAssets = assets
+                    confirmedSourceIDs = checkpoint.sourceAssetIDs
+                    showReview(for: snapshot.sessionID)
+                } catch {
+                    await releaseUnrecoverable(snapshot: snapshot)
+                }
+            }
             return
         }
         if processing.sessionID == snapshot.sessionID {
@@ -498,6 +508,7 @@ extension AppModel {
             do {
                 let checkpoint = try await container.checkpointStore.load(sessionID: snapshot.sessionID)
                 let assets = try await container.photoLibrary.fetchAssets()
+                allAssets = assets
                 let live = Dictionary(uniqueKeysWithValues: assets.map { ($0.id, $0) })
                 let ordered = checkpoint.sourceAssetIDs.compactMap { live[$0] }
                 guard !ordered.isEmpty else {
@@ -513,7 +524,7 @@ extension AppModel {
                 processing.start(request: request, sourceAssets: ordered)
                 path.append(.processing(sessionID: snapshot.sessionID))
             } catch {
-                path.append(.processing(sessionID: snapshot.sessionID))
+                await releaseUnrecoverable(snapshot: snapshot)
             }
         }
     }

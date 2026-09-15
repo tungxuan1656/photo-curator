@@ -7,8 +7,8 @@ import SwiftUI
 /// the S13 removed order, or a single group on S12 — never the full result
 /// set. Keeps only one bounded preview `CGImage` at a time (cleared on ID
 /// change and disappearance; neutral placeholder on failure). The toggle
-/// mutates only ReviewModel; no scores, trash icon, custom gestures,
-/// persistence, or engine rerun.
+/// mutates only ReviewModel; no scores, trash icon, persistence, or engine
+/// rerun. Swipes page through the scoped order via a horizontal drag gesture.
 struct PhotoDetail: View {
     let assetID: AssetID
     let sessionID: SessionID
