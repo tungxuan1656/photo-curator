@@ -17,9 +17,11 @@ struct HomeView: View {
                 if let snapshot = appModel.resumeSnapshot {
                     VStack(spacing: 8) {
                         Text("Continue Curation").font(.headline)
-                        Text("\(snapshot.sourceCount) photos · \(snapshot.stage) · \(snapshot.updatedAt, style: .relative)")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        Text(
+                            "\(snapshot.sourceCount) photos · \(snapshot.stage) · \(snapshot.updatedAt, style: .relative)"
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                         Button("Continue") { appModel.continueResumedSession() }
                             .buttonStyle(.borderedProminent)
                         Button("Start New") { appModel.requestNewSession() }

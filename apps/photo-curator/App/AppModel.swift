@@ -128,6 +128,7 @@ final class AppModel {
             unavailableCount: unavailableCount
         )
     }
+
     /// True when any confirmed source asset needs iCloud fetch (S06 copy condition).
     var summaryHasICloudAssets: Bool {
         let live = sourceByID
@@ -365,11 +366,14 @@ extension AppModel {
     func checkpointForBackground() async {
         await processing.pauseForBackground()
     }
+
     /// Launch probe: remembers the newest unfinished session for the Home card.
     /// A session with a persisted non-empty result or save-state counts as
     /// unfinished even when the in-memory run already cleared ownership.
     func refreshResumeSnapshot() async {
-        if activeSessionID != nil { resumeSnapshot = nil; return }
+        if activeSessionID != nil {
+            resumeSnapshot = nil; return
+        }
         guard let found = await container.checkpointStore.latestCheckpoint() else {
             resumeSnapshot = nil
             return
