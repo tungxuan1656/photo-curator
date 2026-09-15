@@ -54,8 +54,16 @@ struct RemovedPhotos: View {
                                 }
                             }
                         }
-                        Button("Back to Review") { appModel.path.removeLast() }
-                            .padding(.vertical, 8)
+                        VStack(spacing: 8) {
+                            Button("Back to Review") { appModel.path.removeLast() }
+                            Button("Continue to Save") {
+                                if appModel.path.last != .finalReview(sessionID: sessionID) {
+                                    appModel.path.append(.finalReview(sessionID: sessionID))
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .padding(.vertical, 8)
                     }
                     .navigationDestination(for: AssetID.self) { id in
                         PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: removed)

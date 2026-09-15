@@ -482,7 +482,9 @@ extension AppModel {
             }
             let ok = await beginReview(for: sessionID)
             if !ok {
-                path.append(.reviewOverview(sessionID: sessionID))
+                if path.last != .reviewOverview(sessionID: sessionID) {
+                    path.append(.reviewOverview(sessionID: sessionID))
+                }
             }
         }
     }

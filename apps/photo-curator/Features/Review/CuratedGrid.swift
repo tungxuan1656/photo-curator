@@ -40,6 +40,12 @@ struct CuratedGrid: View {
                     if model.lastRemovedID != nil {
                         Button("Removed from album — Undo") { model.undoLastRemoval() }
                     }
+                    Button("Continue to Save") {
+                        if appModel.path.last != .finalReview(sessionID: sessionID) {
+                            appModel.path.append(.finalReview(sessionID: sessionID))
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
                 .navigationDestination(for: AssetID.self) { id in
                     PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: model.curatedDisplayIDs)

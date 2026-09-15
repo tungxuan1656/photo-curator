@@ -44,6 +44,12 @@ struct SimilarGroups: View {
                             VStack(spacing: 12) {
                                 Text("Similar photos reviewed").font(.headline)
                                 Button("Back to Review") { appModel.path.removeLast() }
+                                Button("Continue to Save") {
+                                    if appModel.path.last != .finalReview(sessionID: sessionID) {
+                                        appModel.path.append(.finalReview(sessionID: sessionID))
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
                             }
                             .padding(.vertical)
                         }

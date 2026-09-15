@@ -25,12 +25,24 @@ struct ReviewOverview: View {
                         Text("\(unavailable) photos were unavailable and could not be analyzed.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
-                    Button("Review Selection") { appModel.path.append(.curatedGrid(sessionID: sessionID)) }
-                        .buttonStyle(.borderedProminent)
-                    if !model.similarGroups.isEmpty {
-                        Button("Review Similar Photos") { appModel.path.append(.similarGroups(sessionID: sessionID)) }
+                    Button("Review Selection") {
+                        if appModel.path.last != .curatedGrid(sessionID: sessionID) {
+                            appModel.path.append(.curatedGrid(sessionID: sessionID))
+                        }
                     }
-                    Button("Review Removed") { appModel.path.append(.removedPhotos(sessionID: sessionID)) }
+                    .buttonStyle(.borderedProminent)
+                    if !model.similarGroups.isEmpty {
+                        Button("Review Similar Photos") {
+                            if appModel.path.last != .similarGroups(sessionID: sessionID) {
+                                appModel.path.append(.similarGroups(sessionID: sessionID))
+                            }
+                        }
+                    }
+                    Button("Review Removed") {
+                        if appModel.path.last != .removedPhotos(sessionID: sessionID) {
+                            appModel.path.append(.removedPhotos(sessionID: sessionID))
+                        }
+                    }
                     Button("Discard Curation", role: .destructive) { confirmingDiscard = true }
                 }.padding()
             } else {
