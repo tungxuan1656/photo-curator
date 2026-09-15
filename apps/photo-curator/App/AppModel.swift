@@ -128,6 +128,11 @@ final class AppModel {
             unavailableCount: unavailableCount
         )
     }
+    /// True when any confirmed source asset needs iCloud fetch (S06 copy condition).
+    var summaryHasICloudAssets: Bool {
+        let live = sourceByID
+        return confirmedSourceIDs.compactMap { live[$0] }.contains { $0.source == .iCloud }
+    }
 
     /// Continue is valid only against fresh loaded source with a non-empty
     /// selection; mid-refresh/error states must not freeze a stale snapshot.
