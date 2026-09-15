@@ -174,4 +174,29 @@ actor SessionCheckpointStore {
             // Already absent; treat as success.
         }
     }
+
+    /// Cold-start resume probe: newest decodable checkpoint plus presence of its
+    /// result and save-state siblings. Missing/corrupt files are skipped, never thrown.
+    struct ResumableSession: Sendable {
+        let checkpoint: SessionCheckpoint
+        let hasResult: Bool
+        let hasSaveState: Bool
+    }
+
+    func latestCheckpoint() async -> ResumableSession? {
+        let ids = await files.listJSONFiles(under: directory)
+        var best: (SessionCheckpoint, Date)?
+        for raw in ids {
+            guard let uuid = UUID(uuidString: raw) else { continue }
+            let id = SessionID(rawValue: uuid)
+            guard let checkpoint = try? await files.load(SessionCheckpoint.self, from: path(for: id)) else { continue }
+            if best == nil || checkpoint.updatedAt > best!.0.updatedAt {
+                best = (checkpoint, checkpoint.updatedAt)
+            }
+        }
+        guard let found = best?.0 else { return nil }
+        let hasResult = (try? await files.load(SelectionResult.self, from: resultPath(for: found.sessionID))) != nil
+        let hasSave = await loadSaveState(sessionID: found.sessionID) != nil
+        return ResumableSession(checkpoint: found, hasResult: hasResult, hasSaveState: hasSave)
+    }
 }
