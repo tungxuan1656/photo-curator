@@ -94,17 +94,15 @@ private struct SimilarGroupCard: View {
                                         .opacity(model.isSelected(id) ? 1 : 0.35)
                                 }
                                 .buttonStyle(.plain)
-                                Button(model.isSelected(id) ? "Remove from album" : "Add to album") {
-                                    model.toggle(id)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(model.isSelected(id) ? "Remove photo" : "Add photo")
+                                SelectionToggle(isSelected: model.isSelected(id), onToggle: { model.toggle(id) })
                             }
                             let current = model.currentWinner(of: group)
                             if id == group.engineWinner {
                                 Text("Recommended best pick").font(.caption).bold()
+                                    .accessibilityLabel("Recommended best pick")
                             } else if id == current {
                                 Text("Best pick").font(.caption).bold()
+                                    .accessibilityLabel("Best pick")
                             }
                             Text(model.isSelected(id) ? "In album" : "Removed")
                                 .font(.caption)

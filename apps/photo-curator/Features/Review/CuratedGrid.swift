@@ -38,7 +38,7 @@ struct CuratedGrid: View {
                         }
                     }
                     if model.lastRemovedID != nil {
-                        Button("Undo") { model.undoLastRemoval() }
+                        Button("Removed from album — Undo") { model.undoLastRemoval() }
                     }
                 }
                 .navigationDestination(for: AssetID.self) { id in
@@ -66,10 +66,7 @@ private struct ReviewCell: View {
                     .opacity(isSelected ? 1 : 0.35)
             }
             .buttonStyle(.plain)
-            Button(isSelected ? "Remove from album" : "Add to album", action: onToggle)
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
-                .accessibilityLabel(isSelected ? "Remove photo from album" : "Add photo to album")
+            SelectionToggle(isSelected: isSelected, onToggle: onToggle)
         }
     }
 }

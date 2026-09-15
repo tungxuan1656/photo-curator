@@ -47,9 +47,9 @@ struct RemovedPhotos: View {
                                                 .aspectRatio(1, contentMode: .fill)
                                         }
                                         .buttonStyle(.plain)
-                                        Button("Add") { model.restore(id) }
+                                        Button("Add back") { model.restore(id) }
                                             .font(.caption)
-                                            .accessibilityLabel("Add photo to album")
+                                            .accessibilityLabel("Add photo back to album")
                                     }
                                 }
                             }
