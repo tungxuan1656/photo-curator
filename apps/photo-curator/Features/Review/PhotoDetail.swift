@@ -16,9 +16,9 @@ struct PhotoDetail: View {
     var pagerIDs: [AssetID]?
     @Environment(AppModel.self) private var appModel
     @State private var currentAssetID: AssetID
-    @State private var cgImage: CGImage?
+    @State private var loadFailed = false
+    @State private var retryToken = 0
     @State private var beginFailed = false
-
     init(assetID: AssetID, sessionID: SessionID, pagerIDs: [AssetID]? = nil) {
         self.assetID = assetID
         self.sessionID = sessionID
@@ -37,12 +37,23 @@ struct PhotoDetail: View {
                                 Image(decorative: cgImage, scale: 1, orientation: .up)
                                     .resizable()
                                     .scaledToFit()
+                            } else if loadFailed {
+                                ErrorStateView(
+                                    title: "We couldn't load this photo.",
+                                    message: "Your progress is saved.",
+                                    primaryTitle: "Try Again",
+                                    primary: { retryToken += 1; loadFailed = false; cgImage = nil },
+                                    secondaryTitle: "Back",
+                                    secondary: { appModel.path.removeLast() }
+                                )
                             } else {
                                 Rectangle().fill(.quaternary)
                                     .frame(minHeight: 200)
                             }
                         }
-                        .accessibilityLabel(model.isSelected(currentAssetID) ? "Photo, in album" : "Photo, removed")
+                        .accessibilityLabel(
+                            "Photo \(index + 1) of \(order.count), \(model.isSelected(currentAssetID) ? "selected" : "removed")"
+                        )
                         Button(model.isSelected(currentAssetID) ? "In Album" : "Removed") {
                             model.toggle(currentAssetID)
                         }
@@ -60,12 +71,14 @@ struct PhotoDetail: View {
                         .accessibilityLabel("Photo \(index + 1) of \(order.count)")
                         if let date = model.sourceByID[currentAssetID]?.creationDate {
                             Text(date, style: .date).font(.footnote).foregroundStyle(.secondary)
+                                .accessibilityLabel(Text(date, style: .date))
                         }
                     }
                     .padding()
-                    .task(id: currentAssetID) {
+                    .task(id: "\(currentAssetID.rawValue)-\(retryToken)") {
                         let requested = currentAssetID
                         cgImage = nil
+                        loadFailed = false
                         do {
                             let image = try await appModel.imageLoader.preview(
                                 for: requested,
@@ -78,13 +91,29 @@ struct PhotoDetail: View {
                         } catch {
                             guard requested == currentAssetID else { return }
                             cgImage = nil
+                            loadFailed = true
                         }
                     }
+                    .gesture(
+                        DragGesture(minimumDistance: 40, coordinateSpace: .local)
+                            .onEnded { value in
+                                if value.translation.width < -40 {
+                                    currentAssetID = order[min(order.count - 1, index + 1)]
+                                } else if value.translation.width > 40 {
+                                    currentAssetID = order[max(0, index - 1)]
+                                }
+                            }
+                    )
                     .onDisappear {
                         cgImage = nil
                     }
                 } else {
-                    ProgressView("Loading photo…")
+                    ErrorStateView(
+                        title: "We couldn't load this photo.",
+                        message: "Your progress is saved.",
+                        primaryTitle: "Back",
+                        primary: { appModel.path.removeLast() }
+                    )
                 }
             } else {
                 ErrorStateView(

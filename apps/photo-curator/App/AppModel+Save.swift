@@ -68,7 +68,7 @@ extension AppModel {
             return .failed(.creationFailed)
         }
         let ids = model.selectedAssetIDs
-        let name = model.albumName
+        let name = model.albumName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !ids.isEmpty else {
             return .failed(.assetsUnavailable)
         }
