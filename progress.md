@@ -107,3 +107,11 @@
 **Evidence**: ./init.sh PASS on every close (format, swiftlint --strict 0 violations, BUILD SUCCEEDED, SKIP [test]); simulator install/launch no-crash each feature (permission/S05 states render, PIDs alive); feature_index.json all 14 done.
 **Blockers**: none in code — user-owned device follow-up: Gate 1 correction consistency, Gate 2 Dataset A save + interrupted retry, 1k/5k + cancel@25% resume with §7 numbers, privacy AC-01..12 + a11y, datasets A-H/Golden/§7.3.
 **Next**: Merge stacked branches feat/feat-010 → feat/feat-014 in dependency order; run device QA list above.
+
+## 2026-09-15 — feat-015
+
+**State**: active (code complete on feat/feat-015, 11 commits; device QA user-owned)
+**Done**: Interaction-only flow/screen repair via SDD (Tasks 1-9 + final-review wave, all reviews clean): S17 resume seam + snapshot + Home Continue card + launch refresh; Start New §4.3 confirm + review Discard; deleted ReviewReadyView/.reviewReady (completed routes build-then-route to S09/S15/load-failed); S09 grid-first + stats + unavailable; shared 44pt SelectionToggle (S10/S12) + Selected/Removed/Add-back vocab + Undo copy + best-pick a11y; S05 denied/empty/limited recovery + one-photo hint; conditional S06 iCloud line; Settings notDetermined + sheet Dismiss; S11 swipe + retry-token failure state (no spinner) + position/date a11y; S14 blank-name gate + save trim; S16 partial line; unified pause copy; final-review wave restored S14 Continue-to-Save on grid/groups/removed + overview/showReview push guards.
+**Evidence**: ./init.sh PASS twice (final: format 0/55, swiftlint --strict 0 violations/55 files, BUILD SUCCEEDED, SKIP [test]); simulator iPhone 17 Pro iOS 26.5 install/launch no-crash PID 83950; grep zero reviewReady/ReviewReadyView; grep 3 S14 push sites; ledger .agent-work/sdd/feat-015/progress.md (9 tasks complete, Task 8 one fix round, final review NEEDS-FIXES → wave all ADDRESSED).
+**Blockers**: none in code — user-owned device follow-up: Dataset A tap-through (first-run → save → Done, kill-relaunch Continue, denied/limited/empty S05).
+**Next**: PR feat/feat-015 → main (squash); update feature_index.json feat-015 active→done + progress block on merge.

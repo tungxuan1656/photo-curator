@@ -9,7 +9,7 @@ extension AppModel {
     /// pushes a duplicate overview when one is already on top. Reloads the
     /// persisted `SelectionFeedback` so review edits survive relaunch; the
     /// engine never reruns. Returns false when the result is missing,
-    /// mismatched, or empty; the ReviewReady caller surfaces inline retry
+    /// mismatched, or empty; the review entry caller surfaces inline retry
     /// feedback while the failed-route Try Again caller already shows the
     /// recoverable state.
     func beginReview(for sessionID: SessionID) async -> Bool {
@@ -35,6 +35,13 @@ extension AppModel {
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
         let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
         let model = ReviewModel(sessionID: sessionID, result: result, sourceByID: live, feedback: feedback)
+        // Persisted unavailable bucket: frozen checkpoint source count minus
+        // decided IDs, plus `assetUnavailable` decisions (full-result path).
+        // Survives relaunch where the in-memory progress counter is `.zero`.
+        let frozenCount = try? await container.checkpointStore.load(sessionID: sessionID)
+        model.persistedUnavailableCount = ReviewModel.unavailableCount(
+            result: result, frozenSourceCount: frozenCount?.sourceAssetIDs.count
+        )
         // Ordered writes: the latest snapshot always persists last, so rapid
         // toggles cannot land out of order on disk.
         let persist = PersistLatest(store: container.checkpointStore, sessionID: sessionID)
@@ -68,8 +75,8 @@ extension AppModel {
             return .failed(.creationFailed)
         }
         let ids = model.selectedAssetIDs
-        let name = model.albumName
-        guard !ids.isEmpty else {
+        let name = model.albumName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !ids.isEmpty, !name.isEmpty else {
             return .failed(.assetsUnavailable)
         }
         let flight = Task { [container] in
@@ -131,20 +138,33 @@ extension AppModel {
         let flight = saveFlight?.task
         flight?.cancel()
         saveFlight = nil
-        await flight?.value
+        _ = await flight?.value
     }
 
     /// S16 Done: clears the save claim, drops the session review state, and
-    /// returns Home with no unfinished session card.
+    /// returns Home with no unfinished session card. Deletes the persisted
+    /// session data (mirroring `discardCuration` ordering: clear claim, await
+    /// in-flight save termination via `cancelSave`, then `deleteSessionData`)
+    /// so `refreshResumeSnapshot` never resurrects the completed session.
+    /// The loaded `Completion` view already holds its display `SaveState` in
+    /// memory (`Completion.swift:11-27`), so deleting underneath it is safe.
     func finishSave(for sessionID: SessionID) {
-        if saveFlight?.session == sessionID {
-            saveFlight = nil
-        }
+        // The save claim clears inside cancelSave below (mirroring
+        // discardCuration), so the flight's termination is awaited before
+        // any file is deleted.
         if reviewModel?.sessionID == sessionID {
             reviewModel = nil
         }
         activeSessionID = nil
+        resumeSnapshot = nil
         path.removeAll()
+        Task {
+            await cancelSave(for: sessionID)
+            let cleaned = await deleteSessionData(sessionID, context: "Completed curation")
+            if cleaned, lastSessionID == sessionID {
+                lastSessionID = nil
+            }
+        }
     }
 
     /// S16 data: latest persisted save state for the session, if any.

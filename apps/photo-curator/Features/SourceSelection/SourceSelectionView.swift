@@ -3,6 +3,7 @@ import UIKit
 
 struct SourceSelectionView: View {
     @Environment(AppModel.self) private var appModel
+    @State private var showsAccessGuidance = false
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
     private var thumbPixels: CGSize {
@@ -17,6 +18,10 @@ struct SourceSelectionView: View {
         VStack {
             Text("\(appModel.selectedIDs.count) photos selected")
                 .font(.headline)
+            if appModel.selectedIDs.count == 1 {
+                Text("Photos Curator works best with a larger set.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
             Text("Photos Curator will analyze these photos and propose a smaller album. Your originals stay unchanged.")
                 .font(.footnote)
             Picker("Range", selection: $appModel.filter.preset) {
@@ -32,6 +37,7 @@ struct SourceSelectionView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(!appModel.canContinueToSummary)
         }
+        .sheet(isPresented: $showsAccessGuidance) { AccessGuidanceSheet() }
         .navigationTitle("Choose source photos")
         .task { await appModel.loadSource() }
         .task {
@@ -53,20 +59,29 @@ struct SourceSelectionView: View {
     private var content: some View {
         switch (appModel.authorization, appModel.sourceState) {
         case (.denied, _), (.restricted, _), (_, .denied):
-            Text("Photos Access Needed")
+            Text("Photos Access Needed").font(.headline)
             Text("Allow photo access to choose images for curation.")
+            Button("Open Settings") { appModel.openSettingsURL() }
+                .buttonStyle(.borderedProminent)
+            Button("Learn More") { showsAccessGuidance = true }
         case (_, .loading), (_, .idle):
             ProgressView("Loading photos…")
         case (_, .empty):
-            Text("No Photos Available")
+            Text("No Photos Available").font(.headline)
             Text("Add photos to your library or allow access to more photos, then try again.")
+            if appModel.authorization == .limited {
+                Button("Choose More Photos") { appModel.presentPicker() }
+                    .buttonStyle(.borderedProminent)
+            }
             Button("Try Again") { Task { await appModel.loadSource() } }
         case (_, .failed):
             Text("Couldn't load photos")
             Button("Retry") { Task { await appModel.loadSource() } }
         case (_, .loaded):
             if appModel.authorization == .limited {
-                Text("Limited Photos Access — only shared photos appear. Use Choose More Photos in Home to add more.")
+                Text("Limited Photos Access — only shared photos appear.")
+                    .font(.footnote)
+                Button("Choose More Photos") { appModel.presentPicker() }
                     .font(.footnote)
             }
             ScrollView {

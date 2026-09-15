@@ -17,6 +17,10 @@ struct Completion: View {
                 VStack(spacing: 12) {
                     Text("Album Saved").font(.title2.bold())
                     Text("\(state.addedIDs.count) photos saved to \"\(state.albumTitle)\".")
+                    if !state.remainingIDs.isEmpty || !state.missingIDs.isEmpty {
+                        Text("Some photos could not be added. Your originals are unchanged.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                     Button("Done") { appModel.finishSave(for: sessionID) }
                         .buttonStyle(.borderedProminent)
                 }

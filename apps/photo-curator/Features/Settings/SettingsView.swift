@@ -28,7 +28,14 @@ struct SettingsView: View {
             Section("Photos Access") {
                 Text(accessLabel)
                     .accessibilityLabel("Photos access: \(accessLabel)")
-                if appModel.authorization == .denied || appModel.authorization == .restricted {
+                if appModel.authorization == .notDetermined {
+                    Text("Photo access is not set up yet.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button("Continue") {
+                        Task { await appModel.requestPermission() }
+                    }
+                    .accessibilityLabel("Continue to photo access setup")
+                } else if appModel.authorization == .denied || appModel.authorization == .restricted {
                     Text("Allow photo access to choose images for curation.")
                         .font(.footnote).foregroundStyle(.secondary)
                     Button("Open Settings") { appModel.openSettingsURL() }

@@ -53,6 +53,10 @@ struct FinalReview: View {
                     Text("Your original photos will not be changed.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    if model.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("Name your album to save it.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                     Button("Save Album") {
                         // Claim-once: a second tap before S15 appears must not
                         // push a duplicate saving route onto the same flight.
@@ -61,7 +65,10 @@ struct FinalReview: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .disabled(selected.isEmpty || appModel.isSaving(sessionID: sessionID))
+                    .disabled(
+                        model.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            || selected.isEmpty || appModel.isSaving(sessionID: sessionID)
+                    )
                     Button("Back to Review") { appModel.path.removeLast() }
                 }
                 .padding()

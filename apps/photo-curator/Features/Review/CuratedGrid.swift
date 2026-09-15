@@ -38,8 +38,14 @@ struct CuratedGrid: View {
                         }
                     }
                     if model.lastRemovedID != nil {
-                        Button("Undo") { model.undoLastRemoval() }
+                        Button("Removed from album — Undo") { model.undoLastRemoval() }
                     }
+                    Button("Continue to Save") {
+                        if appModel.path.last != .finalReview(sessionID: sessionID) {
+                            appModel.path.append(.finalReview(sessionID: sessionID))
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
                 .navigationDestination(for: AssetID.self) { id in
                     PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: model.curatedDisplayIDs)
@@ -66,10 +72,7 @@ private struct ReviewCell: View {
                     .opacity(isSelected ? 1 : 0.35)
             }
             .buttonStyle(.plain)
-            Button(isSelected ? "Remove from album" : "Add to album", action: onToggle)
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
-                .accessibilityLabel(isSelected ? "Remove photo from album" : "Add photo to album")
+            SelectionToggle(isSelected: isSelected, onToggle: onToggle)
         }
     }
 }

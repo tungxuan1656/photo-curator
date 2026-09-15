@@ -65,4 +65,16 @@ actor FileStore {
         }
         return FileManager.default.fileExists(atPath: target.path)
     }
+
+    /// Lists JSON filenames (no directories) under one relative directory.
+    /// Missing directory returns []. Never throws: resume probing must not fail launch.
+    func listJSONFiles(under relativePath: String) -> [String] {
+        guard let target = try? url(for: relativePath) else { return [] }
+        guard let items = try? FileManager.default.contentsOfDirectory(
+            at: target, includingPropertiesForKeys: [.contentModificationDateKey]
+        ) else { return [] }
+        return items
+            .filter { $0.pathExtension == "json" }
+            .map { $0.deletingPathExtension().lastPathComponent }
+    }
 }

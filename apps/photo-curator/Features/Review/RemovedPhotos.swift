@@ -47,15 +47,23 @@ struct RemovedPhotos: View {
                                                 .aspectRatio(1, contentMode: .fill)
                                         }
                                         .buttonStyle(.plain)
-                                        Button("Add") { model.restore(id) }
+                                        Button("Add back") { model.restore(id) }
                                             .font(.caption)
-                                            .accessibilityLabel("Add photo to album")
+                                            .accessibilityLabel("Add photo back to album")
                                     }
                                 }
                             }
                         }
-                        Button("Back to Review") { appModel.path.removeLast() }
-                            .padding(.vertical, 8)
+                        VStack(spacing: 8) {
+                            Button("Back to Review") { appModel.path.removeLast() }
+                            Button("Continue to Save") {
+                                if appModel.path.last != .finalReview(sessionID: sessionID) {
+                                    appModel.path.append(.finalReview(sessionID: sessionID))
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                        .padding(.vertical, 8)
                     }
                     .navigationDestination(for: AssetID.self) { id in
                         PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: removed)

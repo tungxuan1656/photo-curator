@@ -8,15 +8,34 @@ struct HomeView: View {
     @State private var showsAccessGuidance = false
 
     var body: some View {
+        @Bindable var appModel = appModel
         VStack(spacing: 16) {
             Text("Pick a trip, event, or batch of photos. "
                 + "Photos Curator will find the strongest set for you to review.")
             switch appModel.authorization {
             case .authorized, .limited:
-                Button("Curate Photos") {
-                    appModel.showSourceSelection()
+                if let snapshot = appModel.resumeSnapshot {
+                    VStack(spacing: 8) {
+                        Text("Continue Curation").font(.headline)
+                        Text(
+                            "\(snapshot.sourceCount) photos · \(snapshot.stageDescription) · \(snapshot.updatedAt, style: .relative)"
+                        )
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        Button("Continue") { appModel.continueResumedSession() }
+                            .buttonStyle(.borderedProminent)
+                        Button("Start New") { appModel.requestNewSession() }
+                    }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel(
+                        "Continue curation, \(snapshot.sourceCount) photos, \(snapshot.stageDescription)"
+                    )
+                } else {
+                    Button("Curate Photos") {
+                        appModel.showSourceSelection()
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
                 if appModel.authorization == .limited {
                     // Picker lives in the guidance sheet (wired in feat-002);
                     // this entry only opens the sheet.
@@ -65,6 +84,16 @@ struct HomeView: View {
                     appModel.openSettings()
                 }
             }
+        }
+        .confirmationDialog(
+            "Discard this curation?",
+            isPresented: $appModel.confirmingNewSession,
+            titleVisibility: .visible
+        ) {
+            Button("Discard Curation", role: .destructive) { appModel.startNewSession(confirmed: true) }
+            Button("Keep Curation", role: .cancel) { appModel.startNewSession(confirmed: false) }
+        } message: {
+            Text("Your original photos will stay unchanged. The current analysis and selection will be removed.")
         }
         .sheet(isPresented: $showsAccessGuidance) {
             AccessGuidanceSheet()

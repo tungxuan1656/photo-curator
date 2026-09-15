@@ -1,7 +1,38 @@
+// swiftlint:disable file_length - feat-015 resume snapshot pushed AppModel past 500; split in a later task.
 import Foundation
 import Observation
 import OSLog
 import UIKit
+
+/// Cold-start resume snapshot for the S17 Home card. In-memory only; it
+/// mirrors the newest on-disk checkpoint and clears once its session is
+/// owned, discarded, or completed.
+struct ResumeSnapshot: Sendable, Equatable {
+    let sessionID: SessionID
+    let stage: String
+    let sourceCount: Int
+    let updatedAt: Date
+    let hasResult: Bool
+    let hasSaveState: Bool
+
+    /// User-facing stage copy (ux-flows §7 phases); never the raw stored value.
+    var stageDescription: String {
+        switch ProcessingStage(rawValue: stage) {
+        case .loading:
+            "Preparing photos"
+        case .analysis:
+            "Analyzing photos"
+        case .clustering, .momentDetection:
+            "Grouping similar shots"
+        case .ranking:
+            "Choosing the best photos"
+        case .finalSelection:
+            "Finishing your album"
+        case nil:
+            "In progress"
+        }
+    }
+}
 
 /// G1 skeleton session state. Runs on the `PhotoLibraryService` protocol (Noop in G1);
 /// real permission wiring landed in feat-002.
@@ -22,7 +53,9 @@ final class AppModel {
     var activeSessionID: SessionID?
     /// Most recent session, retained across completion so late cleanup (discard)
     /// still finds its data. Cleared only when that session's data is deleted.
-    private var lastSessionID: SessionID?
+    var lastSessionID: SessionID?
+    var resumeSnapshot: ResumeSnapshot?
+    var confirmingNewSession = false
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -114,6 +147,12 @@ final class AppModel {
         )
     }
 
+    /// True when any confirmed source asset needs iCloud fetch (S06 copy condition).
+    var summaryHasICloudAssets: Bool {
+        let live = sourceByID
+        return confirmedSourceIDs.compactMap { live[$0] }.contains { $0.source == .iCloud }
+    }
+
     /// Continue is valid only against fresh loaded source with a non-empty
     /// selection; mid-refresh/error states must not freeze a stale snapshot.
     var canContinueToSummary: Bool {
@@ -200,6 +239,9 @@ final class AppModel {
 
     /// Session-owned review state for S09–S11. Nil until beginReview succeeds.
     var reviewModel: ReviewModel?
+    /// Inline retry note for a no-op review retry (already on the failed
+    /// route); set by showReview, rendered by ReviewLoadFailedView.
+    var reviewLoadRetryFailed = false
 }
 
 // MARK: - feat-006 curation intents
@@ -230,6 +272,7 @@ extension AppModel {
         // session is cancelled too: no orphan export may write into it.
         activeSessionID = request.sessionID
         lastSessionID = request.sessionID
+        resumeSnapshot = nil
         finalizeFlight?.task.cancel()
         finalizeFlight = nil
         if processing.isRunning {
@@ -279,7 +322,9 @@ extension AppModel {
     /// Session cleanup: ALL deletes always attempted independently, each
     /// failure logged. Absent files already count as success (idempotent),
     /// so cleanup never short-circuits. Returns true when all succeeded.
-    private func deleteSessionData(_ sessionID: SessionID?, context: String) async -> Bool {
+    /// Shared with the Save extension (`finishSave` deletes the completed
+    /// session's data with the same ordering as discard).
+    func deleteSessionData(_ sessionID: SessionID?, context: String) async -> Bool {
         guard let sessionID else { return true }
         var cleaned = true
         do {
@@ -345,11 +390,185 @@ extension AppModel {
         await processing.pauseForBackground()
     }
 
-    func showReview(for sessionID: SessionID) {
-        path.append(.reviewReady(sessionID: sessionID))
+    /// Launch probe: remembers the newest unfinished session for the Home card.
+    /// A session with a persisted non-empty result or save-state counts as
+    /// unfinished even when the in-memory run already cleared ownership.
+    func refreshResumeSnapshot() async {
+        if activeSessionID != nil {
+            resumeSnapshot = nil; return
+        }
+        guard let found = await container.checkpointStore.latestCheckpoint() else {
+            resumeSnapshot = nil
+            return
+        }
+        let result = try? await container.checkpointStore.loadResult(sessionID: found.checkpoint.sessionID)
+        if let result, !result.selectedAssetIDs.isEmpty {
+            resumeSnapshot = ResumeSnapshot(
+                sessionID: found.checkpoint.sessionID,
+                stage: found.checkpoint.stage,
+                sourceCount: found.checkpoint.sourceAssetIDs.count,
+                updatedAt: found.checkpoint.updatedAt,
+                hasResult: true,
+                hasSaveState: found.hasSaveState
+            )
+            return
+        }
+        if found.hasSaveState {
+            resumeSnapshot = ResumeSnapshot(
+                sessionID: found.checkpoint.sessionID,
+                stage: found.checkpoint.stage,
+                sourceCount: found.checkpoint.sourceAssetIDs.count,
+                updatedAt: found.checkpoint.updatedAt,
+                hasResult: false,
+                hasSaveState: true
+            )
+            return
+        }
+        if found.checkpoint.stage == ProcessingStage.finalSelection.rawValue {
+            resumeSnapshot = nil
+            return
+        }
+        resumeSnapshot = ResumeSnapshot(
+            sessionID: found.checkpoint.sessionID,
+            stage: found.checkpoint.stage,
+            sourceCount: found.checkpoint.sourceAssetIDs.count,
+            updatedAt: found.checkpoint.updatedAt,
+            hasResult: false,
+            hasSaveState: false
+        )
     }
 
-    /// ReviewReadyView caller: persisted result when the run finished, nil otherwise.
+    /// Home "Start New" when a resume snapshot exists: ask first (ux-flows §4.3),
+    /// because starting supersedes and deletes the retained session's data.
+    func requestNewSession() {
+        if resumeSnapshot != nil || activeSessionID != nil {
+            confirmingNewSession = true
+            return
+        }
+        showSourceSelection()
+    }
+
+    /// Confirmed Start New: supersedes the retained session exactly like
+    /// discard (cancel run, clear ownership, async cancelSave → await
+    /// termination → delete), then routes to source selection. Covers the
+    /// snapshot-only case (no live run) and a mid-run supersede.
+    func startNewSession(confirmed: Bool) {
+        confirmingNewSession = false
+        guard confirmed else { return }
+        processing.cancel()
+        finalizeFlight?.task.cancel()
+        finalizeFlight = nil
+        let sessionID = activeSessionID ?? lastSessionID ?? resumeSnapshot?.sessionID
+        activeSessionID = nil
+        resumeSnapshot = nil
+        if reviewModel?.sessionID == sessionID {
+            reviewModel = nil
+        }
+        showSourceSelection()
+        guard let sessionID else { return }
+        Task {
+            await cancelSave(for: sessionID)
+            await processing.awaitTermination()
+            let cleaned = await deleteSessionData(sessionID, context: "Superseded curation")
+            if cleaned, lastSessionID == sessionID {
+                lastSessionID = nil
+            }
+        }
+    }
+
+    /// Home "Continue" for the retained session: re-enter at the right surface.
+    /// Processing/checkpointed work reopens Processing; a finished result (or an
+    /// interrupted save) opens review/saving via showReview; otherwise the run
+    /// resumes from its checkpoint.
+    func continueResumedSession() {
+        guard let snapshot = resumeSnapshot else { return }
+        resumeSnapshot = nil
+        activeSessionID = snapshot.sessionID
+        lastSessionID = snapshot.sessionID
+        if snapshot.hasSaveState || snapshot.hasResult {
+            Task {
+                do {
+                    let checkpoint = try await container.checkpointStore.load(sessionID: snapshot.sessionID)
+                    let assets = try await container.photoLibrary.fetchAssets()
+                    allAssets = assets
+                    confirmedSourceIDs = checkpoint.sourceAssetIDs
+                    showReview(for: snapshot.sessionID)
+                } catch {
+                    await releaseUnrecoverable(snapshot: snapshot)
+                }
+            }
+            return
+        }
+        if processing.sessionID == snapshot.sessionID {
+            path.append(.processing(sessionID: snapshot.sessionID))
+            Task { await resumeIfPaused() }
+            return
+        }
+        Task {
+            do {
+                let checkpoint = try await container.checkpointStore.load(sessionID: snapshot.sessionID)
+                let assets = try await container.photoLibrary.fetchAssets()
+                allAssets = assets
+                let live = Dictionary(uniqueKeysWithValues: assets.map { ($0.id, $0) })
+                let ordered = checkpoint.sourceAssetIDs.compactMap { live[$0] }
+                guard !ordered.isEmpty else {
+                    await releaseUnrecoverable(snapshot: snapshot)
+                    return
+                }
+                confirmedSourceIDs = checkpoint.sourceAssetIDs
+                let request = SelectionRequest(
+                    sessionID: snapshot.sessionID,
+                    sourceAssetIDs: checkpoint.sourceAssetIDs,
+                    config: .default
+                )
+                processing.start(request: request, sourceAssets: ordered)
+                path.append(.processing(sessionID: snapshot.sessionID))
+            } catch {
+                await releaseUnrecoverable(snapshot: snapshot)
+            }
+        }
+    }
+
+    /// Empty/unrecoverable resume: release ownership, delete the dead session
+    /// data, and land Home with no phantom card. No new alert copy.
+    private func releaseUnrecoverable(snapshot: ResumeSnapshot) async {
+        activeSessionID = nil
+        if reviewModel?.sessionID == snapshot.sessionID {
+            reviewModel = nil
+        }
+        goHome()
+        await cancelSave(for: snapshot.sessionID)
+        await processing.awaitTermination()
+        let cleaned = await deleteSessionData(snapshot.sessionID, context: "Unrecoverable session")
+        if cleaned, lastSessionID == snapshot.sessionID {
+            lastSessionID = nil
+        }
+    }
+
+    /// Review entry from Processing completed / Home Continue / load-failed retry:
+    /// builds the ReviewModel (or reconciles an interrupted save), then routes
+    /// directly to S09 (or S15). Never pushes a review interstitial.
+    func showReview(for sessionID: SessionID) {
+        reviewLoadRetryFailed = false
+        Task {
+            if await hasInterruptedSave(for: sessionID) {
+                _ = await beginReview(for: sessionID)
+                return
+            }
+            let ok = await beginReview(for: sessionID)
+            if !ok {
+                if path.last != .reviewOverview(sessionID: sessionID) {
+                    path.append(.reviewOverview(sessionID: sessionID))
+                } else {
+                    // Already on the failed route: retrying would be a silent
+                    // no-op, so surface an inline retry note instead.
+                    reviewLoadRetryFailed = true
+                }
+            }
+        }
+    }
+
+    /// Review entry caller: persisted result when the run finished, nil otherwise.
     func loadResult(for sessionID: SessionID) async -> SelectionResult? {
         try? await container.checkpointStore.loadResult(sessionID: sessionID)
     }
@@ -365,7 +584,7 @@ extension AppModel {
     }
 
     /// Partial-result finalizer for Continue Without Them: builds a persisted
-    /// SelectionResult from the available cached analyses so ReviewReady has
+    /// SelectionResult from the available cached analyses so review entry has
     /// data, then routes. No-op when nothing analyzable exists (the attention
     /// screen stays put). Re-entrant safe: the first tap per session owns
     /// finalization; repeat taps for the SAME session join it (never duplicate
@@ -457,6 +676,7 @@ extension AppModel {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
+        resumeSnapshot = nil
         if reviewModel?.sessionID == sessionID {
             reviewModel = nil
         }
@@ -480,6 +700,7 @@ extension AppModel {
         processing.cancel()
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
+        resumeSnapshot = nil
         reviewModel = nil
         path.removeAll()
         Task {

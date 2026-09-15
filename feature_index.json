@@ -259,6 +259,38 @@
       ],
       "status": "done",
       "title": "Release: QA plus conditional analytics"
+    },
+    {
+      "depends_on": [
+        "feat-014"
+      ],
+      "gate": "resume card + guarded start + direct S09 entry + grid-first review + toggle controls + recovery paths + detail states; ./init.sh passes",
+      "id": "feat-015",
+      "owns": [
+        "App/AppModel.swift",
+        "App/AppModel+Save.swift",
+        "App/AppRoute.swift",
+        "App/RootView.swift",
+        "Features/Onboarding/HomeView.swift",
+        "Features/Onboarding/AccessGuidanceSheet.swift",
+        "Features/SourceSelection/SourceSelectionView.swift",
+        "Features/SourceSelection/SelectionSummaryView.swift",
+        "Features/Processing/ProcessingView.swift",
+        "Features/Processing/ProcessingModel.swift",
+        "Features/Review/ReviewOverview.swift",
+        "Features/Review/CuratedGrid.swift",
+        "Features/Review/SimilarGroups.swift",
+        "Features/Review/RemovedPhotos.swift",
+        "Features/Review/PhotoDetail.swift",
+        "Features/Review/FinalReview.swift",
+        "Features/Review/Completion.swift",
+        "Features/Settings/SettingsView.swift",
+        "Infrastructure/FileStore.swift",
+        "Infrastructure/SessionCheckpointStore.swift",
+        "SharedUI/SelectionToggle.swift"
+      ],
+      "status": "active",
+      "title": "Flow + screens interaction repair"
     }
   ],
   "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done; owns is per-feat scope, not an exclusive lock — a later feat may sequentially modify an earlier feat's file (e.g. BatchPipeline.swift, Settings/, ServiceProtocols.swift); single-active order means no concurrent overlap"

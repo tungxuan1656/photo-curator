@@ -16,6 +16,7 @@ struct AccessGuidanceSheet: View {
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
+                Button("Dismiss") { dismiss() }
             case .denied:
                 Text("Photo access is turned off. Enable it in Settings to curate photos.")
                 Button("Open Settings") {
@@ -24,6 +25,7 @@ struct AccessGuidanceSheet: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                Button("Dismiss") { dismiss() }
             case .restricted:
                 Text("Photos access is restricted on this device.")
                 Button("Done") {
