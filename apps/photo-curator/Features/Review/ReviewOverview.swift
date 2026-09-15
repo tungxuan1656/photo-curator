@@ -44,7 +44,7 @@ struct ReviewLoadFailedView: View {
             title: "We couldn't load your selection.",
             message: "Your progress is saved.",
             primaryTitle: "Try Again",
-            primary: { Task { await appModel.beginReview(for: sessionID) } },
+            primary: { appModel.showReview(for: sessionID) },
             secondaryTitle: "Back to Home",
             secondary: { appModel.goHome() }
         )

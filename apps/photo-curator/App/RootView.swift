@@ -32,8 +32,6 @@ struct RootView: View {
                     ProcessingView()
                 case .settings:
                     SettingsView()
-                case let .reviewReady(id):
-                    ReviewReadyView(sessionID: id)
                 case let .reviewOverview(id):
                     if appModel.reviewModel?.sessionID == id {
                         ReviewOverview(sessionID: id)
@@ -73,6 +71,7 @@ struct RootView: View {
         }
         .task {
             await appModel.refreshAuthorization()
+            await appModel.refreshResumeSnapshot()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {
