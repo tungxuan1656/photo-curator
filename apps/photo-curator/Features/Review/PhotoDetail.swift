@@ -16,6 +16,7 @@ struct PhotoDetail: View {
     var pagerIDs: [AssetID]?
     @Environment(AppModel.self) private var appModel
     @State private var currentAssetID: AssetID
+    @State private var cgImage: CGImage?
     @State private var loadFailed = false
     @State private var retryToken = 0
     @State private var beginFailed = false
