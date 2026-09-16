@@ -13,6 +13,7 @@ Related docs:
 - `manual-qa.md` — QA steps
 - `analytics.md` — event names
 - `curation-intelligence.md` — post-MVP intelligence architecture and model gates
+- `curation-runtime-stack.md` — current concrete APIs/models, routing, and benchmark status
 
 Execution work does not live here. Tracked work lives in `feature_index.json` and `docs/plans/feat-<id>.md` per `AGENTS.md`.
 
@@ -31,7 +32,7 @@ P0 foundation → P1 analysis → P2 engine → P3 MVP
 Rules:
 
 - Selection quality comes before polish. A pretty app with bad picks is a failure.
-- Prefer simple clear rules before smart AI. See [03](../product-specs/selection-rules.md).
+- Prefer the cheapest layer that solves the measured failure: deterministic/native first when sufficient, then measured Core ML/semantic intelligence. See [03](../product-specs/selection-rules.md) and [curation-runtime-stack.md](../design-docs/curation-runtime-stack.md).
 - Stay on-device. No backend until a real need forces it.
 - Keep engine settings in one place so weights and thresholds are easy to change.
 
@@ -63,7 +64,7 @@ Stop and check before doing more work.
 |---|---|---|---|
 | G1 — On-device works | P1 | Can the phone handle the load? | Tune image size, batching, Vision load per [08](../ship-gates/performance.md). Do not add a backend |
 | G2 — Albums useful | P2 | Is output better than random? | Fix moments, duplicates, scoring, diversity per [03](../product-specs/selection-rules.md). Do not polish UI |
-| G3 — Corrections small | P6 | Do users rebuild every album? | Study removed vs restored photos; fix scoring, duplicates, or moments before adding AI |
+| G3 — Corrections small | P6 | Do users rebuild every album? | Build a failure inventory; fix with the cheapest adequate layer and add measured intelligence when it demonstrably improves the failing decision |
 | G4 — Taste needed | P6 | Do users show steady personal taste? | Only then add P7. Generic engine must be good first |
 | G5 — Backend needed | Any | Does a need force a server? | Needs: sync, accounts, sharing, server-only feature. "Maybe later" is not enough |
 
