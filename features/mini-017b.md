@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `blocked` (rows templated per no-device constraint; values pending user-run physical measurement; ledger merged via `0967d2d`)
+- Status: `blocked` (merged via `bdfa595`, PR #28, independent APPROVE; row blocks reproducible, values pending user-run physical measurement per Simulator-only constraint)
 - Parent integration feature: `feat-017`
 - Reserved ID: `mini-017b`
 

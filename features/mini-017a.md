@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `done` (ledger reviewable on `tungxuan1656/mini-017a-ledger`; awaiting parent independent review + merge)
+- Status: `done` (merged via `0967d2d`, PR #27, independent APPROVE; denominators match the parent freeze)
 - Parent integration feature: `feat-017`
 - Reserved ID: `mini-017a`
 

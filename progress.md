@@ -147,3 +147,11 @@
 **Evidence**: `./init.sh` PASS (result recorded at contract commit); `git diff --stat` tracker docs only.
 **Blockers**: none
 **Next**: dispatch `mini-017a`; merge children in order 017a → 017b → 017c; then run parent plan Task 3 (consolidate failures, gate feat-018).
+
+## 2026-09-16 — feat-017 Task 3
+
+**State**: active (sole integration parent; all children merged; parent PR to main not yet opened)
+**Done**: Parent Task 3 consolidation — pending-baseline failure IDs F-017-B/C/D/E/F/G/GLD/H with candidate V2 remedy pointers added to `curation-intelligence.md` §14 (no scoring/threshold/weight/version/config/budget change); feat-018 admission gate recorded in `features/feat-017.md` Handoff. Merges: `mini-017a` via `0967d2d` (PR #27, APPROVE), `mini-017b` via `bdfa595` (PR #28, APPROVE), `mini-017c` via `e7143bc` (PR #29, APPROVE) plus `ebb0a50` stale-line fix. Index: `mini-017a` `done`; `mini-017b`/`mini-017c` `blocked` with recorded pending-physical reasons; `feat-017` stays `active`. No `apps/` change; all run values honestly `pending`, nothing invented.
+**Evidence**: `./init.sh` PASS at this commit (format, swiftlint --strict, Simulator build SUCCEEDED, SKIP [test] by policy); tracker-docs-only diff.
+**Blockers**: user-run follow-ups — Golden annotation (200–500 fixed assets per `manual-qa.md` §3.2) plus physical measurement of the §8.2 and §7 rows (Simulator-only constraint).
+**Next**: coordinator opens the parent PR to main after review; feat-018 may start only after the recorded gate.

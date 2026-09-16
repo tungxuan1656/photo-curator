@@ -69,11 +69,12 @@ progress, and thermal behavior only; it is never hand-scored for taste.
 | 3 | `mini-017c` — 1k-photo device budget inventory | `features/mini-017c.md` | Perf §7 conditions recorded; no budget-constant change; `./init.sh` passes |
 
 Ownership is non-overlapping: each mini owns exactly its own file; no mini touches a
-shared contract, a sibling file, or any `apps/` path. All three are indexed in
-`feature_index.json` as task-ready `todo` records (none active yet). Children branch
-from the parent contract commit and merge here only after their gate plus an
-independent review. `mini-017b` starts after `mini-017a` merges (it needs the ledger);
-`mini-017c` merges last. The full 12-field admission card lives in each mini file.
+shared contract, a sibling file, or any `apps/` path. Children merged in order with
+independent reviews: `mini-017a` via `0967d2d` (PR #27, APPROVED), `mini-017b` via
+`bdfa595` (PR #28, APPROVED), `mini-017c` via `e7143bc` (PR #29, APPROVED) plus
+`ebb0a50` stale-line fix. Index: `mini-017a` `done`; `mini-017b`/`mini-017c`
+`blocked` with recorded pending-physical reasons (row values honestly `pending`).
+The full 12-field admission card lives in each mini file.
 
 ## Acceptance
 
@@ -92,9 +93,9 @@ independent review. `mini-017b` starts after `mini-017a` merges (it needs the le
 
 Plan: `docs/plans/feat-017.md`
 
-1. Freeze fixture versions, nine metrics, devices, and evidence locations. (done, this commit)
-2. Admit evidence-only children; merge their ledgers without changing shared QA policy. (admitted; merges pending in order 017a → 017b → 017c)
-3. Consolidate failures into the V2 design document and choose the feat-018 admission gate. (after all merges)
+1. Freeze fixture versions, nine metrics, devices, and evidence locations. (done, contract commit)
+2. Admit evidence-only children; merge their ledgers without changing shared QA policy. (done: merged in order 017a → 017b → 017c, each with independent review)
+3. Consolidate failures into the V2 design document and choose the feat-018 admission gate. (done, this commit: pending-baseline IDs F-017-B/C/D/E/F/G/GLD/H in `curation-intelligence.md` §14; gate in Handoff)
 
 ## Verify
 
@@ -103,7 +104,8 @@ Plan: `docs/plans/feat-017.md`
 
 ## Handoff
 
-- State: active (sole integration parent; no active minis yet)
-- Evidence: parent contract commit on `tungxuan1656/feat-017-integration` (tracker docs only, no `apps/` paths); `./init.sh` PASS at contract commit.
-- Blockers: none (feat-016 `done` verified on origin/main `dd7193a` before activation).
-- Next: dispatch `mini-017a`; merge children in order 017a → 017b → 017c; then run parent plan Task 3.
+- State: active (sole integration parent; all children merged; parent PR to main not yet opened)
+- Evidence: contract `b1bd651` + merges `0967d2d` / `bdfa595` / `e7143bc` + fix `ebb0a50` on `tungxuan1656/feat-017-integration` (tracker docs only, no `apps/` paths); `./init.sh` PASS at this commit.
+- Blockers: user-run follow-ups — Golden annotation (200–500 fixed assets per `manual-qa.md` §3.2) plus physical measurement of the §8.2 and §7 rows (Simulator-only constraint; nothing invented).
+- feat-018 admission gate: baseline exists with nine denominators frozen, failures classified with candidate remedies (F-017-B/C/D/E/F/G/GLD/H), Golden annotation plus physical measurement outstanding as user-run follow-ups. feat-018 may start only after this gate.
+- Next: coordinator opens the parent PR to main after review.

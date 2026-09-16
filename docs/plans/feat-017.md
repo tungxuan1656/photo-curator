@@ -58,18 +58,18 @@ after its gate plus an independent review. Execution runs in order: 017b starts 
 - [x] Indexed the three minis as `todo` (task-ready; none active).
 - [x] Ran `./init.sh` (PASS) with no `apps/` change.
 
-### Task 2: Children collect evidence (later commits, in merge order)
+### Task 2: Children collect evidence (merged in order 017a → 017b → 017c)
 
-- [ ] `mini-017a`: Golden label audit + ledger skeleton reviewable.
-- [ ] `mini-017b`: reproducible §8.2 rows for A–H, Golden, Real Trip.
-- [ ] `mini-017c`: 1k-photo time/memory/thermal observations with §7 conditions.
-- [ ] Each merge: independent review + `./init.sh` on the parent; QA policy untouched.
+- [x] `mini-017a`: Golden label audit + ledger skeleton reviewable (merged via `0967d2d`, PR #27, independent APPROVE).
+- [x] `mini-017b`: reproducible §8.2 row blocks for A–H, Golden, Real Trip (merged via `bdfa595`, PR #28, independent APPROVE; values honestly `pending` user-run physical measurement).
+- [x] `mini-017c`: 1k-photo time/memory/thermal observations with §7 conditions (merged via `e7143bc`, PR #29, independent APPROVE, plus `ebb0a50` stale-line fix; values honestly `pending`).
+- [x] Each merge: independent review + `./init.sh` on the parent; QA policy untouched.
 
 ### Task 3: Consolidate and gate feat-018 (parent, after all merges)
 
-- [ ] Merge ledgers into the failure taxonomy in `curation-intelligence.md`.
-- [ ] Record the feat-018 admission gate in `features/feat-017.md` handoff + `progress.md`.
-- [ ] Run `./init.sh` at parent close.
+- [x] Merge ledgers into the failure taxonomy in `curation-intelligence.md` (pending-baseline IDs F-017-B/C/D/E/F/G/GLD/H with remedy pointers; no behavior change).
+- [x] Record the feat-018 admission gate in `features/feat-017.md` handoff + `progress.md`.
+- [x] Run `./init.sh` at parent close.
 
 ## Rollback
 

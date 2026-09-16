@@ -330,7 +330,7 @@
       "merge_gate": "Ledger reviewable with nine frozen denominators; no apps/shared-contract diff; ./init.sh passes",
       "parent": "feat-017",
       "seam": "Golden label audit and metric ledger records (evidence only)",
-      "status": "todo",
+      "status": "done",
       "title": "Golden labels and metric ledger"
     },
     {
@@ -341,7 +341,8 @@
       "merge_gate": "One reproducible section 8.2 row per dataset; no apps diff; ./init.sh passes",
       "parent": "feat-017",
       "seam": "Baseline runs on A-H, Golden, and Real Trip (evidence only)",
-      "status": "todo",
+      "blocked_reason": "Section 8.2 row values pending user-run physical measurement (Simulator-only constraint); shapes reproducible, nothing invented",
+      "status": "blocked",
       "title": "A-H, Golden, and Real Trip baseline runs"
     },
     {
@@ -352,7 +353,8 @@
       "merge_gate": "Section 7 conditions complete; no budget-constant or apps change; ./init.sh passes",
       "parent": "feat-017",
       "seam": "1,000-photo device budget inventory (evidence only)",
-      "status": "todo",
+      "blocked_reason": "Section 7 row values pending user-run physical measurement (Simulator-only constraint); conditions complete, no tuning",
+      "status": "blocked",
       "title": "1k-photo device budget inventory"
     },
     {

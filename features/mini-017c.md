@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `blocked` (section-7 rows templated per Simulator-only constraint; values pending user-run physical measurement; merges last after `mini-017b`)
+- Status: `blocked` (merged via `e7143bc`, PR #29, independent APPROVE, plus `ebb0a50` stale-line fix; row blocks reproducible, values pending user-run physical measurement per Simulator-only constraint)
 - Parent integration feature: `feat-017`
 - Reserved ID: `mini-017c`
 
