@@ -13,6 +13,7 @@ Start at `AGENTS.md`. Then read one owner doc below. Then code.
 | Change app structure, jobs, or threads | [ios-architecture.md](design-docs/ios-architecture.md) |
 | Change saved data, IDs, or cache shape | [data-model.md](design-docs/data-model.md) |
 | Change PhotoKit or Vision calls | [apple-frameworks.md](design-docs/apple-frameworks.md) |
+| Plan post-MVP AI / Core ML / semantic curation | [curation-intelligence.md](design-docs/curation-intelligence.md) |
 | Change speed, limits, or size targets | [performance.md](ship-gates/performance.md) |
 | Change privacy, access, or what is kept | [privacy.md](ship-gates/privacy.md) |
 | Run QA checks by hand | [manual-qa.md](ship-gates/manual-qa.md) |
@@ -53,6 +54,7 @@ Older docs use bare numbers 01–13. Use filenames for new refs; the table below
 | [ios-architecture.md](design-docs/ios-architecture.md) | App shape, jobs, logs | You change code shape |
 | [data-model.md](design-docs/data-model.md) | Saved shapes, cache keys | You change saved fields |
 | [apple-frameworks.md](design-docs/apple-frameworks.md) | PhotoKit, Vision use | You touch photos APIs |
+| [curation-intelligence.md](design-docs/curation-intelligence.md) | Post-MVP intelligence architecture, inference tiers, model gates | You add Core ML or semantic curation |
 | [performance.md](ship-gates/performance.md) | Limits, time goals | You change speed or size |
 | [privacy.md](ship-gates/privacy.md) | Privacy, keep rules | You touch data or access |
 | [manual-qa.md](ship-gates/manual-qa.md) | Hand QA steps | You test a build |
