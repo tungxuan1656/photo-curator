@@ -1,6 +1,8 @@
 # Curation Intelligence V2 Parallel Delivery Plan
 
-> **Execution:** Follow `AGENTS.md` until Task 1 is complete. Use one integration feature and no more than four active mini-features after Task 1.
+> **Execution:** The Task 1 policy is implemented in this PR and takes effect when PR #25
+> merges. Until then, follow the currently merged `AGENTS.md`. Afterwards use one active
+> integration feature and no more than four active mini-features.
 
 **Goal:** Deliver measured Curation Intelligence V2 improvements with 5–10 people, without conflicting changes to selection contracts or untraceable quality regressions.
 
@@ -83,7 +85,8 @@ One person can hold multiple roles. The integration owner must not approve their
 
 ## 3. Governance adoption
 
-Task 1 changes repository policy. Until this task merges, `AGENTS.md` keeps the one-active-feature rule.
+Task 1 changes repository policy. It is implemented in PR #25; the merged `AGENTS.md`
+becomes the source of truth.
 
 ### Task 1: Add the parallel mini-feature policy
 
@@ -95,22 +98,28 @@ Task 1 changes repository policy. Until this task merges, `AGENTS.md` keeps the 
 
 **Produces:** a tracker that retains `todo`, `active`, `blocked`, and `done`, while distinguishing an integration feature from a mini-feature.
 
-- [ ] Add `kind: integration` or `kind: mini` to each new V2 record.
-- [ ] Add `parent`, `seam`, `exclusive_owns`, and `merge_gate` to each mini-feature record.
-- [ ] Limit active records to one `integration` and four `mini` records.
-- [ ] Require a completed dependency before activation, unless the record only prepares a detached adapter or evaluation artifact.
-- [ ] Require the parent feature file to link every active child record.
-- [ ] Keep existing features valid without new fields.
-- [ ] Add the mini-feature admission checklist from Section 4 to the feature template.
-- [ ] Require `./init.sh` after each mini-feature merge and at parent close.
-- [ ] Replace the single-agent review rule with an independent-reviewer rule for integration features.
+- [x] Add `kind: integration` or `kind: mini` to each new V2 record.
+- [x] Add `parent`, `seam`, `exclusive_owns`, and `merge_gate` to each admitted mini-feature record.
+- [x] Limit active records to one `integration` and four `mini` records.
+- [x] Require a completed dependency before activation, unless the record only prepares a detached adapter or evaluation artifact.
+- [x] Require the parent feature file to link every active child record.
+- [x] Keep existing features valid without new fields.
+- [x] Add the mini-feature admission checklist from Section 4 to the feature template.
+- [x] Require `./init.sh` after each mini-feature merge and at parent close.
+- [x] Replace the single-agent review rule with an independent-reviewer rule for integration features.
 
 **Acceptance:**
 
-- [ ] Existing feature records remain readable.
-- [ ] A coordinator can identify the parent, seam, exclusive files, and merge gate for every active mini-feature.
-- [ ] No mini-feature can claim a shared contract in `exclusive_owns`.
-- [ ] `./init.sh` passes.
+- [x] Existing feature records remain readable.
+- [x] A coordinator can identify the parent, seam, exclusive files, and merge gate for every admitted mini-feature.
+- [x] No mini-feature can claim a shared contract in `exclusive_owns`.
+- [x] `./init.sh` passes after the full PR #25 update.
+
+**Implementation evidence (2026-09-16):** `AGENTS.md`, `feature_index.json`,
+`features/feat-template.md`, and `features/mini-feat-template.md` define the policy.
+`feat-017` through `feat-028` contain readiness plans and reserved child definitions.
+`./init.sh` passed after the full update (SwiftFormat, SwiftLint, iOS Simulator build;
+automated tests intentionally skipped by repository policy).
 
 ## 4. Mini-feature admission card
 
@@ -247,7 +256,7 @@ At handoff, give the next integration owner the parent feature file, the latest 
 
 1. Merge PR #25.
 2. Finish the two fixture-dependent `feat-016` cases.
-3. Create and approve the Task 1 governance feature.
+3. Apply the merged Task 1 policy; do not activate more than one integration parent.
 4. Activate `feat-017` and lock the baseline ledger.
 5. Open only mini-features that pass the admission card.
 6. Assign one integration owner before any module branch starts.
