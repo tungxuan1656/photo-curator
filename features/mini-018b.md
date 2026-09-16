@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `todo` (task-ready; starts after `mini-018a` merges)
+- Status: `active` (implemented 2026-09-16 on `tungxuan1656/mini-018b-cost`; 018a merged as `5b731bb`, phase-1 shapes stable; evidence reviewable, awaiting gate review + merge)
 - Parent integration feature: `feat-018`
 - Reserved ID: `mini-018b`
 
@@ -48,13 +48,19 @@
 
 ## Acceptance and evidence
 
-- [ ] Cold per-request cost recorded per new request (mean/p50 per asset, environment-labeled).
-- [ ] Warm per-request cost + print-request reference recorded (cache-hit path behavior).
-- [ ] QoS propagation path recorded as a code-path cite (lanes → handler → requests).
+- [x] Cold per-request cost recorded per new request (mean/p50 per asset, environment-labeled).
+- [x] Warm per-request cost + print-request reference recorded (cache-hit path behavior).
+- [x] QoS propagation path recorded as a code-path cite (lanes → handler → requests).
 - [ ] No `apps/` diff (`git diff --name-only` shows only the two owned files).
 - Manual QA / benchmark command or procedure: harness method recorded in
-  `docs/evidence/universal-request-cost.md` (fixture bytes + harness hash + environment).
+  `docs/evidence/universal-request-cost.md` §2 + §6 (fixture bytes + harness hash + environment).
 - Evidence location: `docs/evidence/universal-request-cost.md` (this benchmark).
+  Host-harness (A-shape 60 @ 512 px, Apple M2 / macOS 26.5.1 / Xcode 26.6): cold
+  aesthetics 5.05/3.98 ms, classify 5.42/4.71 ms, sum 10.47/8.67 ms per asset;
+  print reference 4.17/3.67 ms; warm aesthetics 3.84/3.80, classify 4.62/4.57,
+  print 3.54/3.51 (mean/p50). Simulator-execution: NOT RUN with reason — every
+  Vision request (new + existing) throws `Failed to create espresso context` on
+  the booted iPhone 17 Pro Simulator here, so no Simulator number is reported.
   Verification: `./init.sh` result, `git diff --name-only`, commit, and PR in Handoff.
 
 ## Inline plan
@@ -65,7 +71,11 @@
 
 ## Handoff
 
-State `todo` (admitted 2026-09-16 in the feat-018 contract commit; starts after 018a
-merges). Blockers: needs stable 018a phase-1 input shapes.
-Next: run the benchmark; open the child PR into `tungxuan1656/feat-018-integration`
-after gate + review (squash; never to main).
+State `active` (implemented 2026-09-16; 018a merged `5b731bb`, phase-1 shapes
+fixed per §1 of the evidence file; cost table + QoS cite reviewable in
+`docs/evidence/universal-request-cost.md`; `./init.sh` PASS — format + `swiftlint
+--strict` + Simulator build SUCCEEDED + SKIP [test] by policy).
+Blockers: needs integration-owner + independent review, then merge.
+Next: merge into `tungxuan1656/feat-018-integration` after gate + review (squash; never
+to main). Verification: `./init.sh` PASS (2026-09-16); `git diff --name-only`
+shows only the two owned files (verified before commit).
