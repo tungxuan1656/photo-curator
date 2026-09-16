@@ -126,10 +126,12 @@ existing structured lanes:
 - Requests: 018a `collect` issues the aesthetics + classify `perform` calls
   (`try? handler.perform([aesthetics])`, `try? handler.perform([classify])` at
   `apps/photo-curator/Services/Analysis/UniversalFactAdapter.swift:59-70`,
-  with the request allocations at `:62-63`); planned parent-Task-3 wiring calls
-  `collect` from `performAll` (`VisionAnalysisService.swift:92-118`, which does
-  NOT yet call `collect`), adding those `perform` calls beside the existing
-  face/print calls inside the same synchronous lane body.
+  with the request allocations at `:62-63`); parent Task 3 (`bc7cbd0`) wires
+  `collect` into `performAll` at
+  `apps/photo-curator/Services/Analysis/VisionAnalysisService.swift:139-140`
+  (cancellation-checked `try`, beside the face/print calls at `:101-113`), maps
+  phase 2 at `:148`, and passes the new facts into `PhotoAnalysis.make` at
+  `:149-159` inside the same synchronous lane body.
   `similarityArtifact` (cache-hit path) keeps the single print-request shape
   (`VisionAnalysisService.swift:37-50`).
 

@@ -73,7 +73,7 @@ struct PhotoAnalysis: Identifiable, Codable, Sendable {
     let content: ContentAnalysis
     /// True when a feature print was produced transiently for this analysis.
     /// False means no print (nil request result); the asset groups as a
-    /// singleton. Decodable default `false` keeps version-1 rows readable.
+    /// singleton. Version-1 rows (no key) decode to `false` via `init(from:)`.
     let featurePrintAvailable: Bool
     let qualityScore: Double
     let qualityBreakdown: QualityScoreBreakdown?
@@ -137,5 +137,28 @@ extension PhotoAnalysis {
             analysisVersion: currentVersion
         )
     }
+
     // swiftlint:enable function_parameter_count
+
+    /// Version-tolerant decode: version-1 rows lack `featurePrintAvailable`;
+    /// `decodeIfPresent` defaults them to `false` so the requeue rule holds by
+    /// miss (version gate), not crash (decode throw). Encode stays symmetric.
+    enum V2CodingKeys: String, CodingKey {
+        case assetID, technical, people, composition, content, featurePrintAvailable
+        case qualityScore, qualityBreakdown, analyzedAt, analysisVersion
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: V2CodingKeys.self)
+        assetID = try container.decode(AssetID.self, forKey: .assetID)
+        technical = try container.decode(TechnicalAnalysis.self, forKey: .technical)
+        people = try container.decode(PeopleAnalysis.self, forKey: .people)
+        composition = try container.decode(CompositionAnalysis.self, forKey: .composition)
+        content = try container.decode(ContentAnalysis.self, forKey: .content)
+        featurePrintAvailable = try container.decodeIfPresent(Bool.self, forKey: .featurePrintAvailable) ?? false
+        qualityScore = try container.decode(Double.self, forKey: .qualityScore)
+        qualityBreakdown = try container.decodeIfPresent(QualityScoreBreakdown.self, forKey: .qualityBreakdown)
+        analyzedAt = try container.decode(Date.self, forKey: .analyzedAt)
+        analysisVersion = try container.decode(Int.self, forKey: .analysisVersion)
+    }
 }

@@ -361,7 +361,7 @@
       "id": "feat-018",
       "kind": "integration",
       "mini_candidates": ["mini-018a", "mini-018b"],
-      "owns": ["Domain/Models/PhotoAnalysis.swift", "Services/Analysis/VisionAnalysisService.swift", "Services/Photos/BatchPipeline.swift", "Infrastructure/FileAnalysisCache.swift", "features/feat-018.md"],
+      "owns": ["Domain/Models/PhotoAnalysis.swift", "Services/Analysis/VisionAnalysisService.swift", "Services/Photos/BatchPipeline.swift", "Infrastructure/FileAnalysisCache.swift", "Configuration/AppConfiguration.swift", "features/feat-018.md"],
       "status": "active",
       "title": "Universal quality signals"
     },

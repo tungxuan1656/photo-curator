@@ -51,7 +51,7 @@
 - [x] Cold per-request cost recorded per new request (mean/p50 per asset, environment-labeled).
 - [x] Warm per-request cost + print-request reference recorded (cache-hit path behavior).
 - [x] QoS propagation path recorded as a code-path cite (lanes → handler → requests).
-- [ ] No `apps/` diff (`git diff --name-only` shows only the two owned files).
+- [x] No `apps/` diff (squash `fcd4641` diff = only the two owned files, verified pre-merge).
 - Manual QA / benchmark command or procedure: harness method recorded in
   `docs/evidence/universal-request-cost.md` §2 + §6 (fixture bytes + harness hash + environment).
 - Evidence location: `docs/evidence/universal-request-cost.md` (this benchmark).

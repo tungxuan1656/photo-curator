@@ -19,7 +19,11 @@ lanes; Simulator-only HARD RULE (never a physical iPhone via any channel).
   four active at a time.
 - `feat-017` `done` is the activation precondition (verified on origin/main before
   editing).
-- Parent owns `PhotoAnalysis`, cache migration, `analysisVersion`, pipeline wiring.
+- Parent owns `PhotoAnalysis` (`Domain/Models/PhotoAnalysis.swift`), cache migration
+  (`Infrastructure/FileAnalysisCache.swift`), `analysisVersion`
+  (`Configuration/AppConfiguration.swift`, bumped 1 → 2 in Task 3), and pipeline
+  wiring (`Services/Analysis/VisionAnalysisService.swift`,
+  `Services/Photos/BatchPipeline.swift` — no structural change needed).
   Children touch only their exact new files plus their own card: no shared-contract,
   sibling, or other `apps/` change.
 - No test targets or test files (repo policy; `./init.sh` reports `SKIP [test]`).
