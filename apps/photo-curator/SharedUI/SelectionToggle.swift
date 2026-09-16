@@ -8,21 +8,14 @@ struct SelectionToggle: View {
 
     var body: some View {
         Button(action: onToggle) {
-            HStack(spacing: 4) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                Text(isSelected ? "Selected" : "Removed")
-                    .font(.caption)
-            }
-            .padding(12)
-            .contentShape(Rectangle())
-            .frame(minWidth: 44, minHeight: 44)
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.title3)
+                .foregroundStyle(isSelected ? Color.accentColor : .white)
+                .background(.ultraThinMaterial, in: Circle())
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isSelected ? Color.accentColor : Color.secondary, lineWidth: 1)
-        )
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
         .accessibilityLabel(isSelected ? "Remove photo from album" : "Add photo to album")
     }

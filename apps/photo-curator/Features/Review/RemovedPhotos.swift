@@ -10,7 +10,7 @@ import UIKit
 struct RemovedPhotos: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
 
     private var thumbPixels: CGSize {
         let scale = UIScreen.main.scale
@@ -44,7 +44,7 @@ struct RemovedPhotos: View {
                                     VStack(spacing: 4) {
                                         NavigationLink(value: id) {
                                             AsyncPhotoThumbnail(assetID: id, targetSizePixels: thumbPixels)
-                                                .aspectRatio(1, contentMode: .fill)
+                                                .clipped()
                                         }
                                         .buttonStyle(.plain)
                                         Button("Add back") { model.restore(id) }

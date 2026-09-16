@@ -80,7 +80,7 @@ private struct SimilarGroupCard: View {
     let sessionID: SessionID
     let targetSizePixels: CGSize
     @Environment(AppModel.self) private var appModel
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
 
     var body: some View {
         if let model = appModel.reviewModel, model.sessionID == sessionID {
@@ -96,7 +96,7 @@ private struct SimilarGroupCard: View {
                             ZStack(alignment: .topTrailing) {
                                 NavigationLink(value: id) {
                                     AsyncPhotoThumbnail(assetID: id, targetSizePixels: targetSizePixels)
-                                        .aspectRatio(1, contentMode: .fill)
+                                        .clipped()
                                         .opacity(model.isSelected(id) ? 1 : 0.35)
                                 }
                                 .buttonStyle(.plain)

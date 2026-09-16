@@ -46,3 +46,4 @@ fastlane/test_output
 
 # Deepwork local state (git-local, OpenCode-readable)
 .slim/deepwork/
+.agent-work/

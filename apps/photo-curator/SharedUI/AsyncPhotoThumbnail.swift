@@ -9,26 +9,27 @@ struct AsyncPhotoThumbnail: View {
     @State private var cgImage: CGImage?
 
     var body: some View {
-        Group {
-            if let cgImage {
-                Image(decorative: cgImage, scale: 1, orientation: .up)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Rectangle().fill(.quaternary)
+        Rectangle()
+            .fill(.quaternary)
+            .aspectRatio(1, contentMode: .fill)
+            .overlay {
+                if let cgImage {
+                    Image(decorative: cgImage, scale: 1, orientation: .up)
+                        .resizable()
+                        .scaledToFill()
+                }
             }
-        }
-        .clipped()
-        .task(id: assetID) {
-            do {
-                let cg = try await appModel.imageLoader.thumbnail(for: assetID, targetSize: targetSizePixels)
-                self.cgImage = cg
-            } catch {
-                self.cgImage = nil
+            .clipped()
+            .task(id: assetID) {
+                do {
+                    let cg = try await appModel.imageLoader.thumbnail(for: assetID, targetSize: targetSizePixels)
+                    self.cgImage = cg
+                } catch {
+                    self.cgImage = nil
+                }
             }
-        }
-        .onDisappear {
-            cgImage = nil
-        }
+            .onDisappear {
+                cgImage = nil
+            }
     }
 }
