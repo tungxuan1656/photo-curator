@@ -42,11 +42,18 @@ struct RemovedPhotos: View {
                             LazyVGrid(columns: columns, spacing: 2) {
                                 ForEach(removed, id: \.self) { id in
                                     VStack(spacing: 4) {
-                                        NavigationLink(value: id) {
+                                        NavigationLink {
+                                            PhotoDetail(
+                                                assetID: id,
+                                                sessionID: sessionID,
+                                                pagerIDs: removed
+                                            )
+                                        } label: {
                                             AsyncPhotoThumbnail(assetID: id, targetSizePixels: thumbPixels)
                                                 .clipped()
                                         }
                                         .buttonStyle(.plain)
+                                        ReviewScoreBadge(assetID: id, model: model)
                                         Button("Add back") { model.restore(id) }
                                             .font(.caption)
                                             .accessibilityLabel("Add photo back to album")
@@ -64,9 +71,6 @@ struct RemovedPhotos: View {
                             .buttonStyle(.borderedProminent)
                         }
                         .padding(.vertical, 8)
-                    }
-                    .navigationDestination(for: AssetID.self) { id in
-                        PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: removed)
                     }
                 }
             } else {

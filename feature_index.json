@@ -289,8 +289,28 @@
         "Infrastructure/SessionCheckpointStore.swift",
         "SharedUI/SelectionToggle.swift"
       ],
-      "status": "active",
+      "status": "done",
       "title": "Flow + screens interaction repair"
+    },
+    {
+      "depends_on": [
+        "feat-015"
+      ],
+      "gate": "S10/S12/S13 show lazy per-photo Technical scores; S21 explains saved analysis and original reasons; ./init.sh passes",
+      "id": "feat-016",
+      "owns": [
+        "Features/Review/ReviewModel.swift",
+        "Features/Review/ReviewScoreBadge.swift",
+        "Features/Review/PhotoAnalysisDetail.swift",
+        "Features/Review/PhotoDetail.swift",
+        "Features/Review/CuratedGrid.swift",
+        "Features/Review/SimilarGroups.swift",
+        "Features/Review/RemovedPhotos.swift",
+        "App/AppModel+Save.swift",
+        "docs/product-specs/ux-flows.md"
+      ],
+      "status": "active",
+      "title": "Per-photo analysis transparency"
     }
   ],
   "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done; owns is per-feat scope, not an exclusive lock — a later feat may sequentially modify an earlier feat's file (e.g. BatchPipeline.swift, Settings/, ServiceProtocols.swift); single-active order means no concurrent overlap"

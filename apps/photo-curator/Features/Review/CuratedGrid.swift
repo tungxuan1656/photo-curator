@@ -40,8 +40,11 @@ struct CuratedGrid: View {
                             ForEach(model.curatedDisplayIDs, id: \.self) { id in
                                 ReviewCell(
                                     assetID: id,
+                                    sessionID: sessionID,
+                                    pagerIDs: model.curatedDisplayIDs,
                                     isSelected: model.isSelected(id),
                                     targetSizePixels: thumbPixels,
+                                    model: model,
                                     onToggle: { model.toggle(id) }
                                 )
                             }
@@ -79,9 +82,6 @@ struct CuratedGrid: View {
                     .padding(.horizontal)
                     .padding(.bottom, 8)
                 }
-                .navigationDestination(for: AssetID.self) { id in
-                    PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: model.curatedDisplayIDs)
-                }
             } else {
                 ProgressView("Loading your selection…")
             }
@@ -92,19 +92,27 @@ struct CuratedGrid: View {
 
 private struct ReviewCell: View {
     let assetID: AssetID
+    let sessionID: SessionID
+    let pagerIDs: [AssetID]
     let isSelected: Bool
     let targetSizePixels: CGSize
+    let model: ReviewModel
     let onToggle: () -> Void
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            NavigationLink(value: assetID) {
-                AsyncPhotoThumbnail(assetID: assetID, targetSizePixels: targetSizePixels)
-                    .clipped()
-                    .opacity(isSelected ? 1 : 0.35)
+        VStack(spacing: 2) {
+            ZStack(alignment: .topTrailing) {
+                NavigationLink {
+                    PhotoDetail(assetID: assetID, sessionID: sessionID, pagerIDs: pagerIDs)
+                } label: {
+                    AsyncPhotoThumbnail(assetID: assetID, targetSizePixels: targetSizePixels)
+                        .clipped()
+                        .opacity(isSelected ? 1 : 0.35)
+                }
+                .buttonStyle(.plain)
+                SelectionToggle(isSelected: isSelected, onToggle: onToggle)
             }
-            .buttonStyle(.plain)
-            SelectionToggle(isSelected: isSelected, onToggle: onToggle)
+            ReviewScoreBadge(assetID: assetID, model: model)
         }
         .clipped()
     }

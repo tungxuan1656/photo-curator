@@ -115,3 +115,19 @@
 **Evidence**: ./init.sh PASS twice (final: format 0/55, swiftlint --strict 0 violations/55 files, BUILD SUCCEEDED, SKIP [test]); simulator iPhone 17 Pro iOS 26.5 install/launch no-crash PID 83950; grep zero reviewReady/ReviewReadyView; grep 3 S14 push sites; ledger .agent-work/sdd/feat-015/progress.md (9 tasks complete, Task 8 one fix round, final review NEEDS-FIXES → wave all ADDRESSED).
 **Blockers**: none in code — user-owned device follow-up: Dataset A tap-through (first-run → save → Done, kill-relaunch Continue, denied/limited/empty S05).
 **Next**: PR feat/feat-015 → main (squash); update feature_index.json feat-015 active→done + progress block on merge.
+
+## 2026-09-16 — feat-015
+
+**State**: done
+**Done**: Reconciled the stale tracker state after merged commit `29cb7b3`.
+**Evidence**: Existing feat-015 handoff records `./init.sh` and simulator evidence; baseline `./init.sh` passed again on 2026-09-16.
+**Blockers**: none
+**Next**: feat-016 adds per-photo analysis transparency.
+
+## 2026-09-16 — feat-016
+
+**State**: active
+**Done**: Added S21 per-photo analysis and a **View Analysis** entry from S11. Every visible S10/S12/S13 thumbnail now lazily shows a numeric Technical score and meter. S21 presents the saved technical, people, composition, and content facts where available; original selection reasons; and the current Selected/Removed state. Navigation from all three grids now opens S11 directly, because the root typed navigation stack accepts `AppRoute`, not `AssetID`.
+**Evidence**: `./init.sh` PASS after the implementation (SwiftFormat 0/57 changed, SwiftLint strict 0 violations/57 files, BUILD SUCCEEDED, tests skipped by policy). Installed and launched the new build in iPhone 17 Pro Simulator, PID 74689, with no crash. S10 showed 84/100, 83/100, and 77/100; its thumbnail opened S11 and then S21. S21 exposed Technical, People, Composition, Content, Selection result, current Selected, original Selected, selection score 84/100, and the translated reason. A temporary removal opened S13 with 84/100, opened S11, then Add back restored the observed **Nothing removed** state.
+**Blockers**: This simulator result has no similar groups and no deliberately missing cached analysis. S12 plus the non-blocking unavailable-state manual cases need a representative fixture. No user photos were saved, discarded, or changed during verification; the temporary review selection was restored.
+**Next**: Run the two fixture-dependent cases in `docs/plans/feat-016.md`, then close feat-016.

@@ -55,9 +55,6 @@ struct SimilarGroups: View {
                         }
                         .padding()
                     }
-                    .navigationDestination(for: AssetID.self) { id in
-                        PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: similarOrder(for: id, in: groups))
-                    }
                 }
             } else {
                 ProgressView("Loading your selection…")
@@ -65,12 +62,6 @@ struct SimilarGroups: View {
         }
         .navigationTitle("Similar Photos")
     }
-}
-
-/// Pager order for deep-linked photos: the containing group, or the single
-/// photo when it belongs to no group.
-private func similarOrder(for id: AssetID, in groups: [SimilarGroup]) -> [AssetID] {
-    groups.first(where: { $0.memberIDs.contains(id) })?.memberIDs ?? [id]
 }
 
 private struct SimilarGroupCard: View {
@@ -94,7 +85,13 @@ private struct SimilarGroupCard: View {
                     ForEach(group.memberIDs, id: \.self) { id in
                         VStack(spacing: 4) {
                             ZStack(alignment: .topTrailing) {
-                                NavigationLink(value: id) {
+                                NavigationLink {
+                                    PhotoDetail(
+                                        assetID: id,
+                                        sessionID: sessionID,
+                                        pagerIDs: group.memberIDs
+                                    )
+                                } label: {
                                     AsyncPhotoThumbnail(assetID: id, targetSizePixels: targetSizePixels)
                                         .clipped()
                                         .opacity(model.isSelected(id) ? 1 : 0.35)
@@ -102,6 +99,7 @@ private struct SimilarGroupCard: View {
                                 .buttonStyle(.plain)
                                 SelectionToggle(isSelected: model.isSelected(id), onToggle: { model.toggle(id) })
                             }
+                            ReviewScoreBadge(assetID: id, model: model)
                             let current = model.currentWinner(of: group)
                             if id == group.engineWinner {
                                 Text("Recommended best pick").font(.caption).bold()

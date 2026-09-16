@@ -35,6 +35,11 @@ final class ReviewModel {
     var persistedUnavailableCount = 0
 
     private let engineSelected: Set<AssetID>
+    @ObservationIgnored private let analysisCache: any AnalysisCache
+    @ObservationIgnored private let decisionByID: [AssetID: Decision]
+    @ObservationIgnored private var analysisByID: [AssetID: PhotoAnalysis] = [:]
+    @ObservationIgnored private var unavailableAnalysisIDs: Set<AssetID> = []
+    @ObservationIgnored private var analysisFlights: [AssetID: Task<PhotoAnalysis?, Never>] = [:]
     private var removedEditIDs: Set<AssetID>
     private var restoredEditIDs: Set<AssetID>
     private var favoriteEditIDs: Set<AssetID>
@@ -45,12 +50,15 @@ final class ReviewModel {
         sessionID: SessionID,
         result: SelectionResult,
         sourceByID: [AssetID: PhotoAsset],
+        analysisCache: any AnalysisCache,
         feedback: SelectionFeedback? = nil,
         onFeedbackChanged: ((SelectionFeedback) -> Void)? = nil
     ) {
         self.sessionID = sessionID
         self.result = result
         self.sourceByID = sourceByID
+        self.analysisCache = analysisCache
+        decisionByID = Dictionary(uniqueKeysWithValues: result.decisions.map { ($0.assetID, $0) })
         self.onFeedbackChanged = onFeedbackChanged
         let live = Set(sourceByID.keys)
         let allResultIDs = Set(result.selectedAssetIDs + result.rejectedAssetIDs)
@@ -95,6 +103,36 @@ final class ReviewModel {
 
     func setFeedbackHook(_ hook: ((SelectionFeedback) -> Void)?) {
         onFeedbackChanged = hook
+    }
+
+    /// Reads compact saved analysis only when a visible review surface needs it.
+    /// Concurrent cells for the same asset await one flight. Missing cache rows
+    /// are remembered so scrolling does not repeatedly probe disk.
+    func loadAnalysis(for id: AssetID) async -> PhotoAnalysis? {
+        if let analysis = analysisByID[id] {
+            return analysis
+        }
+        if unavailableAnalysisIDs.contains(id) {
+            return nil
+        }
+        if let flight = analysisFlights[id] {
+            return await flight.value
+        }
+        let cache = analysisCache
+        let flight = Task { await cache.analysis(for: id) }
+        analysisFlights[id] = flight
+        let analysis = await flight.value
+        analysisFlights[id] = nil
+        if let analysis, analysis.assetID == id {
+            analysisByID[id] = analysis
+            return analysis
+        }
+        unavailableAnalysisIDs.insert(id)
+        return nil
+    }
+
+    func decision(for id: AssetID) -> Decision? {
+        decisionByID[id]
     }
 
     /// Cached S12 grouping: the derivation (incl. UUIDs) runs once in init,

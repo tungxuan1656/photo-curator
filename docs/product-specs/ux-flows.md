@@ -52,7 +52,7 @@ These are the only hard rules in this doc. Everything else is guidance.
 
 ### 2.1 Screen inventory
 
-The MVP has 20 screens/sheets. All are required.
+The MVP has 21 screens/sheets. All are required.
 
 | ID  | Screen                                  | Role in flow                                  |
 | --- | --------------------------------------- | --------------------------------------------- |
@@ -76,6 +76,7 @@ The MVP has 20 screens/sheets. All are required.
 | S18 | Settings                                | Access state, privacy note, about             |
 | S19 | Photo Access Management Guidance        | Sheet: limited vs denied recovery paths       |
 | S20 | Generic Recoverable Error               | Reusable title / body / two-action template   |
+| S21 | Photo Analysis                          | Explain one photo's local analysis and result |
 
 There is no account, sync, social, subscription, or editing flow in the MVP.
 
@@ -99,6 +100,7 @@ each screen needs to handle.
 | S14 Final Review     | Yes    | Preview load    | No selected (Save off)     | Preview retry        | Sometimes        |
 | S15 Saving           | Yes    | Core state      | —                          | Yes (retry / finish) | Yes              |
 | S16 Completion       | Yes    | —               | —                          | Destination missing  | —                |
+| S21 Photo Analysis   | Yes    | Analysis read   | No analysis saved          | —                    | Sometimes        |
 | S18 Settings         | Yes    | Permission read | —                          | Rare                 | —                |
 
 Rules that apply across rows:
@@ -122,9 +124,9 @@ Processing (S07, S08 only when blocked)
   ↓
 Review Overview (S09)
   ↓
-Curated Grid (S10) ⇄ Photo Detail (S11)
-  ├─ Similar Groups (S12) ⇄ Photo Detail
-  └─ Removed Photos (S13) ⇄ Photo Detail
+Curated Grid (S10) ⇄ Photo Detail (S11) → Photo Analysis (S21)
+  ├─ Similar Groups (S12) ⇄ Photo Detail (S11) → Photo Analysis (S21)
+  └─ Removed Photos (S13) ⇄ Photo Detail (S11) → Photo Analysis (S21)
   ↓
 Final Review (S14) → Saving (S15) → Completion (S16)
 ```
@@ -403,10 +405,10 @@ Discard). Diagnostics stay internal.
 
 Review answers three questions: what did the app choose, what did it
 leave out, and where is a decision genuinely useful. Default review never
-requires re-inspecting every source photo. No raw scores appear in the
-primary UI. What counts as duplicate, moment, best pick, or diverse is
-defined in `selection-rules.md`; this section defines only how
-those outcomes are shown and corrected.
+requires re-inspecting every source photo. Review grids show a compact
+Technical score for visual comparison. What counts as duplicate, moment,
+best pick, or diverse is defined in `selection-rules.md`; this section
+defines only how those outcomes are shown and corrected.
 
 ```mermaid
 flowchart TD
@@ -459,16 +461,21 @@ with a persistent **126 selected** count. Every photo here is included.
 - Single-item removal offers lightweight undo: **Removed from album —
   Undo**. No multi-level history. No MVP multi-select or advanced
   filters; Selected / Removed filters are enough.
+- Every visible thumbnail shows its **Technical score** under the image.
+  The score is 0–100 and uses the saved sharpness and exposure analysis.
+  A numeric label and a meter support comparison without relying on color.
+  A cell reads its score only when it becomes visible. It never loads a
+  full-size image or waits for scores for the whole grid.
 
 ### 8.3 S11 — Photo Detail
 
 Back, large photo, **In Album** / **Removed** toggle (checkmark state, no
 trash icon), previous/next inside the current context, optional compact
 info (date, location when authorized). Pinch zoom and horizontal swipe
-allowed; vertical swipe does nothing destructive. No AI metrics. An
-optional "why selected" line uses high-level reasons only (sharpest in
-group, better expression, adds variety) and never claims certainty the
-model cannot support.
+allowed; vertical swipe does nothing destructive.
+
+The detail has **View Analysis**, which opens S21 for the same photo. This
+action never changes its selection state.
 
 ### 8.4 S12 — Similar Group Review
 
@@ -484,6 +491,10 @@ Correction flow: open group → tap another photo → it becomes included,
 the old pick becomes removed unless kept explicitly → state persists on
 return and at save.
 
+Each visible group thumbnail uses the same Technical score badge as S10.
+The badge helps compare similar frames. It does not replace the
+**Recommended best pick** label.
+
 ### 8.5 S13 — Removed Photos
 
 Title **Removed Photos** with "These photos are not in your curated
@@ -492,6 +503,31 @@ updates the count at once, confirms subtly, and keeps grid position.
 Reason labels (similar / lower quality / redundant) are optional and
 never call a photo "bad". Large removed sets lazy-load thumbnails and
 never build full-resolution state eagerly.
+
+Each visible removed thumbnail uses the same Technical score badge as S10.
+If no saved analysis exists, the badge says **Analysis unavailable**.
+
+### 8.6 S21 — Photo Analysis
+
+S21 shows the current photo and the saved result for that photo. It is an
+explanation screen, not a control for selection weights or thresholds.
+
+- **Technical score** shows 0–100. It combines the saved sharpness and
+  exposure signals. It supports comparison only. It does not decide the
+  final album by itself.
+- **Analysis details** show each available local signal: sharpness,
+  exposure, resolution, blur risk, underexposure risk, and overexposure
+  risk. Values that were not produced say **Not analyzed**. The screen
+  never invents a zero value for a missing signal.
+- **People, composition, and content** show only saved aggregate facts.
+  The screen never shows face boxes, face identity, location, embeddings,
+  or full EXIF data.
+- **Selection result** shows the original automatic result, its plain
+  reason labels, and the current Selected or Removed state. If the user
+  changed the state, both facts remain visible.
+- If the local analysis is unavailable, the screen keeps the original
+  selection reason and states that detailed analysis is unavailable. It
+  offers Back; it does not restart processing from this screen.
 
 ---
 
@@ -642,8 +678,9 @@ Tone: calm, short, confident without certainty, non-technical, respectful
 of ownership. Say "We found 18 similar groups to review." and "Removed
 from album", not "AI detected 18 redundant clusters" or "Rejected". The
 app can say "Photos Curator selected 126 photos." Never claim it knows
-which memories matter. Never show numeric confidence; route uncertainty
-to **Needs Attention** or Similar Groups.
+which memories matter. A numeric Technical score is an analysis result,
+not confidence or a promise of a better memory. Route uncertainty to
+**Needs Attention** or Similar Groups.
 
 Accessibility is MVP quality: Dynamic Type without clipped controls;
 VoiceOver labels on every photo action ("Photo, September 4, selected",
@@ -660,8 +697,9 @@ unless the PRD adds them: accounts, sync, sharing networks, AI chat,
 ratings, tags, search, maps, deletion of originals, storage-cleaner
 flows, face identity or people naming, editing or filters, video
 editing, books, desktop companion, parallel curation jobs, session
-history, scoring-weight controls, debug score views, long onboarding
-carousels, gamified swiping, test-only screens.
+history, scoring-weight controls, developer-only overlays such as face
+boxes or embeddings, long onboarding carousels, gamified swiping,
+test-only screens.
 
 ---
 
@@ -684,9 +722,13 @@ Release-ready when each item below holds. Procedure and scripts live in
 - Save: final count and editable name shown; empty save blocked; double
   taps create one album; interrupted saves reconcile; partial never
   reported as full; completion matches the Photos output.
-- Safety: originals untouched; privacy lines match the build; no raw
-  scores, embeddings, or identity claims in UI; temp data follows the
+- Safety: originals untouched; privacy lines match the build; only the
+  documented local analysis results appear in UI; no embeddings, face
+  boxes, locations, or identity claims appear; temp data follows the
   retention rules in `privacy.md`.
+- Analysis: S10, S12, and S13 show a stable Technical score for each
+  visible analyzed photo; S21 explains available signals and the original
+  selection reason without changing selection policy or user choices.
 - Access: Dynamic Type, VoiceOver state and actions, non-color state,
   tap targets, Reduce Motion all hold on the main flow.
 
