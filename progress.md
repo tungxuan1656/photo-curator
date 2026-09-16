@@ -139,3 +139,19 @@
 **Evidence**: `./init.sh` PASS at closure (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test] by policy). features/feat-016.md acceptance all checked; feature_index.json feat-016 active→done; docs/plans/feat-016.md Task 4 checked.
 **Blockers**: Worker-introduced app-container fixture fully removed (temporary result/checkpoint files deleted, stashed analysis-cache row restored, no fixture shipped in the repo). One Simulator library photo added via supported `simctl addmedia` during verification is left for the user to remove by hand; all six originals verified present and the app re-launched healthy with photo fetch working.
 **Next**: feat-017 when the user selects it.
+
+## 2026-09-16 — feat-017
+
+**State**: active (sole integration parent; contract commit only)
+**Done**: Verified origin/main `dd7193a` shows feat-016 `done` before editing; branch verified at `dd7193a` with a clean tree. Activated feat-017; froze fixture versions (analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1), the nine `manual-qa.md` §4 denominators, devices (physical iPhone only; H stability-only), and evidence locations. Added `docs/plans/feat-017.md` (child files, merge order, rollback); admitted `mini-017a/017b/017c` as task-ready `todo` index records with exact non-overlapping ownership and merge gates. No `apps/` change.
+**Evidence**: `./init.sh` PASS (result recorded at contract commit); `git diff --stat` tracker docs only.
+**Blockers**: none
+**Next**: dispatch `mini-017a`; merge children in order 017a → 017b → 017c; then run parent plan Task 3 (consolidate failures, gate feat-018).
+
+## 2026-09-16 — feat-017 Task 3
+
+**State**: active (sole integration parent; all children merged; parent PR to main not yet opened)
+**Done**: Parent Task 3 consolidation — pending-baseline failure IDs F-017-B/C/D/E/F/G/GLD/H with candidate V2 remedy pointers added to `curation-intelligence.md` §14 (no scoring/threshold/weight/version/config/budget change); feat-018 admission gate recorded in `features/feat-017.md` Handoff. Merges: `mini-017a` via `0967d2d` (PR #27, APPROVE), `mini-017b` via `bdfa595` (PR #28, APPROVE), `mini-017c` via `e7143bc` (PR #29, APPROVE) plus `ebb0a50` stale-line fix. Index: `mini-017a` `done`; `mini-017b`/`mini-017c` `blocked` with recorded pending-physical reasons; `feat-017` stays `active`. No `apps/` change; all run values honestly `pending`, nothing invented.
+**Evidence**: `./init.sh` PASS at this commit (format, swiftlint --strict, Simulator build SUCCEEDED, SKIP [test] by policy); tracker-docs-only diff.
+**Blockers**: user-run follow-ups — Golden annotation (200–500 fixed assets per `manual-qa.md` §3.2) plus physical measurement of the §8.2 and §7 rows (Simulator-only constraint).
+**Next**: coordinator opens the parent PR to main after review; feat-018 may start only after the recorded gate.

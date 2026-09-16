@@ -506,6 +506,27 @@ User corrections are strong evaluation evidence:
 
 Under the current privacy policy, production user photos/corrections are **not** global training data. Any future cross-user training or personalization policy requires its own explicit privacy/product decision. Owned/licensed QA datasets may be used to evaluate or train a future ranker within their terms.
 
+### feat-017 pending-baseline failure inventory
+
+Pending baseline only (branch `tungxuan1656/feat-017-integration`; fixtures
+`analysisVersion 1`, `engineVersion 2`, `configVersion 1`, cache `schemaVersion 1`):
+all run values are honestly `pending` awaiting user-run physical measurement
+(Simulator-only constraint); no numbers are invented and no behavior changes here.
+Evidence: `features/mini-017a.md` (Golden ledger + frozen denominators),
+`features/mini-017b.md` (nine `manual-qa.md` §8.2 row blocks), `features/mini-017c.md`
+(two §7 budget blocks with full conditions).
+
+| ID | Target area / dataset | Candidate V2 remedy pointer |
+|---|---|---|
+| F-017-B | Duplicate leakage / wrong best-shot (B) | feat-021 variant-aware clustering; feat-024 embedding only if a FeaturePrint gap is measured |
+| F-017-C | Moment coverage (C) | feat-022 semantic moments |
+| F-017-D | Group-photo / people handling (D) | feat-020 people and group selection |
+| F-017-E | Landscape/context under-selection (E) | feat-018 universal signals; specialist only if a measured gap remains |
+| F-017-F | Bad-photo selection (F) | feat-018 universal quality signals |
+| F-017-G | Real-Trip album usefulness (G) | feat-023 global diversity; feat-026 uncertainty review |
+| F-017-GLD | Golden labels unannotated | annotate 200–500 fixed assets per `manual-qa.md` §3.2 before Golden regression |
+| F-017-H | 1k-photo time/memory/thermal + cancel (H, stability-only) | feat-018 request budget; pressure slows speed first, never correctness |
+
 ### Custom Core ML ranker gate
 
 Only after enough representative labels exist, evaluate an on-device learning-to-rank model for:
