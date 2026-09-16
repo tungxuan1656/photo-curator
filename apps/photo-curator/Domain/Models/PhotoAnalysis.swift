@@ -57,6 +57,10 @@ struct QualityScoreBreakdown: Codable, Sendable {
 }
 
 /// Derived facts about one photo. Facts live here; choices live in `Decision`.
+/// `featurePrintAvailable` records that a transient Vision feature print was
+/// produced for this analysis (feat-018 universal schema, version 2).
+/// Availability only: the print blob itself stays run-local and is never
+/// persisted, per the data-model §4 invariant.
 struct PhotoAnalysis: Identifiable, Codable, Sendable {
     var id: AssetID {
         assetID
@@ -67,6 +71,10 @@ struct PhotoAnalysis: Identifiable, Codable, Sendable {
     let people: PeopleAnalysis
     let composition: CompositionAnalysis
     let content: ContentAnalysis
+    /// True when a feature print was produced transiently for this analysis.
+    /// False means no print (nil request result); the asset groups as a
+    /// singleton. Version-1 rows (no key) decode to `false` via `init(from:)`.
+    let featurePrintAvailable: Bool
     let qualityScore: Double
     let qualityBreakdown: QualityScoreBreakdown?
     let analyzedAt: Date
@@ -89,16 +97,22 @@ extension PhotoAnalysis {
         min(1.0, max(0.0, value))
     }
 
-    // swiftlint:disable function_parameter_count - factory assembles the six analysis facts in one call.
+    // swiftlint:disable function_parameter_count - factory assembles the version-2 universal facts in one call.
     /// Shared factory: clamps scores once and stamps the version.
     /// VisionAnalysisService calls this; it defines no clamp.
+    /// `aestheticScore`/`tags`/`featurePrintAvailable` are the feat-018
+    /// universal facts (frozen schema); unavailable arms are nil / [] / false.
+    /// `sceneType` rule is unchanged (faces-based) in feat-018.
     static func make(
         assetID: AssetID,
         technical: TechnicalAnalysis,
         faceCount: Int,
         groupPhotoScore: Double?,
         subjectPlacementScore: Double?,
-        sceneType: SceneType
+        sceneType: SceneType,
+        aestheticScore: Double? = nil,
+        tags: [SemanticTag] = [],
+        featurePrintAvailable: Bool = false
     ) -> PhotoAnalysis {
         let sharp = clamped01(technical.sharpnessScore)
         let expo = clamped01(technical.exposureScore)
@@ -108,12 +122,13 @@ extension PhotoAnalysis {
             technical: technical,
             people: PeopleAnalysis(faceCount: max(0, faceCount), groupPhotoScore: groupPhotoScore.map(clamped01)),
             composition: CompositionAnalysis(
-                aestheticScore: nil,
+                aestheticScore: aestheticScore.map(clamped01),
                 subjectPlacementScore: subjectPlacementScore.map(clamped01),
                 horizonScore: nil,
                 visualBalanceScore: nil
             ),
-            content: ContentAnalysis(sceneType: sceneType, tags: [], hasText: nil, screenshotProbability: nil),
+            content: ContentAnalysis(sceneType: sceneType, tags: tags, hasText: nil, screenshotProbability: nil),
+            featurePrintAvailable: featurePrintAvailable,
             qualityScore: total,
             qualityBreakdown: QualityScoreBreakdown(
                 technical: total, people: nil, composition: nil, content: nil, total: total
@@ -122,5 +137,28 @@ extension PhotoAnalysis {
             analysisVersion: currentVersion
         )
     }
+
     // swiftlint:enable function_parameter_count
+
+    /// Version-tolerant decode: version-1 rows lack `featurePrintAvailable`;
+    /// `decodeIfPresent` defaults them to `false` so the requeue rule holds by
+    /// miss (version gate), not crash (decode throw). Encode stays symmetric.
+    enum V2CodingKeys: String, CodingKey {
+        case assetID, technical, people, composition, content, featurePrintAvailable
+        case qualityScore, qualityBreakdown, analyzedAt, analysisVersion
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: V2CodingKeys.self)
+        assetID = try container.decode(AssetID.self, forKey: .assetID)
+        technical = try container.decode(TechnicalAnalysis.self, forKey: .technical)
+        people = try container.decode(PeopleAnalysis.self, forKey: .people)
+        composition = try container.decode(CompositionAnalysis.self, forKey: .composition)
+        content = try container.decode(ContentAnalysis.self, forKey: .content)
+        featurePrintAvailable = try container.decodeIfPresent(Bool.self, forKey: .featurePrintAvailable) ?? false
+        qualityScore = try container.decode(Double.self, forKey: .qualityScore)
+        qualityBreakdown = try container.decodeIfPresent(QualityScoreBreakdown.self, forKey: .qualityBreakdown)
+        analyzedAt = try container.decode(Date.self, forKey: .analyzedAt)
+        analysisVersion = try container.decode(Int.self, forKey: .analysisVersion)
+    }
 }

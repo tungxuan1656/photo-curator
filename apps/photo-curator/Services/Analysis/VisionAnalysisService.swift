@@ -130,20 +130,33 @@ private extension VisionAnalysisService {
             bestFaceQuality = qualityResults.compactMap(\.faceCaptureQuality).map { Double($0) }.max()
         }
         // faceQuality failing (nil results) leaves bestFaceQuality nil: per-field degrade.
+        // Universal facts (feat-018): adapter phase 1 collects the aesthetics +
+        // classify observations beside the face/print requests above, with the
+        // same 512 px `.up` input, independent degrade, and cancellation
+        // checks. Its `try` carries only CancellationError (every other
+        // failure lands in the unavailable arms of `Collected`); that error
+        // maps to `.cancelled` via the do/catch at the top of `analyze`.
         try Task.checkCancellation()
+        let universal = try UniversalFactAdapter.collect(from: image)
         let maxEdge = await AppConfiguration.default.selection.analysisImageMaxDimension
         let technical = await Self.heuristics(on: image, edge: Double(maxEdge))
         // Shared factory owned by PhotoAnalysis.swift — no local clamp.
+        // Phase 2 is a pure map to the frozen fact triple; `hasPrint` passes
+        // the existing first-print-or-nil signal for `featurePrintAvailable`.
+        let similarity = (printRequest.results?.first as? VNFeaturePrintObservation)
+            .map(ImageSimilarityArtifact.init(observation:))
+        let facts = await UniversalFactAdapter.map(universal, hasPrint: similarity != nil)
         let analysis = await PhotoAnalysis.make(
             assetID: assetID,
             technical: technical,
             faceCount: faceCount,
             groupPhotoScore: faceCount >= 2 ? Double(faceCount) / 6.0 : nil,
             subjectPlacementScore: bestFaceQuality,
-            sceneType: faceCount > 0 ? .people : .unknown
+            sceneType: faceCount > 0 ? .people : .unknown,
+            aestheticScore: facts.aestheticScore,
+            tags: facts.tags,
+            featurePrintAvailable: facts.featurePrintAvailable
         )
-        let similarity = (printRequest.results?.first as? VNFeaturePrintObservation)
-            .map(ImageSimilarityArtifact.init(observation:))
         // Post-analysis cancel check: a cancel landing during the sync CPU
         // pass must not return success — map through .cancelled in analyze.
         try Task.checkCancellation()
