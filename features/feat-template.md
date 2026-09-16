@@ -1,5 +1,14 @@
 # feat-xxx — Feature title
 
+## Status and kind
+
+- Status: `todo` | `active` | `blocked` | `done`
+- Kind: `integration` | `mini`
+- Parent: required for `mini`; omit for `integration`.
+- Seam: required for `mini`; state the one independently mergeable responsibility.
+- Exclusive owns: required for `mini`; list only files the child may edit or create.
+- Merge gate: required for `mini`; state what the integration owner must verify before merge.
+
 ## Goal
 
 <One observable outcome.>
@@ -22,12 +31,16 @@
 
 ## Plan
 
-<!-- Bounded (default): 1-3 files, 1 workspace, <200 lines, inline. Split into 2 sequential feats when >=4 files or >=2 workspaces. Substantial (>=4 files or >=2 workspaces, DB migration/breaking API, or needs phases/rollback -> use docs/plans/feat-xxx.md, needs >=2 substantial signals). Each split result is assessed independently; 4 files alone does not require docs/plans/ (needs >=2 substantial signals). -->
+<!-- Every parent begins with a readiness plan here. Before activating an integration
+feature, add docs/plans/feat-xxx.md for shared contracts, >=4 files, >=2 workspaces,
+phases/rollback, or two independent risk signals. A mini-feature stays inline. -->
 
 1. <Step.>
 2. <Step.>
 
-Task convention: each Task runs `swiftlint` on changed files only; NO `./init.sh` mid-feat; batch the `.pbxproj` edit at feat end.
+For an integration feature, reserve mini IDs here with a one-purpose seam, admission
+condition, and completion evidence. Materialize a child from `mini-feat-template.md`
+only after the parent locks its exact files.
 
 ## Verify
 
@@ -35,14 +48,18 @@ Task convention: each Task runs `swiftlint` on changed files only; NO `./init.sh
 
 ## Review
 
-- Single agent, sequential (1 active feat): run self-checklist on every feat with file:line evidence.
+- Independent reviewer for every merged mini-feature and integration feature; record
+  file:line evidence in the handoff.
 - Scoped oracle/escalation ONLY for risky: contracts, Domain/Selection scoring, privacy, performance budgets, export/save.
 - Repo checklist: SwiftUI never calls PhotoKit/Vision; engine never imports SwiftUI; `Infrastructure/` Foundation-only; no persisted pixels/face boxes/locations; 120 cols; copy matches ux-flows; no leftover TODO/mock/Noop; YAGNI (nothing extra).
 - 2-3 clean feats = healthy; a miss upgrades self-review rigor.
 
 ## Git
 
-- Branch `feat/<id>` from `main`, code in `owns`, PR squash `feat` → `main`; update `feature_index.json` + `progress.md` in same PR.
+- Parent: branch `feat/<id>` from `main`; mini: branch `mini/<id>` from the active
+  parent. The integration owner alone updates shared contracts, feature index, and
+  progress. Merge child PRs into the parent after their merge gate; squash the parent
+  PR to `main` when done.
 
 ## Handoff
 

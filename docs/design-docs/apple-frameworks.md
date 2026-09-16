@@ -21,6 +21,7 @@ Related docs:
 - `performance.md` — budgets, concurrency, resume
 - `privacy.md` — privacy rules, retention, redaction
 - `manual-qa.md` — QA procedure
+- `curation-runtime-stack.md` — current concrete post-MVP Vision/Core ML/Foundation Models choices
 
 ---
 
@@ -49,7 +50,7 @@ Only this section uses requirement keywords. All other sections use plain verbs.
 | Vision | Feature prints, face rects, face quality, optional landmarks/aesthetics | Required |
 | PhotosUI | Limited-library manager, optional picker for small subsets | As needed |
 | CoreGraphics / ImageIO | Orientation, light decode work | Supporting |
-| Core ML | Custom models | Not for MVP |
+| Core ML | Licensed representation/specialist models after measured post-MVP quality gates | Post-MVP; concrete choices in `curation-runtime-stack.md` |
 | CloudKit | App cloud storage | Not for MVP |
 | AVFoundation | Video work | Not for MVP (photo-only) |
 
@@ -247,7 +248,7 @@ Retry only transient network failures with a small retry around iCloud loads. No
 
 ## 8. Vision pipeline
 
-Vision runs on device on the analysis image. No custom Core ML model unless native requests prove insufficient.
+Vision runs on device on the analysis image. The MVP baseline remains native-first. Post-MVP, Core ML and newer Vision requests follow the measured tiered architecture in [curation-intelligence.md](curation-intelligence.md); the current exact request/model choices and routing live in [curation-runtime-stack.md](curation-runtime-stack.md). A complete native-only fallback remains required.
 
 | Request | Output | Use |
 |---|---|---|
@@ -255,15 +256,24 @@ Vision runs on device on the analysis image. No custom Core ML model unless nati
 | `VNDetectFaceRectanglesRequest` | `VNFaceObservation` list | Face count, boxes, largest-face ratio |
 | `VNDetectFaceCaptureQualityRequest` | Score 0–1 per face | Best-frame choice among similar faces, owned by 03 |
 | `VNDetectFaceLandmarksRequest` | Eyes, mouth points | Optional; add only after QA shows a concrete miss |
-| Aesthetics request | Aesthetics score | Optional fallback chain: native score when present, else local heuristics; never fails the run when absent |
+| Image aesthetics request | Aesthetic score / utility evidence | Post-MVP native signal; one input only, never the selector |
+| Image classification request | Scene/category labels + confidence | Post-MVP native semantic signal |
+| Saliency requests | Subject/attention regions | Post-MVP composition/context signal |
+| Person / foreground mask requests | Subject masks | Post-MVP contextual signal when useful |
+| Horizon request | Horizon evidence | Post-MVP landscape/composition signal |
+| Lens-smudge request | Smudge probability | Post-MVP technical signal; guard availability/device support |
+| OCR / document recognition | Text and document structure | Post-MVP utility/context signal |
+| Body-pose request | Body joints / pose facts | Post-MVP people/action context when useful |
 
 Prefer stable `VN*` requests. Do not adopt new Swift-native Vision types just because they exist.
 
-Per-asset flow:
+Per-asset MVP flow:
 
 ```text
 CGImage + orientation -> feature print + face rects + face quality (+ optional landmarks/aesthetics) + light heuristics (blur, exposure, contrast) -> PhotoAnalysis (per 06) -> persist -> release image
 ```
+
+Post-MVP intelligence must be staged rather than all-models-all-assets. Universal, contextual, candidate, difficult-case, semantic-jury, and verification tiers are defined in [curation-intelligence.md](curation-intelligence.md); current routing and selected tools live in [curation-runtime-stack.md](curation-runtime-stack.md).
 
 Rules:
 
@@ -389,7 +399,8 @@ Manual scenarios (detail in 10): 100 / 1,000 / 2,000 local photos; Optimize Stor
 2. Feature-print version stability across OS releases; `analysisVersion` bump policy unproven.
 3. iCloud progress granularity worth surfacing without noisy UI updates.
 4. Landmark-request cost versus measurable selection gain.
-5. Aesthetics-request availability across supported OS versions; fallback coverage.
+5. Exact availability/device cost of each newer Vision request across the iOS 26 device matrix; verify before default-on.
+6. Core ML specialist latency, memory, thermal cost, redistribution terms, and measurable quality gain.
 
 ---
 
@@ -401,5 +412,6 @@ Manual scenarios (detail in 10): 100 / 1,000 / 2,000 local photos; Optimize Stor
 - Budgets, concurrency numbers, resume: see `performance.md`.
 - Privacy, retention, redaction: see `privacy.md`.
 - UX copy: see `ux-flows.md`. QA: see `manual-qa.md`.
+- Current post-MVP intelligence APIs/models/routing: see `curation-runtime-stack.md`.
 
 Check Apple docs each release: PhotoKit auth, `PHCachingImageManager`, `PHImageRequestOptions`, change observer, album requests, Vision face and feature-print requests.

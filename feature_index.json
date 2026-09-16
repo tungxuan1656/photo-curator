@@ -311,7 +311,127 @@
       ],
       "status": "active",
       "title": "Per-photo analysis transparency"
+    },
+    {
+      "depends_on": ["feat-016"],
+      "gate": "Baseline A-H, Golden, and Real Trip ledger records nine metrics, known failures, and device budgets; no V2 scoring behavior ships.",
+      "id": "feat-017",
+      "kind": "integration",
+      "mini_candidates": ["mini-017a", "mini-017b", "mini-017c"],
+      "owns": ["docs/ship-gates/manual-qa.md", "docs/design-docs/curation-intelligence.md", "features/feat-017.md"],
+      "status": "todo",
+      "title": "V2 baseline and failure inventory"
+    },
+    {
+      "depends_on": ["feat-017"],
+      "gate": "Cheap universal image facts are persisted with analysis-version policy, pass A plus Golden QA, and meet the measured request budget.",
+      "id": "feat-018",
+      "kind": "integration",
+      "mini_candidates": ["mini-018a", "mini-018b"],
+      "owns": ["Domain/Models/PhotoAnalysis.swift", "Services/Analysis/VisionAnalysisService.swift", "Services/Photos/BatchPipeline.swift", "Infrastructure/FileAnalysisCache.swift", "features/feat-018.md"],
+      "status": "todo",
+      "title": "Universal quality signals"
+    },
+    {
+      "depends_on": ["feat-018"],
+      "gate": "Contextual facts use Tier-B routing, prove a material baseline failure improvement, and preserve a bounded fallback when unavailable.",
+      "id": "feat-019",
+      "kind": "integration",
+      "mini_candidates": ["mini-019a", "mini-019b", "mini-019c"],
+      "owns": ["Domain/Models/PhotoAnalysis.swift", "Services/Analysis/VisionAnalysisService.swift", "Services/Photos/BatchPipeline.swift", "Infrastructure/FileAnalysisCache.swift", "features/feat-019.md"],
+      "status": "todo",
+      "title": "Contextual quality signals"
+    },
+    {
+      "depends_on": ["feat-019"],
+      "gate": "Group scoring uses per-face distribution and weakest-face protections without moving raw face data into persisted analysis.",
+      "id": "feat-020",
+      "kind": "integration",
+      "mini_candidates": ["mini-020a"],
+      "owns": ["Domain/Scoring/QualityScorer.swift", "Domain/Selection/SelectionEngine.swift", "Services/Analysis/VisionAnalysisService.swift", "features/feat-020.md"],
+      "status": "todo",
+      "title": "People and group selection"
+    },
+    {
+      "depends_on": ["feat-020"],
+      "gate": "Variant-aware clustering keeps visually distinct scenes separate, prevents union-find collapse, and chooses representatives by context.",
+      "id": "feat-021",
+      "kind": "integration",
+      "mini_candidates": ["mini-021a"],
+      "owns": ["Domain/Selection/DuplicateResolver.swift", "Domain/Models/SelectionGrouping.swift", "Domain/Selection/SelectionEngine.swift", "features/feat-021.md"],
+      "status": "todo",
+      "title": "Variant-aware clustering"
+    },
+    {
+      "depends_on": ["feat-021"],
+      "gate": "Change-point moment boundaries improve the baseline trip cases and retain deterministic fallback behavior.",
+      "id": "feat-022",
+      "kind": "integration",
+      "mini_candidates": ["mini-022a"],
+      "owns": ["Domain/Selection/MomentBuilder.swift", "Domain/Models/SelectionGrouping.swift", "Domain/Selection/SelectionEngine.swift", "features/feat-022.md"],
+      "status": "todo",
+      "title": "Semantic moments"
+    },
+    {
+      "depends_on": ["feat-022"],
+      "gate": "Embedding choice is benchmarked on-device, license/checksum is recorded, and Tier-C routing has a safe fallback.",
+      "id": "feat-024",
+      "kind": "integration",
+      "mini_candidates": ["mini-024a", "mini-024b"],
+      "owns": ["Services/Analysis/VisionAnalysisService.swift", "Domain/Models/PhotoAnalysis.swift", "Services/Photos/BatchPipeline.swift", "docs/design-docs/curation-intelligence.md", "features/feat-024.md"],
+      "status": "todo",
+      "title": "Visual embedding foundation"
+    },
+    {
+      "depends_on": ["feat-022", "feat-024"],
+      "gate": "A 150-250 candidate graph improves novelty and saturation behavior without regressing Golden or the 1k-photo budget.",
+      "id": "feat-023",
+      "kind": "integration",
+      "mini_candidates": ["mini-023a"],
+      "owns": ["Domain/Selection/DiversitySelector.swift", "Domain/Selection/SelectionEngine.swift", "Domain/Models/SelectionResult.swift", "features/feat-023.md"],
+      "status": "todo",
+      "title": "Global diversity shortlist"
+    },
+    {
+      "depends_on": ["feat-023"],
+      "gate": "Each difficult-only specialist has a target failure, benchmark, license and resource evidence, bounded routing, and an explicit accept or reject decision.",
+      "id": "feat-025",
+      "kind": "integration",
+      "mini_candidates": [],
+      "owns": ["Services/Analysis/VisionAnalysisService.swift", "Domain/Models/PhotoAnalysis.swift", "Services/Photos/BatchPipeline.swift", "docs/design-docs/curation-intelligence.md", "features/feat-025.md"],
+      "status": "todo",
+      "title": "Conditional specialist models"
+    },
+    {
+      "depends_on": ["feat-023"],
+      "gate": "Uncertain decisions have comprehensible reasons, a Needs review queue, feedback capture, and manual QA evidence.",
+      "id": "feat-026",
+      "kind": "integration",
+      "mini_candidates": ["mini-026a"],
+      "owns": ["Domain/Models/SelectionResult.swift", "Domain/Selection/SelectionEngine.swift", "Features/Review/ReviewModel.swift", "Services/Session/SelectionSessionCoordinator.swift", "features/feat-026.md"],
+      "status": "todo",
+      "title": "Uncertainty review and feedback"
+    },
+    {
+      "depends_on": ["feat-026"],
+      "gate": "The iOS 27 semantic jury is gated, schema-validates its decision, and retains iOS 26 deterministic fallback.",
+      "id": "feat-027",
+      "kind": "integration",
+      "mini_candidates": ["mini-027a"],
+      "owns": ["Services/Analysis/VisionAnalysisService.swift", "Domain/Models/SelectionResult.swift", "Services/ServiceProtocols.swift", "features/feat-027.md"],
+      "status": "todo",
+      "title": "Semantic jury"
+    },
+    {
+      "depends_on": ["feat-027"],
+      "gate": "Ranker evidence supports a versioned and reversible decision; a recorded no-ranker decision is also valid.",
+      "id": "feat-028",
+      "kind": "integration",
+      "mini_candidates": ["mini-028a"],
+      "owns": ["Domain/Selection/SelectionEngine.swift", "Domain/Models/SelectionResult.swift", "Infrastructure/FileAnalysisCache.swift", "docs/design-docs/curation-intelligence.md", "features/feat-028.md"],
+      "status": "todo",
+      "title": "Ranker decision gate"
     }
   ],
-  "rule": "flat sequential: 1 active at a time; a feat becomes active only after depends_on are done; owns is per-feat scope, not an exclusive lock — a later feat may sequentially modify an earlier feat's file (e.g. BatchPipeline.swift, Settings/, ServiceProtocols.swift); single-active order means no concurrent overlap"
+  "rule": "One integration feature may be active. Its parent record owns shared contracts and may admit at most four active mini-features. Every mini-feature has parent, seam, exclusive_owns, and merge_gate; it edits only those exact files. Integration dependencies must be done before activation. A reserved mini candidate becomes an indexed mini-feature only after the parent locks its contract and exact files. Parent owns may overlap earlier done features; active mini owns may not overlap each other or the parent shared-contract list."
 }

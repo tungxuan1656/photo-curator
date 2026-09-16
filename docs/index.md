@@ -13,11 +13,14 @@ Start at `AGENTS.md`. Then read one owner doc below. Then code.
 | Change app structure, jobs, or threads | [ios-architecture.md](design-docs/ios-architecture.md) |
 | Change saved data, IDs, or cache shape | [data-model.md](design-docs/data-model.md) |
 | Change PhotoKit or Vision calls | [apple-frameworks.md](design-docs/apple-frameworks.md) |
+| Change Curation Intelligence architecture | [curation-intelligence.md](design-docs/curation-intelligence.md) |
+| Choose/change concrete AI APIs, models, or inference routing | [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) |
 | Change speed, limits, or size targets | [performance.md](ship-gates/performance.md) |
 | Change privacy, access, or what is kept | [privacy.md](ship-gates/privacy.md) |
 | Run QA checks by hand | [manual-qa.md](ship-gates/manual-qa.md) |
 | Add or change an event log | [analytics.md](ship-gates/analytics.md) |
 | Change build order or what is later | [roadmap.md](exec-plans/roadmap.md) |
+| Coordinate parallel Curation Intelligence V2 delivery | [curation-intelligence-v2-parallel-delivery.md](exec-plans/curation-intelligence-v2-parallel-delivery.md) |
 | Ask why a past choice was made | [decision-log.md](design-docs/decision-log.md) |
 
 Rule: read the owner doc only. Links inside point to other docs. Do not copy text between docs.
@@ -53,11 +56,14 @@ Older docs use bare numbers 01–13. Use filenames for new refs; the table below
 | [ios-architecture.md](design-docs/ios-architecture.md) | App shape, jobs, logs | You change code shape |
 | [data-model.md](design-docs/data-model.md) | Saved shapes, cache keys | You change saved fields |
 | [apple-frameworks.md](design-docs/apple-frameworks.md) | PhotoKit, Vision use | You touch photos APIs |
+| [curation-intelligence.md](design-docs/curation-intelligence.md) | Stable Curation Intelligence capability architecture and gates | You change intelligence architecture |
+| [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) | Current APIs/models, routing, fallback, benchmark status | You implement or replace an AI/native intelligence tool |
 | [performance.md](ship-gates/performance.md) | Limits, time goals | You change speed or size |
 | [privacy.md](ship-gates/privacy.md) | Privacy, keep rules | You touch data or access |
 | [manual-qa.md](ship-gates/manual-qa.md) | Hand QA steps | You test a build |
 | [analytics.md](ship-gates/analytics.md) | Event names only | You log events |
 | [roadmap.md](exec-plans/roadmap.md) | Build order | You plan next work |
+| [curation-intelligence-v2-parallel-delivery.md](exec-plans/curation-intelligence-v2-parallel-delivery.md) | V2 delivery coordination, mini-feature admission, and integration gates | You coordinate V2 work across people or branches |
 | [decision-log.md](design-docs/decision-log.md) | Past reasons, open items | You need why or what is open |
 
 ## Open decisions

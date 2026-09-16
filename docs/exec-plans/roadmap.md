@@ -12,6 +12,9 @@ Related docs:
 - `performance.md` — perf targets and budgets
 - `manual-qa.md` — QA steps
 - `analytics.md` — event names
+- `curation-intelligence.md` — post-MVP intelligence architecture and model gates
+- `curation-runtime-stack.md` — current concrete APIs/models, routing, and benchmark status
+- `curation-intelligence-v2-parallel-delivery.md` — V2 team delivery protocol and integration gates
 
 Execution work does not live here. Tracked work lives in `feature_index.json` and `docs/plans/feat-<id>.md` per `AGENTS.md`.
 
@@ -30,7 +33,7 @@ P0 foundation → P1 analysis → P2 engine → P3 MVP
 Rules:
 
 - Selection quality comes before polish. A pretty app with bad picks is a failure.
-- Prefer simple clear rules before smart AI. See [03](../product-specs/selection-rules.md).
+- Prefer the cheapest layer that solves the measured failure: deterministic/native first when sufficient, then measured Core ML/semantic intelligence. See [03](../product-specs/selection-rules.md) and [curation-runtime-stack.md](../design-docs/curation-runtime-stack.md).
 - Stay on-device. No backend until a real need forces it.
 - Keep engine settings in one place so weights and thresholds are easy to change.
 
@@ -44,11 +47,11 @@ Rules:
 | P1 — Analysis prototype | Read real photos with PhotoKit + Vision | Can we read 1,000 photos? | 100–2,000 real assets analyzed without memory failure; each asset has signals for [03](../product-specs/selection-rules.md) |
 | P2 — Engine prototype | First full pipeline: exclude → moments → duplicates → score → shortlist → album | Can we curate? | 1,000 photos → sensible album with no help; clearly better than random or every-Nth-photo |
 | P3 — Functional MVP | Normal user completes Select → Analyze → Review → Save | Can a normal user use it? | New user completes full flow alone: pick, process, review, fix mistakes, save. Scope: [01](../product-specs/product.md) |
-| P4 — Quality hardening | Fix worst real failure modes | Is the result actually good? | Most albums need small fixes, not rebuilds. Method: [10](../ship-gates/manual-qa.md) |
+| P4 — Quality hardening | Fix worst real failure modes; add measured intelligence only where it improves picks | Is the result actually good? | Most albums need small fixes, not rebuilds. Method: [10](../ship-gates/manual-qa.md); post-MVP intelligence architecture: [curation-intelligence.md](../design-docs/curation-intelligence.md) |
 | P5 — Reliability | Handle large libraries, interruptions, memory | Can it handle real libraries? | Targets in [08](../ship-gates/performance.md) pass; no crashes, lost state, or stuck progress |
 | P6 — Beta | Real users outside the team | Do users trust it? | Curation completes; corrections are small; saved albums confirmed (by [11](../ship-gates/analytics.md) only if analytics is decided, else by manual review per [10](../ship-gates/manual-qa.md)) |
 | P7 — Personalization | Learn per-user taste from corrections | Can it learn this user? | Repeat corrections fall over sessions; bad photos never beat sharp ones on taste alone |
-| P8 — Future intelligence | Story-aware albums, language controls | Can it curate stories? | Only after P0–P6 pass. No gate defined yet |
+| P8 — Future intelligence | Semantic judging, story-aware albums, learned ranking | Can it reason about ambiguous curation choices without weakening the core? | Only after P0–P6 pass and the relevant quality/license/performance gates in [curation-intelligence.md](../design-docs/curation-intelligence.md) pass |
 
 Do not skip phases. If P2 output still looks random, stay in P2. Do not cover it with UI polish.
 
@@ -62,7 +65,7 @@ Stop and check before doing more work.
 |---|---|---|---|
 | G1 — On-device works | P1 | Can the phone handle the load? | Tune image size, batching, Vision load per [08](../ship-gates/performance.md). Do not add a backend |
 | G2 — Albums useful | P2 | Is output better than random? | Fix moments, duplicates, scoring, diversity per [03](../product-specs/selection-rules.md). Do not polish UI |
-| G3 — Corrections small | P6 | Do users rebuild every album? | Study removed vs restored photos; fix scoring, duplicates, or moments before adding AI |
+| G3 — Corrections small | P6 | Do users rebuild every album? | Build a failure inventory; fix with the cheapest adequate layer and add measured intelligence when it demonstrably improves the failing decision |
 | G4 — Taste needed | P6 | Do users show steady personal taste? | Only then add P7. Generic engine must be good first |
 | G5 — Backend needed | Any | Does a need force a server? | Needs: sync, accounts, sharing, server-only feature. "Maybe later" is not enough |
 
@@ -100,7 +103,8 @@ Not in MVP. Detailed execution, if ever approved, moves to `feature_index.json` 
 | Backend server, user accounts, cloud sync | Deferred |
 | Shared or joint albums | Deferred |
 | macOS / web app | Deferred |
-| Custom model training, server image work, search | Deferred |
+| Custom model training | Deferred until Golden/real-trip evidence justifies a learned ranker; gate defined in [curation-intelligence.md](../design-docs/curation-intelligence.md) |
+| Server image work, search | Deferred |
 | Subscriptions, paywall | Deferred until money plan is set |
 | Social feed, photo editor, auto-delete of rejects, full library manager | Out of scope |
 | Android app | Out of scope |
@@ -117,3 +121,4 @@ This doc stays thin and stable. It never holds task lists, file changes, or date
 - Current and planned work: `feature_index.json`
 - Bounded work (1–3 files, <200 lines): plan inside `features/feat-<id>.md`
 - Large work (4+ files, migration, phases, rollback): `docs/plans/feat-<id>.md`, linked from the feature file
+- Curation Intelligence V2 team delivery: `curation-intelligence-v2-parallel-delivery.md`
