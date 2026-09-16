@@ -20,7 +20,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
 
-### 1a. Accepted (35 kept)
+### 1a. Accepted (36 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -52,6 +52,7 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-026 | Never auto-delete rejected photos | 01, 02 |
 | DEC-027 | Speed of development over purity | 05 |
 | DEC-028 | G0 contract naming | 05 |
+| DEC-029 | Post-MVP Curation Intelligence V2 with iOS 26 baseline + optional iOS 27 semantic tier | 03, 04, 07 |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -67,7 +68,7 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 |---|---|---|---|
 | DEC-TBD-003 | Analytics provider | 11 | Deferred |
 | DEC-TBD-004 | Monetization model | 01 | Deferred |
-| DEC-TBD-006 | Advanced ML models | 03, 04, 07 | Deferred |
+| DEC-TBD-006 | Advanced ML models | 03, 04, 07 | Superseded by DEC-029 |
 | DEC-TBD-007 | Personalization strategy | 03, 06 | Deferred |
 
 Promoted to Accepted (values owned in linked docs, not duplicated here):
@@ -226,6 +227,13 @@ at G0); engine file `SelectionEngine.swift` holds concrete `SelectionEngine` (no
 Owner: 05. Affected: feature_index owns, 05. Risk: later stages extend contracts via leader review only.
 Reconsider when: a stage needs a name the contract cannot express.
 
+**DEC-029 — Curation Intelligence V2 (Accepted, 2026-09-16).**
+Owner: 03, 04, 07. Affected: 02, 06, 08, 09, 10, 12.
+Decision: after the functional MVP baseline, improve selection quality through a tiered on-device intelligence stack. iOS 26 remains the minimum and must retain a complete native fallback. Native Vision signals come first; licensed Core ML specialist models may be added when targeted QA proves benefit. iOS 27 Foundation Models image input may act as an optional semantic jury for small ambiguous candidate sets, never as a core dependency. A custom Core ML curation ranker is gated on Golden/real-trip labels and held-out improvement.
+Rationale: the current product goal requires best-shot, meaningful-variation, moment, and album-level reasoning that cannot be represented safely by one quality scalar. A staged specialist architecture can improve those decisions while preserving privacy, fallback, and debuggability.
+Risk: app/model size, battery/thermal cost, licensing mistakes, semantic-model nondeterminism, and regressions hidden by extra complexity.
+Trigger/reconsider when: a layer fails Golden/real-trip quality gates, violates privacy/license constraints, or costs more latency/memory/thermal budget than its measured curation gain. Architecture and gates: [curation-intelligence.md](curation-intelligence.md).
+
 ---
 
 ## 3. Deferred TBDs (structured — no answers invented)
@@ -258,9 +266,10 @@ evidence-backed from original docs — matches MVP save flow and DEC-005/026
 trust posture; mechanics owned in 02, 07. Risk: permission surprise.
 Reconsider when: save-flow build proves otherwise.
 
-**DEC-TBD-006 — Advanced ML (Deferred).**
-Owner: 03, 04, 07. Options: custom quality/aesthetic model, embeddings, expression analysis.
-Only after Apple-baseline is QA-measured. Risk: size/battery/regression. Trigger: baseline gaps in 10.
+**DEC-TBD-006 — Advanced ML (Superseded by DEC-029).**
+Owner: 03, 04, 07. Original options: custom quality/aesthetic model, embeddings, expression analysis.
+Original gate remains useful: Apple/native baseline must be QA-measured before heavier models become default-on.
+Superseded by DEC-029, which accepts a staged post-MVP intelligence program while retaining quality, license, performance, privacy, and fallback gates.
 
 **DEC-TBD-007 — Personalization (Deferred).**
 Owner: 03, 06. Options: weight tweaks → implicit/explicit → on-device learning. From observed behavior, not speculation.
