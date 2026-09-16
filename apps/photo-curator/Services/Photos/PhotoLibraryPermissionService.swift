@@ -42,7 +42,14 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
     }
 
     func presentLimitedLibraryPicker() {
+        // Touch a real PhotosUI class: the picker is an ObjC category with no
+        // link-time symbol, so this keeps the linker from dropping PhotosUI
+        // (dropped framework = "unrecognized selector" crash).
+        _ = PHPickerConfiguration()
         Task { @MainActor in
+            // No-op outside limited mode (docs: picker does nothing when not
+            // limited). Settings called this on full access → crash path.
+            guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited else { return }
             let scenes = UIApplication.shared.connectedScenes
             // Present from the topmost controller: the call site lives inside
             // a sheet, so rootViewController is already presenting (presenting
@@ -58,7 +65,13 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
             while let presented = topViewController.presentedViewController {
                 topViewController = presented
             }
-            PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: topViewController)
+            let library = PHPhotoLibrary.shared()
+            guard library.responds(to: #selector(PHPhotoLibrary.presentLimitedLibraryPicker(from:))) else {
+                Logger(subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "photos")
+                    .warning("Limited-library picker dropped: PhotosUI unavailable.")
+                return
+            }
+            library.presentLimitedLibraryPicker(from: topViewController)
         }
     }
 

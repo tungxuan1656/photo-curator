@@ -5,7 +5,7 @@ struct SourceSelectionView: View {
     @Environment(AppModel.self) private var appModel
     @State private var showsAccessGuidance = false
 
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
     private var thumbPixels: CGSize {
         let scale = UIScreen.main.scale
         let side = (UIScreen.main.bounds.width / 3) * scale
@@ -16,7 +16,7 @@ struct SourceSelectionView: View {
     var body: some View {
         @Bindable var appModel = appModel
         VStack {
-            Text("\(appModel.selectedIDs.count) photos selected")
+            Text(appModel.selectedIDs.count == 1 ? "1 photo selected" : "\(appModel.selectedIDs.count) photos selected")
                 .font(.headline)
             if appModel.selectedIDs.count == 1 {
                 Text("Photos Curator works best with a larger set.")
@@ -35,7 +35,10 @@ struct SourceSelectionView: View {
             content
             Button("Continue") { appModel.continueToSummary() }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(!appModel.canContinueToSummary)
+                .padding(.horizontal)
+                .padding(.bottom, 6)
         }
         .sheet(isPresented: $showsAccessGuidance) { AccessGuidanceSheet() }
         .navigationTitle("Choose source photos")
@@ -87,19 +90,47 @@ struct SourceSelectionView: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 2) {
                     ForEach(appModel.filteredAssets) { asset in
-                        ZStack(alignment: .topTrailing) {
-                            AsyncPhotoThumbnail(assetID: asset.id, targetSizePixels: thumbPixels)
-                                .aspectRatio(1, contentMode: .fill)
-                            let isSelected = appModel.selectedIDs.contains(asset.id)
-                            Button {
-                                appModel.toggleSelection(asset.id)
-                            } label: {
+                        let isSelected = appModel.selectedIDs.contains(asset.id)
+                        Button {
+                            appModel.toggleSelection(asset.id)
+                        } label: {
+                            ZStack(alignment: .topTrailing) {
+                                AsyncPhotoThumbnail(assetID: asset.id, targetSizePixels: thumbPixels)
+                                    .clipped()
                                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                    .font(.title2)
+                                    .foregroundStyle(isSelected ? Color.accentColor : .white)
+                                    .background(.ultraThinMaterial, in: Circle())
+                                    .padding(6)
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(selectionLabel(isSelected: isSelected, isFavorite: asset.isFavorite))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 3)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(selectionLabel(isSelected: isSelected, isFavorite: asset.isFavorite))
+                        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
                     }
+                }
+
+                if appModel.filteredAssets.count < 15 {
+                    VStack(spacing: 6) {
+                        Label("How Curation Works", systemImage: "sparkles")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(Color.accentColor)
+                        Text(
+                            "Photos Curator analyzes sharpness, expressions, and duplicate shots to find your "
+                                + "best moments."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .padding()
                 }
             }
             if appModel.unavailableCount > 0 {

@@ -12,43 +12,119 @@ struct ProcessingView: View {
         Group {
             switch appModel.processing.state {
             case .idle, .preparing:
-                ProgressView("Preparing photos")
-            case let .running(progress):
                 VStack(spacing: 16) {
-                    Text("Curating your photos").font(.title2.bold())
-                    Text(progress.stage.userPhase).font(.headline)
-                    if progress.totalUnits > 0 {
-                        ProgressView(value: progress.overallFraction)
-                        Text("\(progress.analyzedCount) of \(progress.totalUnits) analyzed")
-                            .font(.subheadline).monospacedDigit()
-                    } else {
-                        ProgressView().accessibilityLabel("Working") // indeterminate: loading/select/final
+                    ProgressView()
+                        .controlSize(.large)
+                    Text("Preparing photos…")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case let .running(progress):
+                VStack(spacing: 24) {
+                    Spacer()
+
+                    VStack(spacing: 12) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 44))
+                            .foregroundStyle(Color.accentColor)
+
+                        Text("Curating your photos")
+                            .font(.title2.bold())
+
+                        Text(progress.stage.userPhase)
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
                     }
-                    if progress.downloadingCount > 0 {
-                        Text("Waiting for \(progress.downloadingCount) photos from iCloud")
-                            .font(.subheadline)
-                        Text("Keep this iPhone connected to the internet.")
-                            .font(.footnote).foregroundStyle(.secondary)
+
+                    VStack(spacing: 12) {
+                        if progress.totalUnits > 0 {
+                            ProgressView(value: progress.overallFraction)
+                            Text("\(progress.analyzedCount) of \(progress.totalUnits) analyzed")
+                                .font(.subheadline.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ProgressView()
+                                .accessibilityLabel("Working")
+                        }
+
+                        if progress.downloadingCount > 0 {
+                            Text("Waiting for \(progress.downloadingCount) photos from iCloud")
+                                .font(.subheadline)
+                            Text("Keep this iPhone connected to the internet.")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
+                        if progress.unavailableCount > 0 {
+                            Text("\(progress.unavailableCount) photos were unavailable and could not be analyzed.")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
                     }
-                    if progress.unavailableCount > 0 {
-                        Text("\(progress.unavailableCount) photos were unavailable and could not be analyzed.")
-                            .font(.footnote).foregroundStyle(.secondary)
-                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal)
+
                     Text("You can leave this screen. We'll keep your progress and resume if needed.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Button("Stop Processing") { appModel.cancelProcessing() }
-                    Button("Discard Curation", role: .destructive) { confirmingDiscard = true }
-                }.padding()
-            case let .completed(id, analyzed, unavailable):
-                VStack(spacing: 12) {
-                    Text("Analysis complete").font(.title2.bold())
-                    Text("\(analyzed) photos analyzed")
-                    if unavailable > 0 {
-                        Text("\(unavailable) photos were unavailable and could not be analyzed.")
-                            .font(.footnote).foregroundStyle(.secondary)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+
+                    Spacer()
+
+                    VStack(spacing: 10) {
+                        Button("Stop Processing") { appModel.cancelProcessing() }
+                        Button("Discard Curation", role: .destructive) { confirmingDiscard = true }
+                            .font(.subheadline)
                     }
+                    .padding(.bottom, 16)
+                }
+                .padding()
+            case let .completed(id, analyzed, unavailable):
+                VStack(spacing: 24) {
+                    Spacer()
+
+                    VStack(spacing: 16) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 64))
+                            .foregroundStyle(.green)
+
+                        VStack(spacing: 6) {
+                            Text("Analysis complete")
+                                .font(.title.bold())
+                            Text("\(analyzed) photos analyzed")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Quality, smiles & sharpness evaluated", systemImage: "sparkles")
+                            .font(.subheadline)
+                        Label("Burst & similar shots grouped", systemImage: "square.2.layers.3d")
+                            .font(.subheadline)
+                        Label("Curated album ready for your review", systemImage: "photo.on.rectangle.angled")
+                            .font(.subheadline)
+
+                        if unavailable > 0 {
+                            Text("\(unavailable) photos were unavailable and could not be analyzed.")
+                                .font(.footnote).foregroundStyle(.secondary)
+                                .padding(.top, 4)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal)
+
+                    Spacer()
+
                     Button("Continue to Review") { appModel.showReview(for: id) }
-                }.padding()
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .padding(.bottom, 24)
+                }
+                .padding()
             case let .failed(error):
                 AttentionView(error: error)
             case .cancelled:

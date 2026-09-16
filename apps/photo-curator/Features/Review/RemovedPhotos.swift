@@ -10,7 +10,7 @@ import UIKit
 struct RemovedPhotos: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
 
     private var thumbPixels: CGSize {
         let scale = UIScreen.main.scale
@@ -42,11 +42,18 @@ struct RemovedPhotos: View {
                             LazyVGrid(columns: columns, spacing: 2) {
                                 ForEach(removed, id: \.self) { id in
                                     VStack(spacing: 4) {
-                                        NavigationLink(value: id) {
+                                        NavigationLink {
+                                            PhotoDetail(
+                                                assetID: id,
+                                                sessionID: sessionID,
+                                                pagerIDs: removed
+                                            )
+                                        } label: {
                                             AsyncPhotoThumbnail(assetID: id, targetSizePixels: thumbPixels)
-                                                .aspectRatio(1, contentMode: .fill)
+                                                .clipped()
                                         }
                                         .buttonStyle(.plain)
+                                        ReviewScoreBadge(assetID: id, model: model)
                                         Button("Add back") { model.restore(id) }
                                             .font(.caption)
                                             .accessibilityLabel("Add photo back to album")
@@ -64,9 +71,6 @@ struct RemovedPhotos: View {
                             .buttonStyle(.borderedProminent)
                         }
                         .padding(.vertical, 8)
-                    }
-                    .navigationDestination(for: AssetID.self) { id in
-                        PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: removed)
                     }
                 }
             } else {

@@ -34,7 +34,13 @@ extension AppModel {
         else { return false }
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
         let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
-        let model = ReviewModel(sessionID: sessionID, result: result, sourceByID: live, feedback: feedback)
+        let model = ReviewModel(
+            sessionID: sessionID,
+            result: result,
+            sourceByID: live,
+            analysisCache: container.analysisCache,
+            feedback: feedback
+        )
         // Persisted unavailable bucket: frozen checkpoint source count minus
         // decided IDs, plus `assetUnavailable` decisions (full-result path).
         // Survives relaunch where the in-memory progress counter is `.zero`.

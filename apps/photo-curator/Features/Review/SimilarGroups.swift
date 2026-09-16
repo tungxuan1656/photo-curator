@@ -55,9 +55,6 @@ struct SimilarGroups: View {
                         }
                         .padding()
                     }
-                    .navigationDestination(for: AssetID.self) { id in
-                        PhotoDetail(assetID: id, sessionID: sessionID, pagerIDs: similarOrder(for: id, in: groups))
-                    }
                 }
             } else {
                 ProgressView("Loading your selection…")
@@ -67,12 +64,6 @@ struct SimilarGroups: View {
     }
 }
 
-/// Pager order for deep-linked photos: the containing group, or the single
-/// photo when it belongs to no group.
-private func similarOrder(for id: AssetID, in groups: [SimilarGroup]) -> [AssetID] {
-    groups.first(where: { $0.memberIDs.contains(id) })?.memberIDs ?? [id]
-}
-
 private struct SimilarGroupCard: View {
     let group: SimilarGroup
     let index: Int
@@ -80,7 +71,7 @@ private struct SimilarGroupCard: View {
     let sessionID: SessionID
     let targetSizePixels: CGSize
     @Environment(AppModel.self) private var appModel
-    private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
 
     var body: some View {
         if let model = appModel.reviewModel, model.sessionID == sessionID {
@@ -94,14 +85,21 @@ private struct SimilarGroupCard: View {
                     ForEach(group.memberIDs, id: \.self) { id in
                         VStack(spacing: 4) {
                             ZStack(alignment: .topTrailing) {
-                                NavigationLink(value: id) {
+                                NavigationLink {
+                                    PhotoDetail(
+                                        assetID: id,
+                                        sessionID: sessionID,
+                                        pagerIDs: group.memberIDs
+                                    )
+                                } label: {
                                     AsyncPhotoThumbnail(assetID: id, targetSizePixels: targetSizePixels)
-                                        .aspectRatio(1, contentMode: .fill)
+                                        .clipped()
                                         .opacity(model.isSelected(id) ? 1 : 0.35)
                                 }
                                 .buttonStyle(.plain)
                                 SelectionToggle(isSelected: model.isSelected(id), onToggle: { model.toggle(id) })
                             }
+                            ReviewScoreBadge(assetID: id, model: model)
                             let current = model.currentWinner(of: group)
                             if id == group.engineWinner {
                                 Text("Recommended best pick").font(.caption).bold()

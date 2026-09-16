@@ -60,6 +60,12 @@ struct PhotoDetail: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .accessibilityValue(model.isSelected(currentAssetID) ? "In album" : "Removed")
+                        NavigationLink {
+                            PhotoAnalysisDetail(assetID: currentAssetID, sessionID: sessionID)
+                        } label: {
+                            Label("View Analysis", systemImage: "chart.bar.xaxis")
+                        }
+                        .buttonStyle(.bordered)
                         HStack {
                             Button("Previous") { currentAssetID = order[max(0, index - 1)] }
                                 .disabled(index == 0)
