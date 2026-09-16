@@ -53,7 +53,9 @@ NOT on-device cold/warm, NOT a device claim.
 ## 3. Cost table (host-harness, A-shape 60 assets @ 512 px)
 
 Three consecutive runs of the same binary; run 1 is the recorded evidence,
-runs 2–3 are stability repeats.
+runs 2–3 are cold stability repeats (warm was run 1 only in the original
+session; warm repeats below are two further runs of the same binary on the
+same A-shape fixture bytes).
 
 | Request | Cold mean ms/asset | Cold p50 ms/asset | Warm mean ms/asset | Warm p50 ms/asset | Fails (cold) |
 |---|---|---|---|---|---|
@@ -64,7 +66,11 @@ runs 2–3 are stability repeats.
 
 Stability repeats (cold): run 2 — aesthetics 5.09/3.93, classify 5.41/4.65,
 sum 10.50/8.55, print 4.13/3.63; run 3 — aesthetics 4.44/3.88, classify
-5.15/4.59, sum 9.59/8.47, print 3.82/3.52. Cold-aesthetics max 38.85 ms
+5.15/4.59, sum 9.59/8.47, print 3.82/3.52. Warm stability repeats (mean/p50):
+repeat A — aesthetics 4.12/3.81, classify 4.97/4.61, print 3.83/3.53;
+repeat B — aesthetics 4.07/3.83, classify 4.98/4.61, print 3.76/3.50
+(same binary `ea152379…62fbe6`, same A-shape fixture bytes, 60 assets @ 512 px).
+Cold-aesthetics max 38.85 ms
 (first-asset model-load outlier; min 3.71 ms); all other maxima ≤ 11.46 ms.
 Request-alloc + handler-create overhead is noise (0.004 ms + 0.016 ms mean,
 separately probed). Spot check on one fixture (`A_001.jpg`, full 800×600
@@ -117,10 +123,13 @@ existing structured lanes:
   (`apps/photo-curator/Services/Analysis/VisionAnalysisService.swift:19-23`);
   `performAll` runs synchronously in-lane: one handler, `.up`, independent
   `try?` per request, cancellation checks between requests (`:92-118`).
-- Requests: parent Task 3 calls 018a `collect` from `performAll`, adding the
-  aesthetics + classify `perform` calls beside the existing face/print calls
-  inside the same synchronous lane body
-  (`apps/photo-curator/Services/Analysis/UniversalFactAdapter.swift:50-58`);
+- Requests: 018a `collect` issues the aesthetics + classify `perform` calls
+  (`try? handler.perform([aesthetics])`, `try? handler.perform([classify])` at
+  `apps/photo-curator/Services/Analysis/UniversalFactAdapter.swift:59-70`,
+  with the request allocations at `:62-63`); planned parent-Task-3 wiring calls
+  `collect` from `performAll` (`VisionAnalysisService.swift:92-118`, which does
+  NOT yet call `collect`), adding those `perform` calls beside the existing
+  face/print calls inside the same synchronous lane body.
   `similarityArtifact` (cache-hit path) keeps the single print-request shape
   (`VisionAnalysisService.swift:37-50`).
 
