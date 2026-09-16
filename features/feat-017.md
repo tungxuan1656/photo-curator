@@ -76,12 +76,10 @@ independent reviews: `mini-017a` via `0967d2d` (PR #27, APPROVED), `mini-017b` v
 `blocked` with recorded pending-physical reasons (row values honestly `pending`).
 The full 12-field admission card lives in each mini file.
 
-## Acceptance
-
-- [ ] Nine manual-QA metrics have a baseline, denominator, device, and artifact link.
-- [ ] A-H, Golden, and Real Trip failures are classified with candidate V2 remedies.
-- [ ] Dataset H is used only for stability and performance claims.
-- [ ] No production selection behavior changes.
+- [ ] Nine manual-QA metrics have a baseline, denominator, device, and artifact link. (pending-physical: denominators/devices/links exist but run values are pending user-run physical measurement — Golden annotation 200–500 assets per `manual-qa.md` §3.2 plus physical A-H/Golden/Real Trip plus 1k-budget rows)
+- [x] A-H, Golden, and Real Trip failures are classified with candidate V2 remedies (F-017-B/C/D/E/F/G/GLD/H in `curation-intelligence.md` §14).
+- [x] Dataset H is used only for stability and performance claims.
+- [x] No production selection behavior changes.
 
 ## Relevant docs
 
@@ -104,8 +102,8 @@ Plan: `docs/plans/feat-017.md`
 
 ## Handoff
 
-- State: active (sole integration parent; all children merged; parent PR to main not yet opened)
-- Evidence: contract `b1bd651` + merges `0967d2d` / `bdfa595` / `e7143bc` + fix `ebb0a50` on `tungxuan1656/feat-017-integration` (tracker docs only, no `apps/` paths); `./init.sh` PASS at this commit.
+- State: merged (parent PR #30 MERGED via `52588ff`; branch fully on main; children merged with reviews — `mini-017a` via `0967d2d` PR #27 APPROVED, `mini-017b` via `bdfa595` PR #28 APPROVED, `mini-017c` via `e7143bc` PR #29 APPROVED plus `ebb0a50` stale-line fix; Task 3 done via `96a4de6`)
+- Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] by policy); tracker-docs scope only, no `apps/` paths.
 - Blockers: user-run follow-ups — Golden annotation (200–500 fixed assets per `manual-qa.md` §3.2) plus physical measurement of the §8.2 and §7 rows (Simulator-only constraint; nothing invented).
 - feat-018 admission gate: baseline exists with nine denominators frozen, failures classified with candidate remedies (F-017-B/C/D/E/F/G/GLD/H), Golden annotation plus physical measurement outstanding as user-run follow-ups. feat-018 may start only after this gate.
-- Next: coordinator opens the parent PR to main after review.
+- Next: pending user decision — user-run physical measurement, then explicit done-flip and feat-018 selection; feat-018 must not start here.
