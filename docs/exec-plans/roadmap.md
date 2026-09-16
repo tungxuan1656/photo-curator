@@ -12,6 +12,7 @@ Related docs:
 - `performance.md` — perf targets and budgets
 - `manual-qa.md` — QA steps
 - `analytics.md` — event names
+- `curation-intelligence.md` — post-MVP intelligence architecture and model gates
 
 Execution work does not live here. Tracked work lives in `feature_index.json` and `docs/plans/feat-<id>.md` per `AGENTS.md`.
 
@@ -44,11 +45,11 @@ Rules:
 | P1 — Analysis prototype | Read real photos with PhotoKit + Vision | Can we read 1,000 photos? | 100–2,000 real assets analyzed without memory failure; each asset has signals for [03](../product-specs/selection-rules.md) |
 | P2 — Engine prototype | First full pipeline: exclude → moments → duplicates → score → shortlist → album | Can we curate? | 1,000 photos → sensible album with no help; clearly better than random or every-Nth-photo |
 | P3 — Functional MVP | Normal user completes Select → Analyze → Review → Save | Can a normal user use it? | New user completes full flow alone: pick, process, review, fix mistakes, save. Scope: [01](../product-specs/product.md) |
-| P4 — Quality hardening | Fix worst real failure modes | Is the result actually good? | Most albums need small fixes, not rebuilds. Method: [10](../ship-gates/manual-qa.md) |
+| P4 — Quality hardening | Fix worst real failure modes; add measured intelligence only where it improves picks | Is the result actually good? | Most albums need small fixes, not rebuilds. Method: [10](../ship-gates/manual-qa.md); post-MVP intelligence architecture: [curation-intelligence.md](../design-docs/curation-intelligence.md) |
 | P5 — Reliability | Handle large libraries, interruptions, memory | Can it handle real libraries? | Targets in [08](../ship-gates/performance.md) pass; no crashes, lost state, or stuck progress |
 | P6 — Beta | Real users outside the team | Do users trust it? | Curation completes; corrections are small; saved albums confirmed (by [11](../ship-gates/analytics.md) only if analytics is decided, else by manual review per [10](../ship-gates/manual-qa.md)) |
 | P7 — Personalization | Learn per-user taste from corrections | Can it learn this user? | Repeat corrections fall over sessions; bad photos never beat sharp ones on taste alone |
-| P8 — Future intelligence | Story-aware albums, language controls | Can it curate stories? | Only after P0–P6 pass. No gate defined yet |
+| P8 — Future intelligence | Semantic judging, story-aware albums, learned ranking | Can it reason about ambiguous curation choices without weakening the core? | Only after P0–P6 pass and the relevant quality/license/performance gates in [curation-intelligence.md](../design-docs/curation-intelligence.md) pass |
 
 Do not skip phases. If P2 output still looks random, stay in P2. Do not cover it with UI polish.
 
@@ -100,7 +101,8 @@ Not in MVP. Detailed execution, if ever approved, moves to `feature_index.json` 
 | Backend server, user accounts, cloud sync | Deferred |
 | Shared or joint albums | Deferred |
 | macOS / web app | Deferred |
-| Custom model training, server image work, search | Deferred |
+| Custom model training | Deferred until Golden/real-trip evidence justifies a learned ranker; gate defined in [curation-intelligence.md](../design-docs/curation-intelligence.md) |
+| Server image work, search | Deferred |
 | Subscriptions, paywall | Deferred until money plan is set |
 | Social feed, photo editor, auto-delete of rejects, full library manager | Out of scope |
 | Android app | Out of scope |
