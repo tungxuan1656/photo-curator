@@ -1,7 +1,6 @@
 # mini-017b — A-H, Golden, and Real Trip baseline runs
 
 ## Status and parent
-+
 - Status: `done` (SYNTHETIC nine-metric §8.2 rows filled 2026-09-16 per user directive; computed by `/tmp/f017-evidence/synth-labels.py` sha256 `409601a182b6121d04eaa1a59af2c546f9f1738d89271389b67cac5aacb0745c` against the ALREADY-MEASURED REAL-engine outputs of 06da3e8; no app re-run; no physical-device operations — Simulator only per HARD RULE)
 - Parent integration feature: `feat-017`
 - Reserved ID: `mini-017b`
@@ -50,7 +49,6 @@
 - Row template per run (`manual-qa.md` §8.2): Date / Build / Config / Dataset; Input / Final / Compression; MUST_KEEP total / selected / recall; Selected MUST_KEEP / ACCEPTABLE / REJECT; Good rate / Bad-pick rate; Clusters judged / leakage / best-shot accuracy; Key moments total / covered / coverage; User removals / add-backs; Top failures; Notes; Regression vs last build; Decision. Regression comparison per §6.2 (old-vs-new album diff: only-in-each, cluster-pick changes, lost moments, balance shift; never one number alone).
 
 ## Devices and run procedure
-+
 - SIMULATOR code-evidence (evidence-policy amendment 2026-09-16 per user directive; replaces physical-device manual QA for this baseline; physical numbers optional future work, not gates): booted iPhone 17 Pro (iOS 26.5, UDID BE48CD78…AF29E); app `com.tungxuan.photo-curator` rebuilt + installed + launched (PID 36576, no crash), Photos access granted via `simctl privacy grant photos`; fixtures seeded via `simctl addmedia` — A 60 + B 40 + C 100 + E 60 + F 20 + G 150 + Golden 200 + H 1000 = 1630 files, provenance synthetic-generated (PIL solids+shapes, seed 17017; H seed 17018), Simulator library verified via Photos.sqlite COUNT (70 pre-existing + 1630 seeded = 1700). Build: macOS 26.5.1, Xcode 26.6 (17F113). Config frozen: `analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1`.
 - Run procedure: two code layers — (1) host harness decoding identical fixture bytes with frozen config constants verbatim + byte-derived luma heuristics (same formulas as `VisionAnalysisService.scores`) for stage timing/cache/selection-count behavior; (2) proof binary compiling the REAL shipped Domain sources verbatim running `SelectionEngine.select` on harness-derived analyses (deterministic: A-small repeat gives identical picked-set md5 `6f848be171ad4991720c3be1ada9c12f`). Vision face/VNFeaturePrint run on-device in the app (synthetic solids: 0 faces, scene `.unknown`); host uses deterministic byte-derived stand-ins for edges — honestly labeled, never on-device Vision proof. No `OSSignposter` spans in app code (grep: only OSLog); stage timing is the code-captured §7 equivalent.
 - Dataset H (1,000-scale SYNTHETIC; 3,000/5,000 NOT RUN — Simulator time-box, honestly labeled, optional future NOT a gate) records stability, memory, cancel, progress, and thermal behavior only; it is never hand-scored for taste — Row H carries code-computed SYNTHETIC structural proxies as behavior signal (final-size sanity), NOT quality claims.
@@ -76,7 +74,6 @@ Regression vs last build: n/a — this is the baseline; comparison per §6.2 sta
 Decision: Neutral (baseline)
 ```
 ### Row B — Duplicate Stress (40 synthetic: 10 groups × 4 identical)
-+
 ```text
 # Selection Evaluation — SYNTHETIC code-evidence (NOT human taste, NOT physical proof)
 Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113) / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1 / Dataset: B-dup — 40 synthetic (10 groups × 4 byte-identical copies, manifest fb7319f02e6d71815063e1cdc64b0b93c500f6773201062da4f630d103ba1949, simctl-seeded)
@@ -95,9 +92,7 @@ Notes: smaller than spec range (50–150) — honestly labeled 40-asset syntheti
 Regression vs last build: n/a — this is the baseline; comparison per §6.2 starts at the next change
 Decision: Neutral (baseline)
 ```
-+
 ### Row C — Moment Sequence (100 synthetic with trip gaps)
-+
 ```text
 # Selection Evaluation — SYNTHETIC code-evidence (NOT human taste, NOT physical proof)
 Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113) / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1 / Dataset: C-moment — 100 synthetic (60 A + 40 G, trip gaps 60 s in-block / 1200 s breaks, manifest 96f8189f551b3ee8bcb5ef43b288ea43898313bb7194b98d693aa7d6e1cff5dc, simctl-seeded)
@@ -115,8 +110,8 @@ Top failures: none observed (code run; MOMENT_MISSING / DIVERSITY_FAILURE candid
 Notes: within spec range (100–300); recall 0.202 is a proxy artifact of the 18-pick album against 89 proxy-MUST_KEEP, NOT a quality fail
 Regression vs last build: n/a — this is the baseline; comparison per §6.2 starts at the next change
 Decision: Neutral (baseline)
+```
 ### Row D — People and Groups (NOT RUN — no face fixtures; honestly-unmeasurable, optional future, NOT a gate)
-+
 ```text
 # Selection Evaluation — NOT RUN (honest gap, not a pass)
 Date: pending (NOT RUN — synthetic solids contain no faces; Vision face path needs real faces; inventing face fixtures would be dishonest) / Build: n/a / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1 / Dataset: D — People and Groups (100–200, face/group handling)
@@ -132,9 +127,7 @@ Notes: NOT RUN with reason (no face fixtures; optional future work, not a gate)
 Regression vs last build: n/a — this is the baseline; comparison per §6.2 starts at the next change
 Decision: Neutral (baseline)
 ```
-+
 ### Row E — Landscape and Context (60 synthetic, 0 faces)
-+
 ```text
 # Selection Evaluation — SYNTHETIC code-evidence (NOT human taste, NOT physical proof)
 Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113) / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1 / Dataset: E-context — 60 synthetic (same bytes as A relabeled byte-verified E_A_001 sha == A_001 sha bac1f98739b2…, 0 faces, manifest 579807d4107ff4ecbe54aa73885ad07c35e71ab550fc10ef7797b7055732904f, simctl-seeded)
@@ -175,7 +168,6 @@ Decision: Neutral (baseline)
 ```
 
 ### Row G — Real Trip (REDUCED SCALE 150 synthetic; full 500–1,500 NOT RUN)
-+
 ```text
 # Selection Evaluation — SYNTHETIC code-evidence (NOT human taste, NOT physical proof; REDUCED SCALE honestly labeled)
 Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113) / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1 / Dataset: G-reduced — 150 synthetic with trip gaps (manifest efd86379097f2aebfcb0bda3125d1e09ca5b2e007417de0056b69832c814ed00, simctl-seeded; spec is 500–1,500 — full scale NOT RUN, time-boxed baseline, optional future, NOT a gate)
@@ -194,11 +186,8 @@ Notes: REDUCED SCALE (150 of spec 500–1,500); main question per §2 (would I u
 Regression vs last build: n/a — this is the baseline; comparison per §6.2 starts at the next change
 Decision: Neutral (baseline)
 ```
-+
 ### Row H — Large Library Stress (1,000 SYNTHETIC; 3,000/5,000 NOT RUN — optional future, NOT a gate)
-+
 Row H is NOT hand-scored for taste (parent freeze + `manual-qa.md` §2: H checks system behavior, never hand-score). The SYNTHETIC proxy values below are code-computed structural facts about the 1,000-scale run (same proxy rules as all rows), recorded as behavior signal for final-size sanity — NOT quality claims.
-+
 ```text
 # Selection Evaluation — SYNTHETIC code-evidence (NOT human taste, NOT physical/device proof; stability + structural proxies)
 Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113) / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1 / Dataset: H-1000 — 1000 synthetic trip-gapped (manifest 5a165b85f61e9dbc64a14ec66af6ed1cf06b973b840a31be1a88bf7c3b62dbf8, simctl-seeded; 3,000/5,000 NOT RUN — Simulator time-box, optional future, NOT a gate)
@@ -216,10 +205,9 @@ Top failures: none observed in code runs (system-behavior tags only if observed;
 Notes: Simulator code-evidence only; device memory/thermal per scale need physical-device or extended-Simulator follow-ups (optional future work, not gates)
 Regression vs last build: n/a — this is the baseline; comparison per §6.2 starts at the next change
 Decision: Neutral (baseline)
+```
 ### Row Golden — Stable 200-shape (SYNTHETIC proxy labels; stable regression reference)
-+
 SYNTHETIC proxy labels replace §3.2 human annotation for this baseline only (per user directive 2026-09-16; physical annotation optional future, NOT a gate). The set stays stable across runs (manifest-pinned) and is never retuned to fit the algorithm.
-+
 ```text
 # Selection Evaluation — SYNTHETIC code-evidence (NOT human taste, NOT physical proof; stable set, SYNTHETIC proxy labels)
 Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113) / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1 / Dataset: Golden-shape — 200 synthetic (150 G + 50 A, manifest e61200e01993a990258a196869cf8352647ac746982311f1538bd1ed17c2826d, simctl-seeded; definition range 200–500)
@@ -240,13 +228,10 @@ Decision: Neutral (baseline)
 ```
 
 ## Constraint record
-+
 - No scoring, threshold, weight, config, version, or QA-policy change (frozen versions re-verified in code on this branch; this work touches owned tracker files only — `features/feat-017.md`, `features/mini-017a.md`, `features/mini-017b.md`, `features/mini-017c.md`, `feature_index.json` untouched by this mini, `progress.md` — never `apps/` or shared contracts).
 - SYNTHETIC code-evidence honestly labeled: every value carries SYNTHETIC code-evidence + rule text + build + config + fixture manifest; no SYNTHETIC number is presented as human taste or physical proof; Row D stays honestly NOT RUN with reason (no face fixtures); full-scale G + H 3k/5k + on-device cancel-ack/UI-alive/heat/RSS/thermal stay pending as optional future, NOT gates. Metrics 4/5 carry the edges=[] degraded-config caveat (proof runner fed no similarity edges; on-device app computes real Vision edges).
 - No H hand-scoring for taste: Row H carries SYNTHETIC structural proxies as behavior signal only (final-size sanity), NOT quality claims.
 - No missing required fields: every row carries Date / Build / Config / Dataset, Input / Final, all nine metric slots (SYNTHETIC values, or n/a with degenerate-denominator reasons in Row F, or NOT RUN in Row D), top failures with §7.2 tag vocabulary, Notes, Regression, and `Decision: Neutral (baseline)` — every value computed IN CODE, nothing invented.
 - No test targets or `*Test*.swift` files (repo policy).
-+
 ## Handoff
-+
 State `done` (SYNTHETIC nine-metric §8.2 rows filled 2026-09-16: every value computed IN CODE by synth-labels.py `409601a1…` against the ALREADY-MEASURED REAL-engine outputs of 06da3e8 — A m1 0.240/m2 1.000/m3 0.000/m4 0.000/m5 n-a/m6 1.000/m7 0.200/m8 3.17/m9 4; B m1 0.222/m2 1.000/m3 0.000/m4 0.625/m5 0.200/m6 1.000/m7 0.200/m8 3.50/m9 3; C m1 0.202/m2 1.000/m3 0.000/m4 0.000/m5 n-a/m6 1.000/m7 0.180/m8 3.94/m9 4; E same as A; F empty-album edge (m1 n-a, m2 n-a, m3 n-a, m4 n-a, m5 n-a, m6 0.000, m7 0.000, m8 n-a, m9 1); G-reduced m1 0.166/m2 1.000/m3 0.000/m4 0.000/m5 n-a/m6 1.000/m7 0.160/m8 5.04/m9 4; Golden m1 0.160/m2 1.000/m3 0.000/m4 0.000/m5 n-a/m6 1.000/m7 0.150/m8 5.23/m9 4; H-1000 m1 0.101/m2 1.000/m3 0.000/m4 0.000/m5 n-a/m6 1.000/m7 0.100/m8 8.94/m9 4; Row D honestly NOT RUN with reason; second in merge order; ledger input merged via `0967d2d`). Synthetic-proxy policy per user directive 2026-09-16: human taste judgments replaced by deterministic SYNTHETIC proxies for this baseline (LABEL/MOMENT/BEST-SHOT/REVIEWER rules v1, code hash recorded per row); physical numbers optional future work, not gates. Metrics 4/5 carry the edges=[] degraded-config caveat. Evidence: this file §§ Ledger input / Devices / Baseline runs / Constraint record; parent Handoff holds the method; `./init.sh` result recorded at commit; owned-files-only diff, no `apps/` path. Blockers: none for merge (Row D + full-scale G + H 3k/5k + device-only conditions are optional future, not gates). Nothing invented, never human. Parent owner's next integration action: review this file (reproducibility from recorded fields + proxy honesty), then consolidate.

@@ -36,9 +36,7 @@
 - §3.2 order (labels before runs): 1) review source set blind, 2) mark natural moments, 3) mark duplicate groups and the best frame in each, 4) label each photo, 5) run the app, 6) compare output. No runs are performed in this mini; the order is recorded here so `mini-017b` annotates before running.
 
 ### Label counts (SYNTHETIC proxy labels v1 — deterministic function of fixture bytes, NOT human annotation)
-+
 SYNTHETIC LABEL RULE v1 (code: `/tmp/f017-evidence/synth-labels.py` sha256 `409601a182b6121d04eaa1a59af2c546f9f1738d89271389b67cac5aacb0745c`; q = qualityScore in `out-<shape>.json.analyses.json`, itself computed from fixture bytes via the frozen luma formulas — sharpness=lv/(lv+0.01), exposure=1-under-over, q=0.6*sharp+0.4*expo, same as `VisionAnalysisService.scores`): REJECT if shape == F (defect set by construction) or q < 0.5 (frozen `lowQualityThreshold`; proxy cutoff, not judgment); MUST_KEEP if q >= 0.8 (bright sharp well-framed shapes); ACCEPTABLE else (0.5 <= q < 0.8, medium). SYNTHETIC MOMENT RULE v1 (sorted filename index i → moment i//19; reproduces reported moment counts exactly: 4/3/6/4/2/8/11/53). SYNTHETIC BEST-SHOT RULE v1 (per sha256 byte-identical group: max sharpness, tie → smallest filename). SYNTHETIC REVIEWER RULE v1 (removals = selected REJECT; add-backs = non-selected MUST_KEEP; editRate = (removals+add-backs)/final, n/a if final==0; subjective proxy 5 minus 1 each for recall<0.95, coverage<0.90, goodRate<0.90, badPick>0.10, leakage>0.05, floor 1; final==0 → 1). CAVEAT: proof runner fed similarityEdges=[] (host has no VNFeaturePrint) — metrics 4/5 measure engine-without-edges, a DEGRADED configuration, NOT on-device duplicate performance. Human annotation stays `pending` (no human ground truth exists; nothing invented, never human).
-+
 | Shape | MUST_KEEP | ACCEPTABLE | REJECT | Total | Basis |
 |---|---|---|---|---|---|
 | A-small (60, manifest `33bf85cf…`) | 50 | 9 | 1 | 60 | SYNTHETIC rule v1 on fixture bytes (q>=0.8: 50; 0.5–0.8: 9; q<0.5: 1) |
@@ -49,24 +47,18 @@ SYNTHETIC LABEL RULE v1 (code: `/tmp/f017-evidence/synth-labels.py` sha256 `4096
 | G-reduced (150, manifest `efd86379…`) | 145 | 5 | 0 | 150 | SYNTHETIC rule v1; 8 structural moments (REDUCED SCALE honestly labeled) |
 | Golden-shape (200, manifest `e61200e0…`) | 187 | 12 | 1 | 200 | SYNTHETIC rule v1; 11 structural moments; 5 A-part + 25 G-part proxy-MUST_KEEP picked |
 | H-1000 (1000, manifest `5a165b85…`) | 994 | 5 | 1 | 1000 | SYNTHETIC rule v1; 53 structural moments |
-+
 ### Note coverage (SYNTHETIC proxies)
-+
 | Note | Coverage |
 |---|---|
 | Moment ID | SYNTHETIC: every file gets moment i//19 (counts: A 4, B 3, C 6, E 4, F 2, G-reduced 8, Golden-shape 11, H-1000 53 — each reproduces the reported harness moment count exactly) |
 | Duplicate cluster ID + best-in-cluster flag | SYNTHETIC: sha256 byte-identical groups — B 10 quad-groups with expected-best per group; all other shapes 0 multi-file groups (all distinct sha256) |
 | Group / landscape / portrait / context flag | n/a — synthetic solids carry no people/scene semantics (0 faces, scene `.unknown`); honestly unmeasurable, not proxied |
 | Known defect note | SYNTHETIC: F-shape 20/20 flagged defect-by-construction; other shapes flagged by q<0.5 (A 1, C 1, E 1, Golden 1, H 1) |
-+
 Human annotation per §3.2 stays `pending` (no human ground truth exists in the repo; nothing invented). `mini-017b` measures runs against the SYNTHETIC proxy labels above.
 
 ## Frozen ledger (parent freeze; SYNTHETIC nine-metric values 2026-09-16)
-+
 Fixture versions recorded (verified in code at `b1bd651`, re-verified on this branch — unchanged): `analysisVersion 1` (`AppConfiguration.default.analysis.analysisVersion`; `PhotoAnalysis.currentVersion`), `engineVersion 2` (`FinalAlbumBuilder`), `configVersion 1` (`AppConfiguration.default.configVersion`), cache `schemaVersion 1` (`CacheConfiguration`).
-+
 Nine metrics with SYNTHETIC values computed IN CODE (2026-09-16, `synth-labels.py` `409601a1…`, `synth-metrics.json` `bb2dbdf9…`, against the ALREADY-MEASURED REAL-engine outputs of 06da3e8 — picked-*.json IDs + out-*.json.analyses.json q values; NO app re-run; build macOS 26.5.1 / Xcode 26.6; Simulator iPhone 17 Pro iOS 26.5; 1630 fixtures simctl-seeded). Every value labeled SYNTHETIC — proxy-label agreement, NEVER human taste. Per-shape detail in `mini-017b` rows.
-+
 | # | Metric | Denominator | Value (SYNTHETIC code-evidence) |
 |---|---|---|---|
 | 1 | Must-Keep Recall | total MUST_KEEP | SYNTHETIC: A 12/50 = 0.240; B 8/36 = 0.222; C 18/89 = 0.202; E 12/50 = 0.240; F n/a (0 proxy-MUST_KEEP — degenerate, NOT a pass); G-reduced 24/145 = 0.166; Golden 30/187 = 0.160; H-1000 100/994 = 0.101. Low recalls are proxy artifacts (small finals vs many q>=0.8 proxy-MUST_KEEP), NOT quality fails. |
@@ -78,13 +70,9 @@ Nine metrics with SYNTHETIC values computed IN CODE (2026-09-16, `synth-labels.p
 | 7 | Compression Ratio | input count (track only, no target) | SYNTHETIC MEASURED (REAL engine finals): A-small 60→12 (0.200); B-dup 40→8 (0.200); C-moment 100→18 (0.180); E-context 60→12 (0.200); F-bad 20→0 (0.000); G-reduced 150→24 (0.160, reduced scale honestly labeled); Golden-shape 200→30 (0.150); H-1000 1000→100 (0.100). |
 | 8 | Human Edit Rate | final album size (track only; removals vs add-backs split) | SYNTHETIC proxy (removals = selected REJECT = 0 everywhere; add-backs = non-selected proxy-MUST_KEEP): A 3.17 (0+38/12); B 3.50 (0+28/8); C 3.94 (0+71/18); E 3.17; F n/a (no album); G-reduced 5.04 (0+121/24); Golden 5.23 (0+157/30); H-1000 8.94 (0+894/100). Proxy-label agreement, NOT real review edits. |
 | 9 | Subjective score 1–5 | reviewer judgment (4+ on unseen trips) | SYNTHETIC proxy (rule v1): A/C/E/G/Golden/H 4; B 3 (recall + leakage penalties); F 1 (empty album). Proxy-label agreement, NEVER human taste. |
-+
 Formulas and MVP targets stay owned by `manual-qa.md` §4 at `dd7193a`; this ledger freezes denominators only and redefines nothing. Evidence policy per 2026-09-16 user directive: deterministic SYNTHETIC proxies replace human taste judgments for this baseline (physical numbers optional future work, not gates). Dataset H SYNTHETIC proxies are structural behavior signal, never hand-scored taste.
-+
 ## §8.2 rows for `mini-017b` (all FILLED with SYNTHETIC values 2026-09-16; `mini-017b` owns the per-row detail)
-+
 Template per row (`manual-qa.md` §8.2): Date / Build / Config / Dataset; Input / Final / Compression; MUST_KEEP total / selected / recall; Selected MUST_KEEP / ACCEPTABLE / REJECT; Good rate / Bad-pick rate; Clusters judged / leakage / best-shot accuracy; Key moments total / covered / coverage; User removals / add-backs; Top failures; Notes; Regression vs last build; Decision.
-+
 | Dataset | Row status |
 |---|---|
 | A — Basic Mixed (50–100, smoke) | FILLED — SYNTHETIC (m1 0.240, m2 1.000, m3 0.000, m4 0.000, m5 n/a, m6 1.000, m7 0.200, m8 3.17, m9 4); Decision Neutral |
@@ -96,7 +84,6 @@ Template per row (`manual-qa.md` §8.2): Date / Build / Config / Dataset; Input 
 | G — Real Trip (500–1,500, main qualitative check) | FILLED — SYNTHETIC G-reduced 150 (m1 0.166, m2 1.000, m3 0.000, m4 0.000, m5 n/a, m6 1.000, m7 0.160, m8 5.04, m9 4; full 500–1,500 optional future, NOT a gate); Decision Neutral |
 | H — Large Library Stress (1,000 measured; 3,000/5,000 optional future NOT a gate) | FILLED — SYNTHETIC structural proxies (m1 0.101, m2 1.000, m3 0.000, m4 0.000, m5 n/a, m6 1.000, m7 0.100, m8 8.94, m9 4; behavior signal, never taste); Decision Neutral |
 | Golden — Stable 200-shape (SYNTHETIC proxy labels; regression reference) | FILLED — SYNTHETIC (m1 0.160, m2 1.000, m3 0.000, m4 0.000, m5 n/a, m6 1.000, m7 0.150, m8 5.23, m9 4; stable set, never retuned); Decision Neutral |
-+
 Every row carries `Decision: Neutral (baseline)`. No run values are invented; every value computed IN CODE, labeled SYNTHETIC, never human.
 
 ## Acceptance and evidence
@@ -114,7 +101,5 @@ Every row carries `Decision: Neutral (baseline)`. No run values are invented; ev
 3. Publish §8.2 rows (one per dataset) for `mini-017b` to fill. (done — all rows FILLED with SYNTHETIC values; Row D NOT RUN with reason)
 
 ## Handoff
-+
 State `done` (ledger reviewable; denominators match the parent freeze; all nine metrics carry SYNTHETIC code-evidence values per shape — LABEL/MOMENT/BEST-SHOT/REVIEWER rules v1, synth-labels.py `409601a1…`, synth-metrics.json `bb2dbdf9…`, computed against the ALREADY-MEASURED REAL-engine outputs of 06da3e8 with NO app re-run). Synthetic-proxy policy per user directive 2026-09-16: human taste judgments replaced by deterministic SYNTHETIC proxies for this baseline (physical numbers optional future, not gates). Evidence: this file §§ Golden label audit / Frozen ledger; parent Handoff holds the full method + per-shape values; `./init.sh` result recorded at commit; `git diff --name-only` shows only owned tracker files, no `apps/` path.
-+
 Blockers: none for merge (gate needs no runs). Follow-up (optional, not gates): human annotation stays `pending`; Row D + full-scale G + H 3k/5k + device-only conditions are optional future; `mini-017b` rows carry the per-row SYNTHETIC detail.
