@@ -21,6 +21,7 @@ Related docs:
 - `performance.md` — budgets, concurrency, resume
 - `privacy.md` — privacy rules, retention, redaction
 - `manual-qa.md` — QA procedure
+- `curation-runtime-stack.md` — current concrete post-MVP Vision/Core ML/Foundation Models choices
 
 ---
 
@@ -49,7 +50,7 @@ Only this section uses requirement keywords. All other sections use plain verbs.
 | Vision | Feature prints, face rects, face quality, optional landmarks/aesthetics | Required |
 | PhotosUI | Limited-library manager, optional picker for small subsets | As needed |
 | CoreGraphics / ImageIO | Orientation, light decode work | Supporting |
-| Core ML | Licensed specialist models after measured post-MVP quality gates | Post-MVP; see `curation-intelligence.md` |
+| Core ML | Licensed representation/specialist models after measured post-MVP quality gates | Post-MVP; concrete choices in `curation-runtime-stack.md` |
 | CloudKit | App cloud storage | Not for MVP |
 | AVFoundation | Video work | Not for MVP (photo-only) |
 
@@ -247,7 +248,7 @@ Retry only transient network failures with a small retry around iCloud loads. No
 
 ## 8. Vision pipeline
 
-Vision runs on device on the analysis image. The MVP baseline remains native-first. Post-MVP, licensed Core ML specialist models may be added only through the measured tiered architecture in [curation-intelligence.md](curation-intelligence.md); a complete native-only fallback remains required.
+Vision runs on device on the analysis image. The MVP baseline remains native-first. Post-MVP, Core ML and newer Vision requests follow the measured tiered architecture in [curation-intelligence.md](curation-intelligence.md); the current exact request/model choices and routing live in [curation-runtime-stack.md](curation-runtime-stack.md). A complete native-only fallback remains required.
 
 | Request | Output | Use |
 |---|---|---|
@@ -272,7 +273,7 @@ Per-asset MVP flow:
 CGImage + orientation -> feature print + face rects + face quality (+ optional landmarks/aesthetics) + light heuristics (blur, exposure, contrast) -> PhotoAnalysis (per 06) -> persist -> release image
 ```
 
-Post-MVP intelligence must be staged rather than all-models-all-assets. Universal, contextual, candidate, difficult-case, semantic-jury, and verification tiers are defined in [curation-intelligence.md](curation-intelligence.md).
+Post-MVP intelligence must be staged rather than all-models-all-assets. Universal, contextual, candidate, difficult-case, semantic-jury, and verification tiers are defined in [curation-intelligence.md](curation-intelligence.md); current routing and selected tools live in [curation-runtime-stack.md](curation-runtime-stack.md).
 
 Rules:
 
@@ -411,5 +412,6 @@ Manual scenarios (detail in 10): 100 / 1,000 / 2,000 local photos; Optimize Stor
 - Budgets, concurrency numbers, resume: see `performance.md`.
 - Privacy, retention, redaction: see `privacy.md`.
 - UX copy: see `ux-flows.md`. QA: see `manual-qa.md`.
+- Current post-MVP intelligence APIs/models/routing: see `curation-runtime-stack.md`.
 
 Check Apple docs each release: PhotoKit auth, `PHCachingImageManager`, `PHImageRequestOptions`, change observer, album requests, Vision face and feature-print requests.
