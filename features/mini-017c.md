@@ -61,7 +61,7 @@ Frozen §1 conditions note: assets local, normal thermals, Low Power off, normal
 - Frozen fixture versions (verified in code on this branch, unchanged from the parent freeze): `analysisVersion 1` (`AppConfiguration.default.analysis.analysisVersion`; `PhotoAnalysis.currentVersion`), `engineVersion 2` (`FinalAlbumBuilder`), `configVersion 1` (`AppConfiguration.default.configVersion`), cache `schemaVersion 1` (`CacheConfiguration`).
 - Run procedure: `manual-qa.md` §5.4 perf smoke (100 / 500 / 1,000 / 5,000 inputs; pass signs: run starts, progress moves, UI stays alive, heat sane, no crash, cancel works, result complete) plus §7.3 release-validation subset (1,000-photo run without critical fail; cancel run) with `performance.md` §7 capture and `OSSignposter` stage spans (job, metadata, load, Vision, clustering, ranking, persistence batches).
 - Simulator: never §7 device proof (parent freeze: Simulator is UI work only). No Simulator numbers are recorded in this file; the `./init.sh` Simulator build in Handoff is build verification only, not a §7 measurement.
-- Merge order: this mini merges last, after `mini-017b` (PR #28 open at record time).
+- Merge order: this mini merges last, after `mini-017b` (PR #28 merged via bdfa595).
 
 ## Budget runs (§7 rows; all run-dependent values `pending`)
 
@@ -109,4 +109,4 @@ Regression vs last build: n/a — this is the baseline
 
 ## Handoff
 
-State `blocked` (two §7 row blocks templated in §§ Budget runs with run-dependent values honestly `pending`; merges last). Commit: branch `tungxuan1656/mini-017c-budget` (hash in PR / worker_done). Evidence: this file §§ Frozen budgets / Devices / Budget runs / Constraint record; `./init.sh` result recorded below; `git diff --name-only` = `features/mini-017c.md` only, no `apps/` path. Blockers: user-run physical measurement required — no physical-device operations permitted (user constraint 2026-09-16); `mini-017b` still unmerged (PR #28 open; this mini merges last). Parent owner's next integration action: review this file (conditions complete, facts-only deltas, no tuning) after `mini-017b` merges; merge last; then run parent Task 3.
+State `blocked` (two §7 row blocks templated in §§ Budget runs with run-dependent values honestly `pending`; merges last). Commit: branch `tungxuan1656/mini-017c-budget` (hash in PR / worker_done). Evidence: this file §§ Frozen budgets / Devices / Budget runs / Constraint record; `./init.sh` result recorded below; `git diff --name-only` = `features/mini-017c.md` only, no `apps/` path. Blockers: user-run physical measurement required — no physical-device operations permitted (user constraint 2026-09-16); `mini-017b` merged via bdfa595, this mini merged last. Parent owner's next integration action: review this file (conditions complete, facts-only deltas, no tuning); then run parent Task 3.
