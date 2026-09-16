@@ -540,7 +540,9 @@ If an iOS 27 path can invoke any non-local model, it needs a separate explicit p
 
 ## 16. Implementation order
 
-Implementation is tracked as GitHub issues until the current active repository feature is complete. Do not create a second active feature.
+Implementation is tracked as GitHub issues until the current active repository feature is complete.
+
+Until its governance task merges, do not create a second active feature. Read the [parallel delivery protocol](../exec-plans/curation-intelligence-v2-parallel-delivery.md) before that task changes the rule.
 
 The program is **evidence/dependency-driven**, not a requirement to ship every named technology.
 

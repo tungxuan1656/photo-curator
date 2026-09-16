@@ -20,6 +20,7 @@ Start at `AGENTS.md`. Then read one owner doc below. Then code.
 | Run QA checks by hand | [manual-qa.md](ship-gates/manual-qa.md) |
 | Add or change an event log | [analytics.md](ship-gates/analytics.md) |
 | Change build order or what is later | [roadmap.md](exec-plans/roadmap.md) |
+| Coordinate parallel Curation Intelligence V2 delivery | [curation-intelligence-v2-parallel-delivery.md](exec-plans/curation-intelligence-v2-parallel-delivery.md) |
 | Ask why a past choice was made | [decision-log.md](design-docs/decision-log.md) |
 
 Rule: read the owner doc only. Links inside point to other docs. Do not copy text between docs.
@@ -62,6 +63,7 @@ Older docs use bare numbers 01–13. Use filenames for new refs; the table below
 | [manual-qa.md](ship-gates/manual-qa.md) | Hand QA steps | You test a build |
 | [analytics.md](ship-gates/analytics.md) | Event names only | You log events |
 | [roadmap.md](exec-plans/roadmap.md) | Build order | You plan next work |
+| [curation-intelligence-v2-parallel-delivery.md](exec-plans/curation-intelligence-v2-parallel-delivery.md) | V2 delivery coordination, mini-feature admission, and integration gates | You coordinate V2 work across people or branches |
 | [decision-log.md](design-docs/decision-log.md) | Past reasons, open items | You need why or what is open |
 
 ## Open decisions
