@@ -116,17 +116,17 @@ mini on dispatch; the parent retains the frozen schema sections.
 
 ### Task 2: Children collect (merge in order 018a → 018b)
 
-- [ ] `mini-018a`: two-phase adapter reviewable (merges only after gate + review).
-- [ ] `mini-018b`: cost + QoS evidence reviewable (starts after 018a merges).
-- [ ] Each merge: independent review + `./init.sh` on the parent; weights untouched.
+- [x] `mini-018a`: two-phase adapter reviewable (merged via `5b731bb`, PR #34, independent APPROVE).
+- [x] `mini-018b`: cost + QoS evidence reviewable (merged via `fcd4641`, PR #35, independent APPROVE after findings fix).
+- [x] Each merge: independent review + `./init.sh` on the parent; weights untouched.
 
 ### Task 3: Integrate and gate feat-019 (parent, after all merges)
 
-- [ ] Wire adapter phases into `performAll` + `make`; bump `analysisVersion` 1 → 2.
-- [ ] Run the Verify procedure (A-shape + Golden-shape proof binary, cold/warm cost,
+- [x] Wire adapter phases into `performAll` + `make`; bump `analysisVersion` 1 → 2.
+- [x] Run the Verify procedure (A-shape + Golden-shape proof binary, cold/warm cost,
   QoS path, fallback byte-compare) and record F-017-E/F movement.
-- [ ] Record the feat-019 admission gate in `features/feat-018.md` handoff + `progress.md`.
-- [ ] Run `./init.sh` at parent close.
+- [x] Record the feat-019 admission gate in `features/feat-018.md` handoff + `progress.md`.
+- [x] Run `./init.sh` at parent close.
 
 ## Rollback
 

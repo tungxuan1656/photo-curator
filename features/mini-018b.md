@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `active` (implemented 2026-09-16 on `tungxuan1656/mini-018b-cost`; 018a merged as `5b731bb`, phase-1 shapes stable; evidence reviewable, awaiting gate review + merge)
+- Status: `done` (merged via `fcd4641`, PR #35, independent APPROVE after findings fix; judged by parent Task 3)
 - Parent integration feature: `feat-018`
 - Reserved ID: `mini-018b`
 
@@ -71,11 +71,11 @@
 
 ## Handoff
 
-State `active` (implemented 2026-09-16; 018a merged `5b731bb`, phase-1 shapes
-fixed per §1 of the evidence file; cost table + QoS cite reviewable in
-`docs/evidence/universal-request-cost.md`; `./init.sh` PASS — format + `swiftlint
---strict` + Simulator build SUCCEEDED + SKIP [test] by policy).
-Blockers: needs integration-owner + independent review, then merge.
-Next: merge into `tungxuan1656/feat-018-integration` after gate + review (squash; never
-to main). Verification: `./init.sh` PASS (2026-09-16); `git diff --name-only`
-shows only the two owned files (verified before commit).
+State `done` (merged via `fcd4641`, PR #35, independent APPROVE after findings fix;
+judged by parent Task 3: host-harness pipeline delta +43.6% cold / +45.5% warm vs the
+v1-shape request set — exceeds the >~20% flag ON THIS HOST; no budget constant
+proposed or changed; flag judged at parent close against the warm-cache-hit path).
+Blockers: none.
+Next: none (child complete); parent Task 3 done; coordinator opens the parent PR to
+main (squash; separate merge task). Verification: `./init.sh` PASS (2026-09-16); `git
+diff --name-only` shows only the two owned files (verified before commit).

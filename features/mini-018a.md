@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `active` (dispatched 2026-09-16; implementation complete, awaiting gate review + merge)
+- Status: `done` (merged via `5b731bb`, PR #34, independent APPROVE; wired by parent Task 3)
 - Parent integration feature: `feat-018`
 - Reserved ID: `mini-018a`
 
@@ -74,9 +74,9 @@
 
 ## Handoff
 
-State `active` (implemented 2026-09-16; two-phase adapter reviewable, gate self-check
-passed: mapping matches frozen schema, bounded outputs, explicit unavailable values,
-no shared-contract/sibling diff, `./init.sh` PASS).
-Blockers: none (needs integration-owner + independent review, then merge).
-Next: merge into `tungxuan1656/feat-018-integration` after gate + review (squash; never
-to main); then dispatch `mini-018b`.
+State `done` (merged via `5b731bb`, PR #34, independent APPROVE; wired by parent Task 3
+into `performAll` + `make` with `analysisVersion` 2; mapping proven live by the Task 3
+proof binary — aes 60/60 + 200/200, tags 180 + 600, prints 60/60 + 200/200).
+Blockers: none.
+Next: none (child complete); parent Task 3 done; coordinator opens the parent PR to
+main (squash; separate merge task).

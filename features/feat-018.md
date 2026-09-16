@@ -120,13 +120,16 @@ cards live in each mini file and `docs/plans/feat-018.md`.
 
 ## Acceptance
 
-- [ ] Aesthetics, classification, FeaturePrint policy flag, and allowed PhotoKit metadata
-  are represented with availability and provenance per the frozen schema above.
-- [ ] Persisted per-photo fact changes bump `analysisVersion` 1 → 2 with the no-migration
-  requeue rule; cache safety preserved.
-- [ ] A-shape + Golden-shape Simulator code-evidence moves the feat-017 SYNTHETIC baseline
-  for F-017-E/F with no >~20% pipeline regression (procedure in Verify).
-- [ ] Fallback is deterministic per fact (nil/empty/false mapping proven by double-run
+- [x] Aesthetics, classification, FeaturePrint policy flag, and allowed PhotoKit metadata
+  are represented with availability and provenance per the frozen schema above
+  (wired in Task 3: `PhotoAnalysis.featurePrintAvailable` persisted, `aestheticScore`
+  populated via `make`, `tags` populated, allowlist unchanged in `map`).
+- [x] Persisted per-photo fact changes bump `analysisVersion` 1 → 2 with the no-migration
+  requeue rule; cache safety preserved (cache proof `REQUEUE-RULE: PASS`, below).
+- [x] A-shape + Golden-shape Simulator code-evidence moves the feat-017 SYNTHETIC baseline
+  for F-017-E/F with no >~20% pipeline regression (procedure in Verify; results in
+  Handoff — movement is rank-order only, see the honest reading).
+- [x] Fallback is deterministic per fact (nil/empty/false mapping proven by double-run
   byte-compare; no fabricated values).
 
 ## Relevant docs
@@ -165,12 +168,74 @@ cards live in each mini file and `docs/plans/feat-018.md`.
 
 ## Handoff
 
-- State: active (sole integration; contract commit only, no `apps/` change)
+- State: active (sole integration; Task 3 wired + verified, children merged; parent PR to main NOT yet opened)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-16 —
   `feat-017` reads `done` (squash #33 at `a877fa0`), `feat-018` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
-  no other `active` feature. (Task premise expected feat-017 `active`; the #33 SYNTHETIC
-  close flipped it to `done`, which satisfies the rule more strongly.)
-- Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] by policy); `git diff --name-only` owned-files-only.
+  no other `active` feature.
+- Task 3 wiring (this commit, the only shared-contract change): `PhotoAnalysis` gains
+  persisted `featurePrintAvailable: Bool` (availability only; blob never persisted);
+  `make` gains `aestheticScore`/`tags`/`featurePrintAvailable` params (defaults
+  nil/[]/false) wiring the frozen facts; `VisionAnalysisService.performAll` calls
+  `UniversalFactAdapter.collect` (phase 1, same 512 px `.up` input, independent degrade,
+  cancel maps to `.cancelled`) then `map` (phase 2, pure) with the existing
+  first-print-or-nil signal; `AppConfiguration.default.analysis.analysisVersion` 1 → 2.
+  No scorer-math/weight/threshold change (`QualityScorer.score` already folds
+  `aestheticScore` into the composition mean over available signals only —
+  verified by reading `QualityScorer.swift:49-59`); `tags` gain no scorer consumer.
+  `FileAnalysisCache` version gate + `BatchPipeline.completedIDs` checkpoint-ignore
+  already implement the frozen requeue rule — no new migration code.
+- Task 3 Verify (Simulator code-evidence, host-harness macOS Vision backend; never
+  manual QA, never a physical device; proof sources kept at
+  `/tmp/f017-evidence/v2proof-main.swift` + `v2time.swift` + `v1time.swift` +
+  `cacheproof.swift`, outside the repo, hosts only, never shipped):
+  - Proof binary compiles the REAL shipped sources verbatim (Domain Models/Selection/
+    Scoring + `AppConfiguration` + `ServiceProtocols` + `ImageSimilarityArtifact` +
+    `UniversalFactAdapter` + `VisionAnalysisService`; main `bc409f47…`, binary
+    `65de92e2…`) and runs the REAL `analyze` (incl. wired adapter) → `make` (v2) →
+    `select` on A-shape (60, manifest `33bf85cf…`) + Golden-shape (200, manifest
+    `e61200e0…`) fixture bytes twice. Facts observed live: aes 60/60 + 200/200,
+    tags 180 + 600 (3/asset), prints 60/60 + 200/200. Determinism byte-compare:
+    A md5 `01975608…ccc3` == `01975608…ccc3`; Golden `9f7792c7…3445` ==
+    `9f7792c7…3445`. PASS.
+  - F-017-E/F movement (SYNTHETIC proxy labels v1, same rule as feat-017 — q from
+    fixture bytes, thresholds 0.5/0.8; HONEST READING: proxy-class totals are
+    unchanged — A m1 0.240/m2 1.000/m3 0.000/m6 1.000/m7 0.200/m8 3.17 and Golden m1
+    0.160/m2 1.000/m3 0.000/m6 1.000/m7 0.150/m8 5.23 identical v1→v2 — because
+    every swapped pick stays inside MUST_KEEP; the v2 facts RE-RANK within the
+    proxy top class: A 3/12 picks differ (`A_011/A_019/A_055` → `A_009/A_029/A_038`,
+    all q 0.85–0.91 MUST_KEEP), Golden 12/30 differ with 5 A-part + 25 G-part
+    composition preserved. The aesthetic signal flows end-to-end (nil→populated,
+    composition mean now divides by 2 signals instead of 1) without breaking any
+    proxy metric — integration signal-live, NOT a quality-gain claim; SYNTHETIC
+    proxies cannot judge taste, and Golden human annotation stays pending).
+  - Cold/warm cost (same host, same A-shape bytes @ 512 px; v2 binary `b009e249…`
+    via REAL `analyze` vs v1-shape binary `74e6a748…` running the face/print-only
+    request set + formula-identical luma probe): v2 cold 26.83 ms/asset, warm 21.75;
+    v1-shape cold 18.68, warm 14.95. Pipeline delta = +8.15 ms/asset cold (+43.6%),
+    +6.80 warm (+45.5%) — EXCEEDS the performance.md >~20% regression flag ON THIS
+    HOST. Honest disposition: host-harness per-asset Vision inference cost is not
+    the shipped pipeline budget (no batching/lanes/cache-hits, macOS backend not
+    the device backend, H-1000 baseline ran zero Vision inference); the flag is
+    judged at parent close against the warm-cache-hit path + lane parallelism, and
+    NO budget constant is proposed or changed here. Recorded, not hidden.
+  - QoS: confirmed unchanged — no `Task.detached`, no `TaskPriority`, no priority
+    argument in `UniversalFactAdapter.swift` / `VisionAnalysisService.swift` lane
+    bodies; new requests run inside the existing `BatchPipeline.drain` structured
+    lanes and inherit lane priority (mini-018b §5 cites hold; wiring adds `perform`
+    calls inside the same synchronous lane body).
+  - Cache requeue proof (REAL `FileStore` + `FileAnalysisCache` +
+    `SessionCheckpointStore` sources; main `58a68276…`, binary `1334bd3a…`):
+    `currentVersion=2 v1rowMiss=true v2rowHit=true v1ckptIgnored=true
+    v2ckptKept=true` → `REQUEUE-RULE: PASS` (v1 rows requeue, v2 rows hit).
+- Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0
+  violations, Simulator build SUCCEEDED, SKIP [test] by policy).
+- feat-019 admission gate: may start only after the parent PR to main merges AND
+  its contract freezes contextual routing (tier-B subset policy), fallback bounds,
+  and the F-017 failure target with a measured remedy pointer. feat-019 owns the
+  same four shared-contract files after this branch lands; it must not reinterpret
+  the version-2 frozen schema (aesthetic map, top-3 tags, print-availability flag,
+  allowlist) — extensions bump `analysisVersion` 2 → 3 with the same requeue rule.
 - Blockers: none.
-- Next: dispatch `mini-018a`; merge 018a → 018b; then parent Task 3 (wire + version bump + Verify).
+- Next: coordinator opens the parent PR to main (squash; separate merge task);
+  feat-019 selection remains user-gated; feat-019 must not start here.

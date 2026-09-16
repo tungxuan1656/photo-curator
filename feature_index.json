@@ -373,7 +373,7 @@
       "merge_gate": "Mapping matches the frozen schema with bounded outputs and explicit unavailable values; no shared-contract/sibling diff; ./init.sh passes",
       "parent": "feat-018",
       "seam": "Universal aesthetics and classification observation collection plus fact mapping (new adapter only, no wiring)",
-      "status": "todo",
+      "status": "done",
       "title": "Universal aesthetics and classification adapter"
     },
     {
@@ -384,7 +384,7 @@
       "merge_gate": "Cold/warm per-request cost plus QoS path recorded; no apps diff; ./init.sh passes",
       "parent": "feat-018",
       "seam": "Universal-request cost benchmark (evidence only)",
-      "status": "todo",
+      "status": "done",
       "title": "Universal-request cost benchmark"
     },
     {
