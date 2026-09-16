@@ -6,6 +6,7 @@
 It never owns current operational values — those live in owner docs (linked per entry).
 Current values: selection policy → `selection-rules.md`, mechanics → `selection-engine.md`,
 arch → `ios-architecture.md`, shapes → `data-model.md`, APIs → `apple-frameworks.md`,
+current AI/model implementation choices → `curation-runtime-stack.md`,
 budgets → `performance.md`, privacy → `privacy.md`,
 QA → `manual-qa.md`, UX → `ux-flows.md`, product → `product.md`,
 metrics → `analytics.md`, roadmap → `roadmap.md`.
@@ -229,10 +230,10 @@ Reconsider when: a stage needs a name the contract cannot express.
 
 **DEC-029 — Curation Intelligence V2 (Accepted, 2026-09-16).**
 Owner: 03, 04, 07. Affected: 02, 06, 08, 09, 10, 12.
-Decision: after the functional MVP baseline, improve selection quality through a tiered on-device intelligence stack. iOS 26 remains the minimum and must retain a complete native fallback. Native Vision signals come first; licensed Core ML specialist models may be added when targeted QA proves benefit. iOS 27 Foundation Models image input may act as an optional semantic jury for small ambiguous candidate sets, never as a core dependency. A custom Core ML curation ranker is gated on Golden/real-trip labels and held-out improvement.
+Decision: after the functional MVP baseline, improve selection quality through a tiered on-device intelligence stack. iOS 26 remains the minimum and must retain a complete native fallback. Native Vision signals come first where sufficient; replaceable Core ML representation/specialist models may be added when targeted QA proves benefit. Exact model/API choices are owned by `curation-runtime-stack.md`, not by this architectural decision. iOS 27 Foundation Models image input may act as an optional semantic jury for small ambiguous candidate sets, never as a core dependency. A custom Core ML curation ranker is gated on Golden/real-trip labels and held-out improvement.
 Rationale: the current product goal requires best-shot, meaningful-variation, moment, and album-level reasoning that cannot be represented safely by one quality scalar. A staged specialist architecture can improve those decisions while preserving privacy, fallback, and debuggability.
 Risk: app/model size, battery/thermal cost, licensing mistakes, semantic-model nondeterminism, and regressions hidden by extra complexity.
-Trigger/reconsider when: a layer fails Golden/real-trip quality gates, violates privacy/license constraints, or costs more latency/memory/thermal budget than its measured curation gain. Architecture and gates: [curation-intelligence.md](curation-intelligence.md).
+Trigger/reconsider when: a layer fails Golden/real-trip quality gates, violates privacy/license constraints, or costs more latency/memory/thermal budget than its measured curation gain. Architecture and gates: [curation-intelligence.md](curation-intelligence.md). Current concrete stack: [curation-runtime-stack.md](curation-runtime-stack.md).
 
 ---
 
