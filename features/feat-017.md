@@ -76,6 +76,8 @@ independent reviews: `mini-017a` via `0967d2d` (PR #27, APPROVED), `mini-017b` v
 `blocked` with recorded pending-physical reasons (row values honestly `pending`).
 The full 12-field admission card lives in each mini file.
 
+## Acceptance
+
 - [ ] Nine manual-QA metrics have a baseline, denominator, device, and artifact link. (pending-physical: denominators/devices/links exist but run values are pending user-run physical measurement — Golden annotation 200–500 assets per `manual-qa.md` §3.2 plus physical A-H/Golden/Real Trip plus 1k-budget rows)
 - [x] A-H, Golden, and Real Trip failures are classified with candidate V2 remedies (F-017-B/C/D/E/F/G/GLD/H in `curation-intelligence.md` §14).
 - [x] Dataset H is used only for stability and performance claims.
