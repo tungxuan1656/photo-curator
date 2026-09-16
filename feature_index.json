@@ -357,13 +357,35 @@
     },
     {
       "depends_on": ["feat-017"],
-      "gate": "Cheap universal image facts are persisted with analysis-version policy, pass A plus Golden QA, and meet the measured request budget.",
+      "gate": "Cheap universal image facts are persisted with analysis-version policy, pass A plus Golden code-evidence, and meet the measured request budget.",
       "id": "feat-018",
       "kind": "integration",
       "mini_candidates": ["mini-018a", "mini-018b"],
       "owns": ["Domain/Models/PhotoAnalysis.swift", "Services/Analysis/VisionAnalysisService.swift", "Services/Photos/BatchPipeline.swift", "Infrastructure/FileAnalysisCache.swift", "features/feat-018.md"],
-      "status": "todo",
+      "status": "active",
       "title": "Universal quality signals"
+    },
+    {
+      "depends_on": ["feat-018"],
+      "exclusive_owns": ["Services/Analysis/UniversalFactAdapter.swift", "features/mini-018a.md"],
+      "id": "mini-018a",
+      "kind": "mini",
+      "merge_gate": "Mapping matches the frozen schema with bounded outputs and explicit unavailable values; no shared-contract/sibling diff; ./init.sh passes",
+      "parent": "feat-018",
+      "seam": "Universal aesthetics and classification observation collection plus fact mapping (new adapter only, no wiring)",
+      "status": "todo",
+      "title": "Universal aesthetics and classification adapter"
+    },
+    {
+      "depends_on": ["feat-018", "mini-018a"],
+      "exclusive_owns": ["docs/evidence/universal-request-cost.md", "features/mini-018b.md"],
+      "id": "mini-018b",
+      "kind": "mini",
+      "merge_gate": "Cold/warm per-request cost plus QoS path recorded; no apps diff; ./init.sh passes",
+      "parent": "feat-018",
+      "seam": "Universal-request cost benchmark (evidence only)",
+      "status": "todo",
+      "title": "Universal-request cost benchmark"
     },
     {
       "depends_on": ["feat-018"],
