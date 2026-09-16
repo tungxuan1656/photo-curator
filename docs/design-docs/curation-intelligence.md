@@ -1,17 +1,20 @@
 # Curation Intelligence V2
 
-**Status:** Proposed post-MVP quality architecture  
+**Status:** Accepted post-MVP quality architecture  
 **Minimum OS:** iOS 26  
 **Enhanced tier:** iOS 27 when Apple Foundation Models image input is available  
 **Goal:** Maximize curation quality while keeping the core workflow private, on-device, measurable, and debuggable.
 
-This document owns the **future intelligence architecture**: which model families and analysis tiers are allowed, how expensive inference is staged, and how semantic judging fits around deterministic selection rules.
+This document owns the **future intelligence architecture**: capability boundaries, intelligence tiers, routing principles, and how semantic judging fits around deterministic selection rules.
+
+Concrete model/API choices are intentionally not architectural invariants. The current selected implementation stack, benchmark candidates, routing populations, fallbacks, and replacement history live in [curation-runtime-stack.md](curation-runtime-stack.md).
 
 It does **not** replace the current owners:
 
 - Selection policy and reason semantics: [selection-rules.md](../product-specs/selection-rules.md)
 - Pipeline mechanics and configuration: [selection-engine.md](selection-engine.md)
 - Apple API integration details: [apple-frameworks.md](apple-frameworks.md)
+- Current concrete APIs/models/routing: [curation-runtime-stack.md](curation-runtime-stack.md)
 - Stored shapes and cache versions: [data-model.md](data-model.md)
 - Privacy and retention: [privacy.md](../ship-gates/privacy.md)
 - Performance budgets: [performance.md](../ship-gates/performance.md)
@@ -154,7 +157,7 @@ Do not run every model on every photo.
 | A — universal | all input assets | Cheap metadata, aesthetics, classification, FeaturePrint, basic faces, technical facts |
 | B — contextual | relevant subsets | Face detail, saliency, horizon, OCR/document, smudge, pose, masks |
 | C — candidate | shortlist-scale | Stronger Core ML representation and composition/context features |
-| D — difficult cases | ambiguous clusters/moments | DETR/depth/SAM-style specialists or equivalent licensed models |
+| D — difficult cases | ambiguous clusters/moments | Optional specialist perception models selected by measured failure mode |
 | E — semantic jury | small ambiguous sets, iOS 27 only | Structured multimodal comparison |
 | F — verification | finalists / borderline rejects | Higher-resolution or targeted re-check when evidence is weak |
 
@@ -251,14 +254,16 @@ Eye-state-like heuristics must remain conservative. A candid, laugh, sleep, or d
 
 Core ML is a **quality tool**, not a requirement to use large models everywhere.
 
-Initial model families to evaluate:
+The architecture defines capability roles rather than model brands:
 
-| Candidate | Intended role | Routing |
+| Capability role | Intended use | Normal routing |
 |---|---|---|
-| FastViT headless variant | Strong visual representation / embedding backbone | Candidate tier |
-| DETR-style segmentation | Object/layout understanding | Difficult scenes |
-| Depth Anything V2 Small or equivalent | Depth/context/composition representation | Difficult scenes |
-| SAM 2.1 Tiny or equivalent | Precise segmentation if native Vision masks are insufficient | Rare fallback |
+| Visual representation / embedding | Richer similarity, variant, moment, and global redundancy evidence | Candidate tier |
+| Object/layout understanding | Difficult composition or scene-layout cases | Difficult-case tier |
+| Depth/context representation | Composition/context evidence when native signals are insufficient | Difficult-case tier |
+| Precision segmentation | Rare fallback when native subject masks are insufficient | Difficult-case tier |
+
+The currently selected benchmark candidates for these roles live in [curation-runtime-stack.md](curation-runtime-stack.md). Replacing a model there does not require changing this architecture when its capability contract remains the same.
 
 Requirements before any model becomes production-default:
 
@@ -407,14 +412,17 @@ The semantic jury handles **ambiguous, high-impact comparisons**, not bulk ranki
 Example structured output:
 
 ```text
+decision              // chooseA | chooseB | keepBoth | abstain
 sameMoment
 sameSubject
 meaningfulVariants
 bestRepresentativeAssetID
 keepTogetherAssetIDs
-confidence
+certainty             // clear | ambiguous
 reasonCodes
 ```
+
+Treat model-reported certainty as a structured judgment, not as a calibrated probability. Candidate identifiers in the response must be constrained to the supplied candidate set.
 
 Typical inputs:
 
@@ -461,7 +469,7 @@ Candidate uncertainty signals:
 - ambiguous meaningful variation;
 - uncertain moment boundary;
 - favorite/edit/user-intent conflict;
-- semantic-jury low confidence;
+- semantic-jury ambiguous/abstain result;
 - borderline technical rejection.
 
 The review surface should offer a compact “Needs Review” queue while preserving access to Selected, Similar, and Removed.
@@ -472,9 +480,9 @@ The goal is to let automation handle obvious decisions and focus the user on the
 
 ## 14. Evaluation and learning loop
 
-Do not train a custom ranker before the baseline is measured.
+Evaluation starts **before** implementation of the V2 intelligence layers. First record the current demo baseline and a failure inventory on the existing manual QA datasets plus an annotated Golden set. Every new signal/model must name the failure mode it targets and compare against that baseline.
 
-Use the existing manual QA datasets plus an annotated Golden set.
+Do not train a custom ranker before the baseline is measured and the simpler native/specialist layers have been evaluated.
 
 Minimum tracked metrics:
 
@@ -488,13 +496,15 @@ Minimum tracked metrics:
 - review time;
 - subjective album score on unseen trips.
 
-User corrections are strong supervision:
+User corrections are strong evaluation evidence:
 
 - swap winner;
 - add back;
 - remove selected;
 - keep both variants;
 - moment corrections when exposed.
+
+Under the current privacy policy, production user photos/corrections are **not** global training data. Any future cross-user training or personalization policy requires its own explicit privacy/product decision. Owned/licensed QA datasets may be used to evaluate or train a future ranker within their terms.
 
 ### Custom Core ML ranker gate
 
@@ -522,7 +532,7 @@ Curation Intelligence V2 inherits the existing privacy posture.
 - No automatic deletion.
 - Persist only compact facts allowed by privacy/data-model owners.
 - Raw feature prints, face boxes, masks, and large embeddings remain transient unless a future privacy decision explicitly permits otherwise.
-- Identical inputs/configuration must have a deterministic fallback result even when an optional semantic model is unavailable.
+- A fixed input + configuration + `analysisVersion` + relevant OS/model revision must have a deterministic fallback result even when an optional semantic model is unavailable.
 
 If an iOS 27 path can invoke any non-local model, it needs a separate explicit privacy/product decision before use. The core path stays on-device.
 
@@ -532,30 +542,32 @@ If an iOS 27 path can invoke any non-local model, it needs a separate explicit p
 
 Implementation is tracked as GitHub issues until the current active repository feature is complete. Do not create a second active feature.
 
-1. [#16 — expand native Vision signal stack](https://github.com/tungxuan1656/photo-curator/issues/16)
-2. [#17 — people and group-photo intelligence](https://github.com/tungxuan1656/photo-curator/issues/17)
-3. [#18 — Core ML specialist inference layer](https://github.com/tungxuan1656/photo-curator/issues/18)
-4. [#19 — variant-aware clustering and representative selection](https://github.com/tungxuan1656/photo-curator/issues/19)
-5. [#20 — semantic moment segmentation](https://github.com/tungxuan1656/photo-curator/issues/20)
-6. [#21 — global shortlist similarity and album-level diversity](https://github.com/tungxuan1656/photo-curator/issues/21)
-7. [#22 — uncertainty-first review](https://github.com/tungxuan1656/photo-curator/issues/22)
-8. [#23 — iOS 27 Foundation Models semantic jury](https://github.com/tungxuan1656/photo-curator/issues/23)
-9. [#24 — Golden evaluation loop and custom Core ML ranker gate](https://github.com/tungxuan1656/photo-curator/issues/24)
+The program is **evidence/dependency-driven**, not a requirement to ship every named technology.
 
-Program epic: [#15](https://github.com/tungxuan1656/photo-curator/issues/15).
+0. Start the baseline/failure-inventory portion of [#24](https://github.com/tungxuan1656/photo-curator/issues/24) before changing selection intelligence.
+1. [#16 — expand native Vision signal stack](https://github.com/tungxuan1656/photo-curator/issues/16).
+2. [#17 — people and group-photo intelligence](https://github.com/tungxuan1656/photo-curator/issues/17).
+3. [#19 — variant-aware clustering and representative selection](https://github.com/tungxuan1656/photo-curator/issues/19).
+4. [#20 — semantic moment segmentation](https://github.com/tungxuan1656/photo-curator/issues/20).
+5. [#21 — global shortlist similarity and album-level diversity](https://github.com/tungxuan1656/photo-curator/issues/21).
+6. Use [#18 — Core ML representation/specialist inference](https://github.com/tungxuan1656/photo-curator/issues/18) where #19–#21 or measured failures need stronger representation; a lightweight embedding may move earlier when it is a demonstrated dependency.
+7. [#22 — uncertainty-first review](https://github.com/tungxuan1656/photo-curator/issues/22).
+8. [#23 — optional iOS 27 Foundation Models semantic jury](https://github.com/tungxuan1656/photo-curator/issues/23) for remaining ambiguous high-impact cases.
+9. Finish the learned-ranker gate in #24 only if enough representative labels and residual failures justify it.
 
-Evaluation work for #24 may begin in parallel as data preparation, but a learned ranker must not become a production dependency before the earlier baseline layers are measured.
+Program epic: [#15](https://github.com/tungxuan1656/photo-curator/issues/15). Current concrete tool/model choices and routing are owned by [curation-runtime-stack.md](curation-runtime-stack.md).
+
+A feature may finish with **“candidate not needed / rejected by gate”** when the cheaper layer already solves the targeted failure. That is a successful evidence-driven outcome, not incomplete implementation.
 
 ---
-
 ## 17. Ship gates
 
 A new intelligence layer becomes default-on only when it passes all relevant gates:
 
 | Gate | Requirement |
 |---|---|
-| Quality | Demonstrable gain on targeted Golden/real-trip failures |
-| Recall | No unacceptable drop in Must-Keep Recall |
+| Quality | Demonstrable gain on the named targeted Golden/Real Trip failure versus the recorded baseline |
+| Recall | Respect the current `manual-qa.md` Must-Keep Recall target; any exception requires documented manual review |
 | Privacy | Complies with privacy owner doc and on-device core rule |
 | License | Production redistribution/commercial use verified |
 | Performance | Oldest supported-device latency/memory/thermal acceptable |
@@ -569,11 +581,12 @@ A new intelligence layer becomes default-on only when it passes all relevant gat
 
 ## 18. Non-goals
 
-- Running every available model on every image.
+- Treating the runtime-stack model/API list as a requirement to ship every candidate.
 - Face recognition or person identity.
 - Demographic balancing.
 - Generic emotion classification as a hard selector.
 - Cloud AI as a core requirement.
 - Generative retouching.
 - Training before Golden evaluation exists.
+- Keeping a model/API after it fails its measured quality/cost gate.
 - Replacing deterministic album invariants with free-form LLM output.
