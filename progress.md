@@ -155,3 +155,11 @@
 **Evidence**: `./init.sh` PASS at this commit (format, swiftlint --strict, Simulator build SUCCEEDED, SKIP [test] by policy); tracker-docs-only diff.
 **Blockers**: user-run follow-ups — Golden annotation (200–500 fixed assets per `manual-qa.md` §3.2) plus physical measurement of the §8.2 and §7 rows (Simulator-only constraint).
 **Next**: coordinator opens the parent PR to main after review; feat-018 may start only after the recorded gate.
+
+## 2026-09-16 — feat-017 parent merge
+
+**State**: merged (parent PR #30 MERGED via `52588ff`; branch fully on main)
+**Done**: Parent PR #30 merged to main (`52588ff`); children merged with reviews — `mini-017a` via `0967d2d` (PR #27, APPROVED), `mini-017b` via `bdfa595` (PR #28, APPROVED), `mini-017c` via `e7143bc` (PR #29, APPROVED) plus `ebb0a50` stale-line fix; Task 3 consolidation done via `96a4de6` (pending-baseline IDs F-017-B/C/D/E/F/G/GLD/H in `curation-intelligence.md` §14, no production scoring/threshold/weight/version/config/budget change). Index: `feat-017` sole active integration, `mini-017a` `done`, `mini-017b`/`mini-017c` `blocked` pending-physical, `feat-018` `todo` (unchanged). Tracker state reconciled: `features/feat-017.md` Handoff rewritten to merged and exactly three Acceptance boxes checked (nine-metrics-baseline left unchecked, pending-physical).
+**Evidence**: `./init.sh` PASS at this commit (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] by policy); `git diff --name-only` shows only `features/feat-017.md` + `progress.md`, no `apps/` path.
+**Blockers**: user-run follow-ups — Golden annotation (200–500 fixed assets per `manual-qa.md` §3.2) plus physical measurement of the §8.2 and §7 rows (Simulator-only constraint; nothing invented).
+**Next**: user-run physical measurement, then explicit done-flip and feat-018 selection; feat-018 must not start here.
