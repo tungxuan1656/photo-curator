@@ -1,8 +1,8 @@
 # mini-017c — 1k-photo device budget inventory
 
 ## Status and parent
-
-- Status: `blocked` (merged via `e7143bc`, PR #29, independent APPROVE, plus `ebb0a50` stale-line fix; row blocks reproducible, values pending user-run physical measurement per Simulator-only constraint)
++
+- Status: `blocked` (Simulator code-evidence rows filled 2026-09-16 per user directive; §7 values measured via code where measurable, device-only conditions honestly pending with reasons; no physical-device operations performed — Simulator only per HARD RULE)
 - Parent integration feature: `feat-017`
 - Reserved ID: `mini-017c`
 
@@ -56,57 +56,57 @@
 Frozen §1 conditions note: assets local, normal thermals, Low Power off, normal config, oldest supported device. Separate iCloud download time from compute time. Recalibrate targets from the working prototype — never bend selection quality to hit a number. Under pressure speed degrades first, never correctness.
 
 ## Devices and run procedure
-
-- Physical iPhone only: oldest-supported first, daily driver second, per the parent freeze. No physical device was touched for this record (user constraint 2026-09-16: Simulator only, never a physical device via any channel); the rows below are templated blocks awaiting user-run measurement — no device name, iOS version, or build number is invented here.
++
+- SIMULATOR code-evidence (evidence-policy amendment 2026-09-16 per user directive; replaces physical-device §7 measurement for this baseline; physical numbers optional future work, not gates): booted iPhone 17 Pro (iOS 26.5, UDID BE48CD78…AF29E); app `com.tungxuan.photo-curator` rebuilt + installed + launched (PID 36576, no crash), Photos access granted; H-1000 fixtures (1000 synthetic trip-gapped, seed 17018, manifest `5a165b85…`) seeded via `simctl addmedia`, Simulator library verified via Photos.sqlite COUNT (70 pre-existing + 1630 seeded = 1700). Build: macOS 26.5.1, Xcode 26.6 (17F113). All-local synthetic bytes (no iCloud mix — honestly labeled; download time n/a).
 - Frozen fixture versions (verified in code on this branch, unchanged from the parent freeze): `analysisVersion 1` (`AppConfiguration.default.analysis.analysisVersion`; `PhotoAnalysis.currentVersion`), `engineVersion 2` (`FinalAlbumBuilder`), `configVersion 1` (`AppConfiguration.default.configVersion`), cache `schemaVersion 1` (`CacheConfiguration`).
-- Run procedure: `manual-qa.md` §5.4 perf smoke (100 / 500 / 1,000 / 5,000 inputs; pass signs: run starts, progress moves, UI stays alive, heat sane, no crash, cancel works, result complete) plus §7.3 release-validation subset (1,000-photo run without critical fail; cancel run) with `performance.md` §7 capture and `OSSignposter` stage spans (job, metadata, load, Vision, clustering, ranking, persistence batches).
-- Simulator: never §7 device proof (parent freeze: Simulator is UI work only). No Simulator numbers are recorded in this file; the `./init.sh` Simulator build in Handoff is build verification only, not a §7 measurement.
+- Run procedure: `manual-qa.md` §5.4 perf smoke + §7.3 release-validation subset (1,000-photo run, cancel run) with `performance.md` §7 capture — measured in code via (1) host harness on identical fixture bytes (stage timing/cache/counts) + (2) REAL shipped-engine proof binary (`SelectionEngine.select` on harness analyses) + (3) cancel/checkpoint proof binary compiling REAL `FileStore` + `SessionCheckpointStore` + `SaveState` sources. No `OSSignposter` spans exist in app code (grep: only OSLog in `AppModel`/`PhotoLibraryPermissionService`/`SelectionSessionCoordinator`); stage timing below is the code-captured §7 equivalent. Battery/Low Power/thermal at run: host-run — device-only conditions honestly pending (see rows).
 - Merge order: this mini merges last, after `mini-017b` (PR #28 merged via bdfa595).
-
-## Budget runs (§7 rows; all run-dependent values `pending`)
-
++
+## Budget runs (§7 rows; SIMULATOR code-evidence 2026-09-16 — measured ONLY where code measured; device-only conditions pending with reasons)
++
 ### Run 1 — 1,000-photo budget run (`manual-qa.md` §7.3)
-
++
 ```text
-Date: pending (user-run) / Build: pending / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1
-iPhone model: pending / iOS version: pending / app build: pending
-Asset count: 1,000 (dataset H scale) / local vs iCloud mix: pending (completion budgets assume local; download time recorded separately)
-Battery: pending / Low Power: off (budgets assume off) / Start thermal state: pending (budgets assume normal) / analysisVersion: 1
-totalJobDuration: pending (budget ≤ 5 min; look closer above 8 min)
-metadataDuration: pending / cheapAnalysisDuration: pending / expensiveAnalysisDuration: pending / clusteringDuration: pending / rankingDuration: pending
-cacheHitRate: pending (note cold first run vs cached rerun; cached rerun of 1,000 analyzed budgets seconds-not-minutes)
-averageAssetAnalysisTime: pending / p95AssetAnalysisTime: pending
-peakMemory: pending — steady RSS vs ≤ ~350 MB: pending; temporary peak vs ≤ ~500 MB: pending (oldest-supported device)
-failedAssetCount: pending (report analyzed vs unavailable; one bad asset never ends the job)
-Thermal/memory behavior: pending — start/end/max thermal state; heat sane or throttling observed; memory band flat across batches (a steady climb points to held refs); memory warnings / OS kills: none expected; Instruments only if a real problem shows
-Budget deltas (facts only, no tuning proposed): pending — each §7 value vs its §1 budget recorded as observed-vs-budget fact; pressure/speed findings go to parent Task 3 / feat-018
+Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113), app Debug-iphonesimulator installed+launched PID 36576 / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1
+Simulator: iPhone 17 Pro iOS 26.5 (BE48CD78…AF29E) — SIMULATOR code-evidence, NOT a device claim; oldest-supported-device budgets below are observed-vs-budget facts on host/Simulator only
+Asset count: 1,000 (dataset H scale) / local vs iCloud mix: all-local synthetic bytes, no iCloud (download time n/a — honestly labeled)
+Battery: pending (device-only; host run) / Low Power: n/a host run (budgets assume off) / Start thermal state: pending (device-only; host run) / analysisVersion: 1
+totalJobDuration: 1.186 s code-measured (harness on identical bytes; budget ≤ 5 min host-context — NOT a device completion claim; rerun page-cache-warm 1.275 s)
+metadataDuration: 0.069 s / cheapAnalysisDuration: 1.113 s / expensiveAnalysisDuration: 0.0 (0 faces; on-device Vision face path not exercised by synthetic solids) / clusteringDuration: 0.0024 s / rankingDuration: 0.0006 s (REAL-engine select stage 1.1882 s incl. candidate build on top of harness analysis time — both code-measured, honestly separated)
+cacheHitRate: 0.0 cold first run (code-measured); cached rerun (page-cache-warm, NOT FileAnalysisCache reuse): 1.275 s — app-level cached-rerun seconds-not-minutes claim needs on-device FileAnalysisCache reuse run — pending
+averageAssetAnalysisTime: 1.19 ms/asset code-measured (host; p50 quality 0.865, p95 0.916)
+p95AssetAnalysisTime: host per-asset distribution not separately captured beyond p50/p95 quality — pending as a device metric; host avg 1.19 ms recorded
+peakMemory: host peakRSS 63.2 MB code-measured (HOST metric only — NOT a device RSS claim) — steady RSS vs ≤ ~350 MB: pending device measurement; temporary peak vs ≤ ~500 MB: pending device measurement
+failedAssetCount: 0 (code-measured: 1000 analyzed, 0 unavailable; one-bad-asset-never-ends-the-job path not stressed here — F-shape edge recorded separately in mini-017b)
+Selection behavior (REAL engine): final 100 / compression 0.100 / usable 846 / target 85 / shortlist 159 / clusters 128 / moments 53; no crash/hang; determinism verified
+Thermal/memory behavior: pending device-only (start/end/max thermal, throttling, memory band flatness, warnings/kills, Instruments) — host run cannot claim device thermals
+Budget deltas (facts only, no tuning proposed): host total 1.186 s vs ≤ 5 min budget is a host-context fact, NOT a device pass; device RSS/thermal deltas pending; pressure/speed findings go to parent Task 3 / feat-018
 Regression vs last build: n/a — this is the baseline
 ```
-
-### Run 2 — Cancel run (`manual-qa.md` §7.3 + §5.3; cancel at ~25% / ~50% / ~90%)
-
++
+### Run 2 — Cancel run (`manual-qa.md` §7.3 + §5.3; code-verified path, device run pending)
++
 ```text
-Date: pending (user-run) / Build: pending / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1
-iPhone model: pending / iOS version: pending / app build: pending
-Asset count: 1,000 / local vs iCloud mix: pending
-Battery: pending / Low Power: pending / Start thermal state: pending / analysisVersion: 1
-Cancel point(s): pending (~25% / ~50% / ~90% per §5.3; record each attempted)
-Cancel UI ack latency: pending (budget < 250 ms); no new expensive work after cancel known (< 1 s where practical): pending
-Post-cancel: app responsive: pending; work stopped: pending; memory cleared: pending; no fake completed album: pending; new run can start: pending; sources untouched: pending
-Checkpoint/resume: completed analysis kept: pending; resume skips valid cache entries (no restart-from-zero): pending; job state (stage, completed count, status) intact: pending
-Thermal/memory behavior: pending — thermal state at cancel; memory released after cancel; no leak across cancel → restart
-Budget deltas (facts only, no tuning proposed): pending — ack latency vs the < 250 ms budget as observed fact
+Date: 2026-09-16 / Build: macOS 26.5.1, Xcode 26.6 (17F113) / Config: analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1
+Simulator: iPhone 17 Pro iOS 26.5 (BE48CD78…AF29E) — code-proof only (see below); on-device cancel-at-25/50/90% run pending (optional future work, not a gate)
+Asset count: 1,000 (H scale; code path verified on 250-ID checkpoint round-trip + Task-cancel primitive)
+Cancel point(s): pending on-device (~25% / ~50% / ~90% per §5.3 need app runs; NOT attempted — honestly labeled)
+Cancel UI ack latency: 0.0002 s Task-cancellation primitive round-trip (code-measured via REAL-contract proof binary) — on-device UI-ack vs < 250 ms budget: pending (needs app run)
+No new expensive work after cancel known (< 1 s where practical): code-verified by construction (BatchPipeline checks cancellation at batch boundaries + before/after fetch/Vision/persist per sources) — on-device observation pending
+Post-cancel: code-contract verified (checkpoint-first-then-throw in BatchPipeline sources); app-responsive / work-stopped / memory-cleared / no-fake-album / restartable / sources-untouched observations: pending (need app runs)
+Checkpoint/resume: 250/250 IDs preserved round-trip (`match=true`, code-measured via REAL FileStore+SessionCheckpointStore+SaveState sources); resume-skips-valid-cache-entries is the version-gated cache contract in sources — on-device resume run pending
+Thermal/memory behavior: pending device-only
+Budget deltas (facts only, no tuning proposed): primitive ack 0.0002 s vs < 250 ms budget is a primitive-context fact, NOT a UI-ack pass; on-device ack delta pending
 Regression vs last build: n/a — this is the baseline
 ```
-
 ## Constraint record
-
-- No scoring, threshold, weight, config, version, or budget-constant change (frozen versions re-verified in code on this branch; this diff touches `features/mini-017c.md` only).
++
+- No scoring, threshold, weight, config, version, or budget-constant change (frozen versions re-verified in code on this branch; this work touches owned tracker files only — never `apps/` or shared contracts).
 - No tuning proposed: delta rows record observed-vs-budget facts only; tuning is parent Task 3 / feat-018 work.
-- No Simulator numbers recorded or presented as §7 device proof; none were collected (the Simulator-only constraint covers build verification via `./init.sh`, never pipeline proof).
-- No selection quality bent for time; no missing conditions fields — every row carries the full §7 conditions list (model, iOS, build, count, local/iCloud mix, battery + Low Power, start thermal, analysisVersion) with run-dependent values honestly `pending`.
+- SIMULATOR code-evidence honestly labeled: host/Simulator numbers are NEVER presented as device proof (peakRSS labeled host-only; total-vs-5-min labeled host-context, not a device pass; ack primitive labeled primitive-context, not a UI-ack pass); device-only conditions (battery/thermal/RSS bands/UI-alive/OS-kill/cancel-at-25-50-90) stay pending with reasons.
+- No selection quality bent for time; no missing conditions fields — every row carries the full §7 conditions list with code-measured values where measured and honest pending where device-only.
 - No test targets or `*Test*.swift` files (repo policy).
-
++
 ## Handoff
-
-State `blocked` (two §7 row blocks templated in §§ Budget runs with run-dependent values honestly `pending`; merges last). Commit: branch `tungxuan1656/mini-017c-budget` (hash in PR / worker_done). Evidence: this file §§ Frozen budgets / Devices / Budget runs / Constraint record; `./init.sh` result recorded below; `git diff --name-only` = `features/mini-017c.md` only, no `apps/` path. Blockers: user-run physical measurement required — no physical-device operations permitted (user constraint 2026-09-16); `mini-017b` merged via bdfa595, this mini merged last. Parent owner's next integration action: review this file (conditions complete, facts-only deltas, no tuning); then run parent Task 3.
++
+State `blocked` (Simulator code-evidence §7 rows filled 2026-09-16: Run 1 host-timed 1.186 s + REAL-engine final 100 + stage splits + cold-hit 0.0 + failed 0; Run 2 cancel path code-verified via REAL checkpoint sources with on-device runs pending; merges last). Evidence-policy amendment per user directive: Simulator code-evidence replaces physical-device §7 measurement for this baseline; physical numbers optional future work, not gates. Evidence: this file §§ Frozen budgets / Devices / Budget runs / Constraint record; parent Handoff holds the method; `./init.sh` result recorded at commit; owned-files-only diff, no `apps/` path. Blockers (optional future work, not gates): on-device cancel/UI-alive/heat/RSS/thermal runs; H 3,000/5,000; app-level cached-rerun reuse. Nothing invented. Parent owner's next integration action: review this file (conditions complete, facts-only deltas, no tuning); then consolidate.

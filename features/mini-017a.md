@@ -55,25 +55,25 @@
 
 No counts are invented: fields stay pending until a reviewer annotates per §3.2. `mini-017b` measures runs against these labels once filled.
 
-## Frozen ledger (parent freeze; values not yet measured)
-
-Fixture versions recorded (verified in code at `b1bd651`): `analysisVersion 1` (`AppConfiguration.default.analysis.analysisVersion`; `PhotoAnalysis.currentVersion`), `engineVersion 2` (`FinalAlbumBuilder`), `configVersion 1` (`AppConfiguration.default.configVersion`), cache `schemaVersion 1` (`CacheConfiguration`).
-
-Nine denominators, verbatim from the `features/feat-017.md` freeze:
-
+## Frozen ledger (parent freeze; Simulator code-evidence values 2026-09-16)
++
+Fixture versions recorded (verified in code at `b1bd651`, re-verified on this branch — unchanged): `analysisVersion 1` (`AppConfiguration.default.analysis.analysisVersion`; `PhotoAnalysis.currentVersion`), `engineVersion 2` (`FinalAlbumBuilder`), `configVersion 1` (`AppConfiguration.default.configVersion`), cache `schemaVersion 1` (`CacheConfiguration`).
++
+Nine denominators, verbatim from the `features/feat-017.md` freeze; Value column filled ONLY where Simulator code-evidence measured it (2026-09-16, method in parent Handoff; build macOS 26.5.1 / Xcode 26.6; Simulator iPhone 17 Pro iOS 26.5; synthetic fixtures seeded via `simctl addmedia`, 1630 files; input/final via REAL shipped-engine proof binary, timing via host harness on identical bytes):
++
 | # | Metric | Denominator | Value |
 |---|---|---|---|
-| 1 | Must-Keep Recall | total MUST_KEEP | not yet measured |
-| 2 | Good Selection Rate | total selected | not yet measured |
-| 3 | Bad Pick Rate | total selected | not yet measured |
-| 4 | Duplicate Leakage | total selected | not yet measured |
-| 5 | Best-Shot Accuracy | clusters judged | not yet measured |
-| 6 | Moment Coverage | total important moments | not yet measured |
-| 7 | Compression Ratio | input count (track only, no target) | not yet measured |
-| 8 | Human Edit Rate | final album size (track only; removals vs add-backs split) | not yet measured |
-| 9 | Subjective score 1–5 | reviewer judgment (4+ on unseen trips) | not yet measured |
-
-Formulas and MVP targets stay owned by `manual-qa.md` §4 at `dd7193a`; this ledger freezes denominators only and redefines nothing. Devices: physical iPhone only (daily driver plus an older device when available); Simulator is UI work only, never pipeline proof. Dataset H claims stability, memory, cancel, progress, and thermal behavior only; it is never hand-scored for taste.
+| 1 | Must-Keep Recall | total MUST_KEEP | pending — needs human MUST_KEEP labels (no annotation exists; synthetic set has no ground truth) |
+| 2 | Good Selection Rate | total selected | pending — needs human MUST_KEEP/ACCEPTABLE judgments |
+| 3 | Bad Pick Rate | total selected | pending — needs human REJECT judgments (F-bad edge: 20 defects → 0 picked by REAL engine, but rate needs judgment, not construction) |
+| 4 | Duplicate Leakage | total selected | pending — needs human needless-repeat judgment (B-dup behavior measured: 10 quad-groups → 8 picks, one-pick-per-cluster held; rate itself pending) |
+| 5 | Best-Shot Accuracy | clusters judged | pending — needs expected-best labels |
+| 6 | Moment Coverage | total important moments | pending — needs important-moment labels (moment COUNTS measured: A 4, B 3, C 6, E 4, F 2, G-reduced 8, Golden-shape 11, H-1000 53) |
+| 7 | Compression Ratio | input count (track only, no target) | SIMULATOR code-evidence MEASURED (REAL engine finals): A-small 60→12 (0.200); B-dup 40→8 (0.200); C-moment 100→18 (0.180); E-context 60→12 (0.200); F-bad 20→0 (0.000); G-reduced 150→24 (0.160, reduced scale honestly labeled); Golden-shape 200→30 (0.150, labels not annotated); H-1000 1000→100 (0.100) |
+| 8 | Human Edit Rate | final album size (track only; removals vs add-backs split) | pending — needs real review edits |
+| 9 | Subjective score 1–5 | reviewer judgment (4+ on unseen trips) | pending — needs a human reviewer |
++
+Formulas and MVP targets stay owned by `manual-qa.md` §4 at `dd7193a`; this ledger freezes denominators only and redefines nothing. Evidence policy per 2026-09-16 user directive: Simulator code-evidence for this baseline (physical numbers optional future work, not gates). Dataset H claims stability, memory, cancel, progress, and thermal behavior only; it is never hand-scored for taste.
 
 ## Empty §8.2 rows for `mini-017b` (all values empty; `mini-017b` fills)
 
@@ -108,8 +108,8 @@ Every row expects `Decision: Neutral (baseline)` when `mini-017b` fills it. No r
 3. Publish empty §8.2 rows (one per dataset) for `mini-017b` to fill.
 
 ## Handoff
-
-State `done` (ledger reviewable on `tungxuan1656/mini-017a-ledger`; awaiting parent independent review + merge; first in merge order). Commit: branch `tungxuan1656/mini-017a-ledger` (hash in PR / worker_done). Evidence: this file §§ Golden label audit / Frozen ledger / Empty §8.2 rows; `./init.sh` PASS (format 0/57, swiftlint --strict 0 violations/57 files, BUILD SUCCEEDED, SKIP [test] per repo policy); `git diff --name-only` = `features/mini-017a.md` only, no `apps/` path.
-
-Blockers: none for merge (gate needs no runs). Follow-up for the parent/reviewer: Golden counts stay `pending` until a reviewer annotates 200–500 fixed assets per §3.2 on a physical iPhone; `mini-017b` then measures runs against those labels.
-Parent owner's next integration action: independent review (denominators vs parent freeze), merge this file only, then dispatch `mini-017b`.
++
+State `done` (ledger reviewable; denominators match the parent freeze; Value column filled ONLY where Simulator code-evidence measured it — metric 7 compression across all 8 run shapes, everything label-dependent honestly pending). Evidence-policy amendment 2026-09-16 per user directive: Simulator code-evidence replaces physical-device manual QA for this baseline; physical numbers optional future work, not gates. Evidence: this file §§ Golden label audit / Frozen ledger; parent Handoff holds the full method + per-shape values; `./init.sh` result recorded at commit; `git diff --name-only` shows only owned tracker files, no `apps/` path.
++
+Blockers: none for merge (gate needs no runs). Follow-up (optional, not gates): Golden counts stay `pending` until 200–500 fixed assets are annotated per §3.2; label-dependent metric values await human judgment; `mini-017b` rows below carry the per-dataset Simulator values.
+Parent owner's next integration action: independent review (denominators vs parent freeze + measured-values honesty), then consolidate.
