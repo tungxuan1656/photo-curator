@@ -20,11 +20,11 @@ the saved analysis and original decision for one photo.
 
 ## Acceptance
 
-- [ ] S10, S12, and S13 show a numeric Technical score and meter for every visible analyzed photo.
-- [ ] S21 shows available saved signals, original decision reasons, and current Selected or Removed state.
-- [ ] Missing analysis is explicit and does not block review or restart processing.
-- [ ] Scores load only for visible review cells and no pixels enter persistent state.
-- [ ] `./init.sh` passes.
+- [ ] S10, S12, and S13 show a numeric Technical score and meter for every visible analyzed photo. (S10/S13 verified 2026-09-16; S12 pending similar-groups fixture.)
+- [x] S21 shows available saved signals, original decision reasons, and current Selected or Removed state.
+- [ ] Missing analysis is explicit and does not block review or restart processing. (Pending missing-cache-row fixture.)
+- [x] Scores load only for visible review cells and no pixels enter persistent state.
+- [x] `./init.sh` passes. (2026-09-16.)
 
 ## Relevant docs
 
