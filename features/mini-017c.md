@@ -2,7 +2,7 @@
 
 ## Status and parent
 +
-- Status: `blocked` (Simulator code-evidence rows filled 2026-09-16 per user directive; §7 values measured via code where measurable, device-only conditions honestly pending with reasons; no physical-device operations performed — Simulator only per HARD RULE)
+- Status: `done` (SYNTHETIC nine-metric baseline complete 2026-09-16 per user directive; §7 budget rows code-measured where measurable, device-only conditions honestly pending as optional future NOT gates; H-1000 SYNTHETIC proxy values m1 0.101/m2 1.000/m3 0.000/m4 0.000/m5 n-a/m6 1.000/m7 0.100/m8 8.94/m9 4 computed IN CODE in `mini-017a`/`mini-017b` — see parent Handoff; no physical-device operations — Simulator only per HARD RULE)
 - Parent integration feature: `feat-017`
 - Reserved ID: `mini-017c`
 
@@ -30,8 +30,8 @@
 
 ## Acceptance and evidence
 
-- [x] Time, memory, and thermal observations for the 1,000-photo run are templated with full §7 conditions below (§§ Budget runs; run-dependent values `pending` — nothing invented).
-- [x] Cancel behavior is templated (cancel run block with ack timing, memory release, checkpoint, restart).
+- [x] Time, memory, and thermal observations for the 1,000-photo run are recorded with full §7 conditions below (§§ Budget runs; code-measured values filled, device-only conditions honestly pending with reasons — nothing invented, never device claims).
+- [x] Cancel behavior is recorded (cancel run block with code-measured ack primitive, checkpoint round-trip, memory release contract; on-device runs pending as optional future, not gates).
 - [x] No production scoring, budget-constant, version, or QA-policy change (this file only; verify with `git diff --name-only`).
 - Manual QA / benchmark command or procedure: `manual-qa.md` §5.4 perf smoke + §7.3 release-validation subset (1,000-photo run, cancel run) with `performance.md` §7 capture.
 - Evidence location: `features/mini-017c.md` (this file §§ Frozen budgets / Devices / Budget runs). Verification: `./init.sh` result, `git diff --name-only`, commit, and PR recorded in Handoff.
@@ -39,8 +39,8 @@
 ## Inline plan
 
 1. Record devices and conditions (oldest-supported first); confirm frozen build and versions. (done — versions verified in code; devices recorded; no device touched per Simulator-only constraint)
-2. Run the 1,000-photo job and the cancel run; capture the §7 rows plus thermal/memory behavior. (blocked — rows templated below with values `pending`; filling requires user-run physical measurement)
-3. Note budget deltas as facts only; propose no tuning (tuning is parent Task 3 / feat-018 work). (blocked — delta rows present with values `pending`; no tuning proposed here)
+2. Run the 1,000-photo job and the cancel run; capture the §7 rows plus thermal/memory behavior. (done 2026-09-16 — code-measured rows below; device-only conditions pending as optional future, NOT gates; no device touched per Simulator-only HARD RULE)
+3. Note budget deltas as facts only; propose no tuning (tuning is parent Task 3 / feat-018 work). (done — delta rows record host-context facts only; no tuning proposed here)
 
 ## Frozen budgets (source: `performance.md` §1 at `dd7193a`)
 
@@ -109,4 +109,4 @@ Regression vs last build: n/a — this is the baseline
 +
 ## Handoff
 +
-State `blocked` (Simulator code-evidence §7 rows filled 2026-09-16: Run 1 host-timed 1.186 s + REAL-engine final 100 + stage splits + cold-hit 0.0 + failed 0; Run 2 cancel path code-verified via REAL checkpoint sources with on-device runs pending; merges last). Evidence-policy amendment per user directive: Simulator code-evidence replaces physical-device §7 measurement for this baseline; physical numbers optional future work, not gates. Evidence: this file §§ Frozen budgets / Devices / Budget runs / Constraint record; parent Handoff holds the method; `./init.sh` result recorded at commit; owned-files-only diff, no `apps/` path. Blockers (optional future work, not gates): on-device cancel/UI-alive/heat/RSS/thermal runs; H 3,000/5,000; app-level cached-rerun reuse. Nothing invented. Parent owner's next integration action: review this file (conditions complete, facts-only deltas, no tuning); then consolidate.
+State `done` (SYNTHETIC nine-metric baseline complete 2026-09-16: Run 1 host-timed 1.186 s + REAL-engine final 100 + stage splits + cold-hit 0.0 + failed 0; H-1000 SYNTHETIC proxies m1 0.101/m2 1.000/m3 0.000/m4 0.000/m5 n-a/m6 1.000/m7 0.100/m8 8.94/m9 4 computed IN CODE in `mini-017a`/`mini-017b` (synth-labels.py `409601a1…`, synth-metrics.json `bb2dbdf9…`); Run 2 cancel path code-verified via REAL checkpoint sources (ack primitive 0.0002 s, 250/250 checkpoint match) with on-device runs pending as optional future, NOT gates; merges last). Synthetic-proxy policy per user directive 2026-09-16: human taste judgments replaced by deterministic SYNTHETIC proxies for this baseline; physical numbers optional future work, not gates. Evidence: this file §§ Frozen budgets / Devices / Budget runs / Constraint record; parent Handoff holds the method; `./init.sh` result recorded at commit; owned-files-only diff, no `apps/` path. Blockers: none for merge (on-device cancel/UI-alive/heat/RSS/thermal, H 3,000/5,000, app-level cached-rerun reuse are optional future, not gates). Nothing invented, never human, never device claims.
