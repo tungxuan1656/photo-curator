@@ -139,3 +139,11 @@
 **Evidence**: `./init.sh` PASS at closure (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test] by policy). features/feat-016.md acceptance all checked; feature_index.json feat-016 active→done; docs/plans/feat-016.md Task 4 checked.
 **Blockers**: Worker-introduced app-container fixture fully removed (temporary result/checkpoint files deleted, stashed analysis-cache row restored, no fixture shipped in the repo). One Simulator library photo added via supported `simctl addmedia` during verification is left for the user to remove by hand; all six originals verified present and the app re-launched healthy with photo fetch working.
 **Next**: feat-017 when the user selects it.
+
+## 2026-09-16 — feat-017
+
+**State**: active (sole integration parent; contract commit only)
+**Done**: Verified origin/main `dd7193a` shows feat-016 `done` before editing; branch verified at `dd7193a` with a clean tree. Activated feat-017; froze fixture versions (analysisVersion 1, engineVersion 2, configVersion 1, cache schemaVersion 1), the nine `manual-qa.md` §4 denominators, devices (physical iPhone only; H stability-only), and evidence locations. Added `docs/plans/feat-017.md` (child files, merge order, rollback); admitted `mini-017a/017b/017c` as task-ready `todo` index records with exact non-overlapping ownership and merge gates. No `apps/` change.
+**Evidence**: `./init.sh` PASS (result recorded at contract commit); `git diff --stat` tracker docs only.
+**Blockers**: none
+**Next**: dispatch `mini-017a`; merge children in order 017a → 017b → 017c; then run parent plan Task 3 (consolidate failures, gate feat-018).

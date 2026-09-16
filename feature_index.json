@@ -319,8 +319,41 @@
       "kind": "integration",
       "mini_candidates": ["mini-017a", "mini-017b", "mini-017c"],
       "owns": ["docs/ship-gates/manual-qa.md", "docs/design-docs/curation-intelligence.md", "features/feat-017.md"],
-      "status": "todo",
+      "status": "active",
       "title": "V2 baseline and failure inventory"
+    },
+    {
+      "depends_on": ["feat-017"],
+      "exclusive_owns": ["features/mini-017a.md"],
+      "id": "mini-017a",
+      "kind": "mini",
+      "merge_gate": "Ledger reviewable with nine frozen denominators; no apps/shared-contract diff; ./init.sh passes",
+      "parent": "feat-017",
+      "seam": "Golden label audit and metric ledger records (evidence only)",
+      "status": "todo",
+      "title": "Golden labels and metric ledger"
+    },
+    {
+      "depends_on": ["feat-017", "mini-017a"],
+      "exclusive_owns": ["features/mini-017b.md"],
+      "id": "mini-017b",
+      "kind": "mini",
+      "merge_gate": "One reproducible section 8.2 row per dataset; no apps diff; ./init.sh passes",
+      "parent": "feat-017",
+      "seam": "Baseline runs on A-H, Golden, and Real Trip (evidence only)",
+      "status": "todo",
+      "title": "A-H, Golden, and Real Trip baseline runs"
+    },
+    {
+      "depends_on": ["feat-017", "mini-017b"],
+      "exclusive_owns": ["features/mini-017c.md"],
+      "id": "mini-017c",
+      "kind": "mini",
+      "merge_gate": "Section 7 conditions complete; no budget-constant or apps change; ./init.sh passes",
+      "parent": "feat-017",
+      "seam": "1,000-photo device budget inventory (evidence only)",
+      "status": "todo",
+      "title": "1k-photo device budget inventory"
     },
     {
       "depends_on": ["feat-017"],
