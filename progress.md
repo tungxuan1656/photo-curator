@@ -131,3 +131,11 @@
 **Evidence**: `./init.sh` PASS after the implementation (SwiftFormat 0/57 changed, SwiftLint strict 0 violations/57 files, BUILD SUCCEEDED, tests skipped by policy). Installed and launched the new build in iPhone 17 Pro Simulator, PID 74689, with no crash. S10 showed 84/100, 83/100, and 77/100; its thumbnail opened S11 and then S21. S21 exposed Technical, People, Composition, Content, Selection result, current Selected, original Selected, selection score 84/100, and the translated reason. A temporary removal opened S13 with 84/100, opened S11, then Add back restored the observed **Nothing removed** state.
 **Blockers**: This simulator result has no similar groups and no deliberately missing cached analysis. S12 plus the non-blocking unavailable-state manual cases need a representative fixture. No user photos were saved, discarded, or changed during verification; the temporary review selection was restored.
 **Next**: Run the two fixture-dependent cases in `docs/plans/feat-016.md`, then close feat-016.
+
+## 2026-09-16 — feat-016
+
+**State**: done
+**Done**: Closed feat-016 after the two pending manual cases (S12 similar-groups scores and navigation; missing-analysis unavailable state, non-blocking, no processing restart) were user-verified on 2026-09-16. Closure touched tracker/docs only; no production-code, selection, cache-schema, or test changes.
+**Evidence**: `./init.sh` PASS at closure (format, swiftlint --strict, BUILD SUCCEEDED, SKIP [test] by policy). features/feat-016.md acceptance all checked; feature_index.json feat-016 active→done; docs/plans/feat-016.md Task 4 checked.
+**Blockers**: Worker-introduced app-container fixture fully removed (temporary result/checkpoint files deleted, stashed analysis-cache row restored, no fixture shipped in the repo). One Simulator library photo added via supported `simctl addmedia` during verification is left for the user to remove by hand; all six originals verified present and the app re-launched healthy with photo fetch working.
+**Next**: feat-017 when the user selects it.

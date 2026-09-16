@@ -20,9 +20,9 @@ the saved analysis and original decision for one photo.
 
 ## Acceptance
 
-- [ ] S10, S12, and S13 show a numeric Technical score and meter for every visible analyzed photo. (S10/S13 verified 2026-09-16; S12 pending similar-groups fixture.)
+- [x] S10, S12, and S13 show a numeric Technical score and meter for every visible analyzed photo. (S10/S13 verified 2026-09-16; S12 user-verified 2026-09-16.)
 - [x] S21 shows available saved signals, original decision reasons, and current Selected or Removed state.
-- [ ] Missing analysis is explicit and does not block review or restart processing. (Pending missing-cache-row fixture.)
+- [x] Missing analysis is explicit and does not block review or restart processing. (User-verified 2026-09-16.)
 - [x] Scores load only for visible review cells and no pixels enter persistent state.
 - [x] `./init.sh` passes. (2026-09-16.)
 
@@ -38,7 +38,7 @@ Plan: `docs/plans/feat-016.md`
 
 ## Handoff
 
-- State: active
+- State: done
 - Done: S10/S12/S13 use a lazy, accessible Technical score footer; S11 opens
   S21, which shows saved signals, original selection reasons, and current
   inclusion state. Thumbnail navigation is direct because the root stack holds
@@ -50,8 +50,11 @@ Plan: `docs/plans/feat-016.md`
   83/100, and 77/100; its thumbnail opened S11, and **View Analysis** opened
   S21 with the saved Technical, People, Composition, Content, and Selection
   result values. A temporary S13 removal displayed 84/100, opened S11, and
-  was restored to the observed **Nothing removed** state.
-- Blocker: the simulator result has no similar groups and no intentionally
-  missing cache row, so S12 and the explicit analysis-unavailable state need
-  a representative fixture for final manual validation.
-- Next: run those two fixture-dependent manual cases, then close feat-016.
+  was restored to the observed **Nothing removed** state. `./init.sh` passed
+  again on 2026-09-16 at closure with no production-code changes. The two
+  pending manual cases (S12 similar-groups scores and S12 -> S11 -> S21
+  navigation; deliberately missing cache row showing Analysis unavailable
+  without blocking review or restarting processing) were user-verified on
+  2026-09-16 per coordinator confirmation; no worker-recorded observations.
+- Blocker: none.
+- Next: feat-017 (depends on feat-016) when the user selects it.
