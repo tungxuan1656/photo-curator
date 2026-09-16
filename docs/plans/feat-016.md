@@ -102,5 +102,5 @@
 
 - [x] Run `./init.sh`.
 - [x] Perform a simulator smoke: launch the app and confirm it does not crash.
-- [ ] Manually verify on a review result: S10 and S13 pass (score footer, S11 -> S21, current versus original state); S12 and the missing-analysis state await a representative fixture.
+- [x] Manually verify on a review result: S10 and S13 pass (score footer, S11 -> S21, current versus original state); S12 and the missing-analysis state user-verified 2026-09-16.
 - [x] Record the commands and observable manual result in the feature handoff and `progress.md`.
