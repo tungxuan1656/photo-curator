@@ -2,7 +2,7 @@
 
 ## Status and kind
 
-- Status: `active`
+- Status: `done`
 - Kind: `integration`
 - Depends on: `feat-017` (`done` on origin/main `a877fa0`; verified before activation)
 
@@ -168,7 +168,7 @@ cards live in each mini file and `docs/plans/feat-018.md`.
 
 ## Handoff
 
-- State: active (sole integration; Task 3 wired + verified, children merged; parent PR to main NOT yet opened)
+- State: done (parent PR #36 squash-MERGED via `a68c89a` 2026-09-16; contract + children + Task 3 + findings fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-16 —
   `feat-017` reads `done` (squash #33 at `a877fa0`), `feat-018` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
@@ -237,5 +237,8 @@ cards live in each mini file and `docs/plans/feat-018.md`.
   the version-2 frozen schema (aesthetic map, top-3 tags, print-availability flag,
   allowlist) — extensions bump `analysisVersion` 2 → 3 with the same requeue rule.
 - Blockers: none.
-- Next: coordinator opens the parent PR to main (squash; separate merge task);
-  feat-019 selection remains user-gated; feat-019 must not start here.
+- Closeout (done-flip, branch `tungxuan1656/feat-018-doneflip` from origin/main `a68c89a`):
+  - Squash evidence: parent PR #36 state MERGED, mergeCommit `a68c89a` (= origin/main HEAD); squash body contains the full chain — contract `cf9cd52`, child `5b731bb` (018a, PR #34 MERGED) + `fcd4641` (018b, PR #35 MERGED), Task 3 `bc7cbd0`, findings fix `2a0834e`; pre-squash commits verified present via `git cat-file -t`.
+  - Acceptance re-verified on main (all four boxes honestly still pass, read checked): (1) wiring — `featurePrintAvailable` persisted (`PhotoAnalysis.swift:77`), `make` params (`:113-115`), `performAll` wires `collect`+`map` (`VisionAnalysisService.swift:144-158`), `analysisVersion: 2` (`AppConfiguration.swift:61`), `UniversalFactAdapter.swift` + `docs/evidence/universal-request-cost.md` exist; (2) version-2 + requeue — cache version gate (`FileAnalysisCache.swift:26,35`), checkpoint-ignore (`BatchPipeline.swift:381`), v1 `decodeIfPresent`→false (`PhotoAnalysis.swift:158`); (3) Verify code-evidence — Task 3 proof results recorded in this Handoff stand (determinism byte-compare PASS, rank-order movement honest reading, cold/warm disposition recorded); (4) fallback determinism — unavailable mapping nil/[]/false in adapter `map` (`:94-102`).
+  - Minis `mini-018a`/`mini-018b` already `done` in `feature_index.json`; `feat-019` stays `todo` (no start here; its contract must still freeze tier-B routing, fallback bounds, and the F-017 target with a measured remedy pointer, and bump `analysisVersion` 2 → 3 for extensions).
+- Next: feat-019 selection remains user-gated; feat-019 must not start here.

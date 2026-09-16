@@ -362,7 +362,7 @@
       "kind": "integration",
       "mini_candidates": ["mini-018a", "mini-018b"],
       "owns": ["Domain/Models/PhotoAnalysis.swift", "Services/Analysis/VisionAnalysisService.swift", "Services/Photos/BatchPipeline.swift", "Infrastructure/FileAnalysisCache.swift", "Configuration/AppConfiguration.swift", "features/feat-018.md"],
-      "status": "active",
+      "status": "done",
       "title": "Universal quality signals"
     },
     {
