@@ -46,8 +46,8 @@ struct SettingsView: View {
                     Button("Choose More Photos") { appModel.presentPicker() }
                         .accessibilityLabel("Choose more photos to share")
                 } else {
-                    Button("Manage Photos Access") { appModel.presentPicker() }
-                        .accessibilityLabel("Manage photos access")
+                    Text("All photos are available for curation.")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
             }
             Section("Privacy") {
