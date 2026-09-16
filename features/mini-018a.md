@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `todo` (task-ready; starts on coordinator dispatch)
+- Status: `active` (dispatched 2026-09-16; implementation complete, awaiting gate review + merge)
 - Parent integration feature: `feat-018`
 - Reserved ID: `mini-018a`
 
@@ -54,15 +54,16 @@
 
 ## Acceptance and evidence
 
-- [ ] Phase-1 collection degrades per request (one failure never fails the asset) with
+- [x] Phase-1 collection degrades per request (one failure never fails the asset) with
   cancellation checks between requests.
-- [ ] Phase-2 mapping is pure: bounded outputs (1 Optional score, ≤3 tags, 1 Bool) and
+- [x] Phase-2 mapping is pure: bounded outputs (1 Optional score, ≤3 tags, 1 Bool) and
   the frozen unavailable values, no fabricated defaults.
-- [ ] No shared-contract, sibling, or other `apps/` diff (`git diff --name-only`).
+- [x] No shared-contract, sibling, or other `apps/` diff (`git diff --name-only`).
 - Manual QA / benchmark command or procedure: n/a (code only; measured at parent Verify).
 - Evidence location: `Services/Analysis/UniversalFactAdapter.swift` (code) + parent
-  Verify proof-binary record. Verification: `./init.sh` result, `git diff --name-only`,
-  commit, and PR recorded in Handoff.
+  Verify proof-binary record. Verification: `./init.sh` PASS (format, `swiftlint --strict`,
+  Simulator build SUCCEEDED, SKIP [test] by policy); `git diff --name-only` shows only
+  the two owned files; commit and PR recorded in Handoff.
 
 ## Inline plan
 
@@ -73,7 +74,9 @@
 
 ## Handoff
 
-State `todo` (admitted 2026-09-16 in the feat-018 contract commit; unstarted).
-Blockers: none (starts on dispatch; needs only the frozen schema).
-Next: implement the two phases; open the child PR into `tungxuan1656/feat-018-integration`
-after gate + review (squash; never to main).
+State `active` (implemented 2026-09-16; two-phase adapter reviewable, gate self-check
+passed: mapping matches frozen schema, bounded outputs, explicit unavailable values,
+no shared-contract/sibling diff, `./init.sh` PASS).
+Blockers: none (needs integration-owner + independent review, then merge).
+Next: merge into `tungxuan1656/feat-018-integration` after gate + review (squash; never
+to main); then dispatch `mini-018b`.
