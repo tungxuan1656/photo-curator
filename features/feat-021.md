@@ -1,9 +1,8 @@
 # feat-021 — Variant-aware clustering
 
-## Status and kind
+## Status
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-020`
 
 ## Goal
@@ -13,15 +12,8 @@ cluster, then select representatives by the moment context.
 
 ## Contract boundary
 
-The parent owns cluster membership, representative contract, and any change to
-`DuplicateResolver` or `SelectionGrouping`. Child work may calculate coherence evidence
-in a new, exclusive file only.
-
-## Reserved mini-features
-
-- `mini-021a` — cluster coherence evaluator. Admit after the parent locks its input and
-  output types. Done when it reports split/keep evidence for the baseline failure set;
-  it must not edit resolver wiring or representative selection.
+The feature owns cluster membership, representative contract, and any change to
+`DuplicateResolver` or `SelectionGrouping`. Calculate coherence evidence inside this feature.
 
 ## Acceptance
 
@@ -39,7 +31,7 @@ in a new, exclusive file only.
 ## Inline plan
 
 1. Convert baseline collapse cases into explicit cluster invariants.
-2. Admit the evidence calculator only after its exclusive file and contract are locked.
+2. Implement the evidence calculator after its contract is fixed.
 3. Integrate resolver and representative changes, then run cluster QA.
 
 ## Verify

@@ -1,9 +1,8 @@
 # feat-019 — Contextual quality signals
 
-## Status and kind
+## Status
 
 - Status: `done`
-- Kind: `integration`
 - Depends on: `feat-018` (`done` on origin/main `72070d6`; verified before activation)
 
 ## Goal
@@ -17,7 +16,7 @@ policy. No weight, threshold, or scorer-math change in the contract commit.
 
 ## Contract boundary
 
-The parent owns Tier-B eligibility, cache/version behavior, fact schema, and
+The feature owns Tier-B eligibility, cache/version behavior, fact schema, and
 pipeline wiring — the same four shared files as feat-018, plus this record:
 
 - `Domain/Models/PhotoAnalysis.swift`
@@ -27,16 +26,14 @@ pipeline wiring — the same four shared files as feat-018, plus this record:
 - `features/feat-019.md`
 
 Raw facts remain separate from selection weights: this commit persists no new
-fact and changes no weight, threshold, or scorer math. No child may edit the
-shared files above or a sibling file. (`features/mini-019a.md` /
-`features/mini-019b.md` / `features/mini-019c.md` transfer to their mini on
-dispatch; the parent retains the frozen routing sections.)
+fact and changes no weight, threshold, or scorer math. This feature owns the
+shared files above and all routing implementation.
 
 ## FROZEN Tier-B routing contract (locked 2026-09-17, base `72070d6`)
 
 Base versions: `analysisVersion 2`, `engineVersion 2`, `configVersion 1`, cache
 `schemaVersion 1`. Persisted per-photo changes take `analysisVersion` 2 → **3**
-at parent integration (Task 3), never in a child. The feat-018 extension rule
+during feature implementation. The feat-018 extension rule
 holds: the new version's rows requeue by miss, never by crash or migration.
 
 ### Tier-A runs first
@@ -61,13 +58,13 @@ Revisions verified in the iOS 26.5 SDK headers on 2026-09-17.
 `Technically usable` = not on the frozen low-quality path (Tier-B cannot
 rescue a bad photo; F-017-F stays Tier-A). Miss-rate note: utility triggers
 cover screenshot-subtype and `isUtility` assets only; photos of documents with
-neither signal are an honest miss, and mini-019b measures trigger coverage on
+neither signal are an honest miss, and the utility implementation measures trigger coverage on
 Golden-shape rather than widening the predicate here.
 
 Explicitly OUT of feat-019: objectness saliency (one saliency family
 suffices); foreground/person-instance masks (subject-fraction overlap with
 saliency + person-seg); smudge (no such request exists in the iOS 26.5 SDK
-headers — mini-019c records it UNAVAILABLE); pose/landmarks (mini-019c matrix
+headers — the implementation records it UNAVAILABLE); pose/landmarks (optional matrix
 only, never persisted here); any Core ML/embedding (feat-024).
 
 ### Expected-value skip rule
@@ -106,7 +103,7 @@ index only). No per-person identity is created; counts stay in the existing
 
 ### Cache/version behavior
 
-`analysisVersion` 2 → 3 at parent Task 3. The existing version gate IS the
+`analysisVersion` 2 → 3 at feature implementation. The existing version gate IS the
 migration: `FileAnalysisCache` reuses a row only when
 `stored.analysisVersion == current (3)`; `BatchPipeline.completedIDs` ignores
 checkpoints whose `analysisVersion != current`, so stale checkpoints re-queue
@@ -115,7 +112,7 @@ row or checkpoint with `analysisVersion != 3` is recomputed from pixels once,
 then stored at 3. `Reset Analysis` semantics unchanged (apple-frameworks §8: do
 not migrate ephemeral AI fields). No new migration code.
 
-### Pipeline wiring points (parent Task 3, after children merge)
+### Pipeline wiring points (feature implementation, during feature implementation)
 
 1. `VisionAnalysisService.performAll`: Tier-A (existing requests plus
    `UniversalFactAdapter`) → eligibility predicates → eligible Tier-B requests
@@ -141,19 +138,6 @@ by the double-run byte-compare in Verify; transient-request nondeterminism is
 bounded to nil-vs-value and resolves on the next version bump or Reset
 Analysis. Cancel and memory-critical paths are unchanged.
 
-## Admitted mini-features (merge order: 019a → 019b → 019c-conditional)
-
-| Order | Mini | Exclusive owns | Merge gate |
-|---|---|---|---|
-| 1 | `mini-019a` — composition evidence adapter | `Services/Analysis/CompositionEvidenceAdapter.swift`, `features/mini-019a.md` | Pure mapping per frozen schema, bounded outputs, explicit unavailable values; no shared-contract/sibling diff; `./init.sh` passes |
-| 2 | `mini-019b` — utility evidence adapter | `Services/Analysis/UtilityEvidenceAdapter.swift`, `features/mini-019b.md` | Pure mapping per frozen schema + trigger-coverage note, bounded outputs, no raw text persisted; no shared-contract/sibling diff; `./init.sh` passes |
-| 3 | `mini-019c` — experimental availability matrix (CONDITIONAL) | `docs/evidence/tier-b-experimental-matrix.md`, `features/mini-019c.md` | Activates only on a parent-named residual failure; benchmark-backed accept/reject per candidate; no `apps/` diff; `./init.sh` passes |
-
-Ownership is non-overlapping; no mini touches a shared contract or a sibling
-file. 019b starts after 019a merges. 019c stays `todo` until the parent names
-the residual failure it targets. Full 12-field cards live in each mini file
-and `docs/plans/feat-019.md`.
-
 ## Acceptance (Simulator code-evidence; manual QA replaced per user directive 2026-09-16)
 
 - [x] A-shape + Golden-shape proof binary (REAL shipped sources verbatim, run
@@ -175,13 +159,12 @@ and `docs/plans/feat-019.md`.
 - `docs/design-docs/data-model.md` (§4 invariants, §6 shapes)
 - `docs/ship-gates/performance.md` (§1/§5 budgets, regression flag)
 - `docs/ship-gates/privacy.md` (canonical retention/classification owner)
-- `docs/exec-plans/curation-intelligence-v2-parallel-delivery.md`
 
 ## Inline plan
 
 1. Contract commit (this commit): activate, freeze Tier-B routing, admit 019a
    + 019b + 019c-conditional as `todo`. No `apps/` change.
-2. Children: 019a composition adapter, then 019b utility adapter, then 019c
+2. Implementation slices: composition evidence, then utility evidence, then optional availability work
    matrix iff a residual failure is named; merge in order with independent reviews.
 3. Parent Task 3: wire predicates + requests + `make` + version 3, run the
    Verify procedure, gate feat-020.
@@ -200,7 +183,7 @@ and `docs/plans/feat-019.md`.
   delta vs the feat-018 warm baseline judged against the performance.md >~20%
   regression flag under the §1 conditions (local assets, normal thermals, Low
   Power off). Host-harness macOS Vision backend: the booted-Simulator Vision
-  path throws `espresso-context` here (mini-018b finding), so no Simulator
+  path throws `espresso-context` here (previous benchmark finding), so no Simulator
   Vision numbers are claimed; Simulator build + launch no-crash comes from
   `./init.sh`.
 - `./init.sh` PASS; `git diff --name-only` shows owned files only, no unrelated `apps/` path.
@@ -210,7 +193,7 @@ and `docs/plans/feat-019.md`.
 
 ## Handoff
 
-- State: done (parent PR #40 squash-MERGED via `e62172b` 2026-09-17; contract + children + Task 3 + findings fix all on main; index flipped `active` → `done`)
+- State: done (parent PR #40 squash-MERGED via `e62172b` 2026-09-17; contract + implementation + Task 3 + findings fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-018` reads `done` (squash #37 at `72070d6`), `feat-019` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
@@ -304,7 +287,7 @@ and `docs/plans/feat-019.md`.
   same four shared-contract files after this branch lands; it must not reinterpret
   the version-3 frozen schema (Tier-B facts, caps, predicates, allowlist) — extensions
   bump `analysisVersion` 3 → 4 with the same requeue rule.
-- mini-019c fate: CONDITIONAL-CLOSED (not activated, not merged) — no residual failure
+- Optional experimental availability work remains deferred because no residual failure
   named (zero Tier-B-driven pick movement on synthetic bytes is expected per the
   no-scorer-consumer design, not a failure); smudge stays UNAVAILABLE (no such request
   in the iOS 26.5 SDK headers, re-verified at Task 3); pose/landmarks matrix deferred
@@ -313,5 +296,5 @@ and `docs/plans/feat-019.md`.
 - Closeout (done-flip, branch `tungxuan1656/feat-019-doneflip` from origin/main `e62172b`):
   - Squash evidence: parent PR #40 state MERGED, mergeCommit `e62172b` (= origin/main HEAD); squash body contains the full chain — contract `b8b22ff`, child `8394e19` (019a, PR #39 MERGED) + `2274281` (019b, PR #38 MERGED), Task 3 `8e12b97`, findings fix `f3d5337`; pre-squash commits verified present via `git cat-file -t`.
   - Acceptance re-verified on main (all four boxes honestly still pass, read checked): (1) wiring — `performAll` splits Tier-A/Tier-B (`VisionAnalysisService.swift:92,110,146,189`), `make` gains 7 Tier-B params with caps (`PhotoAnalysis.swift:132-136,150,156-157`), `analysisVersion: 3` (`AppConfiguration.swift:61`), both adapters exist (`Services/Analysis/CompositionEvidenceAdapter.swift` + `UtilityEvidenceAdapter.swift`); (2) version-3 + requeue — cache version gate (`FileAnalysisCache.swift:26,35`), checkpoint-ignore (`BatchPipeline.swift:386`), version-tolerant decode (`PhotoAnalysis.swift:194,202`); (3) Verify code-evidence — Task 3 proof results recorded in this Handoff stand (determinism byte-compare PASS, honest nil-on-synthetic reading, skip/bound proofs, PERSIST-PROOF PASS, REQUEUE-RULE PASS, cost recorded with no budget constant changed); (4) fallback — per-request independent degrade with gated nil arms (`VisionAnalysisService.swift:227-234`), pure capped map (`PhotoAnalysis.swift:150,156-157`), cancellation checks between requests.
-  - Minis `mini-019a`/`mini-019b` already `done` in `feature_index.json`; `mini-019c` stays `todo` conditional-closed (not activated, not merged — no residual failure named, smudge UNAVAILABLE, matrix deferred); `feat-020` stays `todo` (no start here).
+  - Composition and utility evidence are shipped; optional availability matrix work remains deferred (no residual failure named, smudge UNAVAILABLE).  `feat-020` stays `todo` (no start here).
 - Next: PR `tungxuan1656/feat-019-doneflip` → main (squash in a separate merge task); feat-020 selection remains user-gated; feat-020 must not start here.

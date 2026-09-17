@@ -1,9 +1,8 @@
 # feat-025 — Conditional specialist models
 
-## Status and kind
+## Status
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-023`
 
 ## Goal
@@ -13,15 +12,9 @@ no cheaper accepted remedy. Rejection is a successful outcome.
 
 ## Contract boundary
 
-The parent owns candidate selection, target failure, accept/reject decision, routing,
+The feature owns candidate selection, target failure, accept/reject decision, routing,
 resource budget, license/provenance, and rollback. Do not pre-admit DETR, depth, or SAM
-as a bundle. Create a mini-feature only for one candidate with one named failure.
-
-## Reserved mini-features
-
-None. At activation, the parent may reserve `mini-025a`, then `mini-025b`, only after
-each prior candidate is accepted or rejected. Every record must identify one model, one
-failure, one device benchmark, one license/checksum record, and one reject path.
+as a bundle. Create a feature only for one candidate with one named failure.
 
 ## Acceptance
 
@@ -41,7 +34,7 @@ failure, one device benchmark, one license/checksum record, and one reject path.
 ## Inline plan
 
 1. Select a single unresolved feat-023 failure and verify no cheaper signal fixes it.
-2. Create one mini-feature admission card for one candidate; benchmark and decide.
+2. Create one evaluation record for each candidate; benchmark and decide.
 3. Integrate only an accepted candidate, otherwise record the rejection and close.
 
 ## Verify

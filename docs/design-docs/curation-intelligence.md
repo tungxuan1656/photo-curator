@@ -512,8 +512,7 @@ Pending baseline only (branch `tungxuan1656/feat-017-integration`; fixtures
 `analysisVersion 1`, `engineVersion 2`, `configVersion 1`, cache `schemaVersion 1`):
 all run values are honestly `pending` awaiting user-run physical measurement
 (Simulator-only constraint); no numbers are invented and no behavior changes here.
-Evidence: `features/mini-017a.md` (Golden ledger + frozen denominators),
-`features/mini-017b.md` (nine `manual-qa.md` §8.2 row blocks), `features/mini-017c.md`
+Evidence: `features/feat-017.md` (Golden ledger, nine `manual-qa.md` §8.2 rows, and device budget records)
 (two §7 budget blocks with full conditions).
 
 | ID | Target area / dataset | Candidate V2 remedy pointer |
@@ -563,7 +562,7 @@ If an iOS 27 path can invoke any non-local model, it needs a separate explicit p
 
 Implementation is tracked as GitHub issues until the current active repository feature is complete.
 
-Until its governance task merges, do not create a second active feature. Read the [parallel delivery protocol](../exec-plans/curation-intelligence-v2-parallel-delivery.md) before that task changes the rule.
+Keep one feature active at a time. Read `AGENTS.md` and the selected feature record before starting work.
 
 The program is **evidence/dependency-driven**, not a requirement to ship every named technology.
 

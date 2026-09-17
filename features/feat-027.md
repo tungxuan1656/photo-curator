@@ -1,9 +1,8 @@
 # feat-027 — Semantic jury
 
-## Status and kind
+## Status
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-026`
 
 ## Goal
@@ -13,15 +12,9 @@ against a small, recoverable schema; iOS 26 remains deterministic.
 
 ## Contract boundary
 
-The parent owns OS gate, provider protocol, request policy, choice schema, fallback,
-telemetry-free diagnostics, and selection integration. Children may implement an isolated
+The feature owns OS gate, provider protocol, request policy, choice schema, fallback,
+telemetry-free diagnostics, and selection integration. Implement an isolated
 adapter only after the parent locks protocol and exact path.
-
-## Reserved mini-features
-
-- `mini-027a` — semantic jury adapter. Admit after the schema and iOS availability
-  contract are frozen. Done when it returns only `chooseA`, `chooseB`, `keepBoth`, or
-  `abstain`, and returns explicit unavailability instead of changing selection wiring.
 
 ## Acceptance
 
@@ -39,7 +32,7 @@ adapter only after the parent locks protocol and exact path.
 ## Inline plan
 
 1. Lock availability, schema, ambiguity admission, and fallback contracts.
-2. Admit the adapter with exclusive source ownership.
+2. Implement the adapter with the fixed source ownership.
 3. Integrate only validated results; record iOS 26 and failure-path evidence.
 
 ## Verify

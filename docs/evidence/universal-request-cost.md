@@ -1,4 +1,4 @@
-# Universal-request cost benchmark (mini-018b, feat-018)
+# Universal-request cost benchmark (feat-018)
 
 Evidence only; no code change. Every number below is measured on this run from
 real fixture bytes with the harness sources hashed in §6 — nothing invented,
@@ -9,7 +9,7 @@ measured on this host; the host-harness numbers below are the reproducible
 record, and parent Task 3 re-measures in the Simulator-execution lane where the
 backend exists.
 
-## 1. Input shapes (merged mini-018a, commit `5b731bb`)
+## 1. Input shapes (adapter implementation, commit `5b731bb`)
 
 Phase-1 input: the 512 px analysis `CGImage`, orientation `.up`, one shared
 `VNImageRequestHandler` per asset; two requests collected beside the existing

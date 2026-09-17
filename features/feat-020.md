@@ -1,9 +1,8 @@
 # feat-020 — People and group selection
 
-## Status and kind
+## Status
 
 - Status: `done`
-- Kind: `integration`
 - Depends on: `feat-019` (`done` on origin/main `00c62e2`; verified before activation)
 
 ## Goal
@@ -15,7 +14,7 @@ decision policy only; feat-019 owns the Tier-A/B fact schema (frozen).
 
 ## Contract boundary
 
-The parent owns aggregation, candid guards, selection policy, explanations,
+The feature owns aggregation, candid guards, selection policy, explanations,
 and privacy review — the same shared files as feat-019, plus this record:
 
 - `Domain/Scoring/QualityScorer.swift`
@@ -23,17 +22,14 @@ and privacy review — the same shared files as feat-019, plus this record:
 - `Services/Analysis/VisionAnalysisService.swift`
 - `features/feat-020.md`
 
-No child may edit the shared files above or a sibling file.
-(`features/mini-020a.md` transfers to its mini on dispatch; the parent
-retains the frozen decision sections.) No child may reinterpret the
+This feature owns the shared files above and all implementation wiring. No implementation may reinterpret the
 version-3 frozen schema (Tier-A/B facts, caps, predicates, allowlist).
 
 ## FROZEN people/group decision contract (locked 2026-09-17, base `00c62e2`)
 
 Base versions: `analysisVersion 3`, `engineVersion 2`, `configVersion 1`,
 cache `schemaVersion 1`. Persisted per-photo extensions take
-`analysisVersion` 3 → **4** at parent integration (Task 3), never in a
-child. The feat-018/019 extension rule holds: the new version's rows requeue
+`analysisVersion` 3 → **4** during feature implementation. The feat-018/019 extension rule holds: the new version's rows requeue
 by miss, never by crash or migration.
 
 ### Aggregation inputs (exact; feat-019 outputs only)
@@ -96,7 +92,7 @@ only; retention until reset or version change (§6).
 
 ### Cache/version behavior
 
-`analysisVersion` 3 → 4 at parent Task 3. The existing version gate IS the
+`analysisVersion` 3 → 4 at feature implementation. The existing version gate IS the
 migration: `FileAnalysisCache` reuses a row only when
 `stored.analysisVersion == current (4)`; `BatchPipeline.completedIDs`
 ignores checkpoints whose `analysisVersion != current`. Requeue rule: any
@@ -106,9 +102,9 @@ migration code. New persisted fields (if any) decode with
 `decodeIfPresent` (version-3 rows still decode; the gate treats them as
 miss, not crash).
 
-### Pipeline wiring points (parent Task 3, after the child merges)
+### Pipeline wiring points (feature implementation)
 
-1. `GroupEvidenceCalculator` (new file, mini-020a): transient per-face
+1. `GroupEvidenceCalculator` (new file): transient per-face
    distribution from the Tier-A face observations — pure map, scalars only,
    nothing persisted, nothing returned but count/min/mean.
 2. `QualityScorer.score`: fold the weakest-face signal into the people term
@@ -129,22 +125,6 @@ signal, Tier-A-only score — never a throw, never a fabricated score).
 Mapping is pure: same per-face values give the same distribution.
 Same-image rerun determinism is proven by the double-run byte-compare in
 Verify. Cancel and memory-critical paths are unchanged.
-
-## Admitted mini-features (merge order: 020a only)
-
-| Order | Mini | Exclusive owns | Merge gate |
-|---|---|---|---|
-| 1 | `mini-020a` — group evidence calculator | `Services/Analysis/GroupEvidenceCalculator.swift`, `features/mini-020a.md` | Pure transient mapping per frozen contract (per-face values → count/min/mean scalars), no persisted/raw-face return, no shared-contract/sibling diff; `./init.sh` passes |
-
-Ownership is non-overlapping; the mini touches only its exact new file plus
-its own card. The full 12-field card lives in `features/mini-020a.md` and
-`docs/plans/feat-020.md`.
-
-## Reserved mini-features
-
-- `mini-020a` — admitted as `todo` (task-ready) in this commit. Done when it
-  returns derived, non-persisted distributions for the parent to consume and
-  documents its unavailable case.
 
 ## Acceptance (Simulator code-evidence; manual QA replaced per user directive 2026-09-16)
 
@@ -201,7 +181,7 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
 
 ## Handoff
 
-- State: done (parent PR #43 squash-MERGED via `4613afe` 2026-09-17; contract + child + Task 3 + max-restore fix all on main; index flipped `active` → `done`)
+- State: done (parent PR #43 squash-MERGED via `4613afe` 2026-09-17; contract + implementation + Task 3 + max-restore fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-019` reads `done` (squash #41 at `00c62e2`), `feat-020` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
@@ -291,7 +271,7 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
   extensions bump `analysisVersion` 4 → 5 with the same requeue rule.
 - Blockers: none.
 - Closeout (done-flip, branch `tungxuan1656/feat-020-doneflip` from origin/main `4613afe`):
-  - Squash evidence: parent PR #43 state MERGED, mergeCommit `4613afe` (= origin/main HEAD); squash body contains the full chain — contract `b181559`, child `84af07d` (mini-020a, PR #42 MERGED), Task 3 `fb2d4c1`, max-restore fix `6141907`; all four pre-squash commits plus the squash verified present via `git cat-file -t`; squash tree equals the integration tip (`6141907` tree `e956cdf4…`).
+  - Squash evidence: parent PR #43 state MERGED, mergeCommit `4613afe` (= origin/main HEAD); squash body contains the full implementation chain; all pre-squash commits plus the squash verified present via `git cat-file -t`; squash tree equals the integration tip (`6141907` tree `e956cdf4…`).
   - Acceptance re-verified on main (all four boxes honestly still pass, read checked): (1) wiring — `performAll` passes Tier-A face observations through `GroupEvidenceCalculator.map` (`VisionAnalysisService.swift:97`), calculator pure map with count-only/nil arms + clamped01 (`GroupEvidenceCalculator.swift:46-64`), scorer weakest-face `min(group, minFaceQuality)` fold (`QualityScorer.swift:50`), frozen people reason codes (`FinalAlbumBuilder.swift:85-91`), `analysisVersion: 4` (`AppConfiguration.swift:61`), score call sites unchanged (`SelectionEngine.swift:66,141,182`), no new Vision request (Tier-A still 3 requests: faceRects/faceQuality/print); max-restore fix verified (`VisionAnalysisService.swift:100,187-190` — max feeds the max slot, min/mean ride separately); (2) candid-guard — people term is nil-gated (`QualityScorer.swift:49-53` composes over available signals only, never lowers non-people moments) and reason codes fire only on faced picks (`FinalAlbumBuilder.swift:82-92`); (3) privacy — only derived scalars persist (`PhotoAnalysis.swift:20-22`), boxes/landmarks/pixels never leave Tier-A locals (`VisionAnalysisService.swift:94-96`, diagnostics show face count/copy only); (4) cost/budget — no budget constant changed in the squash (`AppConfiguration.swift` diff is the single version 3 → 4 line), calculator `map` is a synchronous pure fold inside the existing lane body (no detached task, no priority), Task 3 cold/warm/cached numbers recorded in this Handoff stand; version-3 rows still decode whole-struct (`PhotoAnalysis.swift:199`) and the version gate + checkpoint-ignore treat them as miss, not crash (`FileAnalysisCache.swift:26,35`, `BatchPipeline.swift:386`).
-  - Mini `mini-020a` already `done` in `feature_index.json`; `feat-021` stays `todo` (no start here).
+  - Group evidence calculation is complete; `feat-021` stays `todo` (no start here).
 - Next: PR `tungxuan1656/feat-020-doneflip` → main (squash in a separate merge task); feat-021 selection remains user-gated; feat-021 must not start here.

@@ -240,3 +240,19 @@
 **Evidence**: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0 violations, Simulator build SUCCEEDED, SKIP [test] by policy); `git diff --name-only` = `features/feat-020.md` + `feature_index.json` + `progress.md` only, no `apps/` path.
 **Blockers**: none.
 **Next**: PR `tungxuan1656/feat-020-doneflip` → main (squash in a separate merge task); feat-021 selection remains user-gated; feat-021 must not start here.
+
+## 2026-09-17 — restore single-feature workflow
+
+**State**: documentation migration complete on branch `chore/restore-single-feat-workflow`; no application code changed.
+**Done**: Restored the Harness Slim rule of one active feature at a time. Removed mini-feature fields and records from `feature_index.json`; updated `AGENTS.md`, feature template, all remaining V2 feature records, and the four V2 plans. Deleted the parallel-delivery protocol, mini template, and completed mini-feature cards. Repointed affected evidence links to their parent feature or evidence document.
+**Evidence**: `feature_index.json` parses with 28 feature records, zero mini records, and zero active features; `git diff --check` passes; repository-wide search finds no active mini-feature policy or broken `features/mini-*` route.
+**Blockers**: none.
+**Next**: activate `feat-021` only after the user selects it, then complete the feature on one branch before starting `feat-022`.
+
+## 2026-09-17 — simplify feature index
+
+**State**: tracker migration complete on `chore/restore-single-feat-workflow`.
+**Done**: Removed duplicated `owns` arrays from `feature_index.json`. Added a total `execution_order` from `feat-001` through the remaining V2 work, with `feat-024` before `feat-023` as required by its dependency. The index now keeps only execution metadata; each feature file owns its scope and file list.
+**Evidence**: JSON parses; every ID in `execution_order` maps to one feature record; no feature record contains `owns`, mini-feature fields, or an active status.
+**Blockers**: none.
+**Next**: use `execution_order` to select `feat-021`, then update only that feature record while it is active.

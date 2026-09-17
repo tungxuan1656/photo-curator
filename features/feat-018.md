@@ -1,9 +1,8 @@
 # feat-018 — Universal quality signals
 
-## Status and kind
+## Status
 
 - Status: `done`
-- Kind: `integration`
 - Depends on: `feat-017` (`done` on origin/main `a877fa0`; verified before activation)
 
 ## Goal
@@ -15,7 +14,7 @@ no weight, threshold, or scorer-math change in the contract commit.
 
 ## Contract boundary
 
-The parent owns `PhotoAnalysis`, cache migration, `analysisVersion`, and pipeline wiring:
+The feature owns `PhotoAnalysis`, cache migration, `analysisVersion`, and pipeline wiring:
 
 - `Domain/Models/PhotoAnalysis.swift`
 - `Services/Analysis/VisionAnalysisService.swift`
@@ -24,15 +23,13 @@ The parent owns `PhotoAnalysis`, cache migration, `analysisVersion`, and pipelin
 - `features/feat-018.md`
 
 Raw facts remain separate from selection weights: this commit persists no new fact and
-changes no weight, threshold, or scorer math. No child may edit the shared files above
-or a sibling file. (`features/mini-018a.md` / `features/mini-018b.md` transfer to their
-mini on dispatch; the parent retains the frozen schema sections.)
+changes no weight, threshold, or scorer math. This feature owns the shared files above and all implementation wiring.
 
 ## FROZEN universal fact schema (locked 2026-09-16, base `a877fa0`)
 
 Base versions: `analysisVersion 1`, `engineVersion 2`, `configVersion 1`, cache
 `schemaVersion 1`. Persisted per-photo changes take `analysisVersion` 1 → **2** at
-parent integration (Task 3), never in a child.
+feature implementation.
 
 ### New persisted fields (all inside `PhotoAnalysis`, version 2)
 
@@ -84,7 +81,7 @@ unavailable. Requeue rule: any row or checkpoint with `analysisVersion != 2` is
 recomputed from pixels once, then stored at 2. `Reset Analysis` semantics unchanged
 (apple-frameworks §8: do not migrate ephemeral AI fields).
 
-### Pipeline wiring points (parent Task 3, after children merge)
+### Pipeline wiring points (feature implementation)
 
 1. `VisionAnalysisService.performAll`: add aesthetics + classify requests beside the
    face/print requests (same independent-degrade pattern).
@@ -107,17 +104,6 @@ byte-compare in Verify; transient-request nondeterminism is bounded to nil-vs-va
 resolves on the next version bump or Reset Analysis. Cancel and memory-critical paths
 are unchanged.
 
-## Admitted mini-features (merge order: 018a → 018b)
-
-| Order | Mini | Exclusive owns | Merge gate |
-|---|---|---|---|
-| 1 | `mini-018a` — universal aesthetics + classification adapter | `Services/Analysis/UniversalFactAdapter.swift`, `features/mini-018a.md` | Pure mapping per frozen schema, bounded outputs, explicit unavailable values; no shared-contract/sibling diff; `./init.sh` passes |
-| 2 | `mini-018b` — universal-request cost benchmark | `docs/evidence/universal-request-cost.md`, `features/mini-018b.md` | Cold/warm per-request cost + QoS path note recorded; no `apps/` diff; `./init.sh` passes |
-
-Ownership is non-overlapping; neither mini touches a shared contract or a sibling file.
-018b starts after 018a merges (it needs stable adapter input shapes). Full 12-field
-cards live in each mini file and `docs/plans/feat-018.md`.
-
 ## Acceptance
 
 - [x] Aesthetics, classification, FeaturePrint policy flag, and allowed PhotoKit metadata
@@ -139,13 +125,12 @@ cards live in each mini file and `docs/plans/feat-018.md`.
 - `docs/design-docs/apple-frameworks.md` (§8 Vision pipeline)
 - `docs/design-docs/data-model.md` (§4 invariants, §6 shapes)
 - `docs/ship-gates/performance.md` (§5 budgets, regression flag)
-- `docs/exec-plans/curation-intelligence-v2-parallel-delivery.md`
 
 ## Inline plan
 
 1. Contract commit (this commit): activate, freeze schema, admit 018a + 018b as `todo`.
    No `apps/` change.
-2. Children: 018a adapter, then 018b benchmark; merge in order with independent reviews.
+2. Implementation slices: adapter, then benchmark; complete them in order with review.
 3. Parent Task 3: wire requests + `make` + version 2, run the Verify procedure, gate feat-019.
 
 ## Verify (Simulator code-evidence; manual QA replaced per user directive 2026-09-16)
@@ -153,14 +138,14 @@ cards live in each mini file and `docs/plans/feat-018.md`.
 - Proof binary compiling the REAL shipped Domain + adapter sources verbatim runs A-shape
   (60, manifest `33bf85cf…`) + Golden-shape (200, manifest `e61200e0…`) fixture bytes
   through analyze→score→select twice; byte-compare (md5) proves fallback determinism;
-  SYNTHETIC proxy metrics (mini-017a rules v1) compare version-2 facts against the
+  SYNTHETIC proxy metrics from feat-017 compare version-2 facts against the
   feat-017 baseline for F-017-E/F movement.
 - Cold cost (version-1 rows read as miss: full re-analyze incl. 2 new requests) + warm
-  cost (version-2 cache hits + print rebuild) per asset from the mini-018b evidence;
+  cost (version-2 cache hits + print rebuild) per asset from this feature evidence;
   total pipeline delta vs the feat-017 H-1000 host-harness baseline stays within the
   performance.md >~20% regression flag. Simulator-only; never a device claim.
 - QoS: no new task API — new requests run inside the existing structured lanes and
-  inherit lane priority (no `Task.detached`, no priority parameter); mini-018b records
+  inherit lane priority (no `Task.detached`, no priority parameter); this feature records
   the propagation path.
 - `./init.sh` PASS; `git diff --name-only` shows owned files only, no unrelated `apps/` path.
 - Simulator-only HARD RULE: never touch a physical iPhone via any channel
@@ -168,7 +153,7 @@ cards live in each mini file and `docs/plans/feat-018.md`.
 
 ## Handoff
 
-- State: done (parent PR #36 squash-MERGED via `a68c89a` 2026-09-16; contract + children + Task 3 + findings fix all on main; index flipped `active` → `done`)
+- State: done (parent PR #36 squash-MERGED via `a68c89a` 2026-09-16; contract + implementation + Task 3 + findings fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-16 —
   `feat-017` reads `done` (squash #33 at `a877fa0`), `feat-018` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
@@ -222,7 +207,7 @@ cards live in each mini file and `docs/plans/feat-018.md`.
   - QoS: confirmed unchanged — no `Task.detached`, no `TaskPriority`, no priority
     argument in `UniversalFactAdapter.swift` / `VisionAnalysisService.swift` lane
     bodies; new requests run inside the existing `BatchPipeline.drain` structured
-    lanes and inherit lane priority (mini-018b §5 cites hold; wiring adds `perform`
+    lanes and inherit lane priority (the cost evidence records this hold; wiring adds `perform`
     calls inside the same synchronous lane body).
   - Cache requeue proof (REAL `FileStore` + `FileAnalysisCache` +
     `SessionCheckpointStore` sources; main `58a68276…`, binary `1334bd3a…`):
@@ -240,5 +225,5 @@ cards live in each mini file and `docs/plans/feat-018.md`.
 - Closeout (done-flip, branch `tungxuan1656/feat-018-doneflip` from origin/main `a68c89a`):
   - Squash evidence: parent PR #36 state MERGED, mergeCommit `a68c89a` (= origin/main HEAD); squash body contains the full chain — contract `cf9cd52`, child `5b731bb` (018a, PR #34 MERGED) + `fcd4641` (018b, PR #35 MERGED), Task 3 `bc7cbd0`, findings fix `2a0834e`; pre-squash commits verified present via `git cat-file -t`.
   - Acceptance re-verified on main (all four boxes honestly still pass, read checked): (1) wiring — `featurePrintAvailable` persisted (`PhotoAnalysis.swift:77`), `make` params (`:113-115`), `performAll` wires `collect`+`map` (`VisionAnalysisService.swift:144-158`), `analysisVersion: 2` (`AppConfiguration.swift:61`), `UniversalFactAdapter.swift` + `docs/evidence/universal-request-cost.md` exist; (2) version-2 + requeue — cache version gate (`FileAnalysisCache.swift:26,35`), checkpoint-ignore (`BatchPipeline.swift:381`), v1 `decodeIfPresent`→false (`PhotoAnalysis.swift:158`); (3) Verify code-evidence — Task 3 proof results recorded in this Handoff stand (determinism byte-compare PASS, rank-order movement honest reading, cold/warm disposition recorded); (4) fallback determinism — unavailable mapping nil/[]/false in adapter `map` (`:94-102`).
-  - Minis `mini-018a`/`mini-018b` already `done` in `feature_index.json`; `feat-019` stays `todo` (no start here; its contract must still freeze tier-B routing, fallback bounds, and the F-017 target with a measured remedy pointer, and bump `analysisVersion` 2 → 3 for extensions).
+  - Universal adapter and benchmark work are complete; `feat-019` stays `todo` (no start here; its contract must still freeze tier-B routing, fallback bounds, and the F-017 target with a measured remedy pointer, and bump `analysisVersion` 2 → 3 for extensions).
 - Next: feat-019 selection remains user-gated; feat-019 must not start here.
