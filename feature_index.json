@@ -523,8 +523,24 @@
         "Services/Analysis/VisionAnalysisService.swift",
         "features/feat-020.md"
       ],
-      "status": "todo",
+      "status": "active",
       "title": "People and group selection"
+    },
+    {
+      "depends_on": [
+        "feat-020"
+      ],
+      "exclusive_owns": [
+        "Services/Analysis/GroupEvidenceCalculator.swift",
+        "features/mini-020a.md"
+      ],
+      "id": "mini-020a",
+      "kind": "mini",
+      "merge_gate": "Pure transient mapping per frozen contract (per-face values to count/min/mean scalars), no persisted/raw-face return, no shared-contract/sibling diff; ./init.sh passes",
+      "parent": "feat-020",
+      "seam": "Per-face distribution computation (new calculator only, no wiring)",
+      "status": "done",
+      "title": "Group evidence calculator"
     },
     {
       "depends_on": [

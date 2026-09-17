@@ -58,7 +58,7 @@ struct AppConfiguration: Codable, Sendable {
 
     static var `default`: Self {
         Self(
-            analysis: AnalysisConfiguration(analysisVersion: 3),
+            analysis: AnalysisConfiguration(analysisVersion: 4),
             selection: SelectionConfiguration(
                 analysisImageMaxDimension: 512,
                 duplicateTimeWindow: 90,

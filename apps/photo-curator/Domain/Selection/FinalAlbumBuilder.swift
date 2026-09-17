@@ -3,13 +3,11 @@ import Foundation
 /// One persisted decision per source asset plus chronological ordering.
 ///
 /// Selected IDs receive `bestInMoment` or `secondaryMomentRepresentative`,
-/// plus `nearDuplicateRepresentative` when the pick speaks for a cluster.
+/// plus `nearDuplicateRepresentative` when the pick speaks for a cluster,
+/// plus feat-020 people reasons (`bestGroupPhoto` + `betterFaceQuality` for
+/// group picks, `bestPortrait` for single-face picks; frozen codes only).
 /// Rejected duplicate losers receive `nearDuplicate` with the winner in
 /// `competingIDs`; quality-floor exclusions receive `lowQuality`; usable
-/// assets cut by shortlist/diversity receive a truthful diversity reason
-/// (never a false quality claim). Verifies one-decision-per-source,
-/// every pick has a reason and an analysis, one pick per cluster, and
-/// chronological output before returning `engineVersion 2`.
 struct FinalAlbumBuilder: Sendable {
     // swiftlint:disable:next function_parameter_count
     func build(
@@ -76,6 +74,21 @@ private struct BuilderContext {
                 : ["secondaryMomentRepresentative"]
             if winnerByCluster[asset.id] != nil {
                 reasons.append("nearDuplicateRepresentative")
+            }
+            // feat-020 people reasons (selection-rules §16, frozen codes only):
+            // a group pick (2+ faces) carries bestGroupPhoto with
+            // betterFaceQuality when the weakest-face signal is present; a
+            // single-face pick carries bestPortrait. No new code invented.
+            if let candidate = scoreByID[asset.id], candidate.containsPeople {
+                let faces = analyses[asset.id]?.people.faceCount ?? 0
+                if faces >= 2 {
+                    reasons.append("bestGroupPhoto")
+                    if analyses[asset.id]?.people.minFaceQuality != nil {
+                        reasons.append("betterFaceQuality")
+                    }
+                } else {
+                    reasons.append("bestPortrait")
+                }
             }
             return Decision(
                 assetID: asset.id, status: .selected, score: scoreByID[asset.id]?.score,
