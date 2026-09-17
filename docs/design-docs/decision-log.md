@@ -62,6 +62,7 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-036 | Global diversity shortlist graph contract | `features/feat-023.md` |
 | DEC-037 | Tier-C graph uses the exact FeaturePrint shortlist | `features/feat-023.md` |
 | DEC-038 | Tier-D specialists rejected (feat-025 no-op) | `features/feat-025.md` |
+| DEC-039 | Feat-025 readiness record keeps docs/plans/feat-025.md, no app change | `features/feat-025.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -349,6 +350,18 @@ Alternatives considered: vendoring any candidate without a target failure (rejec
 Evidence: feat-023 proof (Smoke 60->6, Golden 200->15, Trip 150->24, H 1000->56; 12 named cases ALL PASS; fallback==noop exactly; double-run byte-identical) plus repo-state proof (`find` shows no `.mlmodel*`/`.mlpackage*`/`.coreml*`; `apps/` grep shows no Tier-D names vendored); `./init.sh` PASS at the feat-025 commit; `git diff --name-only` shows tracker/decision records only, no `apps/` path.
 Consequences: the iOS 26 native path stays complete with zero specialist cost; feat-026/feat-028 proceed unaffected (feat-028 explicitly does not depend on feat-025); no license/checksum/size/latency burden is added.
 Reconsider when: a named residual failure shows cheaper remedies (native Tier-B facts, Tier-C embedding, feat-027 jury) exhausted with fixture evidence that a specific Tier-D candidate moves picks - then run that candidate's full gate (license re-review + checksum + size/latency/memory/thermal + quality delta + bounded difficult-only routing + rollback) before any vendoring.
+
+---
+
+# DEC-039 - Feat-025 readiness record: keep docs/plans/feat-025.md, no application change
+Status: Accepted - Date: 2026-09-17
+Owner: `features/feat-025.md` - Affected: `docs/plans/feat-025.md`, feat-026 admission
+Context: DEC-038 recorded the feat-025 no-op verdict with "Create no `docs/plans/feat-025.md`" under its then-known single-workspace/no-shared-contract condition. The review fix then touched >=4 tracked paths (`features/feat-025.md`, `feature_index.json`, `docs/design-docs/curation-runtime-stack.md`, `docs/design-docs/decision-log.md`, `progress.md` plus the plan itself), and AGENTS.md requires a readiness plan at that file count regardless of code impact.
+Decision: Retain the DEC-038 no-op specialist outcome unchanged (three candidates individually REJECTED, nothing vendored, no benchmark without a target failure) and keep `docs/plans/feat-025.md` as the required Harness Slim readiness record (frozen trigger contract, explicit no-trigger branch, per-candidate records, repo-state verification, rollback/no-model-admission). No application/model/runtime change: no provider, Vision request, persisted field, config key, or version move.
+Alternatives considered: delete the plan to match DEC-038's "create no plan" line literally (rejected - violates the AGENTS.md >=4-file rule the review fix triggered); rewrite DEC-038 (rejected - append-only history, the DEC-038 verdict stands); treat the plan as a code rollout (rejected - single workspace, no shared-contract code change, no phases, nothing to roll back beyond the docs/metadata paths).
+Evidence: `docs/plans/feat-025.md` file-count rationale; `git status --porcelain` at the review fix shows five modified docs/metadata paths plus the plan, no `apps/` path; `./init.sh` PASS at the feat-025 commit; PR #52 MERGED via `55cf176753be531fa64fbab68504e5487943d0e9`.
+Consequences: DEC-038's rejection verdict and reconsider condition stand; the plan exists only as the harness-required readiness record; feat-026 proceeds unaffected (depends on feat-023, done).
+Reconsider when: a future feature changes the Tier-D trigger contract or admits a specialist candidate - then supersede with a new evidence-backed DEC entry before any vendoring.
 
 ---
 
