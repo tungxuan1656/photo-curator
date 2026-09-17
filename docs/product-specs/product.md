@@ -164,8 +164,7 @@ Not in the MVP unless promoted through `decision-log.md`:
 - Per-user trained models and complex personalization.
 - Manual AI parameter controls in the UI (similarity / blur / face
   thresholds, diversity weights). Those are internal engine config (03, 04).
-- Automated test targets or test files (repo policy; validation is manual
-  per 10).
+- Automated test targets or test files (repo policy; validation is reproducible automated evidence plus `./init.sh`; manual QA per 10 optional, non-blocking per DEC-032).
 
 ---
 
@@ -198,7 +197,7 @@ MVP must do, not how.
 | FR-20 | Run core analysis on-device where practical | Must | 09 |
 | FR-21 | Work without a Photos Curator account | Must | 09 |
 | FR-22 | Work without a custom backend for core flow | Must | 09 |
-| FR-23 | Keep enough selection info to support manual quality review | Should | 06, 10 |
+| FR-23 | Keep enough selection info to support quality review (automated evidence plus optional hand review) | Should | 06, 10 |
 | FR-24 | Keep suitable local feedback for future engine improvement | Should | 11 |
 
 ---
@@ -228,8 +227,8 @@ Trade-off order when requirements conflict: (1) protect user data,
 
 ## 10. Launch gates
 
-All gates pass before the MVP counts as usable. Measurement method
-and metric targets live in 10; timing budgets live in 08.
+All gates pass before the MVP counts as usable. Gates are proven by reproducible automated evidence (Simulator permitted) plus `./init.sh`; exploratory hand method
+and metric targets live in 10 (optional, non-blocking per DEC-032); timing budgets live in 08.
 
 - **Gate 1 — Large session completes.** A representative ~1,000-photo
   session finishes on supported devices.
@@ -252,7 +251,7 @@ Product-level expectations (goals only; numbers in linked docs):
   survives interruption (budgets: `performance.md`).
 - Privacy posture holds: no account, no normal upload, no deletion, clear
   permission messaging (controls: `privacy.md`).
-- Selection quality judged per `manual-qa.md`;
+- Selection quality judged by reproducible automated evidence (exploratory method in `manual-qa.md`, optional non-blocking per DEC-032);
   usage signals (completion, save, acceptance, replacement, repeat use)
   defined in `analytics.md`.
 
@@ -261,11 +260,10 @@ fill the album, key moments vanish, weak versions win obvious comparisons,
 most picks get replaced, large sessions crash, users fear deletion, or
 setup costs more effort than manual review.
 
-Definition of done: a real user can open the app → pick a large set →
+Definition of done (proven by reproducible automated evidence plus `./init.sh` where possible; hand runs optional, non-blocking per DEC-032): a real user can open the app → pick a large set →
 choose album size → curate → review → fix picks → save, without developer
 help, with good quality, duplicate control, moment coverage, diversity,
 safe originals, and clearly less manual work.
-
 ---
 
 ## 11. Open product questions
@@ -288,7 +286,7 @@ Canonical links:
 - Engine design → `selection-engine.md`
 - Budgets → `performance.md`
 - Privacy → `privacy.md`
-- QA method and metric targets → `manual-qa.md`
+- QA method (optional exploratory handbook) and metric targets → `manual-qa.md`
 - Analytics events → `analytics.md`
 - Roadmap → `roadmap.md`
 - Decisions and rationale → `decision-log.md`
@@ -299,4 +297,4 @@ Uncertain (owned elsewhere, not decided here):
 - Screenshot / Live Photo / Favorites handling thresholds (03, via 13).
 - Completion-time budgets on oldest supported device (08).
 - Retention windows for derived analysis data (09).
-- QA metric pass lines for release (10).
+- QA metric reference lines (advisory, non-blocking per DEC-032) (10).

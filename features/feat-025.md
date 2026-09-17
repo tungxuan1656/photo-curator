@@ -28,7 +28,6 @@ as a bundle. Create a feature only for one candidate with one named failure.
 ## Relevant docs
 
 - `docs/design-docs/curation-intelligence.md`
-- `docs/ship-gates/manual-qa.md`
 - `docs/ship-gates/privacy.md`
 
 ## Inline plan
@@ -39,8 +38,9 @@ as a bundle. Create a feature only for one candidate with one named failure.
 
 ## Verify
 
-- Target fixture plus Golden and 1k smoke for any accepted candidate.
+- Reproducible automated evidence for every behavior change (Simulator permitted): target fixture plus Golden-shaped and 1k-scale for any accepted candidate; record commands, fixtures, and outputs in the handoff.
 - `./init.sh`
+- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Handoff
 

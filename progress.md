@@ -256,3 +256,51 @@
 **Evidence**: JSON parses; every ID in `execution_order` maps to one feature record; no feature record contains `owns`, mini-feature fields, or an active status.
 **Blockers**: none.
 **Next**: use `execution_order` to select `feat-021`, then update only that feature record while it is active.
+
+## 2026-09-17 — feat-021
+
+**State**: active (sole integration; wired + verified, parent PR NOT yet opened; feat-020 stays `done`)
+**Done**: Variant-aware clustering in `DuplicateResolver.swift` only — closest-first canonical edge order, pairwise variant gate (people-presence, single-vs-group, panorama/screenshot class, document, known-differing scene; every veto needs positive evidence on both sides), coherence-checked union (incompatible endpoints never merge behind an intermediate), context-aware representative via the shared `QualityScorer` rank. No `SelectionGrouping`/`SelectionEngine`/`MomentBuilder` change; `analysisVersion` stays 4; no new request/model/dependency/key.
+**Evidence**: Proof binary (REAL shipped sources verbatim; harness `765810ad…`, binary `70dc9af8…`) on fixture bytes twice — A 60→11 (16 clusters, incoherent 0), Golden 200→30 (51 clusters, incoherent 0), B 40→5 (5 clusters, incoherent 0); picked byte-compare A `aef1efb1…` ==, Golden `7a3af1ea…` ==, B `2b7259ec…` ==; named cases I1–I8 + burst control ALL PASS; `./init.sh` PASS (format, `swiftlint --strict` 0 violations/61 files, Simulator build SUCCEEDED, SKIP [test] by policy). Day/night + formal/candid + framing-magnitude ceilings recorded as feat-024/feat-027 admission evidence; three proposed decisions (chain policy, ceilings, version-4 hold) left for the coordinator — no decision-log update made here.
+**Blockers**: none.
+**Next**: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated.
+
+## 2026-09-17 — feat-021 review-fix wave
+
+**State**: active (sole integration; review findings fixed + re-proven, parent PR NOT yet opened; feat-020 stays `done`)
+**Done**: Bilateral variant gate in `DuplicateResolver.swift:134-187` (`framingClassDiffers` 174-180, `documentDiffers` 182-187, nil-arm defers 138-144); plan traversal wording reconciled to closest-first canonical edge order (`docs/plans/feat-021.md:52-54`); plan file staged, tracked via `git diff HEAD --name-only` (`docs/plans/feat-021.md`); acceptance left honest (three code-evidence boxes checked, B-plus-Golden manual/device QA DEFERRED per `manual-qa.md` §§7–9, `features/feat-021.md:20-23`). No feat-022+ scope; no new model/request/persistence/config key; originals/privacy/on-device and feat-020 dependency preserved.
+**Evidence**: Proof `v21proof-main.swift` (`a36e89bd…`), binary (`64c92bf5…`), REAL analyze → candidates → REAL edges → resolve/select twice: A 60→6 (6 clusters, incoherent 0), Golden 200→15 (14 clusters, incoherent 0), B 40→3 (3 clusters, incoherent 0); picked byte-compare A `0a1068c4…` ==, Golden `07d20b69…` ==, B `13eb627b…` == (PASS); named I1–I8 + burst ALL PASS incl. bilateral unknown arms (I3 unk-vs-pano/shot/unk merge; I4 nil-vs-false + true-vs-nil defer); HEAD-baseline movement honestly reported (A `b05f86c2…`, Golden `76705d64…`, B `f6c8c1c7…`); `./init.sh` PASS (format, `swiftlint --strict` 0 violations/61 files, Simulator build SUCCEEDED, SKIP [test] by policy); `git diff HEAD --name-only` = `DuplicateResolver.swift` + `docs/plans/feat-021.md` (staged) + `feature_index.json` + `features/feat-021.md` + `progress.md`.
+**Blockers**: none.
+**Next**: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated.
+
+## 2026-09-17 — feat-021 blocked (B-plus-Golden hard blocker)
+
+**State**: blocked (hard blocker; code-evidence record preserved, parent PR NOT yet opened; feat-020 stays `done`)
+**Done**: Documentation-only tracker update — flipped `feature_index.json` feat-021 `active` → `blocked`; updated `features/feat-021.md` Status/Handoff with blocker, preserved acceptance (three code-evidence boxes checked, B-plus-Golden UNCHECKED), evidence, and recovery action. No `apps/` change; no tests/test targets/frameworks; no destructive operations.
+**Evidence**: No new `./init.sh` run and no new acceptance evidence in this update (nothing fabricated). Blocker evidence as recorded: devicectl reports all three physical iPhones unavailable; repo lacks annotated Golden/real-trip fixtures; `docs/ship-gates/manual-qa.md` disallows Simulator substitution (physical-iPhone + annotated Golden + real-trip review required per §§7–9).
+**Blockers**: HARD BLOCKER above — B-plus-Golden manual/device QA cannot proceed until device and datasets are supplied.
+**Next**: Run physical-iPhone B-plus-Golden annotation/measurement when device and datasets are supplied; feat-022+ stay `todo` and must not be activated here.
+
+## 2026-09-17 — DEC-032 policy cutover (feat-021 unblocked, chain on automated evidence)
+
+**State**: active (feat-021 `blocked` → `active`; sole integration; parent PR NOT yet opened; feat-020 stays `done`, feat-022..028 stay `todo`)
+**Done**: Documentation-only DEC-032 cutover — `AGENTS.md`, `README.md`, `init.sh` (comment + SKIP line only), `docs/ship-gates/manual-qa.md` (optional non-blocking guidance, release lists advisory), `features/feat-template.md`, `feature_index.json` gates for feat-021..028, and feat-021..028 records rewritten to reproducible automated evidence (Simulator permitted) plus `./init.sh`. feat-021 acceptance is now four CHECKED boxes (B-shape 40 + Golden-shape 200 automated runs + I1–I8 + determinism byte-compare, exact counts in `features/feat-021.md` Handoff); no new proof run, nothing fabricated. DEC-031 already marked Superseded by DEC-032 by the coordinator — preserved untouched.
+**Evidence**: `git diff --check` clean; `feature_index.json` parses (28 features); `./init.sh` PASS (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] per no-test-targets policy). No `apps/` change by this task; no tests/test targets/frameworks created.
+**Blockers**: none.
+**Next**: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated.
+
+## 2026-09-17 — DEC-032 final contradiction fixes (review follow-up)
+
+**State**: active (feat-021 stays `active`; no state change; parent PR NOT yet opened; feat-022..028 stay `todo`)
+**Done**: Documentation-only review follow-up — `docs/ship-gates/manual-qa.md:207` regression instruction rewritten to optional exploratory guidance with required automated A/B/Golden-shaped/trip-shaped evidence plus `./init.sh` (safety/privacy/data-integrity kept as automated acceptance conditions; "Never ship" removed, repo-wide grep confirms zero remains), `:297` MVP readiness qualified so manual/subjective review is advisory only, and `docs/design-docs/curation-intelligence.md:275` production-model quality gate qualified as automated Golden-shaped/trip-shaped evidence with hand review non-blocking. No `apps/`, test, decision-log, or historical-block change.
+**Evidence**: `git diff --check` clean; `bash -n init.sh` OK; `jq empty feature_index.json` valid (28 records; feat-021 active, chain todo, all 8 gates carry `./init.sh`); `./init.sh` PASS (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] per no-test-targets policy).
+**Blockers**: none.
+**Next**: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated.
+
+## 2026-09-17 — feat-021 done (DEC-032 automated gate)
+
+**State**: done (closeout metadata only; `feature_index.json` feat-021 `active` → `done`; feat-020 stays `done`, feat-022..028 stay `todo`; parent PR NOT yet opened)
+**Done**: Reconciled `features/feat-021.md` Status/Handoff to `done` — four acceptance boxes pass on the preserved DEC-032 automated record (variant-gate I1–I8 + burst ALL PASS; context-aware representative; double-run determinism byte-compare; B-shape 40 + Golden-shape 200 automated runs, exact counts in the feature Handoff). No `apps/` change, no decision-log edit, no feat-022+ change, no tests created; manual/device QA stays optional non-blocking per DEC-032.
+**Evidence**: Accepted Codex review pass after the bilateral-gate fix wave (DEC-030 evidence) plus the existing fresh `./init.sh` pass (format, `swiftlint --strict` 0 violations, Simulator build SUCCEEDED, SKIP [test] per no-test-targets policy); `git diff --check` clean; `feature_index.json` parses (28 records, chain statuses consistent).
+**Blockers**: none.
+**Next**: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated; feat-022 must not start here.

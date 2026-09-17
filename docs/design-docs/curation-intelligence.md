@@ -18,7 +18,7 @@ It does **not** replace the current owners:
 - Stored shapes and cache versions: [data-model.md](data-model.md)
 - Privacy and retention: [privacy.md](../ship-gates/privacy.md)
 - Performance budgets: [performance.md](../ship-gates/performance.md)
-- Manual evaluation: [manual-qa.md](../ship-gates/manual-qa.md)
+- Exploratory evaluation handbook (optional, non-blocking per DEC-032): [manual-qa.md](../ship-gates/manual-qa.md)
 - Build order: [roadmap.md](../exec-plans/roadmap.md)
 
 Before implementation changes any owner rule, update that owner doc first.
@@ -272,7 +272,7 @@ Requirements before any model becomes production-default:
 3. Measure binary/download size.
 4. Measure latency, memory, thermal behavior, and compute-unit choice.
 5. Define supported-device fallback.
-6. Show measurable quality improvement on Golden / Real Trip evaluation.
+6. Show measurable quality improvement on reproducible automated Golden-shaped / trip-shaped fixture evaluation (Simulator permitted); optional hand review may add context but never blocks by itself.
 7. Keep a complete native-only path.
 
 Apple model catalog: https://developer.apple.com/machine-learning/models/
@@ -480,7 +480,7 @@ The goal is to let automation handle obvious decisions and focus the user on the
 
 ## 14. Evaluation and learning loop
 
-Evaluation starts **before** implementation of the V2 intelligence layers. First record the current demo baseline and a failure inventory on the existing manual QA datasets plus an annotated Golden set. Every new signal/model must name the failure mode it targets and compare against that baseline.
+Evaluation starts **before** implementation of the V2 intelligence layers. First record the current demo baseline and a failure inventory on the existing fixture datasets (A–H shapes) plus a Golden-shaped fixture set (annotated labels optional, non-blocking per DEC-032). Every new signal/model must name the failure mode it targets and compare against that baseline.
 
 Do not train a custom ranker before the baseline is measured and the simpler native/specialist layers have been evaluated.
 
@@ -538,7 +538,7 @@ P(A belongs in the final album | moment + album context)
 
 Inputs can include licensed visual embeddings, Vision facts, metadata, and album context.
 
-Do not ship it unless it beats the deterministic/specialist baseline on held-out trips and has a rollback/fallback path.
+Do not ship it unless it beats the deterministic/specialist baseline on held-out trip-shaped fixture evidence (Simulator permitted) and has a rollback/fallback path.
 
 ---
 
@@ -588,8 +588,8 @@ A new intelligence layer becomes default-on only when it passes all relevant gat
 
 | Gate | Requirement |
 |---|---|
-| Quality | Demonstrable gain on the named targeted Golden/Real Trip failure versus the recorded baseline |
-| Recall | Respect the current `manual-qa.md` Must-Keep Recall target; any exception requires documented manual review |
+| Quality | Demonstrable gain on the named targeted Golden-shaped/trip-shaped automated failure versus the recorded baseline (hand-labeled Golden/real-trip review optional, non-blocking per DEC-032) |
+| Recall | Respect the current `manual-qa.md` Must-Keep Recall reference target; any exception requires documented review of the automated evidence (hand review optional, non-blocking per DEC-032) |
 | Privacy | Complies with privacy owner doc and on-device core rule |
 | License | Production redistribution/commercial use verified |
 | Performance | Oldest supported-device latency/memory/thermal acceptable |

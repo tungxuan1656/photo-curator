@@ -18,15 +18,14 @@ This feature owns model consumers and shared contracts.
 
 ## Acceptance
 
-- [ ] A selected embedding candidate is measured on target devices and retains a fallback.
+- [ ] A selected embedding candidate is measured via reproducible automated benchmarks (Simulator permitted) and retains a fallback.
 - [ ] Tier-C routing is bounded and does not silently force model work for every photo.
 - [ ] Model license, source/version, and checksum are recorded before inclusion.
-- [ ] Golden plus 1k smoke evidence meets the parent budget.
+- [ ] Golden-shaped plus 1k-scale automated evidence meets the parent budget.
 
 ## Relevant docs
 
 - `docs/design-docs/curation-intelligence.md`
-- `docs/ship-gates/manual-qa.md`
 
 ## Inline plan
 
@@ -36,8 +35,9 @@ This feature owns model consumers and shared contracts.
 
 ## Verify
 
-- Pipeline manual QA: Golden plus 1k, on every supported routing fallback.
+- Reproducible automated evidence for every behavior change (Simulator permitted): Golden-shaped plus 1k-scale, on every supported routing fallback; record commands, fixtures, and outputs in the handoff.
 - `./init.sh`
+- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Handoff
 

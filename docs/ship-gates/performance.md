@@ -18,7 +18,7 @@ Related docs:
 
 ## 1. Budgets (single table, read first)
 
-One table. All numbers are starting defaults. Centralize them in code in one policy struct. Tune after profiling on the oldest supported device.
+One table. All numbers are starting defaults. Centralize them in code in one policy struct. Tune after profiling (Simulator-permitted automated measurement; physical-device runs optional non-blocking per DEC-032).
 
 | Budget | Value |
 |---|---|
@@ -50,7 +50,7 @@ One table. All numbers are starting defaults. Centralize them in code in one pol
 | Cached rerun, 1,000 analyzed | Seconds, not minutes |
 | Relative regression flag | Job time up > ~20% with no planned quality change |
 
-Conditions for completion targets: assets local, normal thermals, Low Power off, normal config, oldest supported device. Separate iCloud download time from compute time. Recalibrate targets from the working prototype rather than bending selection quality to hit a number.
+Conditions for completion targets: assets local, normal thermals, Low Power off, normal config, oldest supported device preferred (Simulator-permitted automated equivalents acceptable per DEC-032). Separate iCloud download time from compute time. Recalibrate targets from the working prototype rather than bending selection quality to hit a number.
 
 ## 2. Workloads
 
@@ -125,7 +125,7 @@ Stored checkpoint shape lives in [06](../design-docs/data-model.md). iCloud fetc
 
 ## 7. Measurement
 
-QA steps live in [10](manual-qa.md). Event names live in [11](analytics.md). Redaction rules: [09](privacy.md).
+Exploratory QA steps live in [10](manual-qa.md) (optional, non-blocking per DEC-032); required acceptance is reproducible automated evidence plus `./init.sh`. Event names live in [11](analytics.md). Redaction rules: [09](privacy.md).
 
 Capture per run at minimum:
 
@@ -146,7 +146,7 @@ local vs iCloud mix, battery and Low Power state,
 start thermal state, analysis version
 ```
 
-Bench first on the oldest supported device. A fast current phone never serves as the only reference.
+Prefer benching on the oldest supported device where available; Simulator-permitted automated measurement is acceptable acceptance evidence, and a fast current phone never serves as the only reference.
 
 Fix order during profiling: crashes and memory kills, main-thread blocks, repeat Vision work, image size and decode, concurrency, similarity cost, persistence cost, small code tweaks last. Never tune a small loop while full-resolution decodes still run.
 
@@ -154,7 +154,7 @@ Perf bug scale: crash or corrupt or deadlock or stuck cancel on a normal 1,000-p
 
 ## 8. Definition of Done
 
-- 1,000-photo job finishes cleanly on the oldest supported device.
+- 1,000-photo job finishes cleanly at 1k scale (oldest supported device preferred; Simulator-permitted automated equivalent acceptable per DEC-032).
 - 5,000-photo job finishes with flat memory across batches.
 - UI stays usable during analysis; progress stays at §1 rate.
 - Vision and image fetch use §1 bounded concurrency.
@@ -165,7 +165,7 @@ Perf bug scale: crash or corrupt or deadlock or stuck cancel on a normal 1,000-p
 - Similarity work stays inside bounded neighborhoods.
 - Heat and memory pressure degrade speed with no kill.
 - Instruments shows no large leak and no analysis block on main.
-- No test targets added (manual validation only, per [10](manual-qa.md)).
+- No test targets added (required validation is reproducible automated evidence plus `./init.sh`; manual QA per [10](manual-qa.md) optional, non-blocking per DEC-032).
 
 ## 9. Uncertain
 

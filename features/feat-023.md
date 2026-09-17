@@ -19,15 +19,14 @@ selection contracts.
 ## Acceptance
 
 - [ ] Global novelty and saturation correct the named baseline failures.
-- [ ] Candidate graph stays within the approved 150–250 bound and 1k budget.
+- [ ] Candidate graph stays within the approved 150–250 bound and 1k-photo-scale budget.
 - [ ] Missing embeddings retain deterministic pre-graph selection behavior.
-- [ ] Golden, Real Trip, and 1k manual QA passes.
+- [ ] Golden-shaped, trip-shaped, and 1k-scale reproducible automated evidence passes (Simulator permitted).
 
 ## Relevant docs
 
 - `docs/design-docs/curation-intelligence.md`
 - `docs/product-specs/selection-rules.md`
-- `docs/ship-gates/manual-qa.md`
 
 ## Inline plan
 
@@ -37,8 +36,9 @@ selection contracts.
 
 ## Verify
 
-- Pipeline manual QA: smoke plus Golden plus Real Trip plus 1k.
+- Reproducible automated evidence for every behavior change (Simulator permitted): smoke plus Golden-shaped plus trip-shaped plus 1k-scale; record commands, fixtures, and outputs in the handoff.
 - `./init.sh`
+- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Handoff
 

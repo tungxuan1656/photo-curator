@@ -7,14 +7,14 @@
 **Ownership (per blueprint):**
 This doc owns the 13-event MVP set, the session model with ephemeral ID, and the core rate definitions (acceptance, removal, restore, edit, save, regen, review effort, time-to-album, completion). It also owns segmentation keys, offline rules, and the consent and retention pointers.
 
-This doc does not own privacy and redaction rules (09 is sole owner), perf targets (08), QA evaluation method (10 is primary), or product goals (01). See links below.
+This doc does not own privacy and redaction rules (09 is sole owner), perf targets (08), QA evaluation method (10 is the optional exploratory handbook; required acceptance is reproducible automated evidence per DEC-032), or product goals (01). See links below.
 
 **Related docs:**
 
 - `product.md` — product goals (not restated here)
 - `performance.md` — perf targets (not restated here)
 - `privacy.md` — privacy, redaction, consent, retention rules (sole owner)
-- `manual-qa.md` — QA method, primary evaluation (analytics is secondary)
+- `manual-qa.md` — optional exploratory QA handbook (analytics is secondary; required acceptance is reproducible automated evidence per DEC-032)
 
 ---
 
@@ -131,7 +131,7 @@ Compare engine versions with the same table each time: acceptance, restore, edit
 
 - Privacy, forbidden fields, log redaction, consent, retention: see `privacy.md`. That doc is the sole owner. This doc sends counts and time buckets only, per 09.
 - Perf targets and budgets: see `performance.md`. This doc only defines how to measure time.
-- QA method, datasets, pass rules: see `manual-qa.md`. Manual QA is primary. Analytics only backs it up.
+- QA method (optional exploratory), datasets, reference rules: see `manual-qa.md`. Required acceptance is reproducible automated evidence plus `./init.sh`; hand review is advisory. Analytics only backs it up.
 - Product goals and scope: see `product.md`.
 
 ---

@@ -22,12 +22,11 @@ models may be rejected and are not a ranker prerequisite.
 - [ ] Candidate ranker demonstrably beats the deterministic baseline on the agreed gates,
   or the no-ranker decision is recorded with the same evidence.
 - [ ] Any accepted ranker has explicit version, migration, rollback, and fallback behavior.
-- [ ] Final Golden, Real Trip, and 1k gates pass.
+- [ ] Final Golden-shaped, trip-shaped, and 1k-scale automated gates pass (Simulator permitted).
 
 ## Relevant docs
 
 - `docs/design-docs/curation-intelligence.md`
-- `docs/ship-gates/manual-qa.md`
 
 ## Inline plan
 
@@ -37,8 +36,9 @@ models may be rejected and are not a ranker prerequisite.
 
 ## Verify
 
-- Final pipeline manual QA: smoke plus Golden plus Real Trip plus 1k.
+- Reproducible automated evidence for every behavior change (Simulator permitted): smoke plus Golden-shaped plus trip-shaped plus 1k-scale; record commands, fixtures, and outputs in the handoff.
 - `./init.sh`
+- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Handoff
 

@@ -1,6 +1,6 @@
 # Photos Curator — Decision Log
 
-**Doc:** `decision-log.md` · **Status:** Living · **Updated:** 2026-09-10
+**Doc:** `decision-log.md` · **Status:** Living · **Updated:** 2026-09-17
 
 **Ownership:** This doc OWNS rationale/history only (why a choice was made, append-only DEC-xxx).
 It never owns current operational values — those live in owner docs (linked per entry).
@@ -21,7 +21,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
 
-### 1a. Accepted (36 kept)
+### 1a. Accepted (38 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -41,7 +41,7 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-014 | Cache reusable analysis | 04, 06, 08 |
 | DEC-015 | Intentionally simple architecture | 05 |
 | DEC-016 | No automated test targets | 10 |
-| DEC-017 | Manual QA for selection quality | 10 |
+| DEC-017 | Manual QA for selection quality | 10 (Superseded by DEC-032) |
 | DEC-018 | Analytics carry no photo/biometric content | 11, 09 |
 | DEC-019 | Keep selection-reason metadata | 03, 04, 06 |
 | DEC-020 | No personalization required for MVP | 01, 03 |
@@ -54,6 +54,8 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-027 | Speed of development over purity | 05 |
 | DEC-028 | G0 contract naming | 05 |
 | DEC-029 | Post-MVP Curation Intelligence V2 with iOS 26 baseline + optional iOS 27 semantic tier | 03, 04, 07 |
+| DEC-030 | Variant-aware clustering contract | `features/feat-021.md` |
+| DEC-032 | Automated feature evidence replaces mandatory manual QA | `AGENTS.md`, `features/feat-template.md`, 10 |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -87,6 +89,12 @@ non-destructive, collision-safe → 02, 07). See §3.
 | OPEN-P04 | How much alternative browsing in review? | 02 | Deferred |
 | OPEN-P05 | Mandatory-include mark before curation? | 02, 03 | Deferred |
 | OPEN-P10 | Feedback persistence across sessions? | 06, 03 | Deferred |
+
+### 1d. Superseded recent decisions
+
+| ID | Topic | Superseded by |
+|---|---|---|
+| DEC-031 | Feat-021 blocked pending physical QA inputs | DEC-032 |
 
 Promoted to Accepted (rules owned in 03, linked not duplicated):
 OPEN-P06 (screenshots deprioritized, not forced), OPEN-P07 (Live Photo stills
@@ -183,7 +191,7 @@ DI frameworks, buses, or plugin systems without a real problem. Owner: 05.
 Speed over suite at this stage; no XCTest/UI-test infra. Quality via §DEC-017 instead — validation still required.
 Owner: 10.
 
-**DEC-017 — Manual QA for quality (Accepted).**
+**DEC-017 — Manual QA for quality (Superseded by DEC-032).**
 No single metric = good album. Datasets: trip, family, event, landscape/portrait-heavy, low-light,
 burst-heavy, screenshots-mix, iCloud-heavy. Dims: dup suppression, coverage, faces, blur, diversity. Owner: 10.
 
@@ -234,6 +242,38 @@ Decision: after the functional MVP baseline, improve selection quality through a
 Rationale: the current product goal requires best-shot, meaningful-variation, moment, and album-level reasoning that cannot be represented safely by one quality scalar. A staged specialist architecture can improve those decisions while preserving privacy, fallback, and debuggability.
 Risk: app/model size, battery/thermal cost, licensing mistakes, semantic-model nondeterminism, and regressions hidden by extra complexity.
 Trigger/reconsider when: a layer fails Golden/real-trip quality gates, violates privacy/license constraints, or costs more latency/memory/thermal budget than its measured curation gain. Architecture and gates: [curation-intelligence.md](curation-intelligence.md). Current concrete stack: [curation-runtime-stack.md](curation-runtime-stack.md).
+
+## 2a. Feat-021 decisions
+
+# DEC-030 — Variant-aware clustering contract
+Status: Accepted · Date: 2026-09-17
+Owner: `features/feat-021.md` · Affected: `DuplicateResolver`, feat-022 admission
+Context: The resolver needed to stop semantic variants from collapsing through a transitive near-duplicate chain while keeping sparse analysis deterministic and preserving the frozen persisted schema.
+Decision: Use closest-first canonical edge ordering and coherence-checked union. A variant veto requires positive categorical evidence on both members; unknown or nil evidence defers to the legacy-compatible merge. Keep day/night, formal/candid with the same face count, and framing-magnitude distinctions as later embedding or jury ceilings, and keep `analysisVersion` at 4 because no persisted shape changes.
+Alternatives considered: first-fit/BFS ordering (rejected because it did not match the stronger deterministic contract); asymmetric unknown handling (rejected because it splits on incomplete evidence); adding new persisted facts or thresholds (rejected as unnecessary scope and migration risk).
+Evidence: feat-021 proof runs on A/B/Golden were byte-identical across two runs with zero incoherent clusters; bilateral unknown cases pass; the second Codex review confirmed the implementation and plan wording after fixes.
+Consequences: variant-aware behavior remains local to `DuplicateResolver`, keeps the iOS 26 native fallback, adds no model/request/dependency or migration, and intentionally defers distinctions that require richer evidence.
+Reconsider when: a later feature supplies measured embedding/jury evidence or a named residual failure shows that these ceilings materially harm curation quality.
+
+# DEC-031 — Feat-021 blocked pending physical QA inputs
+Status: Superseded by DEC-032 · Date: 2026-09-17
+Owner: `features/feat-021.md`, `docs/ship-gates/manual-qa.md` · Affected: feat-021 and its dependent chain
+Context: Code and host proof passed, but the feat-021 gate requires B+Golden physical-iPhone annotated-label evidence and real-trip evidence. The acceptance record correctly leaves that box unchecked.
+Decision: Keep feat-021 blocked and do not merge its PR or activate feat-022. Resume only after a physical iPhone and the required annotated Golden plus real-trip dataset are available; then rerun the owner QA gate and `./init.sh`.
+Alternatives considered: relabel synthetic host proof as manual QA (rejected because it does not contain annotated labels); substitute Simulator evidence (rejected by `manual-qa.md`); lower or check the acceptance criterion (rejected because it would falsify the gate); wait for the required device and datasets (accepted recovery).
+Evidence: OMP acceptance-closure Dispatch `ctx_8793451d37d5` reports all three physical iPhones unavailable via `devicectl`, no annotated Golden labels or real-trip fixtures in the repository, and Simulator substitution barred by `manual-qa.md`; Codex review Dispatch `ctx_8de70448c1c8` independently reached `BLOCKED/FIX_REQUIRED`.
+Consequences: the integration worktree and code remain preserved, feat-021 remains the sole blocked feature, later features stay `todo`, and no merge commit or PR is claimed.
+Reconsider when: the physical device and datasets are supplied and the complete B+Golden, real-trip, and build evidence passes without changing the acceptance bar.
+
+# DEC-032 — Automated feature evidence replaces mandatory manual QA
+Status: Accepted · Date: 2026-09-17
+Owner: `AGENTS.md`, `features/feat-template.md`, `docs/ship-gates/manual-qa.md` · Affected: feat-021 through feat-028 and future feature records
+Context: The current manual-qa policy makes physical-device execution, human Golden annotation, and real-trip review hard release gates. Those inputs are unavailable, while the repository already supports deterministic proof binaries, Simulator builds, and automated code evidence.
+Decision: Supersede DEC-017. Manual or physical-device QA is optional and non-blocking. Every behavior-changing feature MUST provide reproducible automated evidence for its acceptance criteria, using the Simulator when appropriate, and MUST pass `./init.sh`. Keep the no-test-target, no-`*Test*.swift`, and no-test-framework policy. Feature records must not require manual-qa execution or physical-device evidence.
+Alternatives considered: keep physical QA as a hard gate (rejected because it blocks reproducible repository work on unavailable external inputs); accept manual-only evidence (rejected because it is not restartable); remove all quality evidence (rejected because acceptance still needs objective proof); allow automated proof with optional manual follow-up (accepted).
+Evidence: the feat-021 proof binary passed A, B, and Golden-shaped deterministic runs plus I1–I8; `./init.sh` passed; the prior blocker was exclusively unavailable physical devices and datasets, not a failing automated proof.
+Consequences: feat-021 can resume from its preserved integration worktree after its acceptance record is rewritten to the automated gate; later features use automated fixture/proof evidence and remain free of physical-device blockers. Manual-qa.md remains as optional exploratory guidance and historical method documentation.
+Reconsider when: a release, privacy, safety, or data-integrity risk requires a separately approved manual check, or automated evidence cannot represent a newly introduced behavior.
 
 ---
 

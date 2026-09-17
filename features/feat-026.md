@@ -20,13 +20,12 @@ and review-flow integration. Implement the presentation component as part of thi
 - [ ] Uncertain decisions enter a comprehensible Needs review queue with actionable reasons.
 - [ ] Feedback capture is bounded, on-device, and does not retain prohibited raw data.
 - [ ] Deterministic decisions retain the existing review flow.
-- [ ] Manual review QA shows reason, action, recovery, and persistence behavior.
+- [ ] Automated evidence shows reason, action, recovery, and persistence behavior (Simulator permitted; hand review optional non-blocking).
 
 ## Relevant docs
 
 - `docs/product-specs/ux-flows.md`
 - `docs/ship-gates/privacy.md`
-- `docs/ship-gates/manual-qa.md`
 
 ## Inline plan
 
@@ -36,8 +35,9 @@ and review-flow integration. Implement the presentation component as part of thi
 
 ## Verify
 
-- Review manual QA: normal, uncertain, unavailable, and recovery paths.
+- Reproducible automated evidence for every behavior change (Simulator permitted): normal, uncertain, unavailable, and recovery paths; record commands, fixtures, and outputs in the handoff.
 - `./init.sh`
+- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Handoff
 
