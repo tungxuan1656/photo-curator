@@ -95,7 +95,9 @@ private extension VisionAnalysisService {
         // the transient per-face distribution (no new Vision request). Only
         // scalars cross; boxes/landmarks/pixels never leave Tier-A locals.
         let groupFacts = GroupEvidenceCalculator.map(faceCount: faceCount, faceQualities: tierA.faceQualities)
-        let bestFaceQuality = groupFacts.meanFaceQuality
+        // Frozen max restored: subjectPlacementScore keeps the pre-Task-3 Tier-A
+        // per-face quality max exactly; only the people-term min/mean fold is new.
+        let bestFaceQuality = tierA.bestFaceQuality
         let similarity = tierA.similarity
         // Universal facts (feat-018): adapter phase 1 collects the aesthetics +
         // classify observations beside the face/print requests above, with the
@@ -180,13 +182,18 @@ private extension VisionAnalysisService {
         let faceQualities: [Double]? = faceCount > 0 ? (faceQuality.results.map { results in
             results.compactMap(\.faceCaptureQuality).map { Double($0) }
         }) : nil
+        // Frozen max (pre-Task-3 behavior, byte-identical): the per-face quality
+        // max feeds subjectPlacementScore; min/mean ride separately via faceQualities.
         var bestFaceQuality: Double?
         if faceCount > 0, let qualities = faceQualities, !qualities.isEmpty {
             bestFaceQuality = qualities.max()
         }
         let similarity = (printRequest.results?.first as? VNFeaturePrintObservation)
             .map(ImageSimilarityArtifact.init(observation:))
-        return TierABaseline(faceCount: faceCount, faceQualities: faceQualities, similarity: similarity)
+        return TierABaseline(
+            faceCount: faceCount, bestFaceQuality: bestFaceQuality, faceQualities: faceQualities,
+            similarity: similarity
+        )
     }
 
     /// Tier-B contextual pass (feat-019 frozen routing). Tier-A facts from the
@@ -283,12 +290,9 @@ private extension VisionAnalysisService {
         ))
     }
 
-    /// Tier-A baseline facts for one asset: face facts plus the transient
-    /// print signal. Plain value box so `performAll` stays short.
-    /// feat-020: carries the per-face quality list (nil when the quality
-    /// request degraded) so the calculator maps the distribution transiently.
     private nonisolated struct TierABaseline: Sendable {
         let faceCount: Int
+        let bestFaceQuality: Double?
         let faceQualities: [Double]?
         let similarity: ImageSimilarityArtifact?
     }

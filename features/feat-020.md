@@ -210,8 +210,10 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
   persisted `minFaceQuality: Double?` + `meanFaceQuality: Double?` (derived scalars only;
   boxes/landmarks/pixels never persisted); `make` gains the 2 params (defaults nil) with
   `clamped01`; `TierABaseline` carries the transient per-face quality list (nil when the
-  quality request degrades) and `bestFaceQuality` now folds from the calculator mean
-  (identical value, same `subjectPlacementScore` slot); `performAll` passes the existing
+  quality request degrades) and `bestFaceQuality` stays the frozen Tier-A per-face
+  quality max exactly as pre-Task-3 (`qualities.max()` on the Tier-A list, same
+  `subjectPlacementScore` slot — max-restore fix, Codex finding addressed);
+  `performAll` passes the existing
   Tier-A face observations through `GroupEvidenceCalculator.map` (NO new Vision request)
   and stores the min/mean scalars; `QualityScorer.score` folds the weakest-face signal
   (`min(group, minFaceQuality)`, weights in configuration, no threshold invented);
@@ -273,8 +275,15 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
     `15274756…`, binary `90579020…`): `currentVersion=4 v3rowMiss=true v4rowHit=true`
     → `REQUEUE-RULE: PASS` (v3 rows requeue, v4 rows hit; checkpoint-ignore
     already covers stale checkpoints — read-verified `BatchPipeline.swift:386`).
+  - Max-restore fix (Codex REQUEST_CHANGES finding, this commit): `subjectPlacementScore`
+    carries the frozen Tier-A per-face quality max again (`tierA.bestFaceQuality`,
+    `qualities.max()` — byte-identical to pre-Task-3); `groupFacts.min/mean` still flow
+    into `make` + the scorer weakest-face fold only. Re-ran determinism proofs on the
+    fixed sources (binaries `c5cd3383…` + `52b43685…`): A `01975608…ccc3` ==, Golden
+    `9f7792c7…3445` ==, B `ecd4aa1a…41068` == (PASS); DIST all TRUE; FOLD 0.7333 vs
+    0.6000 PASS; no mean-in-max-slot path remains (only `meanFaceQuality:` make-arg
+    reference at line 142). Numbers unchanged because fixtures are faceless.
 - Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0
-  violations, Simulator build SUCCEEDED, SKIP [test] by policy).
 - feat-021 admission gate: may start only after the parent PR to main merges AND
   its contract freezes variant-aware clustering (visually-distinct separation,
   union-find collapse guard, context-aware representatives) without reinterpreting
