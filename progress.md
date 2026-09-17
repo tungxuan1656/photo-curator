@@ -218,3 +218,10 @@
 **Evidence**: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0 violations, Simulator build SUCCEEDED, SKIP [test] by policy); `git diff --name-only` = `features/feat-019.md` + `feature_index.json` + `progress.md` only, no `apps/` path.
 **Blockers**: none.
 **Next**: PR `tungxuan1656/feat-019-doneflip` → main (squash in a separate merge task); feat-020 selection remains user-gated; feat-020 must not start here.
+## 2026-09-17 — feat-020 contract (active, sole integration)
+
+**State**: active (sole integration parent; contract commit only, no `apps/` change)
+**Done**: Verified origin/main `00c62e2` reads `feat-019` `done` / `feat-020` `todo` (dependency rule satisfied; repo idle, no other `active`). Branch `tungxuan1656/feat-020-integration` verified at `00c62e2` with a clean tree. Activated `feat-020`; froze the people/group decision contract (exact Tier-A aggregation inputs — faceCount, per-face faceCaptureQuality distribution, groupPhotoScore slot — plus Tier-B balance as inputs-only, weakest-face protection rule, candid-guard rule, reason-code policy reusing bestPortrait/bestGroupPhoto/betterFaceQuality with existing review copy, privacy no-persist limits, version 3→4 no-migration requeue rule, Task 3 wiring points on QualityScorer + SelectionEngine, deterministic fallback). Admitted `mini-020a` (group evidence calculator, `Services/Analysis/GroupEvidenceCalculator.swift`) as task-ready `todo` with all 12 admission fields concrete. Acceptance/Verify rewritten to Simulator code-evidence (B-shape + Golden-shape proof binary with face-bearing fixtures where available, per-face distribution + weakest-face asserts, candid-guard proof, privacy no-persist proof, cost vs budget).
+**Evidence**: `./init.sh` result recorded at commit; `git diff --name-only` = `features/feat-020.md` + `feature_index.json` + `docs/plans/feat-020.md` + `features/mini-020a.md` + `progress.md` only, no `apps/` path.
+**Blockers**: none.
+**Next**: dispatch `mini-020a`; merge with independent review; then parent Task 3 (wire + version 4 + Verify, gate feat-021).
