@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `todo` (task-ready; admitted 2026-09-17 by the feat-019 contract commit)
+- Status: `active` (implemented 2026-09-17 on `tungxuan1656/mini-019a-comp`; PR open into `tungxuan1656/feat-019-integration`, awaiting independent review + merge)
 - Parent integration feature: `feat-019`
 - Reserved ID: `mini-019a`
 
@@ -58,14 +58,16 @@
 
 ## Acceptance and evidence
 
-- [ ] Phase-1 collection degrades per request (one failure never fails the asset) with
+- [x] Phase-1 collection degrades per request (one failure never fails the asset) with
   cancellation checks between requests.
-- [ ] Phase-2 mapping is pure: bounded outputs (2 Optional scores, 1 Optional
+- [x] Phase-2 mapping is pure: bounded outputs (2 Optional scores, 1 Optional
   capped count) and the frozen unavailable values, no fabricated defaults.
-- [ ] No shared-contract, sibling, or other `apps/` diff (`git diff --name-only`).
+- [x] No shared-contract, sibling, or other `apps/` diff (`git diff --name-only`).
 - Manual QA / benchmark command or procedure: n/a (code only; measured at parent Verify).
 - Evidence location: `Services/Analysis/CompositionEvidenceAdapter.swift` (code) + parent
-  Verify proof-binary record.
+  Verify proof-binary record. `./init.sh` PASS 2026-09-17 on the mini branch
+  (swiftformat clean, swiftlint `--strict` 0 violations, Simulator Debug build
+  **BUILD SUCCEEDED**, `SKIP [test]` per no-tests policy).
 
 ## Inline plan
 
@@ -77,6 +79,6 @@
 
 ## Handoff
 
-State `todo` (admitted 2026-09-17; not started).
-Blockers: none.
-Next: dispatch after the contract commit lands; merge first (019a → 019b order).
+State `active` (implemented 2026-09-17; adapter reviewable on `tungxuan1656/mini-019a-comp`, PR open into the integration branch).
+Blockers: independent review + parent merge (merge gate: mapping matches frozen schema, bounded outputs, explicit nil arms, no shared/sibling diff, `./init.sh` PASS).
+Next: merge first (019a → 019b order); parent Task 3 wires eligibility + adapter phases (no wiring in this mini).
