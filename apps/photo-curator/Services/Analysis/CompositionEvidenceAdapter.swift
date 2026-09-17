@@ -99,7 +99,7 @@ enum CompositionEvidenceAdapter {
     }
 
     /// Foreground fraction of a person-segmentation `OneComponent8` mask:
-    /// bytes above the foreground midpoint over all pixels. Returns nil for
+    /// foreground-classified bytes over all pixels. Returns nil for
     /// a non-`OneComponent8`, undecodable, or empty mask (the frozen
     /// unavailable arm). Runs inside phase 1 so the buffer never crosses to
     /// the caller. Nonisolated: pure pixel math.
@@ -115,7 +115,7 @@ enum CompositionEvidenceAdapter {
         var foreground = 0
         for row in 0 ..< height {
             let rowBase = base.advanced(by: row * bytesPerRow).assumingMemoryBound(to: UInt8.self)
-            for col in 0 ..< width where rowBase[col] > 127 {
+            for col in 0 ..< width where rowBase[col] != 0 {
                 foreground += 1
             }
         }
