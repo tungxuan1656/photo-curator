@@ -21,7 +21,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
 
-### 1a. Accepted (40 kept)
+### 1a. Accepted (42 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -63,6 +63,8 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-037 | Tier-C graph uses the exact FeaturePrint shortlist | `features/feat-023.md` |
 | DEC-038 | Tier-D specialists rejected (feat-025 no-op) | `features/feat-025.md` |
 | DEC-039 | Feat-025 readiness record keeps docs/plans/feat-025.md, no app change | `features/feat-025.md` |
+| DEC-040 | Manual QA removed from feature gates; automated evidence only | `AGENTS.md`, `features/feat-template.md` |
+| DEC-041 | Roadmap manual-QA residue cleanup; automated-only gates hold | `docs/exec-plans/roadmap.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -362,6 +364,29 @@ Alternatives considered: delete the plan to match DEC-038's "create no plan" lin
 Evidence: `docs/plans/feat-025.md` file-count rationale; `git status --porcelain` at the review fix shows five modified docs/metadata paths plus the plan, no `apps/` path; `./init.sh` PASS at the feat-025 commit; PR #52 MERGED via `55cf176753be531fa64fbab68504e5487943d0e9`.
 Consequences: DEC-038's rejection verdict and reconsider condition stand; the plan exists only as the harness-required readiness record; feat-026 proceeds unaffected (depends on feat-023, done).
 Reconsider when: a future feature changes the Tier-D trigger contract or admits a specialist candidate - then supersede with a new evidence-backed DEC entry before any vendoring.
+---
+
+# DEC-040 - Manual QA removed from feature gates; automated evidence only
+Status: Accepted - Date: 2026-09-17
+Owner: `AGENTS.md`, `features/feat-template.md` - Affected: feat-021 through feat-028 and future feature records, `docs/plans/feat-025.md`, `docs/index.md`, `init.sh`
+Context: DEC-032 made manual and physical-device QA optional and non-blocking, but feature records, plans, and harness messages still carry manual-qa, hand-review, and device-QA wording that reads as a required workflow. Those inputs are unavailable and non-reproducible, while the repository supports deterministic proof binaries, Simulator builds, and automated code evidence.
+Decision: Manual QA is removed from current and future feature gates. Manual QA is not required and is never an acceptance criterion, blocker, or release gate. Every behavior-changing feature MUST provide reproducible automated evidence for its acceptance criteria (Simulator-based proof permitted) and MUST pass `./init.sh`. Keep the no-test-target, no-`*Test*.swift`, and no-test-framework policy; no tests are added. `docs/ship-gates/manual-qa.md` remains only as an archival reference, never a gate.
+Alternatives considered: keep manual QA as optional non-blocking guidance (rejected - residual wording still reads as a required workflow and invites manual substitution for reproducible proof); accept manual-only evidence (rejected - not restartable); remove all quality evidence (rejected - acceptance still needs objective proof); automated proof with no manual gate and an archival handbook (accepted).
+Evidence: feat-021 through feat-025 closed on deterministic proof-binary plus `./init.sh` evidence with no manual-QA gate; `./init.sh` reports `SKIP [test]` per the no-tests policy; this policy update touches docs and harness paths only, with no `apps/` change.
+Consequences: feat-021 through feat-028 Verify and acceptance wording uses automated evidence only; `AGENTS.md`, `features/feat-template.md`, `docs/index.md`, `docs/plans/feat-025.md`, and `init.sh` carry no manual-QA gate wording; future features follow the same automated-only gate.
+Reconsider when: a release, privacy, safety, or data-integrity risk requires a separately approved manual check, or automated evidence cannot represent a newly introduced behavior - then record a new evidence-backed DEC entry before adding any manual gate.
+
+---
+
+# DEC-041 - Roadmap manual-QA residue cleanup; automated-only gates hold
+Status: Accepted - Date: 2026-09-17
+Owner: `docs/exec-plans/roadmap.md` - Affected: `docs/exec-plans/roadmap.md` P4/P6 gates + deferred test-target row, `docs/design-docs/decision-log.md`, `progress.md`
+Context: DEC-040 removed manual QA from current and future feature gates, but `docs/exec-plans/roadmap.md` still gated current/future work on hand QA: P4 named `manual-qa.md` as the Method, P6 accepted manual review as the saved-album confirmation fallback, and the deferred test-target row stated QA is manual. The Codex finding cites lines 49, 51, and 110 exactly. Those inputs are unavailable and non-reproducible, while the repository supports deterministic proof binaries, Simulator builds, and automated code evidence.
+Decision: Reclassify those roadmap gates to reproducible automated evidence (Simulator permitted) + `./init.sh` only per DEC-040. Retain `manual-qa.md` links as explicitly archival/non-gating optional context, never an acceptance criterion, blocker, or release gate. Keep future custom-model training gated on automated Golden-shaped/trip-shaped evidence per `curation-intelligence.md`. Leave `docs/ship-gates/manual-qa.md` in place and preserve all historical progress/plan facts; no `apps/`, test, status, or dependency change.
+Alternatives considered: keep P4/P6 manual wording as optional non-blocking guidance (rejected - in a phase-gate table it still reads as a required workflow and contradicts DEC-040); delete `manual-qa.md` or rewrite historical progress/plans (rejected - destroys the archival record and exceeds the Codex finding scope); remove all quality evidence from the roadmap (rejected - phases still need objective gates); reclassify the three gates to automated-only with archival links (accepted).
+Evidence: `docs/exec-plans/roadmap.md` P4/P6/deferred rows rewritten to automated evidence + `./init.sh` with `manual-qa.md` labeled archival/non-gating; scans of `AGENTS.md`, `docs/index.md`, `features/feat-template.md`, `features/feat-021.md` through `features/feat-028.md`, `docs/plans/feat-025.md`, and `init.sh` show no remaining manual-QA/hand-review/device-QA requirement wording (only the DEC-040 non-requirement disclaimer and archival references remain); `python3 -c json.load(feature_index.json)` parses; `bash -n init.sh` clean; `git diff --check` clean.
+Consequences: roadmap P4/P6/P8 and deferred rows carry automated-only gates; feat-021 through feat-028 Verify/acceptance wording is unchanged and already automated-only; `manual-qa.md` stays archival reference only; future features follow the same DEC-040 automated-only gate.
+Reconsider when: a release, privacy, safety, or data-integrity risk requires a separately approved manual check, or automated evidence cannot represent a newly introduced behavior - then record a new evidence-backed DEC entry before adding any manual gate.
 
 ---
 

@@ -20,7 +20,7 @@ BUILD_TASKS=(
 )
 
 TEST_TASKS=(
-  # "xcodebuild test -project apps/photo-curator.xcodeproj -scheme photo-curator -destination 'generic/platform=iOS Simulator'" # SKIP explicit: no test target (xcodebuild -list shows single target photo-curator), no *Test*.swift; policy: AGENTS.md no-tests rule (DEC-032 keeps no test targets/frameworks; required evidence is reproducible automated proof + ./init.sh, manual-qa.md optional)
+  # "xcodebuild test -project apps/photo-curator.xcodeproj -scheme photo-curator -destination 'generic/platform=iOS Simulator'" # SKIP explicit: no test target (xcodebuild -list shows single target photo-curator), no *Test*.swift; policy: AGENTS.md no-tests rule (DEC-032 keeps no test targets/frameworks; required evidence is reproducible automated proof + ./init.sh)
 )
 
 if ! [[ "$MAX_JOBS" =~ ^[1-9][0-9]*$ ]]; then
@@ -92,7 +92,7 @@ run_parallel "build" "${BUILD_TASKS[@]}"
 
 echo "=== Test ==="
 if [ "${#TEST_TASKS[@]}" -eq 0 ]; then
-  echo "SKIP [test] no automated tests — reproducible automated evidence + ./init.sh required; manual QA optional (DEC-032)"
+  echo "SKIP [test] no automated tests — reproducible automated evidence + ./init.sh required (DEC-040)"
 else
   run_parallel "test" "${TEST_TASKS[@]}"
 fi

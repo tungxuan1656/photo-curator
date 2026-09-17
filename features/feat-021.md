@@ -36,7 +36,7 @@ The feature owns cluster membership, representative contract, and any change to
 ## Verify
 
 - Reproducible automated evidence (Simulator permitted): proof binary (REAL shipped sources verbatim) runs A-shape (60) + Golden-shape (200) + B-shape (40) fixture bytes through REAL analyze → candidates → REAL feature-print edges → resolve/select twice with byte-compare, plus injected named-case asserts (I1–I8 + burst control). Exact counts in Handoff.
-- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
+- Manual QA is not required and is never an acceptance criterion, blocker, or release gate (DEC-040). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Coordination plan
 
@@ -50,4 +50,4 @@ The feature owns cluster membership, representative contract, and any change to
 - Ceilings (deliberate, documented in `docs/plans/feat-021.md`): day-vs-night, same-light front-vs-rear landmark, same-face-count formal-vs-candid, and people-neutral wide-vs-close are NOT separated — no persisted fact distinguishes them; needs feat-024 embedding or feat-027 jury. Face-detection-miss splits whole groups (accepted: split keeps both, merge loses a memory). Only new per-pair cost is the ~5-equality veto on edges that pass the threshold; no new timings recorded beyond the shape select runs (budgets unchanged, no constant changed).
 - Proposed decisions for the coordinator (no doc update made here — coordinator owns `docs/design-docs/decision-log.md`): (D1) accept the I6 chain reading (incompatible endpoints kept apart even when no direct edge witnessed the pair — split direction, recall-preserving) as the feat-021 chain policy; (D2) accept the day/night + formal/candid + framing-magnitude ceilings as feat-024/feat-027 admission evidence rather than feat-021 gaps; (D3) accept `analysisVersion` staying 4 (no persisted-shape change, no migration).
 - Blockers: none.
-- Next: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated; feat-022 must not start here. Physical-device or hand-review runs are optional non-blocking follow-up only.
+- Next: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated; feat-022 must not start here.

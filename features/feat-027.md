@@ -38,7 +38,7 @@ adapter only after the parent locks protocol and exact path.
 
 - Reproducible automated evidence for every behavior change (Simulator permitted): Golden-shaped jury evidence on the iOS 27 path plus deterministic fallback evidence on the iOS 26 path; record commands, fixtures, and outputs in the handoff.
 - `./init.sh`
-- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
+- Manual QA is not required and is never an acceptance criterion, blocker, or release gate (DEC-040). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Handoff
 
