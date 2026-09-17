@@ -2,6 +2,16 @@ import Foundation
 
 /// Protected-first greedy diversity fill over the shortlist.
 ///
+/// Feat-023 graph wiring: the greedy fill reads visual-novelty from a
+/// precomputed `GlobalDiversityGraph` (bounded member scope, capped edges,
+/// canonical order). A fallback graph (`isFallback`, no distances) runs the
+/// exact pre-feat-023 FeaturePrint edge path. Phases (forced -> protected sole
+/// -> core -> greedy), coverage/category math, saturation, weights, and
+/// `QualityScorer.compareRank` tie-breaks are unchanged: the graph changes
+/// only the visual-novelty input, never who is protected or the pick order.
+/// The edge-list overloads keep exact legacy behavior for existing callers;
+/// the engine and new code use the graph overloads, and both utility paths
+/// run one shared formula so fallback cannot drift.
 /// Deterministic order: forced restores first, then sole usable candidates
 /// of each moment, then the best candidate of each still-unrepresented
 /// moment, then repeated greatest-utility picks. Utility combines the base
@@ -20,6 +30,25 @@ struct DiversitySelector: Sendable {
         configuration: SelectionConfiguration,
         feedback: SelectionFeedback?
     ) -> Set<AssetID> {
+        let graph = GlobalDiversityGraphBuilder.build(
+            shortlist: shortlist,
+            mergedEdges: similarityEdges
+        )
+        return select(
+            shortlist: shortlist, allMomentIDs: allMomentIDs, targetCount: targetCount,
+            graph: graph, configuration: configuration, feedback: feedback
+        )
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func select(
+        shortlist: [ScoredCandidate],
+        allMomentIDs: [MomentID],
+        targetCount: Int,
+        graph: GlobalDiversityGraph,
+        configuration: SelectionConfiguration,
+        feedback: SelectionFeedback?
+    ) -> Set<AssetID> {
         let excluded = feedback?.removedIDs.subtracting(feedback?.restoredIDs ?? []) ?? []
         let forced = feedback?.restoredIDs ?? []
         let pool = shortlist.filter { $0.disposition == .usable && !excluded.contains($0.asset.id) }
@@ -29,7 +58,7 @@ struct DiversitySelector: Sendable {
         state.insertProtectedSoleCandidates(byMoment, allMomentIDs: allMomentIDs)
         state.insertCoreRepresentatives(byMoment, allMomentIDs: allMomentIDs)
         state.fillGreedily(
-            targetCount: targetCount, allCandidates: pool, edges: similarityEdges, configuration: configuration
+            targetCount: targetCount, allCandidates: pool, graph: graph, configuration: configuration
         )
         return state.selected
     }
@@ -61,7 +90,50 @@ struct DiversitySelector: Sendable {
         return QualityScorer.compareRank(left, right)
     }
 
+    // swiftlint:disable:next function_parameter_count
+    static func utilityOrderStatic(
+        _ left: ScoredCandidate, _ right: ScoredCandidate, selected: Set<AssetID>,
+        pool: [ScoredCandidate], graph: GlobalDiversityGraph, configuration: SelectionConfiguration
+    ) -> Bool {
+        let leftScore = utilityStatic(
+            left, selected: selected, pool: pool, graph: graph, configuration: configuration
+        )
+        let rightScore = utilityStatic(
+            right, selected: selected, pool: pool, graph: graph, configuration: configuration
+        )
+        if leftScore != rightScore {
+            return leftScore > rightScore
+        }
+        return QualityScorer.compareRank(left, right)
+    }
+
     static func utilityStatic(
+        _ candidate: ScoredCandidate,
+        selected: Set<AssetID>,
+        pool: [ScoredCandidate],
+        graph: GlobalDiversityGraph,
+        configuration: SelectionConfiguration
+    ) -> Double {
+        utility(
+            candidate, selected: selected, pool: pool, edges: graph.edges,
+            configuration: configuration
+        )
+    }
+
+    static func utilityStatic(
+        _ candidate: ScoredCandidate,
+        selected: Set<AssetID>,
+        pool: [ScoredCandidate],
+        edges: [SimilarityEdge],
+        configuration: SelectionConfiguration
+    ) -> Double {
+        utility(
+            candidate, selected: selected, pool: pool, edges: edges,
+            configuration: configuration
+        )
+    }
+
+    private static func utility(
         _ candidate: ScoredCandidate,
         selected: Set<AssetID>,
         pool: [ScoredCandidate],
@@ -168,14 +240,14 @@ private struct DiversityState {
     }
 
     mutating func fillGreedily(
-        targetCount: Int, allCandidates: [ScoredCandidate], edges: [SimilarityEdge],
+        targetCount: Int, allCandidates: [ScoredCandidate], graph: GlobalDiversityGraph,
         configuration: SelectionConfiguration
     ) {
         var remaining = pool.filter { !selected.contains($0.asset.id) }
         while selected.count < targetCount, !remaining.isEmpty {
             remaining.sort {
                 DiversitySelector.utilityOrderStatic(
-                    $0, $1, selected: selected, pool: allCandidates, edges: edges, configuration: configuration
+                    $0, $1, selected: selected, pool: allCandidates, graph: graph, configuration: configuration
                 )
             }
             guard let next = remaining.first else { break }

@@ -35,7 +35,7 @@ struct FinalAlbumBuilder: Sendable {
             rejectedAssetIDs: sourceAssets.map(\.id).filter { !selected.contains($0) },
             decisions: decisions,
             generatedAt: Date(),
-            engineVersion: 2
+            engineVersion: 3
         )
     }
 }

@@ -11,7 +11,10 @@ enum SelectionError: Error, Sendable {
 /// Pure deterministic selection facade. Same assets + analyses + configuration + feedback give the same
 /// result (tie-breaks: selection-rules §15). Pipeline: chrono order → available partition → duplicate
 /// resolution → moment construction → quality rank/shortlist → diversity selection → final verify/order.
-/// Final picks are chronologically ordered and each carries reason codes.
+/// Feat-023: the graph scopes merged FeaturePrint + Tier-C edges to the exact shortlist the selector
+/// consumes (non-overlapping member pairs, capped, canonical). Empty merged edges mark the fallback
+/// graph, which runs the exact pre-feat-023 path. Clusters + moments stay FeaturePrint-only
+/// (feat-021/feat-022 frozen). Final picks are chronologically ordered and each carries reason codes.
 struct SelectionEngine: Sendable {
     let duplicateResolver = DuplicateResolver()
     let momentBuilder = MomentBuilder()
@@ -21,6 +24,51 @@ struct SelectionEngine: Sendable {
 
     func duplicateCandidates(for assets: [PhotoAsset], configuration: SelectionConfiguration) -> [SimilarityCandidate] {
         duplicateResolver.candidates(for: assets, configuration: configuration)
+    }
+
+    /// Shortlist-scope assets for Tier-C routing (feat-023, DEC-037): the exact
+    /// shortlist the diversity graph consumes, mapped back to assets.
+    /// Production routes Tier-C pairs over this scope (non-overlapping with
+    /// the duplicate-candidate source); router refusal or empty output falls
+    /// back to noop. Pure + deterministic: same inputs give the same scope.
+    /// Callers MUST pass the same FeaturePrint `similarityEdges` given to
+    /// `select` (default `[]` is the fallback arm only); clusters + moments
+    /// stay FeaturePrint-only (feat-021/feat-022 frozen).
+    func shortlistScope(
+        for assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis],
+        configuration: SelectionConfiguration, feedback: SelectionFeedback? = nil,
+        similarityEdges: [SimilarityEdge] = []
+    ) -> [PhotoAsset] {
+        let ordered = assets.sorted {
+            if ($0.creationDate ?? .distantPast) != ($1.creationDate ?? .distantPast) {
+                return ($0.creationDate ?? .distantPast) < ($1.creationDate ?? .distantPast)
+            }
+            return $0.id.rawValue < $1.id.rawValue
+        }
+        let available = ordered.filter { analyses[$0.id] != nil }
+        let resolution = duplicateResolver.resolve(
+            assets: available, analyses: analyses, edges: similarityEdges, configuration: configuration
+        )
+        let byAvailableID = Dictionary(uniqueKeysWithValues: available.map { ($0.id, $0) })
+        let repAssets = resolution.representativeIDs.compactMap { byAvailableID[$0] }
+        let moments = momentBuilder.build(
+            representatives: repAssets, analyses: analyses, edges: similarityEdges, configuration: configuration
+        )
+        let lookups = Self.lookups(
+            byAvailableID: byAvailableID, repAssets: repAssets,
+            clusters: resolution.clusters, moments: moments
+        )
+        let scored = lookups.repAssets.compactMap { asset -> ScoredCandidate? in
+            guard let analysis = analyses[asset.id], let momentID = lookups.momentByID[asset.id] else { return nil }
+            return qualityScorer.score(
+                asset: asset, analysis: analysis, clusterID: lookups.clusterByID[asset.id],
+                momentID: momentID, configuration: configuration
+            )
+        }
+        let target = Self.targetCount(for: scored, configuration: configuration)
+        return qualityScorer.shortlist(
+            candidates: scored, targetCount: target, configuration: configuration
+        ).map(\.asset)
     }
 
     func select(
@@ -83,11 +131,10 @@ struct SelectionEngine: Sendable {
             analyses: analyses, momentByID: fullMomentByID, clusterByID: lookups.clusterByID,
             configuration: configuration
         )
-        // feat-024: Tier-C edges feed diversity novelty only, so the default merges exactly to fallback.
         let picked = diversitySelector.select(
             shortlist: shortlist, allMomentIDs: moments.map(\.id), targetCount: target,
-            similarityEdges: VisualEmbeddingEdges.merged(
-                featurePrintEdges: similarityEdges, tierCEdges: tierCEdges
+            graph: Self.diversityGraph(
+                shortlist: shortlist, similarityEdges: similarityEdges, tierCEdges: tierCEdges
             ),
             configuration: configuration, feedback: feedback
         )
@@ -96,6 +143,22 @@ struct SelectionEngine: Sendable {
                 clusters: resolution.clusters, scored: overridden, feedback: feedback
             ),
             moments: moments, scored: overridden, selectedIDs: picked, configuration: configuration
+        )
+    }
+
+    /// Graph assembly (feat-023): merge FeaturePrint + Tier-C once, then scope
+    /// to the exact shortlist the selector consumes (non-overlapping member
+    /// pairs, capped, canonical). Empty merged edges mark the fallback graph,
+    /// which selects exactly as engineVersion 2 on the same shortlist.
+    /// Clusters + moments always see FeaturePrint edges only (feat-021/022).
+    private static func diversityGraph(
+        shortlist: [ScoredCandidate], similarityEdges: [SimilarityEdge], tierCEdges: [SimilarityEdge]
+    ) -> GlobalDiversityGraph {
+        GlobalDiversityGraphBuilder.build(
+            shortlist: shortlist,
+            mergedEdges: VisualEmbeddingEdges.merged(
+                featurePrintEdges: similarityEdges, tierCEdges: tierCEdges
+            )
         )
     }
 
