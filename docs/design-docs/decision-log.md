@@ -21,7 +21,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
 
-### 1a. Accepted (39 kept)
+### 1a. Accepted (40 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -61,6 +61,7 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-035 | Production wiring for bounded Tier-C diversity edges | `features/feat-024.md` |
 | DEC-036 | Global diversity shortlist graph contract | `features/feat-023.md` |
 | DEC-037 | Tier-C graph uses the exact FeaturePrint shortlist | `features/feat-023.md` |
+| DEC-038 | Tier-D specialists rejected (feat-025 no-op) | `features/feat-025.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -336,6 +337,18 @@ Alternatives considered: retain the edge-free independent scope (rejected - it c
 Evidence: Codex review identified the scope divergence as the sole High finding; existing feat-023 proof and `./init.sh` passed otherwise, and the corrected path is covered by the same deterministic graph/selection evidence.
 Consequences: every production Tier-C edge is now eligible for the exact shortlist consumed by global diversity; earlier duplicate/moment contracts and all bounds remain unchanged; no model, persisted field, schema migration, cloud path, or new quota is introduced.
 Reconsider when: a future selection-stage change adds feedback or another pruning input that can make shortlist scope diverge again; then update this contract and add a new evidence-backed DEC entry before changing routing.
+
+---
+
+# DEC-038 - Tier-D specialists rejected: no triggering residual failure (feat-025 no-op)
+Status: Accepted - Date: 2026-09-17
+Owner: `features/feat-025.md` - Affected: `curation-runtime-stack.md` §7, feat-026/feat-028 admission
+Context: Feat-025 may evaluate a difficult-only specialist only when a residual feat-023 failure exists with no cheaper accepted remedy, must decide each candidate individually (never DETR/depth/SAM as a bundle), and may integrate only an accepted candidate with bounded on-device licensed evidenced rollback-safe routing. Feat-023 closed with all 12 named cases passing and deterministic fallback proven; its only documented ceilings are pixel-level distinctions (day/night, formal/candid same-face-count, framing magnitude, dense-timeline activity) whose recorded reconsider path is FastViT Tier-C pixel evidence or the feat-027 jury first.
+Decision: Record feat-025 as a documented no-op: reject DETR-style object/layout, Depth Anything V2 Small depth/context, and SAM 2.1 Tiny precision segmentation individually for lack of a triggering residual failure with cheaper remedies exhausted. Ship no model, runtime dependency, provider, Vision request, persisted field, config key, or version move. Mark the three runtime-stack §7 rows REJECTED with this DEC pointer. Create no `docs/plans/feat-025.md` (no shared-contract change, single workspace, nothing to roll back).
+Alternatives considered: vendoring any candidate without a target failure (rejected - unlicensed unmeasured size/latency/memory cost, violates the feature gate); bundling all three as one decision (rejected - contract requires per-candidate verdicts); running benchmarks without a triggering failure (rejected - numbers without a target failure cannot justify cost); inventing a residual failure to force integration (rejected - falsifies the gate).
+Evidence: feat-023 proof (Smoke 60->6, Golden 200->15, Trip 150->24, H 1000->56; 12 named cases ALL PASS; fallback==noop exactly; double-run byte-identical) plus repo-state proof (`find` shows no `.mlmodel*`/`.mlpackage*`/`.coreml*`; `apps/` grep shows no Tier-D names vendored); `./init.sh` PASS at the feat-025 commit; `git diff --name-only` shows tracker/decision records only, no `apps/` path.
+Consequences: the iOS 26 native path stays complete with zero specialist cost; feat-026/feat-028 proceed unaffected (feat-028 explicitly does not depend on feat-025); no license/checksum/size/latency burden is added.
+Reconsider when: a named residual failure shows cheaper remedies (native Tier-B facts, Tier-C embedding, feat-027 jury) exhausted with fixture evidence that a specific Tier-D candidate moves picks - then run that candidate's full gate (license re-review + checksum + size/latency/memory/thermal + quality delta + bounded difficult-only routing + rollback) before any vendoring.
 
 ---
 

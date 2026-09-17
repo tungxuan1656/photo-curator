@@ -254,9 +254,9 @@
       "depends_on": [
         "feat-023"
       ],
-      "gate": "Each difficult-only specialist has a target failure, benchmark, license and resource evidence, bounded routing, and an explicit accept or reject decision; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
+      "gate": "A no-trigger specialist evaluation is an explicit valid branch: with no unresolved feat-023 named failure and cheaper remedies unexhausted, all three named candidates are individually rejected, so no target/benchmark/license/resource evidence is required for an admitted model and no runtime dependency is introduced; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
       "id": "feat-025",
-      "status": "todo",
+      "status": "done",
       "title": "Conditional specialist models"
     },
     {
