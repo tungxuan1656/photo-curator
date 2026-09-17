@@ -335,4 +335,4 @@
 **Done**: Post-merge metadata closeout only — no `apps/`, plan, decision-log, `init.sh`, or `feature_index.json` change. `features/feat-024.md` Handoff State/Next rewritten to the merged state; acceptance/evidence text preserved intact.
 **Evidence**: `git cat-file -t 6a130e3da9b782817cf819332738df6e3b7ce5d8` = commit, on `main`; `git diff --check` clean; `feature_index.json` parses with feat-022 `done`, feat-024 `done`, feat-023 `todo` (depends on feat-022 + feat-024). No `init.sh` or manual QA run (docs-only closeout).
 **Blockers**: none.
-**Next**: feat-023 is the next approved feature (depends on feat-022 and feat-024, both done); feat-023 selection remains user-gated.
+**Next**: feat-023 is the next approved feature (depends on feat-022 and feat-024, both done); it can activate after this closeout is merged.
