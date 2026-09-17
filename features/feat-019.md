@@ -156,15 +156,17 @@ and `docs/plans/feat-019.md`.
 
 ## Acceptance (Simulator code-evidence; manual QA replaced per user directive 2026-09-16)
 
-- [ ] A-shape + Golden-shape proof binary (REAL shipped sources verbatim, run
-  twice, byte-compare) shows Tier-B facts live with deterministic fallback.
-- [ ] Tier-B skip/bound proof: measured skip fractions per shape; every
-  persisted output within the frozen bounds; no unbounded shape.
-- [ ] Privacy no-persist proof: persisted rows hold derived facts only — no
-  strings, boxes, masks, landmarks, or joints.
-- [ ] Cost vs budget: cold/warm per Tier-B request plus pipeline delta judged
-  against the performance.md budgets (procedure in Verify; results in Handoff).
-
+- [x] A-shape + Golden-shape proof binary (REAL shipped sources verbatim, run
+  twice, byte-compare) shows Tier-B facts live with deterministic fallback
+  (Task 3 results in Handoff — salient live, horizon/balance honestly nil-on-synthetic,
+  picks identical v2→v3).
+- [x] Tier-B skip/bound proof: measured skip fractions per shape; every
+  persisted output within the frozen bounds; no unbounded shape (Task 3 results in Handoff).
+- [x] Privacy no-persist proof: persisted rows hold derived facts only — no
+  strings, boxes, masks, landmarks, or joints (PERSIST-PROOF: PASS in Handoff).
+- [x] Cost vs budget: cold/warm per Tier-B request plus pipeline delta judged
+  against the performance.md budgets (procedure in Verify; results in
+  Handoff — host-harness Tier-B request cost recorded, no budget constant changed).
 ## Relevant docs
 
 - `docs/design-docs/curation-intelligence.md` (failure F-017-E, §15 privacy/determinism)
@@ -208,10 +210,105 @@ and `docs/plans/feat-019.md`.
 
 ## Handoff
 
-- State: active (sole integration parent; contract commit only, no `apps/` change)
+- State: active (sole integration parent; Task 3 wired + verified, both children merged; parent PR to main NOT yet opened)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-018` reads `done` (squash #37 at `72070d6`), `feat-019` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
   no other `active` feature.
-- Next: dispatch `mini-019a`; merge 019a → 019b → 019c-conditional with
-  independent reviews; then parent Task 3 (wire + version 3 + Verify, gate feat-020).
+- Task 3 wiring (this commit, the only shared-contract change): `PhotoAnalysis` gains
+  persisted `salientRegionCount: Int?` + `textLineCount: Int?` + `isDocument: Bool?`
+  (availability only; strings/boxes/masks never persisted) and now populates the reused
+  `horizonScore`/`visualBalanceScore`/`hasText`/`screenshotProbability` slots; `make`
+  gains the 7 Tier-B params (defaults nil) with caps enforced inside (`min(10,…)`,
+  `min(50,…)`, `clamped01`); `AnalysisInput` gains `isScreenshotSubtype: Bool`
+  (Tier-A PhotoKit flag; pipeline sets it from `PhotoAsset.mediaSubtype`, rebuilder
+  paths pass `false` — artifact-only, never analyzed); `performAll` splits into
+  `tierABaseline` (unchanged Tier-A lane) + `tierBFacts` (frozen eligibility +
+  adapter phases, independent degrade, cancellation checks); gated facts stay nil
+  for ineligible assets. `AppConfiguration.default.analysis.analysisVersion` 2 → 3.
+  No scorer-math/weight/threshold change (composition mean already folds
+  `horizonScore`/`visualBalanceScore` over available signals only —
+  `QualityScorer.swift:49-59` re-verified; salient/utility facts gain no scorer
+  consumer). `FileAnalysisCache` version gate + `BatchPipeline.completedIDs`
+  checkpoint-ignore already implement the frozen requeue rule — no new migration
+  code. New fields decode version-tolerantly (all-Optional whole-struct decode;
+  only `featurePrintAvailable` keeps its hand-written default).
+- Task 3 Verify (Simulator code-evidence, host-harness macOS Vision backend; never
+  manual QA, never a physical device; proof sources kept at
+  `/tmp/f019-evidence/v3proof-main.swift` + `v3time-shape.swift` +
+  `cacheproof3.swift` + `persistproof.swift` + `perreq2.swift` + `v3synth.py`,
+  outside the repo, hosts only, never shipped):
+  - Proof binary compiles the REAL shipped sources verbatim (Domain Models/Selection/
+    Scoring + `AppConfiguration` + `ServiceProtocols` + `ImageSimilarityArtifact` +
+    `UniversalFactAdapter` + `CompositionEvidenceAdapter` + `UtilityEvidenceAdapter` +
+    `VisionAnalysisService`; main `b04ef698…`, binary `1fa78ed8…`) and runs the REAL
+    `analyze` (incl. wired Tier-B) → `select` on A-shape (60) + Golden-shape (200)
+    fixture bytes twice. Facts observed live: saliency 57/60 + 198/200; utility
+    (OCR+doc-seg, `isUtility`-triggered) 39/60 + 143/200 with 0 text lines on
+    synthetic solids; horizon 0/60 + 0/200 and balance 0/60 + 0/200 — HONEST
+    unavailable-arm behavior on synthetic bytes (horizon finds no horizon in
+    solids; person-seg never runs with 0 faces; facedbg confirms 0/60 + 0/200
+    faces). Adapter pure-map unit checks pass (horizon 0.809/balance 0.35/
+    salient-cap-10 and utility 1.0/0.7/0.2/0.0 arms, determinism true, nil arms
+    nil). Determinism byte-compare: picked A md5 `01975608…ccc3` ==
+    `01975608…ccc3`; picked Golden `9f7792c7…3445` == `9f7792c7…3445`. PASS.
+    Full-fact JSON identical excl. timing. PASS.
+  - Tier-B skip proof: A 57/60 ran, 3/60 skipped; Golden 198/200 ran, 2/200
+    skipped (skip = technically unusable per the scorer floor). Bound proof:
+    caps enforced in `make` (in-14 → stored 10, in-99 → stored 50, probs
+    clamped01) — no unbounded shape.
+  - F-017-E movement (SYNTHETIC proxy labels v1, same rule as feat-017/018):
+    A m1 0.240/m2 1.000/m3 0.000/m6 1.000/m7 0.200 and Golden m1 0.160/m2
+    1.000/m3 0.000/m6 1.000/m7 0.150 — identical v2→v3, and pick md5 identical
+    v2→v3 on both shapes. HONEST READING: Tier-B facts flow end-to-end
+    (nil→populated on eligible assets) but move ZERO picks on synthetic bytes —
+    expected, because horizon/balance are nil-on-synthetic and salient/utility
+    facts have no scorer consumer in feat-019 by design. Integration
+    signal-live, NOT a quality-gain claim; SYNTHETIC proxies cannot judge
+    taste, and Golden human annotation stays pending.
+  - Trigger coverage (Golden-shape): utility Tier-B ran on 143/200 assets via
+    the transient `isUtility` signal (no screenshot-subtype fixtures exist —
+    filename convention carries no screenshot/doc names); composition Tier-B
+    ran on 198/200 (all faceless, usable). Miss-rate note stands: photos of
+    documents with neither trigger are an honest miss, measured not widened.
+  - Privacy proof (REAL `PhotoAnalysis` row encode; main `7441c9ff…`, binary
+    `41f291e0…`): persisted JSON holds derived scalars/counts/flags/tags only —
+    forbidden-shape scan (boxes, pixel buffers, landmarks, joints, heatmaps,
+    raw-string payloads, masks) → NONE. `PERSIST-PROOF: PASS`. The v2
+    `SemanticTag.confidence` key is a version-2 persisted scalar (frozen
+    schema), not a Tier-B confidence pair — explicitly allowlisted in the scan.
+  - Cold/warm cost (same host, same A-shape bytes @ 512 px; v3 full-`analyze`
+    binary `fe9f5759…`): v3 cold 52.60 ms/asset, warm 50.09 (mean; p50 51.06/
+    51.53). Per-request split (20-asset sample, mean/p50): saliency 8.92/7.44,
+    horizon 3.84/3.71, person-seg 11.91/10.12, OCR-accurate 23.89/17.74,
+    doc-seg 4.94/3.45, aesthetics 5.88/5.67, classify 5.85/5.34. Honest
+    disposition: host-harness per-asset Vision inference cost is not the
+    shipped pipeline budget (no batching/lanes/cache-hits, macOS backend not
+    the device backend); OCR-accurate dominates the Tier-B cost and runs ONLY
+    on eligible assets (skip rule measured above); the >~20% flag is judged at
+    parent close against the warm-cache-hit path + lane parallelism, and NO
+    budget constant is proposed or changed here. Recorded, not hidden.
+  - QoS: unchanged — Tier-B runs inside the existing `performAll` lane body
+    (no `Task.detached`, no priority parameter); adapter `collect` calls sit
+    beside the existing lane requests with the same cancellation checks.
+  - Cache requeue proof (REAL `FileStore` + `FileAnalysisCache` +
+    `SessionCheckpointStore` + `SaveState` sources; main `db2c9a52…`, binary
+    `b675a1bc…`): `currentVersion=3 v2rowMiss=true v3rowHit=true
+    v2ckptIgnored=true v3ckptKept=true` → `REQUEUE-RULE: PASS` (v2 rows
+    requeue, v3 rows hit).
+- Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0
+  violations, Simulator build SUCCEEDED, SKIP [test] by policy).
+- feat-020 admission gate: may start only after the parent PR to main merges AND
+  its contract freezes people/group decision policy (per-face distribution, weakest-face
+  protections) without moving raw face data into persisted analysis. feat-020 owns the
+  same four shared-contract files after this branch lands; it must not reinterpret
+  the version-3 frozen schema (Tier-B facts, caps, predicates, allowlist) — extensions
+  bump `analysisVersion` 3 → 4 with the same requeue rule.
+- mini-019c fate: CONDITIONAL-CLOSED (not activated, not merged) — no residual failure
+  named (zero Tier-B-driven pick movement on synthetic bytes is expected per the
+  no-scorer-consumer design, not a failure); smudge stays UNAVAILABLE (no such request
+  in the iOS 26.5 SDK headers, re-verified at Task 3); pose/landmarks matrix deferred
+  to the feature that names a measured face-driven gap (feat-020 at the earliest).
+- Blockers: none.
+- Next: coordinator opens the parent PR to main (squash; separate merge task); feat-020
+  selection remains user-gated.

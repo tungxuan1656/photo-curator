@@ -81,8 +81,11 @@
 
 ## Handoff
 
-State `todo` (CONDITIONAL — admitted 2026-09-17; NOT started; activation needs a
-parent-named residual failure).
-Blockers: activation condition (parent Task 3 names the failure or records 019c
-as not-needed).
-Next: none until activated.
+State `todo` (CONDITIONAL-CLOSED by parent Task 3 2026-09-17 — NOT activated, NOT merged:
+no residual failure was named because the v3 proof shows zero Tier-B-driven pick movement
+(A/Golden pick md5 identical v2→v3) and the shipped Tier-B facts behave per the frozen
+unavailable arms on synthetic bytes; smudge stays UNAVAILABLE — no such request exists in
+the iOS 26.5 SDK headers, re-verified at Task 3. Pose/landmarks matrix deferred to the
+feature that names a measured face-driven gap, feat-020 at the earliest.)
+Blockers: none (closure is a decision, not a block; activation condition never met).
+Next: none (conditional-close stands; feat-020 may re-open the matrix question with its own record).

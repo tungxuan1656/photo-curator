@@ -22,11 +22,14 @@ struct PeopleAnalysis: Codable, Sendable {
 }
 
 /// Composition signals. Absent (`nil`) means not run, distinct from middling (`0.5`).
+/// feat-019 adds `salientRegionCount` (Tier-B attention saliency, 0…10 capped);
+/// `horizonScore`/`visualBalanceScore` are now populated by Tier-B, nil when not run.
 struct CompositionAnalysis: Codable, Sendable {
     let aestheticScore: Double?
     let subjectPlacementScore: Double?
     let horizonScore: Double?
     let visualBalanceScore: Double?
+    let salientRegionCount: Int?
 }
 
 /// One semantic tag with confidence. Keep few, high-value tags only.
@@ -40,11 +43,16 @@ enum SceneType: String, Codable, Sendable, Hashable {
     case indoor, outdoor, document, screenshot, other, unknown
 }
 
+/// feat-019 adds `textLineCount` (0…50 capped) and `isDocument` (Tier-B
+/// document segmentation); `hasText`/`screenshotProbability` are now populated
+/// by Tier-B, nil when utility Tier-B never ran. Raw strings are never stored.
 struct ContentAnalysis: Codable, Sendable {
     let sceneType: SceneType
     let tags: [SemanticTag]
     let hasText: Bool?
+    let textLineCount: Int?
     let screenshotProbability: Double?
+    let isDocument: Bool?
 }
 
 /// Stored quality rollup. Weighting and tier cutoffs are owned by selection-rules; this file stores fields only.
@@ -82,9 +90,12 @@ struct PhotoAnalysis: Identifiable, Codable, Sendable {
 }
 
 /// Ephemeral analysis input. Never persisted; the image is released after analysis.
+/// `isScreenshotSubtype` is the Tier-A PhotoKit subtype flag (no pixels, no EXIF);
+/// the pipeline sets it from `PhotoAsset.mediaSubtype` so performAll needs no asset.
 struct AnalysisInput: @unchecked Sendable {
     let assetID: AssetID
     let image: CGImage
+    let isScreenshotSubtype: Bool
 }
 
 extension PhotoAnalysis {
@@ -97,12 +108,15 @@ extension PhotoAnalysis {
         min(1.0, max(0.0, value))
     }
 
-    // swiftlint:disable function_parameter_count - factory assembles the version-2 universal facts in one call.
+    // swiftlint:disable function_parameter_count - factory assembles the version-3 Tier-B facts in one call.
     /// Shared factory: clamps scores once and stamps the version.
     /// VisionAnalysisService calls this; it defines no clamp.
     /// `aestheticScore`/`tags`/`featurePrintAvailable` are the feat-018
-    /// universal facts (frozen schema); unavailable arms are nil / [] / false.
-    /// `sceneType` rule is unchanged (faces-based) in feat-018.
+    /// universal facts (frozen schema); `horizonScore`/`visualBalanceScore`/
+    /// `salientRegionCount` (feat-019a) and `hasText`/`textLineCount`/
+    /// `screenshotProbability`/`isDocument` (feat-019b) are the Tier-B facts
+    /// (frozen routing). Unavailable arms are nil / [] / false.
+    /// `sceneType` rule is unchanged (faces-based) in feat-019.
     static func make(
         assetID: AssetID,
         technical: TechnicalAnalysis,
@@ -112,7 +126,14 @@ extension PhotoAnalysis {
         sceneType: SceneType,
         aestheticScore: Double? = nil,
         tags: [SemanticTag] = [],
-        featurePrintAvailable: Bool = false
+        featurePrintAvailable: Bool = false,
+        horizonScore: Double? = nil,
+        visualBalanceScore: Double? = nil,
+        salientRegionCount: Int? = nil,
+        hasText: Bool? = nil,
+        textLineCount: Int? = nil,
+        screenshotProbability: Double? = nil,
+        isDocument: Bool? = nil
     ) -> PhotoAnalysis {
         let sharp = clamped01(technical.sharpnessScore)
         let expo = clamped01(technical.exposureScore)
@@ -124,10 +145,18 @@ extension PhotoAnalysis {
             composition: CompositionAnalysis(
                 aestheticScore: aestheticScore.map(clamped01),
                 subjectPlacementScore: subjectPlacementScore.map(clamped01),
-                horizonScore: nil,
-                visualBalanceScore: nil
+                horizonScore: horizonScore.map(clamped01),
+                visualBalanceScore: visualBalanceScore.map(clamped01),
+                salientRegionCount: salientRegionCount.map { min(10, max(0, $0)) }
             ),
-            content: ContentAnalysis(sceneType: sceneType, tags: tags, hasText: nil, screenshotProbability: nil),
+            content: ContentAnalysis(
+                sceneType: sceneType,
+                tags: tags,
+                hasText: hasText,
+                textLineCount: textLineCount.map { min(50, max(0, $0)) },
+                screenshotProbability: screenshotProbability.map(clamped01),
+                isDocument: isDocument
+            ),
             featurePrintAvailable: featurePrintAvailable,
             qualityScore: total,
             qualityBreakdown: QualityScoreBreakdown(
@@ -141,8 +170,11 @@ extension PhotoAnalysis {
     // swiftlint:enable function_parameter_count
 
     /// Version-tolerant decode: version-1 rows lack `featurePrintAvailable`;
-    /// `decodeIfPresent` defaults them to `false` so the requeue rule holds by
-    /// miss (version gate), not crash (decode throw). Encode stays symmetric.
+    /// version-2 rows lack the three feat-019 fields. The new fields are all
+    /// Optional, so whole-struct decode defaults them to nil; the only
+    /// hand-written arm is the non-Optional `featurePrintAvailable` default.
+    /// The requeue rule holds by miss (version gate), not crash (decode
+    /// throw). Encode stays symmetric.
     enum V2CodingKeys: String, CodingKey {
         case assetID, technical, people, composition, content, featurePrintAvailable
         case qualityScore, qualityBreakdown, analyzedAt, analysisVersion
@@ -153,8 +185,23 @@ extension PhotoAnalysis {
         assetID = try container.decode(AssetID.self, forKey: .assetID)
         technical = try container.decode(TechnicalAnalysis.self, forKey: .technical)
         people = try container.decode(PeopleAnalysis.self, forKey: .people)
-        composition = try container.decode(CompositionAnalysis.self, forKey: .composition)
-        content = try container.decode(ContentAnalysis.self, forKey: .content)
+        composition = (try? container.decode(CompositionAnalysis.self, forKey: .composition))
+            ?? CompositionAnalysis(
+                aestheticScore: nil,
+                subjectPlacementScore: nil,
+                horizonScore: nil,
+                visualBalanceScore: nil,
+                salientRegionCount: nil
+            )
+        content = (try? container.decode(ContentAnalysis.self, forKey: .content))
+            ?? ContentAnalysis(
+                sceneType: .unknown,
+                tags: [],
+                hasText: nil,
+                textLineCount: nil,
+                screenshotProbability: nil,
+                isDocument: nil
+            )
         featurePrintAvailable = try container.decodeIfPresent(Bool.self, forKey: .featurePrintAvailable) ?? false
         qualityScore = try container.decode(Double.self, forKey: .qualityScore)
         qualityBreakdown = try container.decodeIfPresent(QualityScoreBreakdown.self, forKey: .qualityBreakdown)

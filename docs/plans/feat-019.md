@@ -157,18 +157,18 @@ the frozen routing sections.
 
 ### Task 2: Children collect (merge in order 019a → 019b → 019c-conditional)
 
-- [ ] `mini-019a`: composition adapter reviewable (independent review).
-- [ ] `mini-019b`: utility adapter + coverage reviewable (independent review).
-- [ ] `mini-019c`: activates only on a parent-named residual failure.
-- [ ] Each merge: independent review + `./init.sh` on the parent; weights untouched.
+- [x] `mini-019a`: composition adapter reviewable (merged via `8394e19`, PR #39, independent APPROVE).
+- [x] `mini-019b`: utility adapter + coverage reviewable (merged via `2274281`, PR #38, independent APPROVE).
+- [x] `mini-019c`: CONDITIONAL-CLOSED by Task 3 — no residual failure named, smudge UNAVAILABLE, matrix deferred (not activated, not merged).
+- [x] Each merge: independent review + `./init.sh` on the parent; weights untouched.
 
 ### Task 3: Integrate and gate feat-020 (parent, after all merges)
 
-- [ ] Wire predicates + requests into `performAll` + `make`; bump `analysisVersion` 2 → 3.
-- [ ] Run the Verify procedure (A-shape + Golden-shape proof binary, skip/bound
-  proof, privacy no-persist proof, cost vs budget, fallback byte-compare).
-- [ ] Record the feat-020 admission gate in `features/feat-019.md` handoff + `progress.md`.
-- [ ] Run `./init.sh` at parent close.
+- [x] Wire predicates + requests into `performAll` + `make`; bump `analysisVersion` 2 → 3.
+- [x] Run the Verify procedure (A-shape + Golden-shape proof binary, skip/bound
+  proof, privacy no-persist proof, cost vs budget, fallback byte-compare) and record F-017-E movement.
+- [x] Record the feat-020 admission gate in `features/feat-019.md` handoff + `progress.md`.
+- [x] Run `./init.sh` at parent close.
 
 ## Rollback
 

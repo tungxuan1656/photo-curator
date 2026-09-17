@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `active` (implemented 2026-09-17 on `tungxuan1656/mini-019a-comp`; PR open into `tungxuan1656/feat-019-integration`, awaiting independent review + merge)
+- Status: `done` (merged via `8394e19`, PR #39, independent APPROVE; wired by parent Task 3)
 - Parent integration feature: `feat-019`
 - Reserved ID: `mini-019a`
 
@@ -79,6 +79,9 @@
 
 ## Handoff
 
-State `active` (implemented 2026-09-17; adapter reviewable on `tungxuan1656/mini-019a-comp`, PR open into the integration branch).
-Blockers: independent review + parent merge (merge gate: mapping matches frozen schema, bounded outputs, explicit nil arms, no shared/sibling diff, `./init.sh` PASS).
-Next: merge first (019a → 019b order); parent Task 3 wires eligibility + adapter phases (no wiring in this mini).
+State `done` (merged via `8394e19`, PR #39, independent APPROVE; wired by parent Task 3
+into `performAll` via `tierBFacts` + `make` with `analysisVersion` 3; mapping proven live by the Task 3
+proof binary — salient 57/60 + 198/200, horizon/balance honestly nil-on-synthetic per the unavailable arm).
+Blockers: none.
+Next: none (child complete); parent Task 3 done; coordinator opens the parent PR to
+main (squash; separate merge task).

@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `active` (implemented 2026-09-17 in `tungxuan1656/mini-019b-util`; PR open into the integration branch, merges second after 019a)
+- Status: `done` (merged via `2274281`, PR #38, independent APPROVE; wired by parent Task 3)
 - Parent integration feature: `feat-019`
 - Reserved ID: `mini-019b`
 
@@ -109,7 +109,9 @@
 
 ## Handoff
 
-State `active` (adapter reviewable 2026-09-17; 2-file diff only).
+State `done` (merged via `2274281`, PR #38, independent APPROVE; wired by parent Task 3
+into `performAll` via `tierBFacts` + `make` with `analysisVersion` 3; mapping proven live by the Task 3
+proof binary — utility ran only on `isUtility` assets per the frozen predicate: A 39/60, Golden 143/200).
 Blockers: none.
-Next: integration-owner review (merge second, 019a → 019b); parent Task 3 wires
-phases into `performAll` + `make` and runs the trigger-coverage proof.
+Next: none (child complete); parent Task 3 done; coordinator opens the parent PR to
+main (squash; separate merge task).
