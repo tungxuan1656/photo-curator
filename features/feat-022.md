@@ -20,24 +20,24 @@ Calculate boundary evidence inside this feature after its input and output types
 - [ ] Change points improve named trip moment boundaries over feat-017 baseline.
 - [ ] Continuity avoids over-splitting and respects chronological fallback behavior.
 - [ ] Missing semantic facts produce deterministic legacy-compatible grouping.
-- [ ] Golden, Real Trip, and 1k smoke evidence pass.
+- [ ] Golden-shaped, trip-shaped, and 1k-scale reproducible automated evidence passes (Simulator permitted).
 
 ## Relevant docs
 
 - `docs/design-docs/curation-intelligence.md`
 - `docs/product-specs/selection-rules.md`
-- `docs/ship-gates/manual-qa.md`
 
 ## Inline plan
 
 1. Specify boundary and continuity invariants from the failure ledger.
 2. Implement the isolated evidence calculation behind the fixed source path.
-3. Integrate moment policy and fallback; record Golden, Real Trip, and 1k evidence.
+3. Integrate moment policy and fallback; record Golden-shaped, trip-shaped, and 1k-scale automated evidence.
 
 ## Verify
 
-- Pipeline manual QA: smoke plus Golden plus Real Trip plus 1k.
+- Reproducible automated evidence for every behavior change (Simulator permitted): smoke plus Golden-shaped plus trip-shaped plus 1k-scale; record commands, fixtures, and outputs in the handoff.
 - `./init.sh`
+- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032). No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Handoff
 

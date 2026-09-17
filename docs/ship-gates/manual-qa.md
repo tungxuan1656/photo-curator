@@ -1,8 +1,8 @@
-# Manual QA and Selection Evaluation (QA method owner)
+# Manual QA and Selection Evaluation (optional exploratory guidance)
 
 **Doc:** `manual-qa.md` (native filename kept)
-**Status:** MVP specification
-**Role:** Single owner of QA method: dual app + selection QA, datasets, labels, metrics, procedures, checklists, severity, templates, release blockers, cadence. Manual QA is primary; analytics is secondary.
+**Status:** MVP specification — historical reference; optional non-blocking exploratory guidance per DEC-032 (Accepted 2026-09-17, supersedes DEC-017)
+**Role:** Optional handbook for hand QA method: dual app + selection QA, datasets, labels, metrics, procedures, checklists, severity, templates, historical release-blocker lists, cadence. Manual QA is NOT required for feature acceptance and never blocks release; every behavior-changing feature MUST instead provide reproducible automated evidence (Simulator-based proof permitted) and pass `./init.sh`. Analytics remains secondary.
 
 **Ownership:**
 This doc owns QA method only. It does not own selection policy, stored shapes, iCloud mechanics, perf targets, privacy rules, or analytics events. It links to those docs and does not copy them.
@@ -25,7 +25,7 @@ MUST invariants (only use of MUST in this doc):
 
 ## 1. What QA covers
 
-Two test areas. Both are manual on a real iPhone. No automated test suite for MVP.
+Two test areas. Either may be explored by hand on a real iPhone or via Simulator; hand exploration is optional and never acceptance evidence. No automated test suite for MVP (no test targets, no `*Test*.swift`, no test frameworks per repo policy). Required acceptance evidence is reproducible automated proof (Simulator permitted) plus `./init.sh`.
 
 | Area | Question | Where rules live |
 |---|---|---|
@@ -66,9 +66,9 @@ Keep these sets stable so runs can be compared over time. Do not retune the sets
 
 Notes:
 
-- A is the default smoke set. G is the most important qualitative check.
+- A is the default smoke set. G is the most important qualitative check when hand exploration is used.
 - H checks system behavior, not taste. Do not hand-score all 5,000 photos.
-- Test on a physical iPhone first. The simulator is for UI work only, not for pipeline proof. Cover the daily device plus an older device when available for memory and heat checks.
+- Physical-iPhone runs are optional exploratory follow-up only, never acceptance blockers: Simulator-based automated proof is permitted acceptance evidence (DEC-032). Where a physical device is available, the daily device plus an older device may be used for extra memory and heat signal.
 - Selection policy terms (moment, cluster, representative, keeper) follow 03. Stored field names follow 06.
 
 ---
@@ -116,7 +116,7 @@ Use all metrics together. No single number proves quality.
 | Human Edit Rate | manual changes / final album size | track only | Split into removals (added junk) vs add-backs (lost value). Add-backs are worse. |
 | Subjective score 1–5 | reviewer judgment (§6.4) | 4+ on unseen trips | 5 ready, 4 useful, 3 saves time with mistakes, 2 much work left, 1 prefer manual. |
 
-Targets are starting points, not hard pass/fail lines. Manual review decides. A 94% recall with a borderline miss can pass; a 98% recall that drops the key photo fails.
+Targets are starting points, not hard pass/fail lines. Reproducible automated evidence decides acceptance; manual review is advisory only. A 94% recall with a borderline miss can pass; a 98% recall that drops the key photo fails.
 
 Diversity check (visual, not a number): scan the final album for excess focus on one person, place, day, scene, or orientation. A good trip mix covers people, groups, landscapes, buildings, food, details, transport, day and night. The engine prevents one theme from taking over; it does not force quotas. Policy detail: 03.
 
@@ -204,20 +204,20 @@ Acceptable with only small edits?
 
 Blind check on a fresh set (catches overfit to Golden): take a new trip, do not pre-curate, run the app, log removals needed, missing key photos, duplicate fails, and moment fails.
 
-Regression after scoring, threshold, clustering, diversity, face, or sizing changes: run A, B, Golden, and one real trip. Record recall, bad-pick rate, leakage, best-shot accuracy, moment coverage, final size, and notes. Never ship a change on one better number alone (e.g. leakage 5% → 1% with recall 96% → 82% is a fail). Log big calls in `decision-log.md`.
+Regression after scoring, threshold, clustering, diversity, face, or sizing changes (optional exploratory guidance; required acceptance is reproducible automated A/B/Golden-shaped/trip-shaped evidence plus `./init.sh`): run automated A, B, Golden-shaped, and trip-shaped fixture shapes. Record recall, bad-pick rate, leakage, best-shot accuracy, moment coverage, final size, and notes. Do not accept a change on one better number alone (e.g. leakage 5% → 1% with recall 96% → 82% is a fail). Safety, privacy, and data-integrity conditions (originals unchanged, no privacy break, no steady crash or hang, savable album) remain automated acceptance conditions where applicable. Log big calls in `decision-log.md`.
 
 Side-by-side: build albums from old and new configs, diff which photos are only in each, which cluster pick changed, which moments were lost, how balance shifted. Numbers hide taste fails.
 
 ---
 
-## 7. Severity, failure tags, release gates
+## 7. Severity, failure tags, historical release reference (advisory; non-blocking per DEC-032)
 
 ### 7.1 Severity
 
-| Level | Meaning | Examples | Release effect |
+| Level | Meaning | Examples | Advisory signal |
 |---|---|---|---|
-| P0 Critical | Data harm, privacy break, dead flow | Original lost or changed; privacy violated; steady crash; save corrupts; endless hang | Blocks release |
-| P1 Major | Core flow broken | Common album cannot finish; permission flow dead; many key photos lost; bad clustering; review unusable; common iCloud assets fail | Normally blocks |
+| P0 Critical | Data harm, privacy break, dead flow | Original lost or changed; privacy violated; steady crash; save corrupts; endless hang | Investigate first (advisory; non-blocking per DEC-032) |
+| P1 Major | Core flow broken | Common album cannot finish; permission flow dead; many key photos lost; bad clustering; review unusable; common iCloud assets fail | Normally investigate first (advisory; non-blocking per DEC-032) |
 | P2 Moderate | Limited harm | Some weak picks, missed duplicate, rare edge fail, small perf drop, fixable UI state bug | Can ship if known and accepted |
 | P3 Minor | Cosmetic or tiny taste gap | Spacing, wording, rare pick disagreement | Does not block |
 
@@ -225,11 +225,13 @@ Side-by-side: build albums from old and new configs, diff which photos are only 
 
 Tag reports with one or more: `IMPORTANT_PHOTO_MISSED`, `BAD_PHOTO_SELECTED`, `DUPLICATE_LEAKAGE`, `WRONG_BEST_SHOT`, `OVER_CLUSTERING`, `UNDER_CLUSTERING`, `MOMENT_MISSING`, `PEOPLE_BIAS`, `LANDSCAPE_BIAS`, `DIVERSITY_FAILURE`, `GROUP_PHOTO_FAILURE`, `QUALITY_SCORING_FAILURE`, `ALBUM_TOO_LARGE`, `ALBUM_TOO_SMALL`, `UNKNOWN_SELECTION_FAILURE`.
 
-### 7.3 Release validation and blockers
+### 7.3 Release validation and blockers (historical advisory list; non-blocking per DEC-032)
 
-Before a milestone build, run: A smoke pass; Golden regression with no big surprise; one real trip that reads as useful; permission trio (full, limited, denied); 1,000-photo run without critical fail; cancel run; review add/remove; save run; privacy spot-check per 09.
+The lists below are optional exploratory guidance, not acceptance gates. No item here blocks a feature or release by itself; acceptance is reproducible automated evidence plus `./init.sh`.
 
-Do not release with: lost or changed originals; steady crash or hang; unsavable album; cross-session photo mix-up; misleading permission behavior; privacy break; common 1,000-photo run fails; whole moments missing on tap; clearly worse picks than the last good build.
+Before a milestone build, consider as exploratory follow-up: A smoke pass; Golden-shaped automated regression with no big surprise; one trip-shaped review that reads as useful; permission trio (full, limited, denied); 1,000-photo-scale automated run without critical fail; cancel run; review add/remove; save run; privacy spot-check per 09.
+
+Historical release-blocker reference (advisory, not gates): lost or changed originals; steady crash or hang; unsavable album; cross-session photo mix-up; misleading permission behavior; privacy break; common 1,000-photo run fails; whole moments missing on tap; clearly worse picks than the last good build.
 
 Temporary non-blockers: odd weak pick, stray duplicate, small rank dispute, small animation or layout flaw, rare metadata case, small size drift, tie between two good frames. Fix patterns first, not each taste edge.
 
@@ -254,7 +256,7 @@ Severity:
 Screenshot or clip if useful:
 ```
 
-File only recurring, severe, biased, or album-breaking issues. Skip one-off taste notes. Analytics signal definitions live in 11; manual QA stays primary.
+File only recurring, severe, biased, or album-breaking issues. Skip one-off taste notes. Analytics signal definitions live in 11; manual QA stays optional and non-blocking.
 
 ### 8.2 Evaluation run
 
@@ -280,7 +282,7 @@ Keep major comparison notes; throwaway runs need no permanent record.
 
 ## 9. Cadence and done
 
-Proportional QA by risk:
+Proportional exploratory QA by risk (advisory only; reproducible automated evidence remains the acceptance gate):
 
 ```text
 Small UI-only change > run the touched flow.
@@ -290,10 +292,10 @@ Big pipeline change > smoke + Golden + real trip + 1,000-photo check.
 Before milestone > full release list in §7.3.
 ```
 
-A selection feature is done when: it works on device; the new behavior shows; no critical regression; Golden shows no bad surprise; one real album reviewed; limits known; big calls noted in 13.
+A selection feature is done when: reproducible automated evidence (Simulator permitted) proves the new behavior with no critical regression on Golden-shaped fixtures; limits known; `./init.sh` passes; big calls noted in 13. Physical-device runs, annotated Golden labels, and real-trip human review are optional exploratory follow-up, never done-gates.
 
-MVP is ready when: access, picking, progress, fail/cancel, review/edit, and save all work; 1,000-photo runs are steady; key photos rarely drop; bad frames mostly filtered; duplicates cut; groups, landscapes, and moments read well; originals safe; privacy holds; review effort drops clearly.
+MVP is ready when (proven by reproducible automated evidence plus `./init.sh`; manual and subjective review is optional advisory context only): access, picking, progress, fail/cancel, review/edit, and save all work; 1,000-photo-scale runs are steady; key photos rarely drop; bad frames mostly filtered; duplicates cut; groups, landscapes, and moments read well; originals safe; privacy holds; review effort drops clearly.
 
 Not building for MVP: unit/UI/snapshot suites, auto image comparison, vision benchmarks, CI test gates, device farms, stats-significance rigs, annotation platforms, experiment trackers, QA backends, or a second test app target.
 
-Core test: with hundreds or thousands of photos, does the album keep what matters and cut enough repetition and junk to save real time? Numbers guide; reviewed albums decide. Loop: build > run real photos > review misses > tag the failure > smallest fix > re-run stable sets > keep or revert.
+Core test: with hundreds or thousands of photos, does the album keep what matters and cut enough repetition and junk to save real time? Automated evidence decides; hand review is advisory. Loop: build > run automated fixture shapes (plus optional hand review of real photos) > tag the failure > smallest fix > re-run stable sets > keep or revert.

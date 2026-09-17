@@ -33,7 +33,7 @@ If baseline verification fails, record the failure. Fix it only when the current
 - Record scope, acceptance, evidence, and handoff in the feature file.
 - Record a feature result in `progress.md` only when the result, blocker, handoff, or next action materially changes. Do not copy feature scope there.
 - Update `init.sh` when verification commands or workspace modules change.
-- Do not create automated tests for this project: no test targets, no `*Test*.swift` files, no test frameworks or test-only architecture. Validation is manual only; `./init.sh` reports `SKIP [test]` by policy.
+- Do not create automated tests for this project: no test targets, no `*Test*.swift` files, no test frameworks or test-only architecture. Every behavior-changing feature MUST provide reproducible automated evidence (Simulator-based proof permitted) and `./init.sh` MUST pass (it reports `SKIP [test]` by policy). Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032).
 
 ## Plans
 

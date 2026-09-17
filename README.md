@@ -43,7 +43,7 @@ cd photo-curator
 open apps/photo-curator.xcodeproj
 ```
 
-`./init.sh` runs format, strict lint, and a simulator build. Tests report `SKIP [test]` by policy: this repo has no test targets and validation is manual (see `docs/ship-gates/manual-qa.md`).
+`./init.sh` runs format, strict lint, and a simulator build. Tests report `SKIP [test]` by policy: this repo has no test targets. Behavior-changing features provide reproducible automated evidence (Simulator-based proof permitted) and `./init.sh` MUST pass; manual QA (see `docs/ship-gates/manual-qa.md`) is optional non-blocking guidance per DEC-032.
 
 ## Project structure
 

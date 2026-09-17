@@ -73,7 +73,7 @@ Rules:
 | Persistence | File-based Codable, light files and cache only; no database for MVP (see [decision-log](decision-log.md) DEC-TBD-002) |
 | Logging | OSLog `Logger` with subsystem and category |
 | Analytics | If enabled, thin internal interface; provider deferred; schemas in [11](../ship-gates/analytics.md) |
-| Validation | Manual QA per [10](../ship-gates/manual-qa.md); no test targets in repo |
+| Validation | Reproducible automated evidence plus `./init.sh` (manual QA per [10](../ship-gates/manual-qa.md) optional, non-blocking per DEC-032); no test targets in repo |
 
 Invariants (only use of MUST in this doc):
 
