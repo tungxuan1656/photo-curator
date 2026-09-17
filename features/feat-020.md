@@ -148,16 +148,16 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
 
 ## Acceptance (Simulator code-evidence; manual QA replaced per user directive 2026-09-16)
 
-- [ ] B-shape + Golden-shape proof binary (REAL shipped sources verbatim, run
+  - [x] B-shape + Golden-shape proof binary (REAL shipped sources verbatim, run
   twice, byte-compare) shows per-face distribution and weakest-face
   protections resolving the named group failures (Task 3 results in Handoff —
   D-shape faces where available, else synthetic face-bearing fixtures).
-- [ ] Candid-guard proof: valid non-portrait moments survive people policy
+  - [x] Candid-guard proof: valid non-portrait moments survive people policy
   (no candid/laughing/sleeping/downward-gaze discard; no non-people moment
   pushed below the floor by the people term).
-- [ ] Privacy no-persist proof: persisted rows hold derived distributions
+  - [x] Privacy no-persist proof: persisted rows hold derived distributions
   only — no face boxes, landmarks, or pixels in analysis or diagnostics.
-- [ ] Cost vs budget: calculator + scoring delta judged against the
+  - [x] Cost vs budget: calculator + scoring delta judged against the
   performance.md budgets (procedure in Verify; results in Handoff — no
   budget constant changed).
 
@@ -201,14 +201,85 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
 
 ## Handoff
 
-- State: active (sole integration parent; contract commit only, no `apps/` change)
+- State: active (sole integration; Task 3 wired + verified, child merged; parent PR to main NOT yet opened)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-019` reads `done` (squash #41 at `00c62e2`), `feat-020` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
   no other `active` feature.
-- Evidence: `./init.sh` result recorded at commit; `git diff --name-only` =
-  `features/feat-020.md` + `feature_index.json` + `docs/plans/feat-020.md` +
-  `features/mini-020a.md` + `progress.md` only, no `apps/` path.
+- Task 3 wiring (this commit, the only shared-contract change): `PeopleAnalysis` gains
+  persisted `minFaceQuality: Double?` + `meanFaceQuality: Double?` (derived scalars only;
+  boxes/landmarks/pixels never persisted); `make` gains the 2 params (defaults nil) with
+  `clamped01`; `TierABaseline` carries the transient per-face quality list (nil when the
+  quality request degrades) and `bestFaceQuality` now folds from the calculator mean
+  (identical value, same `subjectPlacementScore` slot); `performAll` passes the existing
+  Tier-A face observations through `GroupEvidenceCalculator.map` (NO new Vision request)
+  and stores the min/mean scalars; `QualityScorer.score` folds the weakest-face signal
+  (`min(group, minFaceQuality)`, weights in configuration, no threshold invented);
+  `FinalAlbumBuilder.decision` appends frozen `bestGroupPhoto` + `betterFaceQuality`
+  (group picks) / `bestPortrait` (single-face picks) — no new code invented;
+  `AppConfiguration.default.analysis.analysisVersion` 3 → 4. `SelectionEngine`
+  orchestration unchanged (score call sites read the derived distribution from analysis).
+  `FileAnalysisCache` version gate + `BatchPipeline.completedIDs` checkpoint-ignore
+  already implement the frozen requeue rule — no new migration code. New persisted
+  fields are all-Optional whole-struct decode (version-3 rows still decode; gate
+  treats them as miss, not crash — proven by the v3-tolerance arm below).
+- Task 3 Verify (Simulator code-evidence, host-harness macOS Vision backend; never
+  manual QA, never a physical device; proof sources kept at
+  `/tmp/f020-evidence/src/v4proof-main.swift` + `v4Bproof.swift` +
+  `v4persist.swift` + `v4cache.swift` + `v4time.swift`, outside the repo, hosts only,
+  never shipped):
+  - Proof binary compiles the REAL shipped sources verbatim (Domain Models/Selection/
+    Scoring + `AppConfiguration` + `ServiceProtocols` + `ImageSimilarityArtifact` +
+    `UniversalFactAdapter` + `CompositionEvidenceAdapter` + `UtilityEvidenceAdapter` +
+    `GroupEvidenceCalculator` + `VisionAnalysisService`; main `d92b89b2…`, binary
+    `d759a149…`) and runs the REAL `analyze` (calculator wired) → `select` on A-shape
+    (60) + Golden-shape (200) + B-shape (40, separate binary `ba9a8785…`) fixture bytes
+    twice. HONEST face census: 0/60 + 0/200 + 0/40 faces (facedbg re-confirmed; the
+    drawn-face probe also detects 0 — synthetic solids carry no Vision-detectable
+    faces, no D-shape fixtures exist). Distribution asserts (verbatim calculator on
+    injected per-face values): homos min 0.2/mean 0.6333 TRUE, nil-arm TRUE,
+    count-only TRUE, clamp (1.4→1.0, -0.2→0.0) TRUE. Weakest-face fold (verbatim
+    scorer): good-all 0.7333 vs one-failed-face 0.6000 → weakestface PASS (one failed
+    face drags the group down, never up). Determinism byte-compare: picked A md5
+    `01975608…ccc3` == `01975608…ccc3`; picked Golden `9f7792c7…3445` ==
+    `9f7792c7…3445`; picked B `ecd4aa1a…41068` == `ecd4aa1a…41068`. PASS.
+    Picks identical v3→v4 on all three shapes (A 60→12, Golden 200→30, B 40→3):
+    HONEST READING — the wiring flows end-to-end (nil→populated on faced assets)
+    but moves ZERO picks on faceless synthetic bytes, expected because the people
+    term is nil-gated and the fold only lowers faced groups; signal-live, NOT a
+    quality-gain claim; Golden human annotation stays pending.
+  - Candid-guard proof: non-people usable pre-policy assets keep their disposition
+    (A 12/60 survive as the 12 picks; Golden 30/200 survive as the 30 picks — every
+    non-people pick survives; zero non-people moments pushed below the floor by the
+    people term). People reason codes correctly absent on faceless bytes (bp/bgp/bfq
+    0/0/0 all shapes — codes fire only on faced picks, proven by the wiring read).
+  - Privacy proof (REAL `PhotoAnalysis` row encode; main `718e0611…`, binary
+    `1a253bd6…`): persisted JSON holds derived scalars only — forbidden-shape scan
+    (boxes, pixel buffers, landmarks, joints, heatmaps, crops, embeddings, face
+    keys) → NONE. `PERSIST-PROOF: PASS`. v3-row tolerance arm: stripped v4 keys
+    still decode with nil distribution → `PASS` (miss-not-crash).
+  - Cold/warm cost (same host, same A-shape bytes @ 512 px; binary `97670c77…`):
+    v4 cold full-`analyze` 47.89 ms/asset vs v3 cold 52.60 (same host/method —
+    no regression from the calculator; delta is noise + the nil-gated fold).
+    Warm cache-hit row round-trip 0.03 ms/asset. Honest disposition: host-harness
+    per-asset Vision inference cost is not the shipped pipeline budget (no
+    batching/lanes/cache-hits, macOS backend not the device backend); the >~20%
+    flag is judged at parent close against the warm-cache-hit path + lane
+    parallelism, and NO budget constant is proposed or changed here. Recorded,
+    not hidden.
+  - QoS: unchanged — the calculator `map` is a synchronous pure fold inside the
+    existing `performAll` lane body (no `Task.detached`, no priority parameter).
+  - Cache requeue proof (REAL `FileStore` + `FileAnalysisCache` sources; main
+    `15274756…`, binary `90579020…`): `currentVersion=4 v3rowMiss=true v4rowHit=true`
+    → `REQUEUE-RULE: PASS` (v3 rows requeue, v4 rows hit; checkpoint-ignore
+    already covers stale checkpoints — read-verified `BatchPipeline.swift:386`).
+- Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0
+  violations, Simulator build SUCCEEDED, SKIP [test] by policy).
+- feat-021 admission gate: may start only after the parent PR to main merges AND
+  its contract freezes variant-aware clustering (visually-distinct separation,
+  union-find collapse guard, context-aware representatives) without reinterpreting
+  the version-4 frozen schema (people distribution fields, caps, predicates) —
+  extensions bump `analysisVersion` 4 → 5 with the same requeue rule.
 - Blockers: none.
-- Next: dispatch `mini-020a`; merge with independent review; then parent Task 3
-  (wire + version 4 + Verify, gate feat-021).
+- Next: coordinator opens the parent PR to main (squash; separate merge task);
+  feat-021 selection remains user-gated.

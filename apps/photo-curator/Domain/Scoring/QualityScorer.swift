@@ -42,8 +42,13 @@ struct QualityScorer: Sendable {
     ) -> ScoredCandidate {
         var numerator = analysis.qualityScore * configuration.technicalQualityWeight
         var denominator = configuration.technicalQualityWeight
+        // feat-020 weakest-face fold: the people term is the weaker of the
+        // persisted count-proxy group score and the transient per-face minimum
+        // (one failed face drags the group down, never up). Weights stay in
+        // configuration; no threshold is invented here.
         if let group = analysis.people.groupPhotoScore {
-            numerator += group * configuration.humanImportanceWeight
+            let peopleTerm = analysis.people.minFaceQuality.map { min(group, $0) } ?? group
+            numerator += peopleTerm * configuration.humanImportanceWeight
             denominator += configuration.humanImportanceWeight
         }
         var compositionScores: [Double] = []

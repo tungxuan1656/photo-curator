@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `done` (code complete and reviewable; merge pending gate + independent review)
+- Status: `done` (merged via `84af07d`, PR #42, Codex APPROVE; wired by parent Task 3)
 - Parent integration feature: `feat-020`
 - Reserved ID: `mini-020a`
 
@@ -91,3 +91,13 @@ Blockers: none.
 Next: independent review (integration owner + one reviewer, never the module
 owner alone), then merge into `tungxuan1656/feat-020-integration`; parent
 Task 3 wires the calculator and runs the Verify proof binary.
+
+## Handoff
+
+State `done` (merged via `84af07d`, PR #42, Codex APPROVE; wired by parent Task 3
+into `performAll` via calculator pass-through + `make` with `analysisVersion` 4;
+mapping proven live by the Task 3 proof binary — distribution asserts all TRUE,
+weakest-face fold 0.7333 vs 0.6000 PASS, picks identical v3→v4 on faceless bytes).
+Blockers: none.
+Next: none (child complete); parent Task 3 done; coordinator opens the parent PR to
+main (squash; separate merge task).

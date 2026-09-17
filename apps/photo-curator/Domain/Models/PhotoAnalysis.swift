@@ -12,9 +12,14 @@ struct TechnicalAnalysis: Codable, Sendable {
 }
 
 /// Stored people facts: counts and summary scores only. Face boxes are session-temp and never persisted.
+/// feat-020 adds `minFaceQuality`/`meanFaceQuality` (per-face distribution min/mean, 0…1, nil when
+/// no faces or quality unavailable): derived scalars only, computed transiently by
+/// `GroupEvidenceCalculator` from the Tier-A face observations, never boxes/landmarks/pixels.
 struct PeopleAnalysis: Codable, Sendable {
     let faceCount: Int
     let groupPhotoScore: Double?
+    let minFaceQuality: Double?
+    let meanFaceQuality: Double?
 
     var containsPeople: Bool {
         faceCount > 0
@@ -108,15 +113,15 @@ extension PhotoAnalysis {
         min(1.0, max(0.0, value))
     }
 
-    // swiftlint:disable function_parameter_count - factory assembles the version-3 Tier-B facts in one call.
+    // swiftlint:disable function_parameter_count - factory assembles the version-4 facts in one call.
     /// Shared factory: clamps scores once and stamps the version.
     /// VisionAnalysisService calls this; it defines no clamp.
     /// `aestheticScore`/`tags`/`featurePrintAvailable` are the feat-018
     /// universal facts (frozen schema); `horizonScore`/`visualBalanceScore`/
     /// `salientRegionCount` (feat-019a) and `hasText`/`textLineCount`/
     /// `screenshotProbability`/`isDocument` (feat-019b) are the Tier-B facts
-    /// (frozen routing). Unavailable arms are nil / [] / false.
-    /// `sceneType` rule is unchanged (faces-based) in feat-019.
+    /// (frozen routing); `minFaceQuality`/`meanFaceQuality` (feat-020) are the
+    /// transient per-face distribution scalars. Unavailable arms are nil / [] / false.
     static func make(
         assetID: AssetID,
         technical: TechnicalAnalysis,
@@ -133,7 +138,9 @@ extension PhotoAnalysis {
         hasText: Bool? = nil,
         textLineCount: Int? = nil,
         screenshotProbability: Double? = nil,
-        isDocument: Bool? = nil
+        isDocument: Bool? = nil,
+        minFaceQuality: Double? = nil,
+        meanFaceQuality: Double? = nil
     ) -> PhotoAnalysis {
         let sharp = clamped01(technical.sharpnessScore)
         let expo = clamped01(technical.exposureScore)
@@ -141,7 +148,12 @@ extension PhotoAnalysis {
         return PhotoAnalysis(
             assetID: assetID,
             technical: technical,
-            people: PeopleAnalysis(faceCount: max(0, faceCount), groupPhotoScore: groupPhotoScore.map(clamped01)),
+            people: PeopleAnalysis(
+                faceCount: max(0, faceCount),
+                groupPhotoScore: groupPhotoScore.map(clamped01),
+                minFaceQuality: minFaceQuality.map(clamped01),
+                meanFaceQuality: meanFaceQuality.map(clamped01)
+            ),
             composition: CompositionAnalysis(
                 aestheticScore: aestheticScore.map(clamped01),
                 subjectPlacementScore: subjectPlacementScore.map(clamped01),

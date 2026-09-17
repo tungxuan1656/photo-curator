@@ -113,18 +113,18 @@ mini on dispatch; the parent retains the frozen decision sections.
 
 ### Task 2: Child collects (merge mini-020a)
 
-- [ ] `mini-020a`: group evidence calculator reviewable (merge with independent
-  APPROVE; `./init.sh` on the parent; weights untouched).
+- [x] `mini-020a`: group evidence calculator reviewable (merged via `84af07d`, PR #42,
+  Codex APPROVE; `./init.sh` on the parent; weights untouched).
 
 ### Task 3: Integrate and gate feat-021 (parent, after the merge)
 
-- [ ] Wire calculator pass-through + scorer weakest-face fold + reason codes;
+- [x] Wire calculator pass-through + scorer weakest-face fold + reason codes;
   bump `analysisVersion` 3 → 4.
-- [ ] Run the Verify procedure (B-shape + Golden-shape proof binary,
+- [x] Run the Verify procedure (B-shape + Golden-shape proof binary,
   candid-guard proof, privacy no-persist proof, cost vs budget, fallback
   byte-compare) and record F-017-D movement.
-- [ ] Record the feat-021 admission gate in `features/feat-020.md` handoff + `progress.md`.
-- [ ] Run `./init.sh` at parent close.
+- [x] Record the feat-021 admission gate in `features/feat-020.md` handoff + `progress.md`.
+- [x] Run `./init.sh` at parent close.
 
 ## Rollback
 

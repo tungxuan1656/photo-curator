@@ -539,7 +539,7 @@
       "merge_gate": "Pure transient mapping per frozen contract (per-face values to count/min/mean scalars), no persisted/raw-face return, no shared-contract/sibling diff; ./init.sh passes",
       "parent": "feat-020",
       "seam": "Per-face distribution computation (new calculator only, no wiring)",
-      "status": "todo",
+      "status": "done",
       "title": "Group evidence calculator"
     },
     {

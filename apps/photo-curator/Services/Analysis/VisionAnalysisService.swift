@@ -91,7 +91,11 @@ private extension VisionAnalysisService {
         // own field only via try?.
         let tierA = try await tierABaseline(image: image)
         let faceCount = tierA.faceCount
-        let bestFaceQuality = tierA.bestFaceQuality
+        // feat-020 pass-through: the existing Tier-A face observations map to
+        // the transient per-face distribution (no new Vision request). Only
+        // scalars cross; boxes/landmarks/pixels never leave Tier-A locals.
+        let groupFacts = GroupEvidenceCalculator.map(faceCount: faceCount, faceQualities: tierA.faceQualities)
+        let bestFaceQuality = groupFacts.meanFaceQuality
         let similarity = tierA.similarity
         // Universal facts (feat-018): adapter phase 1 collects the aesthetics +
         // classify observations beside the face/print requests above, with the
@@ -131,7 +135,9 @@ private extension VisionAnalysisService {
             hasText: tierB.hasText,
             textLineCount: tierB.textLineCount,
             screenshotProbability: tierB.screenshotProbability,
-            isDocument: tierB.isDocument
+            isDocument: tierB.isDocument,
+            minFaceQuality: groupFacts.minFaceQuality,
+            meanFaceQuality: groupFacts.meanFaceQuality
         )
         // Post-analysis cancel check: a cancel landing during the sync CPU
         // pass must not return success — map through .cancelled in analyze.
@@ -171,13 +177,16 @@ private extension VisionAnalysisService {
         }
         let faceObservations = faceRects.results ?? []
         let faceCount = faceObservations.count
+        let faceQualities: [Double]? = faceCount > 0 ? (faceQuality.results.map { results in
+            results.compactMap(\.faceCaptureQuality).map { Double($0) }
+        }) : nil
         var bestFaceQuality: Double?
-        if faceCount > 0, let qualityResults = faceQuality.results {
-            bestFaceQuality = qualityResults.compactMap(\.faceCaptureQuality).map { Double($0) }.max()
+        if faceCount > 0, let qualities = faceQualities, !qualities.isEmpty {
+            bestFaceQuality = qualities.max()
         }
         let similarity = (printRequest.results?.first as? VNFeaturePrintObservation)
             .map(ImageSimilarityArtifact.init(observation:))
-        return TierABaseline(faceCount: faceCount, bestFaceQuality: bestFaceQuality, similarity: similarity)
+        return TierABaseline(faceCount: faceCount, faceQualities: faceQualities, similarity: similarity)
     }
 
     /// Tier-B contextual pass (feat-019 frozen routing). Tier-A facts from the
@@ -276,9 +285,11 @@ private extension VisionAnalysisService {
 
     /// Tier-A baseline facts for one asset: face facts plus the transient
     /// print signal. Plain value box so `performAll` stays short.
+    /// feat-020: carries the per-face quality list (nil when the quality
+    /// request degraded) so the calculator maps the distribution transiently.
     private nonisolated struct TierABaseline: Sendable {
         let faceCount: Int
-        let bestFaceQuality: Double?
+        let faceQualities: [Double]?
         let similarity: ImageSimilarityArtifact?
     }
 
