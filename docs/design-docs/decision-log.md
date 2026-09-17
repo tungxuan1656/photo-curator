@@ -56,6 +56,7 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-029 | Post-MVP Curation Intelligence V2 with iOS 26 baseline + optional iOS 27 semantic tier | 03, 04, 07 |
 | DEC-030 | Variant-aware clustering contract | `features/feat-021.md` |
 | DEC-032 | Automated feature evidence replaces mandatory manual QA | `AGENTS.md`, `features/feat-template.md`, 10 |
+| DEC-033 | Semantic moment change-point contract | `features/feat-022.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -274,6 +275,16 @@ Alternatives considered: keep physical QA as a hard gate (rejected because it bl
 Evidence: the feat-021 proof binary passed A, B, and Golden-shaped deterministic runs plus I1–I8; `./init.sh` passed; the prior blocker was exclusively unavailable physical devices and datasets, not a failing automated proof.
 Consequences: feat-021 can resume from its preserved integration worktree after its acceptance record is rewritten to the automated gate; later features use automated fixture/proof evidence and remain free of physical-device blockers. Manual-qa.md remains as optional exploratory guidance and historical method documentation.
 Reconsider when: a release, privacy, safety, or data-integrity risk requires a separately approved manual check, or automated evidence cannot represent a newly introduced behavior.
+
+# DEC-033 — Semantic moment change-point contract
+Status: Accepted · Date: 2026-09-17
+Owner: `features/feat-022.md` · Affected: `MomentBuilder`, feat-023/feat-024 admission
+Context: The moment middle band needed semantic boundaries beyond scene-only grouping without new signals, while sparse evidence had to keep deterministic legacy grouping and dense bursts had to stay together.
+Decision: Use conservative middle-band change-points (people-presence, bilateral document/framing, known-scene) checked only after close-visual-edge continuity; sub-soft-gap density never splits; hard-gap always splits; nil/unknown evidence continues the moment (legacy fallback). Single-vs-group counts and orientation alone never split. Keep `analysisVersion` at 4 (no persisted-shape change, no migration); keep sub-soft-gap activity transitions and day/night + formal/candid + framing-magnitude distinctions as feat-024/feat-027 ceilings.
+Alternatives considered: dense-timeline splitting (rejected — needs embedding/jury evidence); asymmetric unknown handling (rejected — splits on incomplete evidence); new persisted facts or thresholds (rejected — unnecessary scope and migration risk).
+Evidence: feat-022 proof runs (Smoke 60→6, Golden 200→15, Trip 150→10, H 1000→56, all double-run byte-identical) plus named cases M1–M7 ALL PASS with M6 legacy-oracle identity; `./init.sh` PASS (format, `swiftlint --strict` 0 violations/61 files, BUILD SUCCEEDED, SKIP [test] per policy).
+Consequences: moment policy stays local to `MomentBuilder`, keeps the iOS 26 native fallback, adds no model/request/dependency or migration, and feeds feat-024/feat-027 only the measured ceilings.
+Reconsider when: a named residual failure shows the ceilings materially harm curation quality, or measured embedding/jury evidence justifies dense-timeline splitting.
 
 ---
 
