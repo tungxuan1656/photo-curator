@@ -280,7 +280,9 @@ strings, and `competingIDs` holds the duplicate winner a rejected asset lost to.
 persists `selectedAssetIDs` in chronological capture order, the complementary `rejectedAssetIDs`,
 one `Decision` per source ID, and `engineVersion`. `engineVersion 1` was the feat-007 pass-through;
 `engineVersion 2` marks the first real pipeline (duplicates → moments → rank → shortlist → diversity →
-verify → order). Edited twins resolve by `PhotoAsset.isEdited` (mapped from
+verify → order). `engineVersion 3` marks the feat-023 global-diversity-graph pipeline (graph-scoped visual
+novelty; fallback selects exactly as version 2 on the same shortlist; `analysisVersion` stays 4).
+Edited twins resolve by `PhotoAsset.isEdited` (mapped from
 `PHAsset.hasAdjustments`): the edited copy earns a soft bonus and wins the
 near-duplicate tie-break, so only it survives when both twins land in one
 cluster — but twins outside the time window or similarity threshold stay

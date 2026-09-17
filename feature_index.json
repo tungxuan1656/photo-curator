@@ -247,7 +247,7 @@
       ],
       "gate": "A 150-250 candidate graph improves novelty and saturation behavior without regressing Golden-shaped or 1k-scale automated evidence; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
       "id": "feat-023",
-      "status": "todo",
+      "status": "done",
       "title": "Global diversity shortlist"
     },
     {

@@ -260,7 +260,10 @@ actor SelectionSessionCoordinator {
         let edges = try await rebuildSimilarityEdges(for: assets, candidates: candidates, laneCount: laneCount)
         return try engine.select(
             assets: assets, analyses: analyses, configuration: configuration,
-            feedback: nil, similarityEdges: edges, tierCEdges: tierCEdges(for: assets, analyses: analyses)
+            feedback: nil, similarityEdges: edges,
+            tierCEdges: tierCEdges(
+                forShortlistOf: assets, analyses: analyses, configuration: configuration, similarityEdges: edges
+            )
         )
     }
 
@@ -271,12 +274,13 @@ actor SelectionSessionCoordinator {
     ) async throws -> SelectionResult {
         let candidates = engine.duplicateCandidates(for: assets, configuration: request.config.selection)
         let edges = try batchResult.similarityEdges(for: candidates)
+        let tierC = tierCEdges(
+            forShortlistOf: assets, analyses: batchResult.analyses,
+            configuration: request.config.selection, similarityEdges: edges
+        )
         let engineOut = try engine.select(
-            assets: assets,
-            analyses: batchResult.analyses,
-            configuration: request.config.selection,
-            feedback: nil,
-            similarityEdges: edges, tierCEdges: tierCEdges(for: assets, analyses: batchResult.analyses)
+            assets: assets, analyses: batchResult.analyses, configuration: request.config.selection,
+            feedback: nil, similarityEdges: edges, tierCEdges: tierC
         )
         return SelectionResult(
             sessionID: request.sessionID,
@@ -308,13 +312,15 @@ actor SelectionSessionCoordinator {
         return edges
     }
 
-    /// Bounded Tier-C diversity edges (feat-024, DEC-035): native provider over
-    /// analyzed shortlist-scale assets; router refusal or empty output falls
-    /// back to noop (no edges, FeaturePrint fallback). Diversity novelty only.
+    /// Bounded Tier-C edges (DEC-037) over the exact `select` shortlist; same FP edges, noop fallback.
     private func tierCEdges(
-        for assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis]
+        forShortlistOf assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis],
+        configuration: SelectionConfiguration, similarityEdges: [SimilarityEdge]
     ) -> [SimilarityEdge] {
-        let pairs = VisualEmbeddingRouter.tierCCandidates(for: assets.filter { analyses[$0.id] != nil })
+        let scope = engine.shortlistScope(
+            for: assets, analyses: analyses, configuration: configuration, similarityEdges: similarityEdges
+        )
+        let pairs = VisualEmbeddingRouter.tierCCandidates(for: scope.filter { analyses[$0.id] != nil })
         let edges = pairs.isEmpty ? [] : tierCProvider.tierCDistances(for: pairs, analyses: analyses)
         return edges.isEmpty ? NoopVisualEmbeddingProvider().tierCDistances(for: pairs, analyses: analyses) : edges
     }

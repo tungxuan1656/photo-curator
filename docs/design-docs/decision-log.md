@@ -21,7 +21,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
 
-### 1a. Accepted (38 kept)
+### 1a. Accepted (39 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -59,6 +59,8 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-033 | Semantic moment change-point contract | `features/feat-022.md` |
 | DEC-034 | Tier-C visual-embedding provider contract | `features/feat-024.md` |
 | DEC-035 | Production wiring for bounded Tier-C diversity edges | `features/feat-024.md` |
+| DEC-036 | Global diversity shortlist graph contract | `features/feat-023.md` |
+| DEC-037 | Tier-C graph uses the exact FeaturePrint shortlist | `features/feat-023.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -311,6 +313,29 @@ Alternatives considered: downgrade the runtime docs and defer wiring to feat-023
 Evidence: Codex review found the production-path omission while the exact snapshot passed `./init.sh` and the provider proof; the existing router caps input at 250 assets and 4,000 canonical pairs, so production wiring can remain bounded and deterministic.
 Consequences: production selection now exercises the selected native provider at shortlist scale with a deterministic fallback; feat-023 receives a live bounded contract; no cloud processing, model dependency, persisted schema, or migration is added.
 Reconsider when: a named production residual failure or benchmark shows the native representation cannot improve diversity safely; then update the runtime record and repeat the FastViT license/checksum/size/latency/memory/thermal gate before changing the provider.
+
+---
+# DEC-036 - Global diversity shortlist graph contract
+Status: Accepted - Date: 2026-09-17
+Owner: `features/feat-023.md` - Affected: `GlobalDiversityGraph`, `DiversitySelector`, `QualityScorer`, `SelectionEngine`, `FinalAlbumBuilder`, `SelectionSessionCoordinator`, feat-025/feat-026 admission
+Context: Album-level redundancy (repeated landmark/portrait/composition across time) escapes the windowed duplicate pass, but a full-library all-pairs graph would break the 1k-photo budget and Tier-C routing bounds, and any graph change must preserve the quality floor, duplicate/moment contracts, and deterministic fallback.
+Decision: Scope merged FeaturePrint + Tier-C edges to the exact shortlist the selector consumes via `GlobalDiversityGraph` (canonical member order, member pairs only, 4,000-pair cap); cap `QualityScorer.shortlist` pools above 250 in shortlist order with no sub-150 padding; route production Tier-C pairs over `SelectionEngine.shortlistScope` (same shortlist, non-overlapping with the duplicate-candidate source); change only the visual-novelty input inside the unchanged protected/core/greedy phases with unchanged weights and `QualityScorer.compareRank` tie-breaks; bump `engineVersion` 2 to 3 (choice change per data-model; `analysisVersion` stays 4, no persisted-shape change, no migration); add no config key, model, request, quota, or persisted field.
+Alternatives considered: full-library graph (rejected - unbounded pairs, breaks Tier-C bounds and 1k budget); per-category quotas (rejected - selection-rules forbids fixed quotas); feeding the graph into clusters/moments (rejected - would change feat-021/feat-022 frozen contracts without evidence); padding sub-150 pools to 150 (rejected - selection-rules forbids inventing candidates); new config keys for the 150/250 window (rejected - small-knob rule, policy constants beside the router constants).
+Evidence: feat-023 proof runs (Smoke 60->6, Golden 200->15, Trip 150->24, H 1000->56; fallback==noop picks exactly all shapes; double-run byte-identical all 24 files; graph bounds hold: members <= 159, edges <= 4000) plus 12 named cases ALL PASS (N0-N4 novelty, S1-S3 saturation, F1-F3 fallback/determinism, G1 bounds); `./init.sh` PASS (format, `swiftlint --strict` 0 violations, BUILD SUCCEEDED, SKIP [test] per policy).
+Consequences: cross-time redundancy now resolves in the bounded graph while the quality floor, duplicate/moment contracts, Tier-C bounds, FeaturePrint-only clusters/moments, originals/privacy/on-device behavior, and fallback identity hold; stale `engineVersion` 2 decisions re-rank from stored analyses per the standard rule; feat-025/feat-026 inherit the live graph consumer contract.
+Reconsider when: a named residual failure shows the graph misses a redundancy the fixtures can represent, or pixel-level evidence moves picks - then run the FastViT benchmark gate before any provider change, or adjust the window only with fixture evidence and a new DEC entry.
+
+---
+
+# DEC-037 - Tier-C graph uses the exact FeaturePrint shortlist
+Status: Accepted - Date: 2026-09-17
+Owner: `features/feat-023.md` - Affected: `SelectionEngine`, `SelectionSessionCoordinator`, `GlobalDiversityGraph`, feat-025/feat-026 admission
+Context: Codex review found that production Tier-C edges were computed before `SelectionEngine.select` and that the independent scope calculation used no FeaturePrint edges. Duplicate and moment pruning could therefore produce a different shortlist and discard valid Tier-C graph edges.
+Decision: Make `SelectionEngine.shortlistScope` accept the same FeaturePrint edges used by `select`. Both production paths compute their bounded FeaturePrint edges first, pass them into shortlist scope, and route Tier-C pairs only over that exact resulting shortlist. Keep the existing ≤250 asset and ≤4,000 pair limits, deterministic ordering, Noop fallback, diversity-only graph input, and FeaturePrint-only duplicate/moment stages.
+Alternatives considered: retain the edge-free independent scope (rejected - it can diverge from the selector shortlist); route Tier-C before FeaturePrint pruning (rejected - graph work can be discarded and violates exact-shortlist intent); refactor `select` into a multi-stage public transaction (rejected - larger API and rollback surface than the minimal parameter correction).
+Evidence: Codex review identified the scope divergence as the sole High finding; existing feat-023 proof and `./init.sh` passed otherwise, and the corrected path is covered by the same deterministic graph/selection evidence.
+Consequences: every production Tier-C edge is now eligible for the exact shortlist consumed by global diversity; earlier duplicate/moment contracts and all bounds remain unchanged; no model, persisted field, schema migration, cloud path, or new quota is introduced.
+Reconsider when: a future selection-stage change adds feedback or another pruning input that can make shortlist scope diverge again; then update this contract and add a new evidence-backed DEC entry before changing routing.
 
 ---
 

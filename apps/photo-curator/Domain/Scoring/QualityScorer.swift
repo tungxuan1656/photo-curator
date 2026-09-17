@@ -32,6 +32,10 @@ struct ScoredCandidate: Sendable {
 /// resolution, asset ID), caps each moment at `maxPhotosPerMoment`, then
 /// round-robins rank 1 of every moment before rank 2 so coverage precedes
 /// score concentration. Rank-1 candidates survive even past the soft cap.
+/// Feat-023 graph window: the 150-250 operating range caps pools above 250 in
+/// shortlist order (coverage-first, deterministic); pools below 150 pass
+/// through unchanged — never padded (selection-rules Sec 14). Rank, cap, and
+/// round-robin math are otherwise untouched.
 struct QualityScorer: Sendable {
     func score(
         asset: PhotoAsset,
@@ -131,6 +135,11 @@ struct QualityScorer: Sendable {
             guard let first = list.first, !seen.contains(first.asset.id) else { continue }
             out.append(first)
             seen.insert(first.asset.id)
+        }
+        // Feat-023: enforce the 250 graph ceiling in shortlist order. Pools at
+        // or under the ceiling pass through untouched (fallback-identical).
+        if out.count > GlobalDiversityGraphBuilder.maxGraphMembers {
+            out = Array(out.prefix(GlobalDiversityGraphBuilder.maxGraphMembers))
         }
         return out
     }
