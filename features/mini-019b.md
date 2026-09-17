@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `todo` (task-ready; admitted 2026-09-17 by the feat-019 contract commit)
+- Status: `active` (implemented 2026-09-17 in `tungxuan1656/mini-019b-util`; PR open into the integration branch, merges second after 019a)
 - Parent integration feature: `feat-019`
 - Reserved ID: `mini-019b`
 
@@ -67,17 +67,36 @@
 
 ## Acceptance and evidence
 
-- [ ] Phase-1 collection degrades per request (one failure never fails the asset) with
-  cancellation checks between requests.
-- [ ] Phase-2 mapping is pure: bounded outputs (1 Optional Bool text flag, 1
-  Optional capped count, 1 Optional probability, 1 Optional Bool document flag)
-  and the frozen unavailable values; raw strings dropped inside phase 2.
-- [ ] Trigger-coverage method recorded (predicate inputs + expected Golden-shape
-  behavior); no `apps/` diff beyond the two owned files.
-- [ ] No shared-contract, sibling, or other `apps/` diff (`git diff --name-only`).
+- [x] Phase-1 collection degrades per request (one failure never fails the asset) with
+  cancellation checks between requests (`UtilityEvidenceAdapter.collect`: entry +
+  between-request `Task.checkCancellation`, `try?` per request in its own
+  `autoreleasepool`; only `CancellationError` escapes).
+- [x] Phase-2 mapping is pure: bounded outputs (`hasText: Bool?`, `textLineCount:
+  Int?` capped at 50, `screenshotProbability: Double?` in {1.0, 0.7, 0.2, 0.0},
+  `isDocument: Bool?`) and the frozen unavailable values (`nil` per failed
+  request; caller keeps `nil` for never-run assets); raw strings dropped inside
+  phase 2 (phase 1 snapshots top-1 confidences only, never recognized strings).
+- [x] Trigger-coverage method recorded (predicate inputs + expected Golden-shape
+  behavior; see note below); no `apps/` diff beyond the two owned files.
+- [x] No shared-contract, sibling, or other `apps/` diff (`git diff --name-only`
+  shows only `Services/Analysis/UtilityEvidenceAdapter.swift` + this card).
 - Manual QA / benchmark command or procedure: n/a (code only; measured at parent Verify).
 - Evidence location: `Services/Analysis/UtilityEvidenceAdapter.swift` (code) + parent
   Verify proof-binary record.
+
+## Trigger-coverage note (basis for parent Verify)
+
+- Predicate inputs (caller-side, Tier-A same pass): `mediaSubtypes` contains
+  screenshot OR transient `isUtility == true`, AND technically usable. The
+  adapter receives eligibility as the `isScreenshotSubtype` flag for the 1.0
+  arm and is only invoked for eligible assets; it never fetches PhotoKit.
+- Expected Golden-shape behavior: every screenshot-subtype asset maps to
+  `screenshotProbability` 1.0; document rectangles lift non-screenshots to 0.7;
+  confident text lines lift the remainder to 0.2; anything else stays 0.0.
+- Honest miss: photos of documents with neither trigger signal (no screenshot
+  subtype, `isUtility` false) never invoke the adapter and stay `nil`; the
+  coverage fraction on Golden-shape is measured at parent Verify per
+  `docs/plans/feat-019.md` Task 3, not widened here.
 
 ## Inline plan
 
@@ -90,6 +109,7 @@
 
 ## Handoff
 
-State `todo` (admitted 2026-09-17; starts after 019a merges).
+State `active` (adapter reviewable 2026-09-17; 2-file diff only).
 Blockers: none.
-Next: dispatch after 019a merges; merge second (019a → 019b order).
+Next: integration-owner review (merge second, 019a → 019b); parent Task 3 wires
+phases into `performAll` + `make` and runs the trigger-coverage proof.
