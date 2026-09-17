@@ -228,7 +228,7 @@
       ],
       "gate": "Change-point moment boundaries improve the baseline trip cases and retain deterministic fallback behavior; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
       "id": "feat-022",
-      "status": "todo",
+      "status": "done",
       "title": "Semantic moments"
     },
     {

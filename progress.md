@@ -304,3 +304,11 @@
 **Evidence**: Accepted Codex review pass after the bilateral-gate fix wave (DEC-030 evidence) plus the existing fresh `./init.sh` pass (format, `swiftlint --strict` 0 violations, Simulator build SUCCEEDED, SKIP [test] per no-test-targets policy); `git diff --check` clean; `feature_index.json` parses (28 records, chain statuses consistent).
 **Blockers**: none.
 **Next**: PR `tungxuan1656/feat-021-integration` → main (squash in a separate merge task); feat-022 selection remains user-gated; feat-022 must not start here.
+
+## 2026-09-17 — feat-022 done (DEC-032 automated gate)
+
+**State**: done (sole integration; proof + single final `./init.sh`; feat-021 stays `done`, feat-023/feat-024 stay `todo`; parent PR NOT yet opened)
+**Done**: Semantic moment segmentation in `Domain/Selection/MomentBuilder.swift` only — middle-band conservative change-points via `semanticChangeSplits` (people-presence, bilateral document/framing, known-scene; edge-continuity first; sub-soft-gap hold; hard-gap split; nil/unknown legacy-continue; single-vs-group/orientation never split). Created `docs/plans/feat-022.md` (frozen contract, M1–M7 invariants, named verdicts, rollback); recorded DEC-033. No feat-023+ scope; no new Vision request/model/field/config key; `analysisVersion` stays 4.
+**Evidence**: Proof binary (REAL shipped sources verbatim; main `bd15e5f6…`, binary `6970b0de…`, MomentBuilder `93b89d6f…`) through REAL analyze → candidates → REAL feature-print edges → build/select twice: Smoke 60→6, Golden 200→15, Trip 150→10, H 1000→56 (all moments new/legacy counted, incoherent 0; picked + moments byte-compare == all shapes); named M1–M7 ALL PASS (M1 new=2/legacy=1 improvement; M6 legacy-oracle identity). `./init.sh` PASS once (format PASS, `swiftlint --strict` 0 violations/61 files, BUILD SUCCEEDED, SKIP [test] per policy). Synthetic-fixture caveat: uniform 60 s-step timelines never enter the middle band, so shape moment counts match legacy by construction — improvement proven by injected M1–M3 cases.
+**Blockers**: none.
+**Next**: PR `tungxuan1656/feat-022-integration` → main (squash in a separate merge task); feat-024 selection remains user-gated; feat-023 must wait for feat-024.
