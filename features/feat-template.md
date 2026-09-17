@@ -36,7 +36,7 @@ phases/rollback, or two independent risk signals. Link it from this feature. -->
 
 - Reproducible automated evidence for every behavior change (Simulator-based proof permitted): record commands, fixtures, and outputs in the handoff.
 - `./init.sh` once at feat end (+ once before PR)
-- Manual QA per `docs/ship-gates/manual-qa.md` is optional non-blocking exploratory guidance only, never an acceptance blocker (DEC-032).
+- Manual QA is not required and is never an acceptance criterion, blocker, or release gate (DEC-040).
 - No test targets, no `*Test*.swift`, no test frameworks.
 
 ## Review

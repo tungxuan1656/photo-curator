@@ -26,6 +26,6 @@ When the residual-failure search finds no triggering failure — feat-023's 12 n
 
 ## Verification and rollback
 
-Repo-state proof (no behavior change): `find apps -iname '*.mlmodel*' -o -iname '*.mlpackage*' -o -iname '*.coreml*'` → no files; `grep -rn 'DETR\|Depth Anything\|SAM 2\|mlmodel\|mlpackage' apps/` → no hits; `git status --porcelain` = five modified (`features/feat-025.md` + `feature_index.json` + `docs/design-docs/curation-runtime-stack.md` + `docs/design-docs/decision-log.md` + `progress.md`) plus `?? docs/plans/feat-025.md` (this file), no `apps/` path; `./init.sh` PASS; no test targets/`*Test*.swift`/frameworks; no manual QA (optional non-blocking per DEC-032).
+Repo-state proof (no behavior change): `find apps -iname '*.mlmodel*' -o -iname '*.mlpackage*' -o -iname '*.coreml*'` → no files; `grep -rn 'DETR\|Depth Anything\|SAM 2\|mlmodel\|mlpackage' apps/` → no hits; `git status --porcelain` = five modified (`features/feat-025.md` + `feature_index.json` + `docs/design-docs/curation-runtime-stack.md` + `docs/design-docs/decision-log.md` + `progress.md`) plus `?? docs/plans/feat-025.md` (this file), no `apps/` path; `./init.sh` PASS; no test targets/`*Test*.swift`/frameworks.
 
 Rollback / no model admission: nothing integrated, so nothing to roll back beyond reverting the six docs/metadata paths. No model vendored, no provider/request/field/key/version move, no dependency added — no migration to undo, no routing to disable.

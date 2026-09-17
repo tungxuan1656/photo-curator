@@ -17,7 +17,6 @@ Start at `AGENTS.md`. Then read one owner doc below. Then code.
 | Choose/change concrete AI APIs, models, or inference routing | [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) |
 | Change speed, limits, or size targets | [performance.md](ship-gates/performance.md) |
 | Change privacy, access, or what is kept | [privacy.md](ship-gates/privacy.md) |
-| Run QA checks by hand | [manual-qa.md](ship-gates/manual-qa.md) |
 | Add or change an event log | [analytics.md](ship-gates/analytics.md) |
 | Change build order or what is later | [roadmap.md](exec-plans/roadmap.md) |
 | Ask why a past choice was made | [decision-log.md](design-docs/decision-log.md) |
@@ -59,7 +58,7 @@ Older docs use bare numbers 01–13. Use filenames for new refs; the table below
 | [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) | Current APIs/models, routing, fallback, benchmark status | You implement or replace an AI/native intelligence tool |
 | [performance.md](ship-gates/performance.md) | Limits, time goals | You change speed or size |
 | [privacy.md](ship-gates/privacy.md) | Privacy, keep rules | You touch data or access |
-| [manual-qa.md](ship-gates/manual-qa.md) | Hand QA steps | You test a build |
+| [manual-qa.md](ship-gates/manual-qa.md) (archival reference, non-gating) | Historical hand-QA handbook, not a gate | Never required; validation is automated evidence + `./init.sh` |
 | [analytics.md](ship-gates/analytics.md) | Event names only | You log events |
 | [roadmap.md](exec-plans/roadmap.md) | Build order | You plan next work |
 | [decision-log.md](design-docs/decision-log.md) | Past reasons, open items | You need why or what is open |

@@ -384,3 +384,19 @@
 **Evidence**: `git cat-file -t 55cf176753be531fa64fbab68504e5487943d0e9` = commit, on `main`; prior `./init.sh` PASS at the feat-025 commit (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] per policy); `git diff --check` clean; `feature_index.json` parses with feat-023 `done`, feat-025 `done`, feat-026 `todo` (depends on feat-023). No new `init.sh` or manual QA run (docs-only closeout).
 **Blockers**: none.
 **Next**: feat-026 is the next approved feature (depends on feat-023, done); feat-025 must not be reactivated here.
+
+## 2026-09-17 — Harness QA policy update (DEC-040 automated-only gate)
+
+**State**: done (docs/harness-only policy update; no `apps/` change; feat-021 through feat-025 stay `done`, feat-026 through feat-028 stay `todo`)
+**Done**: Removed manual QA as a requirement from current and future Harness Slim gates per DEC-040: `AGENTS.md` working rule, `features/feat-template.md` Verify, `features/feat-021.md` + `feat-023.md` + `feat-024.md` + `feat-025.md` Verify/Handoff wording, `features/feat-026.md` acceptance + Verify, `features/feat-027.md` + `feat-028.md` Verify, `docs/plans/feat-025.md` verification wording, `docs/index.md` hand-QA task route (ownership row relabeled archival/non-gating), and `init.sh` test-skip messages. Appended DEC-040 to `docs/design-docs/decision-log.md` with index row. Left `docs/ship-gates/manual-qa.md` in place as an archival reference and preserved all old decision-log/progress entries, feature scopes, statuses, and dependencies.
+**Evidence**: `python3 -c json.load(feature_index.json)` parses; `bash -n init.sh` clean; `git diff --check` clean; grep over `features/feat-021.md` through `features/feat-028.md` shows no manual-QA/hand-review/device-QA requirement wording (automated evidence + `./init.sh` only). No tests added per policy; no `./init.sh` full run (docs-only, no `apps/` change).
+**Blockers**: none.
+**Next**: feat-026 is the next approved feature (depends on feat-023, done); feat-026 must activate under the DEC-040 automated-only gate.
+
+## 2026-09-17 — Roadmap QA residue cleanup (DEC-041 automated-only gates)
+
+**State**: done (docs/harness-only review fix; no `apps/` change; feat-021 through feat-025 stay `done`, feat-026 through feat-028 stay `todo`)
+**Done**: Removed the Codex-cited manual-QA gates from `docs/exec-plans/roadmap.md` per DEC-041: P4 Method, P6 saved-album confirmation, and the deferred test-target row now require reproducible automated evidence (Simulator permitted) + `./init.sh` only, with `manual-qa.md` retained as an explicitly archival/non-gating link. Scanned `AGENTS.md`, `docs/index.md`, `features/feat-template.md`, `features/feat-021.md` through `features/feat-028.md`, `docs/plans/feat-025.md`, and `init.sh` — no in-scope manual-QA/hand-review/device-QA requirement wording remains. Appended DEC-041 to `docs/design-docs/decision-log.md` with index row; `manual-qa.md` kept in place and historical progress/plans untouched.
+**Evidence**: `python3 -c json.load(feature_index.json)` parses; `bash -n init.sh` clean; `git diff --check` clean; roadmap grep shows `manual-qa.md` only in archival/non-gating references. No tests added per policy; no `./init.sh` full run (docs-only, no `apps/` change).
+**Blockers**: none.
+**Next**: feat-026 is the next approved feature (depends on feat-023, done); feat-026 must activate under the DEC-040/DEC-041 automated-only gate.
