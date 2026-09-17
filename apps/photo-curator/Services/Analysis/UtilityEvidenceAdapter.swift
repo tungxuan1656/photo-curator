@@ -24,11 +24,6 @@ import Vision
 /// or confidence pair crosses the boundary — only Booleans, a capped count,
 /// and a probability.
 enum UtilityEvidenceAdapter {
-    /// Confidence floor for a text line (frozen schema, not a weight).
-    private static let textConfidenceFloor = 0.5
-    /// Cap on the persisted line count (frozen schema).
-    private static let textLineCountCap = 50
-
     /// Phase-1 snapshot of the two utility observations. Pure data: nil marks
     /// the frozen unavailable arms, never a fabricated value. Recognized
     /// strings are never stored here — only the top-1 confidences that phase 2
@@ -71,6 +66,7 @@ enum UtilityEvidenceAdapter {
         ocr.recognitionLevel = .accurate
         ocr.usesLanguageCorrection = true
         let docSeg = VNDetectDocumentSegmentationRequest()
+        docSeg.revision = VNDetectDocumentSegmentationRequestRevision1
         try Task.checkCancellation()
         let ocrRan: Bool = autoreleasepool {
             (try? handler.perform([ocr])) != nil
@@ -100,6 +96,11 @@ enum UtilityEvidenceAdapter {
     /// Nonisolated: builds scalars only, so the off-main lane calls it
     /// without hopping back to the MainActor.
     nonisolated static func map(_ collected: Collected, isScreenshotSubtype: Bool) -> MappedFacts {
+        // Frozen schema thresholds as locals (not statics) so this nonisolated
+        // map touches no static — and no main-actor-isolated — state.
+        let textConfidenceFloor = 0.5
+        let textLineCountCap = 50
+
         let hasText = collected.textTopConfidences.map { $0.contains { $0 >= textConfidenceFloor } }
         let textLineCount = collected.textTopConfidences.map { min(textLineCountCap, $0.count) }
         let isDocument = collected.documentRectangleCount.map { $0 > 0 }
