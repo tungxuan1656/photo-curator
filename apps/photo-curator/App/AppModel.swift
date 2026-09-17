@@ -82,7 +82,8 @@ final class AppModel {
             checkpointStore: container.checkpointStore,
             engine: container.selectionEngine,
             config: .default,
-            pressure: container.memoryPressure
+            pressure: container.memoryPressure,
+            tierCProvider: container.tierCProvider
         )
         processing = ProcessingModel(
             coordinator: coordinator,

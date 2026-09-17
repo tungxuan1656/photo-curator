@@ -57,6 +57,8 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-030 | Variant-aware clustering contract | `features/feat-021.md` |
 | DEC-032 | Automated feature evidence replaces mandatory manual QA | `AGENTS.md`, `features/feat-template.md`, 10 |
 | DEC-033 | Semantic moment change-point contract | `features/feat-022.md` |
+| DEC-034 | Tier-C visual-embedding provider contract | `features/feat-024.md` |
+| DEC-035 | Production wiring for bounded Tier-C diversity edges | `features/feat-024.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -285,6 +287,30 @@ Alternatives considered: dense-timeline splitting (rejected — needs embedding/
 Evidence: feat-022 proof runs (Smoke 60→6, Golden 200→15, Trip 150→10, H 1000→56, all double-run byte-identical) plus named cases M1–M7 ALL PASS with M6 legacy-oracle identity; `./init.sh` PASS (format, `swiftlint --strict` 0 violations/61 files, BUILD SUCCEEDED, SKIP [test] per policy).
 Consequences: moment policy stays local to `MomentBuilder`, keeps the iOS 26 native fallback, adds no model/request/dependency or migration, and feeds feat-024/feat-027 only the measured ceilings.
 Reconsider when: a named residual failure shows the ceilings materially harm curation quality, or measured embedding/jury evidence justifies dense-timeline splitting.
+
+---
+
+# DEC-034 — Tier-C visual-embedding provider contract
+Status: Accepted · Date: 2026-09-17
+Owner: `features/feat-024.md` · Affected: `SelectionEngine`, `curation-runtime-stack.md`, feat-023 admission
+Context: Global diversity (feat-023) needs a bounded Tier-C representation signal, but no measured failure yet justifies vendoring a Core ML model with its license/size/latency cost, and Tier-C work must never silently cover every photo.
+Decision: Ship the capability abstraction (`VisualEmbeddingProvider`), the bounded router (shortlist-scale only: refuses > 250 assets, caps at 4,000 canonical pairs), the native derived embedding as the selected production representation (8-dim persisted-scalar vector, transient, no model/pixels/request/weights), the noop fallback provider, and the union-min edge merge feeding diversity novelty only (clusters + moments stay FeaturePrint-only). Keep FastViT headless benchmark-only (not vendored; license re-review + checksum + size/latency/memory/thermal evidence required before any inclusion). Keep `analysisVersion` at 4 (no persisted-shape change, no migration); keep pixel-level distinctions (day/night, formal/candid same-face-count, framing magnitude, dense-timeline activity) as ceilings.
+Alternatives considered: vendoring FastViT now (rejected — no measured failure, no license/checksum evidence, unnecessary size/latency cost); running Tier-C on every photo (rejected — unbounded cost, violates tier principles); feeding Tier-C into clusters/moments (rejected — would change feat-021/feat-022 frozen contracts without evidence); new persisted embedding fields or version bump (rejected — unnecessary scope and migration risk).
+Evidence: feat-024 proof runs (Golden-shaped 200→15 + H 1000→56 identical across fallback/noop/tierc arms, all double-run byte-identical) plus 14 named cases ALL PASS (R1–R4 router bounds, P1–P5 provider contract, E1–E3 merge, N1–N2 engine isolation); `./init.sh` PASS (format, `swiftlint --strict` 0 violations, BUILD SUCCEEDED, SKIP [test] per policy).
+Consequences: Tier-C stays local to the new file + one engine parameter, keeps the iOS 26 native fallback (default `[]` is exactly the pre-feat-024 path), adds no model/request/dependency/migration/license burden, and admits feat-023 with a bounded shortlist-scale consumer contract.
+Reconsider when: a named residual failure shows persisted facts call two frames identical but diversity needs them separated, with fixture evidence that a pixel-level embedding moves picks — then run the FastViT benchmark gate before any vendoring.
+
+---
+
+# DEC-035 — Production wiring for bounded Tier-C diversity edges
+Status: Accepted · Date: 2026-09-17
+Owner: `features/feat-024.md` · Affected: `SelectionSessionCoordinator`, `AppContainer`, `SelectionEngine`, feat-023 admission
+Context: Review found that DEC-034 and the feat-024 plan called the native derived provider selected/default-on, but the shipped selection session passed no Tier-C edges and `AppContainer` constructed no provider. The feature contract includes pipeline integration, and feat-023 depends on a real bounded consumer contract.
+Decision: Wire `VisualEmbeddingRouter` and `NativeDerivedEmbeddingProvider` into both production selection paths. Use the `NoopVisualEmbeddingProvider` fallback when the router refuses oversized input or no usable Tier-C edges are produced. Pass only the merged Tier-C edges to `SelectionEngine` for diversity novelty; keep duplicate clustering and moment construction on FeaturePrint edges only. Keep `analysisVersion` at 4 and ship no model or new persisted field.
+Alternatives considered: downgrade the runtime docs and defer wiring to feat-023 (rejected — leaves the selected/default-on claim false and violates feat-024's pipeline-integration boundary); route all assets (rejected — unbounded work and violates Tier-C limits); vendor FastViT now (rejected — no measured failure or license/checksum evidence).
+Evidence: Codex review found the production-path omission while the exact snapshot passed `./init.sh` and the provider proof; the existing router caps input at 250 assets and 4,000 canonical pairs, so production wiring can remain bounded and deterministic.
+Consequences: production selection now exercises the selected native provider at shortlist scale with a deterministic fallback; feat-023 receives a live bounded contract; no cloud processing, model dependency, persisted schema, or migration is added.
+Reconsider when: a named production residual failure or benchmark shows the native representation cannot improve diversity safely; then update the runtime record and repeat the FastViT license/checksum/size/latency/memory/thermal gate before changing the provider.
 
 ---
 

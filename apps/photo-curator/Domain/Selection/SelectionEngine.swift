@@ -28,7 +28,9 @@ struct SelectionEngine: Sendable {
         analyses: [AssetID: PhotoAnalysis],
         configuration: SelectionConfiguration,
         feedback: SelectionFeedback?,
-        similarityEdges: [SimilarityEdge] = []
+        similarityEdges: [SimilarityEdge] = [],
+        // feat-024: Tier-C edges feed diversity novelty only; default is the FeaturePrint fallback.
+        tierCEdges: [SimilarityEdge] = []
     ) throws -> SelectionResult {
         let ordered = assets.sorted {
             if ($0.creationDate ?? .distantPast) != ($1.creationDate ?? .distantPast) {
@@ -37,6 +39,7 @@ struct SelectionEngine: Sendable {
             return $0.id.rawValue < $1.id.rawValue
         }
         let available = ordered.filter { analyses[$0.id] != nil }
+        // feat-021/feat-022 frozen: duplicates and moments see FeaturePrint edges only.
         let resolution = duplicateResolver.resolve(
             assets: available, analyses: analyses, edges: similarityEdges, configuration: configuration
         )
@@ -45,40 +48,31 @@ struct SelectionEngine: Sendable {
         let moments = momentBuilder.build(
             representatives: repAssets, analyses: analyses, edges: similarityEdges, configuration: configuration
         )
-        let clusterByID = Dictionary(uniqueKeysWithValues: resolution.clusters.flatMap { cluster in
-            cluster.assetIDs.map { ($0, cluster.id) }
-        })
-        let momentByID = Dictionary(uniqueKeysWithValues: moments.flatMap { moment in
-            moment.assetIDs.map { ($0, moment.id) }
-        })
+        let lookups = Self.lookups(
+            byAvailableID: byAvailableID, repAssets: repAssets,
+            clusters: resolution.clusters, moments: moments
+        )
         // Every duplicate loser inherits its representative's moment so restored
         // losers and swap winners resolve to a real moment even though moments
         // are built from representatives only. Existing entries win.
         let memberMomentByID = Dictionary(uniqueKeysWithValues: resolution.clusters.flatMap { cluster in
-            guard let rep = cluster.representativeAssetID, let momentID = momentByID[rep] else {
+            guard let rep = cluster.representativeAssetID, let momentID = lookups.momentByID[rep] else {
                 return [] as [(AssetID, MomentID)]
             }
             return cluster.assetIDs.map { ($0, momentID) }
         })
-        let fullMomentByID = momentByID.merging(memberMomentByID) { current, _ in current }
-        let scored = repAssets.compactMap { asset -> ScoredCandidate? in
-            guard let analysis = analyses[asset.id], let momentID = momentByID[asset.id] else { return nil }
+        let fullMomentByID = lookups.momentByID.merging(memberMomentByID) { current, _ in current }
+        let scored = lookups.repAssets.compactMap { asset -> ScoredCandidate? in
+            guard let analysis = analyses[asset.id], let momentID = lookups.momentByID[asset.id] else { return nil }
             return qualityScorer.score(
-                asset: asset, analysis: analysis, clusterID: clusterByID[asset.id],
+                asset: asset, analysis: analysis, clusterID: lookups.clusterByID[asset.id],
                 momentID: momentID, configuration: configuration
             )
         }
-        // Explicit user overrides (§14) apply before automatic ranking: swapped
-        // cluster representatives replace the automatic winner in every
-        // downstream stage, and user-restored IDs join the candidate pool even
-        // when the shortlist cap would omit them. Both paths stay deterministic
-        // (sorted IDs, same tie order) and usable-only.
         let overridden = OverrideContext(
             available: available, analyses: analyses, momentByID: fullMomentByID, configuration: configuration
         ).applySwaps(scored: scored, clusters: resolution.clusters, feedback: feedback)
-        let usableCount = overridden.filter { $0.disposition == .usable }.count
-        let scaled = Int((Double(usableCount) * configuration.targetSelectionRatio).rounded(.up))
-        let target = min(max(scaled, configuration.minimumFinalCount), configuration.maximumFinalCount)
+        let target = Self.targetCount(for: overridden, configuration: configuration)
         var shortlist = qualityScorer.shortlist(
             candidates: overridden,
             targetCount: target,
@@ -86,11 +80,16 @@ struct SelectionEngine: Sendable {
         )
         shortlist = unionRestoredCandidates(
             scored: overridden, shortlist: shortlist, feedback: feedback, available: available,
-            analyses: analyses, momentByID: fullMomentByID, clusterByID: clusterByID, configuration: configuration
+            analyses: analyses, momentByID: fullMomentByID, clusterByID: lookups.clusterByID,
+            configuration: configuration
         )
+        // feat-024: Tier-C edges feed diversity novelty only, so the default merges exactly to fallback.
         let picked = diversitySelector.select(
             shortlist: shortlist, allMomentIDs: moments.map(\.id), targetCount: target,
-            similarityEdges: similarityEdges, configuration: configuration, feedback: feedback
+            similarityEdges: VisualEmbeddingEdges.merged(
+                featurePrintEdges: similarityEdges, tierCEdges: tierCEdges
+            ),
+            configuration: configuration, feedback: feedback
         )
         return try finalAlbumBuilder.build(
             sourceAssets: assets, analyses: analyses, clusters: effectiveClusters(
@@ -98,6 +97,35 @@ struct SelectionEngine: Sendable {
             ),
             moments: moments, scored: overridden, selectedIDs: picked, configuration: configuration
         )
+    }
+
+    private struct SelectionLookups {
+        let byAvailableID: [AssetID: PhotoAsset]
+        let repAssets: [PhotoAsset]
+        let clusterByID: [AssetID: ClusterID]
+        let momentByID: [AssetID: MomentID]
+    }
+
+    private static func lookups(
+        byAvailableID: [AssetID: PhotoAsset], repAssets: [PhotoAsset],
+        clusters: [PhotoCluster], moments: [PhotoMoment]
+    ) -> SelectionLookups {
+        let clusterByID = Dictionary(uniqueKeysWithValues: clusters.flatMap { cluster in
+            cluster.assetIDs.map { ($0, cluster.id) }
+        })
+        let momentByID = Dictionary(uniqueKeysWithValues: moments.flatMap { moment in
+            moment.assetIDs.map { ($0, moment.id) }
+        })
+        return SelectionLookups(
+            byAvailableID: byAvailableID, repAssets: repAssets,
+            clusterByID: clusterByID, momentByID: momentByID
+        )
+    }
+
+    private static func targetCount(for scored: [ScoredCandidate], configuration: SelectionConfiguration) -> Int {
+        let usable = scored.filter { $0.disposition == .usable }.count
+        let scaled = Int((Double(usable) * configuration.targetSelectionRatio).rounded(.up))
+        return min(max(scaled, configuration.minimumFinalCount), configuration.maximumFinalCount)
     }
 
     /// Feedback override inputs bundled so helpers stay within the parameter limit.
