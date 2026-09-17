@@ -376,3 +376,11 @@
 **Evidence**: `find apps` shows no `.mlmodel*`/`.mlpackage*`/`.coreml*` files; Tier-D grep → no hits; `git status --porcelain` = five modified plus `?? docs/plans/feat-025.md`, no `apps/` path; `./init.sh` PASS (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] per policy). No test targets/`*Test*.swift`/frameworks; no manual QA (optional non-blocking per DEC-032).
 **Blockers**: none.
 **Next**: PR `tungxuan1656/feat-025-integration` → main (squash in a separate merge task); feat-026 is the next approved feature (depends on feat-023, done); feat-025 must not be reactivated here.
+
+## 2026-09-17 — feat-025 post-merge closeout (PR #52 merged)
+
+**State**: done (PR #52 MERGED into main via `55cf176753be531fa64fbab68504e5487943d0e9`; feat-025 confirmed done, feat-023 stays `done`, feat-026 stays `todo`)
+**Done**: Post-merge metadata closeout only — no `apps/`, `init.sh`, or `feature_index.json` change. `features/feat-025.md` Handoff State/Next rewritten to the merged state (PR #52 MERGED, merge commit `55cf176753be531fa64fbab68504e5487943d0e9`; stale pre-merge branch/commit and closeout-pending wording removed); acceptance/evidence text preserved intact. DEC-039 recorded (append-only; DEC-038 untouched): retains the no-op specialist outcome and keeps `docs/plans/feat-025.md` as the AGENTS.md >=4-file readiness record with no application/model/runtime change; index row added.
+**Evidence**: `git cat-file -t 55cf176753be531fa64fbab68504e5487943d0e9` = commit, on `main`; prior `./init.sh` PASS at the feat-025 commit (format, `swiftlint --strict`, Simulator build SUCCEEDED, SKIP [test] per policy); `git diff --check` clean; `feature_index.json` parses with feat-023 `done`, feat-025 `done`, feat-026 `todo` (depends on feat-023). No new `init.sh` or manual QA run (docs-only closeout).
+**Blockers**: none.
+**Next**: feat-026 is the next approved feature (depends on feat-023, done); feat-025 must not be reactivated here.
