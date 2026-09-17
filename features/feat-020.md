@@ -2,7 +2,7 @@
 
 ## Status and kind
 
-- Status: `active`
+- Status: `done`
 - Kind: `integration`
 - Depends on: `feat-019` (`done` on origin/main `00c62e2`; verified before activation)
 
@@ -201,7 +201,7 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
 
 ## Handoff
 
-- State: active (sole integration; Task 3 wired + verified, child merged; parent PR to main NOT yet opened)
+- State: done (parent PR #43 squash-MERGED via `4613afe` 2026-09-17; contract + child + Task 3 + max-restore fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-019` reads `done` (squash #41 at `00c62e2`), `feat-020` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
@@ -283,12 +283,15 @@ its own card. The full 12-field card lives in `features/mini-020a.md` and
     `9f7792c7…3445` ==, B `ecd4aa1a…41068` == (PASS); DIST all TRUE; FOLD 0.7333 vs
     0.6000 PASS; no mean-in-max-slot path remains (only `meanFaceQuality:` make-arg
     reference at line 142). Numbers unchanged because fixtures are faceless.
-- Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0
+- Evidence: `./init.sh` PASS at the done-flip commit (format, `swiftlint --strict` 0 violations, Simulator build SUCCEEDED, SKIP [test] by policy).
 - feat-021 admission gate: may start only after the parent PR to main merges AND
   its contract freezes variant-aware clustering (visually-distinct separation,
   union-find collapse guard, context-aware representatives) without reinterpreting
   the version-4 frozen schema (people distribution fields, caps, predicates) —
   extensions bump `analysisVersion` 4 → 5 with the same requeue rule.
 - Blockers: none.
-- Next: coordinator opens the parent PR to main (squash; separate merge task);
-  feat-021 selection remains user-gated.
+- Closeout (done-flip, branch `tungxuan1656/feat-020-doneflip` from origin/main `4613afe`):
+  - Squash evidence: parent PR #43 state MERGED, mergeCommit `4613afe` (= origin/main HEAD); squash body contains the full chain — contract `b181559`, child `84af07d` (mini-020a, PR #42 MERGED), Task 3 `fb2d4c1`, max-restore fix `6141907`; all four pre-squash commits plus the squash verified present via `git cat-file -t`; squash tree equals the integration tip (`6141907` tree `e956cdf4…`).
+  - Acceptance re-verified on main (all four boxes honestly still pass, read checked): (1) wiring — `performAll` passes Tier-A face observations through `GroupEvidenceCalculator.map` (`VisionAnalysisService.swift:97`), calculator pure map with count-only/nil arms + clamped01 (`GroupEvidenceCalculator.swift:46-64`), scorer weakest-face `min(group, minFaceQuality)` fold (`QualityScorer.swift:50`), frozen people reason codes (`FinalAlbumBuilder.swift:85-91`), `analysisVersion: 4` (`AppConfiguration.swift:61`), score call sites unchanged (`SelectionEngine.swift:66,141,182`), no new Vision request (Tier-A still 3 requests: faceRects/faceQuality/print); max-restore fix verified (`VisionAnalysisService.swift:100,187-190` — max feeds the max slot, min/mean ride separately); (2) candid-guard — people term is nil-gated (`QualityScorer.swift:49-53` composes over available signals only, never lowers non-people moments) and reason codes fire only on faced picks (`FinalAlbumBuilder.swift:82-92`); (3) privacy — only derived scalars persist (`PhotoAnalysis.swift:20-22`), boxes/landmarks/pixels never leave Tier-A locals (`VisionAnalysisService.swift:94-96`, diagnostics show face count/copy only); (4) cost/budget — no budget constant changed in the squash (`AppConfiguration.swift` diff is the single version 3 → 4 line), calculator `map` is a synchronous pure fold inside the existing lane body (no detached task, no priority), Task 3 cold/warm/cached numbers recorded in this Handoff stand; version-3 rows still decode whole-struct (`PhotoAnalysis.swift:199`) and the version gate + checkpoint-ignore treat them as miss, not crash (`FileAnalysisCache.swift:26,35`, `BatchPipeline.swift:386`).
+  - Mini `mini-020a` already `done` in `feature_index.json`; `feat-021` stays `todo` (no start here).
+- Next: PR `tungxuan1656/feat-020-doneflip` → main (squash in a separate merge task); feat-021 selection remains user-gated; feat-021 must not start here.
