@@ -197,3 +197,10 @@
 **Evidence**: `./init.sh` result recorded at commit; `git diff --name-only` = `features/feat-018.md` + `feature_index.json` + `progress.md` only, no `apps/` path.
 **Blockers**: none.
 **Next**: PR `tungxuan1656/feat-018-doneflip` → main (squash in a separate merge task); feat-019 selection remains user-gated; feat-019 must not start here.
+## 2026-09-17 — feat-019 contract (active, sole integration)
+
+**State**: active (sole integration parent; contract commit only, no `apps/` change)
+**Done**: Verified origin/main `72070d6` reads `feat-018` `done` / `feat-019` `todo` (dependency rule satisfied; repo idle, no other `active`). Branch `tungxuan1656/feat-019-integration` verified at `72070d6` with a clean tree. Activated `feat-019`; froze the Tier-B routing contract (eligibility triggers per request from Tier-A same-pass facts, expected-value skip rule, bounded output shapes per fact, privacy/retention rules, version 2→3 no-migration requeue rule, Task 3 wiring points, deterministic fallback). Revisions verified in the iOS 26.5 SDK headers: attention saliency rev 2, horizon rev 1, person-seg rev 1, text rev 3, doc-seg rev 1; smudge has no request in the SDK (mini-019c records UNAVAILABLE). Admitted `mini-019a`/`mini-019b`/`mini-019c-conditional` as task-ready `todo` index records with exact non-overlapping ownership and merge gates (019c activates only on a parent-named residual failure). Rewrote Acceptance/Verify to Simulator code-evidence (proof binary + skip/bound + privacy no-persist + cost vs budget); no manual QA.
+**Evidence**: `./init.sh` result recorded at commit; `git diff --name-only` = `features/feat-019.md` + `feature_index.json` + `docs/plans/feat-019.md` + `features/mini-019a.md` + `features/mini-019b.md` + `features/mini-019c.md` + `progress.md` only, no `apps/` path.
+**Blockers**: none.
+**Next**: dispatch `mini-019a`; merge 019a → 019b → 019c-conditional with independent reviews; then parent Task 3 (wire + version 3 + Verify, gate feat-020).

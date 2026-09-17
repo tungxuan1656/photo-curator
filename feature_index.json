@@ -394,8 +394,41 @@
       "kind": "integration",
       "mini_candidates": ["mini-019a", "mini-019b", "mini-019c"],
       "owns": ["Domain/Models/PhotoAnalysis.swift", "Services/Analysis/VisionAnalysisService.swift", "Services/Photos/BatchPipeline.swift", "Infrastructure/FileAnalysisCache.swift", "features/feat-019.md"],
-      "status": "todo",
+      "status": "active",
       "title": "Contextual quality signals"
+    },
+    {
+      "depends_on": ["feat-019"],
+      "exclusive_owns": ["Services/Analysis/CompositionEvidenceAdapter.swift", "features/mini-019a.md"],
+      "id": "mini-019a",
+      "kind": "mini",
+      "merge_gate": "Mapping matches the frozen schema with bounded outputs and explicit unavailable values; no shared-contract/sibling diff; ./init.sh passes",
+      "parent": "feat-019",
+      "seam": "Composition observation collection plus fact mapping (new adapter only, no wiring)",
+      "status": "todo",
+      "title": "Composition evidence adapter"
+    },
+    {
+      "depends_on": ["feat-019", "mini-019a"],
+      "exclusive_owns": ["Services/Analysis/UtilityEvidenceAdapter.swift", "features/mini-019b.md"],
+      "id": "mini-019b",
+      "kind": "mini",
+      "merge_gate": "Mapping matches the frozen schema with bounded outputs and no raw text persisted; no shared-contract/sibling diff; ./init.sh passes",
+      "parent": "feat-019",
+      "seam": "Utility observation collection plus fact mapping with trigger-coverage note (new adapter only, no wiring)",
+      "status": "todo",
+      "title": "Utility evidence adapter"
+    },
+    {
+      "depends_on": ["feat-019"],
+      "exclusive_owns": ["docs/evidence/tier-b-experimental-matrix.md", "features/mini-019c.md"],
+      "id": "mini-019c",
+      "kind": "mini",
+      "merge_gate": "Activates only on a parent-named residual failure; benchmark-backed accept/reject per candidate; no apps diff; ./init.sh passes",
+      "parent": "feat-019",
+      "seam": "Experimental availability matrix (evidence only; conditional)",
+      "status": "todo",
+      "title": "Experimental availability matrix"
     },
     {
       "depends_on": ["feat-019"],
