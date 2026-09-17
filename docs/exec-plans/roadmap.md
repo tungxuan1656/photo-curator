@@ -14,7 +14,6 @@ Related docs:
 - `analytics.md` — event names
 - `curation-intelligence.md` — post-MVP intelligence architecture and model gates
 - `curation-runtime-stack.md` — current concrete APIs/models, routing, and benchmark status
-- `curation-intelligence-v2-parallel-delivery.md` — V2 team delivery protocol and integration gates
 
 Execution work does not live here. Tracked work lives in `feature_index.json` and `docs/plans/feat-<id>.md` per `AGENTS.md`.
 
@@ -118,7 +117,7 @@ Do not build deferred items to "save time later." Timing matters more than the i
 
 This doc stays thin and stable. It never holds task lists, file changes, or dates.
 
-- Current and planned work: `feature_index.json`
+- Current status and execution order: `feature_index.json`
+- Feature scope, ownership, acceptance, and evidence: `features/feat-<id>.md`
 - Bounded work (1–3 files, <200 lines): plan inside `features/feat-<id>.md`
 - Large work (4+ files, migration, phases, rollback): `docs/plans/feat-<id>.md`, linked from the feature file
-- Curation Intelligence V2 team delivery: `curation-intelligence-v2-parallel-delivery.md`

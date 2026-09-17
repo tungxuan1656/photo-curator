@@ -20,7 +20,6 @@ Start at `AGENTS.md`. Then read one owner doc below. Then code.
 | Run QA checks by hand | [manual-qa.md](ship-gates/manual-qa.md) |
 | Add or change an event log | [analytics.md](ship-gates/analytics.md) |
 | Change build order or what is later | [roadmap.md](exec-plans/roadmap.md) |
-| Coordinate parallel Curation Intelligence V2 delivery | [curation-intelligence-v2-parallel-delivery.md](exec-plans/curation-intelligence-v2-parallel-delivery.md) |
 | Ask why a past choice was made | [decision-log.md](design-docs/decision-log.md) |
 
 Rule: read the owner doc only. Links inside point to other docs. Do not copy text between docs.

@@ -1,6 +1,6 @@
 # feat-025 — Conditional specialist models
 
-## Status and kind
+## Status
 
 - Status: `todo`
 - Depends on: `feat-023`

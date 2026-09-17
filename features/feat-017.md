@@ -12,8 +12,8 @@ ship a new scoring signal or model.
 
 ## Contract boundary
 
-The parent owns the metric ledger, failure taxonomy, and acceptance baselines. Children
-may collect independent evidence only; they do not change production scoring or QA gates.
+The feature owns the metric ledger, failure taxonomy, and acceptance baselines. Evidence
+collection does not change production scoring or QA gates.
 
 ## Frozen baseline contract (locked 2026-09-16, base `dd7193a`)
 
@@ -61,14 +61,13 @@ progress, and thermal behavior only; it is never hand-scored for taste.
 
 - `docs/ship-gates/manual-qa.md`
 - `docs/design-docs/curation-intelligence.md`
-- `docs/exec-plans/curation-intelligence-v2-parallel-delivery.md`
 
 ## Plan
 
 Plan: `docs/plans/feat-017.md`
 
 1. Freeze fixture versions, nine metrics, devices, and evidence locations. (done, contract commit)
-2. Admit evidence-only children; merge their ledgers without changing shared QA policy. (done: merged in order 017a → 017b → 017c, each with independent review)
+2. Collect evidence-only records without changing shared QA policy. (done: ledger, baseline rows, and budget rows are recorded)
 3. Consolidate failures into the V2 design document and choose the feat-018 admission gate. (done, this commit: pending-baseline IDs F-017-B/C/D/E/F/G/GLD/H in `curation-intelligence.md` §14; gate in Handoff)
 
 ## Verify

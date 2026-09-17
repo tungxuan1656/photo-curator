@@ -1,6 +1,6 @@
 # feat-028 — Ranker decision gate
 
-## Status and kind
+## Status
 
 - Status: `todo`
 - Depends on: `feat-027`
@@ -28,7 +28,6 @@ models may be rejected and are not a ranker prerequisite.
 
 - `docs/design-docs/curation-intelligence.md`
 - `docs/ship-gates/manual-qa.md`
-- `docs/exec-plans/curation-intelligence-v2-parallel-delivery.md`
 
 ## Inline plan
 

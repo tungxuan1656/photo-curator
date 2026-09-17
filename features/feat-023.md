@@ -1,6 +1,6 @@
 # feat-023 — Global diversity shortlist
 
-## Status and kind
+## Status
 
 - Status: `todo`
 - Depends on: `feat-022`, `feat-024`
@@ -13,7 +13,7 @@ and saturation across moments without regressing selection quality or the 1k-pho
 ## Contract boundary
 
 The feature owns shortlist size, graph construction policy, `DiversitySelector` integration,
-selection ordering, fallback, and `engineVersion`. Children do not modify those shared
+selection ordering, fallback, and `engineVersion`. Implementation does not modify those shared
 selection contracts.
 
 ## Acceptance

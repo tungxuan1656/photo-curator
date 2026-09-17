@@ -1,6 +1,6 @@
 # feat-024 — Visual embedding foundation
 
-## Status and kind
+## Status
 
 - Status: `todo`
 - Depends on: `feat-022`
@@ -27,12 +27,11 @@ This feature owns model consumers and shared contracts.
 
 - `docs/design-docs/curation-intelligence.md`
 - `docs/ship-gates/manual-qa.md`
-- `docs/exec-plans/curation-intelligence-v2-parallel-delivery.md`
 
 ## Inline plan
 
 1. Use feat-022 evidence to lock the provider contract and benchmark protocol.
-2. Admit provider and benchmark children with exclusive outputs.
+2. Implement the provider and benchmark as slices of this feature.
 3. Integrate the accepted candidate, version/cache policy, routing, and fallback.
 
 ## Verify

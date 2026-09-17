@@ -1,6 +1,6 @@
 # feat-026 — Uncertainty review and feedback
 
-## Status and kind
+## Status
 
 - Status: `todo`
 - Depends on: `feat-023`

@@ -1,6 +1,6 @@
 # feat-018 — Universal quality signals
 
-## Status and kind
+## Status
 
 - Status: `done`
 - Depends on: `feat-017` (`done` on origin/main `a877fa0`; verified before activation)
@@ -14,7 +14,7 @@ no weight, threshold, or scorer-math change in the contract commit.
 
 ## Contract boundary
 
-The parent owns `PhotoAnalysis`, cache migration, `analysisVersion`, and pipeline wiring:
+The feature owns `PhotoAnalysis`, cache migration, `analysisVersion`, and pipeline wiring:
 
 - `Domain/Models/PhotoAnalysis.swift`
 - `Services/Analysis/VisionAnalysisService.swift`
@@ -29,7 +29,7 @@ changes no weight, threshold, or scorer math. This feature owns the shared files
 
 Base versions: `analysisVersion 1`, `engineVersion 2`, `configVersion 1`, cache
 `schemaVersion 1`. Persisted per-photo changes take `analysisVersion` 1 → **2** at
-feature (Task 3), never in a child.
+feature implementation.
 
 ### New persisted fields (all inside `PhotoAnalysis`, version 2)
 
@@ -125,13 +125,12 @@ are unchanged.
 - `docs/design-docs/apple-frameworks.md` (§8 Vision pipeline)
 - `docs/design-docs/data-model.md` (§4 invariants, §6 shapes)
 - `docs/ship-gates/performance.md` (§5 budgets, regression flag)
-- `docs/exec-plans/curation-intelligence-v2-parallel-delivery.md`
 
 ## Inline plan
 
 1. Contract commit (this commit): activate, freeze schema, admit 018a + 018b as `todo`.
    No `apps/` change.
-2. Children: 018a adapter, then 018b benchmark; merge in order with independent reviews.
+2. Implementation slices: adapter, then benchmark; complete them in order with review.
 3. Parent Task 3: wire requests + `make` + version 2, run the Verify procedure, gate feat-019.
 
 ## Verify (Simulator code-evidence; manual QA replaced per user directive 2026-09-16)
@@ -154,7 +153,7 @@ are unchanged.
 
 ## Handoff
 
-- State: done (parent PR #36 squash-MERGED via `a68c89a` 2026-09-16; contract + children + Task 3 + findings fix all on main; index flipped `active` → `done`)
+- State: done (parent PR #36 squash-MERGED via `a68c89a` 2026-09-16; contract + implementation + Task 3 + findings fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-16 —
   `feat-017` reads `done` (squash #33 at `a877fa0`), `feat-018` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:

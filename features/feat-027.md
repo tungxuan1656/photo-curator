@@ -1,6 +1,6 @@
 # feat-027 — Semantic jury
 
-## Status and kind
+## Status
 
 - Status: `todo`
 - Depends on: `feat-026`
@@ -13,7 +13,7 @@ against a small, recoverable schema; iOS 26 remains deterministic.
 ## Contract boundary
 
 The feature owns OS gate, provider protocol, request policy, choice schema, fallback,
-telemetry-free diagnostics, and selection integration. Children may implement an isolated
+telemetry-free diagnostics, and selection integration. Implement an isolated
 adapter only after the parent locks protocol and exact path.
 
 ## Acceptance

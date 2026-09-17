@@ -1,6 +1,6 @@
 # feat-022 — Semantic moments
 
-## Status and kind
+## Status
 
 - Status: `todo`
 - Depends on: `feat-021`

@@ -1,6 +1,6 @@
 # feat-020 — People and group selection
 
-## Status and kind
+## Status
 
 - Status: `done`
 - Depends on: `feat-019` (`done` on origin/main `00c62e2`; verified before activation)
@@ -14,7 +14,7 @@ decision policy only; feat-019 owns the Tier-A/B fact schema (frozen).
 
 ## Contract boundary
 
-The parent owns aggregation, candid guards, selection policy, explanations,
+The feature owns aggregation, candid guards, selection policy, explanations,
 and privacy review — the same shared files as feat-019, plus this record:
 
 - `Domain/Scoring/QualityScorer.swift`
@@ -29,8 +29,7 @@ version-3 frozen schema (Tier-A/B facts, caps, predicates, allowlist).
 
 Base versions: `analysisVersion 3`, `engineVersion 2`, `configVersion 1`,
 cache `schemaVersion 1`. Persisted per-photo extensions take
-`analysisVersion` 3 → **4** at feature (Task 3), never in a
-child. The feat-018/019 extension rule holds: the new version's rows requeue
+`analysisVersion` 3 → **4** during feature implementation. The feat-018/019 extension rule holds: the new version's rows requeue
 by miss, never by crash or migration.
 
 ### Aggregation inputs (exact; feat-019 outputs only)
@@ -93,7 +92,7 @@ only; retention until reset or version change (§6).
 
 ### Cache/version behavior
 
-`analysisVersion` 3 → 4 at parent Task 3. The existing version gate IS the
+`analysisVersion` 3 → 4 at feature implementation. The existing version gate IS the
 migration: `FileAnalysisCache` reuses a row only when
 `stored.analysisVersion == current (4)`; `BatchPipeline.completedIDs`
 ignores checkpoints whose `analysisVersion != current`. Requeue rule: any
@@ -182,7 +181,7 @@ Verify. Cancel and memory-critical paths are unchanged.
 
 ## Handoff
 
-- State: done (parent PR #43 squash-MERGED via `4613afe` 2026-09-17; contract + child + Task 3 + max-restore fix all on main; index flipped `active` → `done`)
+- State: done (parent PR #43 squash-MERGED via `4613afe` 2026-09-17; contract + implementation + Task 3 + max-restore fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-019` reads `done` (squash #41 at `00c62e2`), `feat-020` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:

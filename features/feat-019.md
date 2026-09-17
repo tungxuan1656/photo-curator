@@ -1,6 +1,6 @@
 # feat-019 — Contextual quality signals
 
-## Status and kind
+## Status
 
 - Status: `done`
 - Depends on: `feat-018` (`done` on origin/main `72070d6`; verified before activation)
@@ -16,7 +16,7 @@ policy. No weight, threshold, or scorer-math change in the contract commit.
 
 ## Contract boundary
 
-The parent owns Tier-B eligibility, cache/version behavior, fact schema, and
+The feature owns Tier-B eligibility, cache/version behavior, fact schema, and
 pipeline wiring — the same four shared files as feat-018, plus this record:
 
 - `Domain/Models/PhotoAnalysis.swift`
@@ -33,7 +33,7 @@ shared files above and all routing implementation.
 
 Base versions: `analysisVersion 2`, `engineVersion 2`, `configVersion 1`, cache
 `schemaVersion 1`. Persisted per-photo changes take `analysisVersion` 2 → **3**
-at feature (Task 3), never in a child. The feat-018 extension rule
+during feature implementation. The feat-018 extension rule
 holds: the new version's rows requeue by miss, never by crash or migration.
 
 ### Tier-A runs first
@@ -103,7 +103,7 @@ index only). No per-person identity is created; counts stay in the existing
 
 ### Cache/version behavior
 
-`analysisVersion` 2 → 3 at parent Task 3. The existing version gate IS the
+`analysisVersion` 2 → 3 at feature implementation. The existing version gate IS the
 migration: `FileAnalysisCache` reuses a row only when
 `stored.analysisVersion == current (3)`; `BatchPipeline.completedIDs` ignores
 checkpoints whose `analysisVersion != current`, so stale checkpoints re-queue
@@ -112,7 +112,7 @@ row or checkpoint with `analysisVersion != 3` is recomputed from pixels once,
 then stored at 3. `Reset Analysis` semantics unchanged (apple-frameworks §8: do
 not migrate ephemeral AI fields). No new migration code.
 
-### Pipeline wiring points (parent Task 3, after children merge)
+### Pipeline wiring points (feature implementation, during feature implementation)
 
 1. `VisionAnalysisService.performAll`: Tier-A (existing requests plus
    `UniversalFactAdapter`) → eligibility predicates → eligible Tier-B requests
@@ -159,13 +159,12 @@ Analysis. Cancel and memory-critical paths are unchanged.
 - `docs/design-docs/data-model.md` (§4 invariants, §6 shapes)
 - `docs/ship-gates/performance.md` (§1/§5 budgets, regression flag)
 - `docs/ship-gates/privacy.md` (canonical retention/classification owner)
-- `docs/exec-plans/curation-intelligence-v2-parallel-delivery.md`
 
 ## Inline plan
 
 1. Contract commit (this commit): activate, freeze Tier-B routing, admit 019a
    + 019b + 019c-conditional as `todo`. No `apps/` change.
-2. Children: 019a composition adapter, then 019b utility adapter, then 019c
+2. Implementation slices: composition evidence, then utility evidence, then optional availability work
    matrix iff a residual failure is named; merge in order with independent reviews.
 3. Parent Task 3: wire predicates + requests + `make` + version 3, run the
    Verify procedure, gate feat-020.
@@ -194,7 +193,7 @@ Analysis. Cancel and memory-critical paths are unchanged.
 
 ## Handoff
 
-- State: done (parent PR #40 squash-MERGED via `e62172b` 2026-09-17; contract + children + Task 3 + findings fix all on main; index flipped `active` → `done`)
+- State: done (parent PR #40 squash-MERGED via `e62172b` 2026-09-17; contract + implementation + Task 3 + findings fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-018` reads `done` (squash #37 at `72070d6`), `feat-019` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:

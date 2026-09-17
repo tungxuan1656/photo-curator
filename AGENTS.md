@@ -41,7 +41,7 @@ If baseline verification fails, record the failure. Fix it only when the current
   `docs/plans/feat-<id>.md` when the feature
   changes a shared contract, has >=4 files or >=2 workspaces, needs rollback/phases,
   or has two or more independent risk signals. Link it from the feature file.
-- Use the active feature's owns list before work starts.
+- Use the selected feature's scope and ownership section before work starts.
 
 ## Escalation
 
