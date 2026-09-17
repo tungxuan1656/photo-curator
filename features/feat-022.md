@@ -3,7 +3,6 @@
 ## Status and kind
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-021`
 
 ## Goal
@@ -13,15 +12,8 @@ fallback for sparse or unavailable semantic evidence.
 
 ## Contract boundary
 
-The parent owns `MomentBuilder`, moment boundaries, continuity policy, and fallback.
-Any child may calculate boundary evidence only after the parent freezes its input/output
-types and assigns an exclusive new file.
-
-## Reserved mini-features
-
-- `mini-022a` — moment boundary evidence calculator. Admit after representative and
-  cluster inputs are stable. Done when it produces bounded evidence for the named trip
-  cases and leaves all boundary policy to the parent.
+The feature owns `MomentBuilder`, moment boundaries, continuity policy, and fallback.
+Calculate boundary evidence inside this feature after its input and output types are fixed.
 
 ## Acceptance
 
@@ -39,7 +31,7 @@ types and assigns an exclusive new file.
 ## Inline plan
 
 1. Specify boundary and continuity invariants from the failure ledger.
-2. Admit the isolated evidence calculation only if its source path is exclusive.
+2. Implement the isolated evidence calculation behind the fixed source path.
 3. Integrate moment policy and fallback; record Golden, Real Trip, and 1k evidence.
 
 ## Verify

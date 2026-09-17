@@ -3,7 +3,6 @@
 ## Status and kind
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-022`, `feat-024`
 
 ## Goal
@@ -13,15 +12,9 @@ and saturation across moments without regressing selection quality or the 1k-pho
 
 ## Contract boundary
 
-The parent owns shortlist size, graph construction policy, `DiversitySelector` integration,
+The feature owns shortlist size, graph construction policy, `DiversitySelector` integration,
 selection ordering, fallback, and `engineVersion`. Children do not modify those shared
 selection contracts.
-
-## Reserved mini-features
-
-- `mini-023a` — global similarity-graph calculation. Admit after feat-024 locks the
-  embedding output and the parent assigns an exclusive new path. Done when it yields a
-  bounded candidate graph and explicit unavailable result; parent owns selection policy.
 
 ## Acceptance
 

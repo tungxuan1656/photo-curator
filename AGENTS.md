@@ -24,19 +24,12 @@ If baseline verification fails, record the failure. Fix it only when the current
 
 ## Working rules
 
-- An integration feature owns the merge order and shared contracts. Keep at most one
-  integration feature `active` at a time. It can admit at most four active mini-features.
-  A mini-feature has one parent, an exclusive seam, and an explicit merge gate. Zero
-  active integration features means the repository is idle.
+- Keep at most one feature `active` at a time. Finish that feature before starting its
+  dependent feature. The active feature owns its full implementation and verification.
 - Use only `todo`, `active`, `blocked`, or `done` as feature status.
 - Start `todo` work only after the user selects or approves it.
 - Keep feature work inside the active parent feature's scope and acceptance criteria.
-- Complete every dependency before activating its dependent integration feature. A
-  detached mini-feature may run before its parent only when its record says so and it
-  does not read or change a shared contract.
-- A mini-feature must declare `parent`, `seam`, `exclusive_owns`, and `merge_gate`.
-  It must not edit parent-owned contracts, pipeline wiring, cache/version policy, or
-  another mini-feature's files. The integration owner makes those changes after review.
+- Complete every dependency before activating its dependent feature.
 - Record scope, acceptance, evidence, and handoff in the feature file.
 - Record a feature result in `progress.md` only when the result, blocker, handoff, or next action materially changes. Do not copy feature scope there.
 - Update `init.sh` when verification commands or workspace modules change.
@@ -44,14 +37,10 @@ If baseline verification fails, record the failure. Fix it only when the current
 
 ## Plans
 
-- Keep a readiness plan inside every `features/feat-<id>.md`. A mini-feature uses an
-  inline plan and the `features/mini-feat-template.md` admission card.
-- Before activating an integration feature, create `docs/plans/feat-<id>.md` when it
+- Keep a readiness plan inside every `features/feat-<id>.md`. Create
+  `docs/plans/feat-<id>.md` when the feature
   changes a shared contract, has >=4 files or >=2 workspaces, needs rollback/phases,
   or has two or more independent risk signals. Link it from the feature file.
-- The active integration feature records the exact child files and merge order before
-  admitting a mini-feature. Reserved mini-feature definitions in a parent plan are
-  not active work and do not require an index record yet.
 - Use the active feature's owns list before work starts.
 
 ## Escalation
@@ -64,7 +53,6 @@ If baseline verification fails, record the failure. Fix it only when the current
 A feature is done only when:
 
 - [ ] Every acceptance criterion passes.
-- [ ] Every admitted mini-feature is merged or explicitly rejected with evidence.
 - [ ] `./init.sh` passes.
 - [ ] The feature file records verification evidence.
 - [ ] `progress.md` records the result and next action.

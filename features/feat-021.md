@@ -3,7 +3,6 @@
 ## Status and kind
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-020`
 
 ## Goal
@@ -13,15 +12,9 @@ cluster, then select representatives by the moment context.
 
 ## Contract boundary
 
-The parent owns cluster membership, representative contract, and any change to
+The feature owns cluster membership, representative contract, and any change to
 `DuplicateResolver` or `SelectionGrouping`. Child work may calculate coherence evidence
 in a new, exclusive file only.
-
-## Reserved mini-features
-
-- `mini-021a` — cluster coherence evaluator. Admit after the parent locks its input and
-  output types. Done when it reports split/keep evidence for the baseline failure set;
-  it must not edit resolver wiring or representative selection.
 
 ## Acceptance
 

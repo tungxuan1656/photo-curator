@@ -3,7 +3,6 @@
 ## Status and kind
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-022`
 
 ## Goal
@@ -13,18 +12,9 @@ diversity relies on it.
 
 ## Contract boundary
 
-The parent owns `VisualEmbeddingProvider`, model selection, Tier-C routing, schema,
+The feature owns `VisualEmbeddingProvider`, model selection, Tier-C routing, schema,
 cache/version policy, and pipeline integration. It records license and checksum evidence.
-No child changes a model consumer or shared contract.
-
-## Reserved mini-features
-
-- `mini-024a` — embedding-provider implementation. Admit after the parent fixes the
-  provider protocol and exact new source path. Done when it returns versioned embeddings
-  or an explicit unavailable result with no UI or pipeline wiring changes.
-- `mini-024b` — FastViT candidate benchmark and provenance record. Admit after fixtures,
-  device, and model candidates are locked. Done with quality, latency, memory, license,
-  and checksum evidence plus accept/reject recommendation.
+This feature owns model consumers and shared contracts.
 
 ## Acceptance
 

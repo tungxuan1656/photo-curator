@@ -3,7 +3,6 @@
 ## Status and kind
 
 - Status: `todo`
-- Kind: `integration`
 - Depends on: `feat-027`
 
 ## Goal
@@ -13,15 +12,9 @@ the deterministic ranker. Either outcome is valid when supported by evidence.
 
 ## Contract boundary
 
-The parent owns labels, offline evaluation, acceptance threshold, ranker version,
+The feature owns labels, offline evaluation, acceptance threshold, ranker version,
 rollback, and the final product decision. It does not depend on feat-025: specialist
 models may be rejected and are not a ranker prerequisite.
-
-## Reserved mini-features
-
-- `mini-028a` — ranker evaluation ledger. Admit after the parent locks label provenance,
-  metrics, and exact evidence path. Done when deterministic and candidate rankers can be
-  compared reproducibly; it does not change production selection or versioning.
 
 ## Acceptance
 
@@ -39,7 +32,7 @@ models may be rejected and are not a ranker prerequisite.
 
 ## Inline plan
 
-1. Freeze labels, metrics, and deterministic baseline before admitting the evidence child.
+1. Freeze labels, metrics, and the deterministic baseline before evaluating candidates.
 2. Evaluate candidate only if the baseline exposes a material remaining gap.
 3. Integrate a versioned ranker or record the no-ranker decision and close V2.
 

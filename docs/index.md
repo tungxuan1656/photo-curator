@@ -63,7 +63,6 @@ Older docs use bare numbers 01–13. Use filenames for new refs; the table below
 | [manual-qa.md](ship-gates/manual-qa.md) | Hand QA steps | You test a build |
 | [analytics.md](ship-gates/analytics.md) | Event names only | You log events |
 | [roadmap.md](exec-plans/roadmap.md) | Build order | You plan next work |
-| [curation-intelligence-v2-parallel-delivery.md](exec-plans/curation-intelligence-v2-parallel-delivery.md) | V2 delivery coordination, mini-feature admission, and integration gates | You coordinate V2 work across people or branches |
 | [decision-log.md](design-docs/decision-log.md) | Past reasons, open items | You need why or what is open |
 
 ## Open decisions
