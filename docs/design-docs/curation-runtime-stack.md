@@ -2,7 +2,7 @@
 
 **Status:** Current implementation selection for Curation Intelligence V2  
 **Architecture owner:** [curation-intelligence.md](curation-intelligence.md)  
-**Updated:** 2026-09-17 (feat-024: Tier-C provider shipped, FastViT stays benchmark-only)
+**Updated:** 2026-09-17 (feat-024: Tier-C provider shipped, FastViT stays benchmark-only; feat-025: Tier-D rejected per DEC-038)
 
 This document owns the concrete implementation choices for Curation Intelligence V2: Apple APIs, model candidates, routing, fallbacks, and benchmark decisions. It is deliberately mutable. `curation-intelligence.md` owns the stable architecture; changing a model here does not require changing the architecture when the capability contract stays the same.
 
@@ -36,9 +36,9 @@ Before implementation, re-check API availability and model/license terms against
 | Lens smudge | Vision lens-smudge request | B | targeted technical cases | EXPERIMENTAL |
 | Body pose | Vision body-pose request | B | people/action cases | EXPERIMENTAL |
 | Rich visual embedding | native derived embedding (`NativeDerivedEmbeddingProvider`: 8-dim persisted-scalar vector, no model) default-on; FastViT headless family smallest-first stays benchmark-only, not vendored | C | shortlist ≤ 250 assets, ≤ 4,000 pairs | SELECTED (native) / BENCHMARK-ONLY (FastViT) |
-| Object/layout specialist | DETR-style segmentation, production-compatible license | D | difficult scenes only | EXPERIMENTAL |
-| Depth/context specialist | Depth Anything V2 Small or equivalent | D | difficult cases only | EXPERIMENTAL |
-| Precision segmentation | SAM 2.1 Tiny or equivalent | D | rare fallback | EXPERIMENTAL |
+| Object/layout specialist | DETR-style segmentation, production-compatible license | D | difficult scenes only | REJECTED (DEC-038, 2026-09-17 — no triggering feat-023 failure) |
+| Depth/context specialist | Depth Anything V2 Small or equivalent | D | difficult cases only | REJECTED (DEC-038, 2026-09-17 — no triggering feat-023 failure) |
+| Precision segmentation | SAM 2.1 Tiny or equivalent | D | rare fallback | REJECTED (DEC-038, 2026-09-17 — no triggering feat-023 failure) |
 | Semantic jury | Foundation Models `SystemLanguageModel` image input | E | 2–6 ambiguous candidates | SELECTED, iOS 27 OPTIONAL |
 | High-res verification | targeted PhotoKit load + re-check | F | finalists/borderline rejects | REQUIRED PATH |
 | Learned ranker | small Core ML learning-to-rank model | later | only after labels exist | NOT YET JUSTIFIED |
@@ -96,6 +96,7 @@ Fallback: FeaturePrint + native facts + deterministic rules (complete; proven id
 DETR-style object/layout, Depth Anything V2 Small (or equivalent), and SAM 2.1 Tiny (or equivalent) are **experimental candidates, not a mandatory model bundle**. Add one only when cheaper native/embedding evidence still leaves a documented failure and the measured quality gain justifies size, latency, memory, thermal cost, and maintenance.
 
 A candidate that fails its gate should be marked REJECTED rather than kept because it is technically impressive.
+DEC-038 (2026-09-17) records the feat-025 no-op verdict: all three candidates rejected with no triggering residual failure and cheaper remedies unexhausted; per-candidate evidence and reconsider triggers live in the decision log.
 
 ## 8. iOS 27 semantic jury
 
