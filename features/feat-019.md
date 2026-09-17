@@ -2,7 +2,7 @@
 
 ## Status and kind
 
-- Status: `active`
+- Status: `done`
 - Kind: `integration`
 - Depends on: `feat-018` (`done` on origin/main `72070d6`; verified before activation)
 
@@ -210,7 +210,7 @@ and `docs/plans/feat-019.md`.
 
 ## Handoff
 
-- State: active (sole integration parent; Task 3 wired + verified, both children merged; parent PR to main NOT yet opened)
+- State: done (parent PR #40 squash-MERGED via `e62172b` 2026-09-17; contract + children + Task 3 + findings fix all on main; index flipped `active` → `done`)
 - Activation precondition: origin/main `feature_index.json` verified 2026-09-17 —
   `feat-018` reads `done` (squash #37 at `72070d6`), `feat-019` reads `todo`; the
   AGENTS.md dependency rule (dependency done before activation) is satisfied. Repo idle:
@@ -296,7 +296,7 @@ and `docs/plans/feat-019.md`.
     `b675a1bc…`): `currentVersion=3 v2rowMiss=true v3rowHit=true
     v2ckptIgnored=true v3ckptKept=true` → `REQUEUE-RULE: PASS` (v2 rows
     requeue, v3 rows hit).
-- Evidence: `./init.sh` PASS at this commit (format, `swiftlint --strict` 0
+- Evidence: `./init.sh` PASS at the done-flip commit (format, `swiftlint --strict` 0
   violations, Simulator build SUCCEEDED, SKIP [test] by policy).
 - feat-020 admission gate: may start only after the parent PR to main merges AND
   its contract freezes people/group decision policy (per-face distribution, weakest-face
@@ -310,5 +310,8 @@ and `docs/plans/feat-019.md`.
   in the iOS 26.5 SDK headers, re-verified at Task 3); pose/landmarks matrix deferred
   to the feature that names a measured face-driven gap (feat-020 at the earliest).
 - Blockers: none.
-- Next: coordinator opens the parent PR to main (squash; separate merge task); feat-020
-  selection remains user-gated.
+- Closeout (done-flip, branch `tungxuan1656/feat-019-doneflip` from origin/main `e62172b`):
+  - Squash evidence: parent PR #40 state MERGED, mergeCommit `e62172b` (= origin/main HEAD); squash body contains the full chain — contract `b8b22ff`, child `8394e19` (019a, PR #39 MERGED) + `2274281` (019b, PR #38 MERGED), Task 3 `8e12b97`, findings fix `f3d5337`; pre-squash commits verified present via `git cat-file -t`.
+  - Acceptance re-verified on main (all four boxes honestly still pass, read checked): (1) wiring — `performAll` splits Tier-A/Tier-B (`VisionAnalysisService.swift:92,110,146,189`), `make` gains 7 Tier-B params with caps (`PhotoAnalysis.swift:132-136,150,156-157`), `analysisVersion: 3` (`AppConfiguration.swift:61`), both adapters exist (`Services/Analysis/CompositionEvidenceAdapter.swift` + `UtilityEvidenceAdapter.swift`); (2) version-3 + requeue — cache version gate (`FileAnalysisCache.swift:26,35`), checkpoint-ignore (`BatchPipeline.swift:386`), version-tolerant decode (`PhotoAnalysis.swift:194,202`); (3) Verify code-evidence — Task 3 proof results recorded in this Handoff stand (determinism byte-compare PASS, honest nil-on-synthetic reading, skip/bound proofs, PERSIST-PROOF PASS, REQUEUE-RULE PASS, cost recorded with no budget constant changed); (4) fallback — per-request independent degrade with gated nil arms (`VisionAnalysisService.swift:227-234`), pure capped map (`PhotoAnalysis.swift:150,156-157`), cancellation checks between requests.
+  - Minis `mini-019a`/`mini-019b` already `done` in `feature_index.json`; `mini-019c` stays `todo` conditional-closed (not activated, not merged — no residual failure named, smudge UNAVAILABLE, matrix deferred); `feat-020` stays `todo` (no start here).
+- Next: PR `tungxuan1656/feat-019-doneflip` → main (squash in a separate merge task); feat-020 selection remains user-gated; feat-020 must not start here.

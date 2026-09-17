@@ -455,7 +455,7 @@
         "Configuration/AppConfiguration.swift",
         "Services/Session/SimilarityRebuilder.swift"
       ],
-      "status": "active",
+      "status": "done",
       "title": "Contextual quality signals"
     },
     {
