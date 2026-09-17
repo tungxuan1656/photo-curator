@@ -352,3 +352,11 @@
 **Evidence**: Proof binary (REAL shipped sources verbatim; main `e27d2ee1…`, binary `1dd58aba…`, staged engine `a48e8ccb…`/graph `cee94c5e…`/selector `9c5f40fa…`/scorer `a6ab3f1a…`/builder `c7a2e7f8…` md5-match shipped) through REAL analyze → candidates → REAL FP edges → REAL `select` twice on three arms with per-shape exact-shortlist coverage guard true all four shapes: Smoke 60→6 (moments 4, graphMembers 6, graphEdges 0/0/15, tierCPairs 15) + Golden 200→15 (moments 11, graphMembers 15, graphEdges 0/0/105, tierCPairs 105) + Trip G 150→24 (moments 8, graphMembers 24, graphEdges 0/0/276, tierCPairs 276) + H 1000→56 (clusters 81, moments 56, graphMembers 60, graphEdges 0/0/1770, tierCPairs 1770); picked byte-compare == both runs AND fallback==noop exactly all shapes (Smoke `0a1068c4…`, Golden `07d20b69…`, Trip `0f55281f…`, H `9de46dd7…`); all arms `engineVersion` 3; 13 named cases ALL PASS (N0-N4, S1-S3, F1-F3, G1, X1 scope 3 pairs 3 covered true). `./init.sh` PASS once after final edits (format PASS, `swiftlint --strict` 0 violations/63 files, BUILD SUCCEEDED, SKIP [test] per policy; log `/tmp/f023-init.log`). No test targets/`*Test*.swift`/frameworks; no manual QA.
 **Blockers**: none.
 **Next**: PR `tungxuan1656/feat-023-integration` → main (squash in a separate merge task); feat-025 selection remains user-gated; feat-023 must not be reactivated here.
+
+## 2026-09-17 — feat-023 post-merge closeout (PR #50 merged)
+
+**State**: done (PR #50 MERGED into main via `96a75a94c2f31dfe962c1375d9009e4a42882545`; feat-023 confirmed done, feat-022 stays `done`, feat-024 stays `done`, feat-025 stays `todo`)
+**Done**: Post-merge metadata closeout only — no `apps/`, plan, decision-log, `init.sh`, or `feature_index.json` change. `features/feat-023.md` Handoff State/Next rewritten to the merged state; acceptance/evidence text preserved intact.
+**Evidence**: `git cat-file -t 96a75a94c2f31dfe962c1375d9009e4a42882545` = commit, on `main`; `git diff --check` clean; `feature_index.json` parses with feat-022 `done`, feat-024 `done`, feat-023 `done` (depends on feat-022 + feat-024), feat-025 `todo` (depends on feat-023). No `init.sh` or manual QA run (docs-only closeout).
+**Blockers**: none.
+**Next**: feat-025 is the next approved feature (depends on feat-023, done); it can activate after this closeout is merged.
