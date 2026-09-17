@@ -328,3 +328,11 @@
 **Evidence**: Wiring re-proof `/tmp/f024-evidence/out-wiring` run1+run2 (same binary `4bba357e…`, staged engine `0e17e9a2…`/provider `94b5de2a…` md5-match shipped): Golden 200→15 (clusters 14, moments 11, tierCEdges 0/0/4000) + H 1000→56 (clusters 81, moments 56, tierCEdges 0/0/4000); picked md5 == both runs × all three arms (Golden `07d20b69…`, H `9de46dd7…`); 14 named cases ALL PASS (R1–R4, P1–P5, E1–E3, N1 fallback-equals-noop, N2 clusters-moments-frozen); `swiftlint --strict` 0 violations/62 files; Simulator `BUILD SUCCEEDED`; `./init.sh` result recorded below. No test targets/`*Test*.swift`/frameworks; no manual QA.
 **Blockers**: none.
 **Next**: PR `tungxuan1656/feat-024-integration` → main (squash in a separate merge task); feat-023 selection remains user-gated (live bounded production consumer contract ready).
+
+## 2026-09-17 — feat-024 post-merge closeout (PR #48 merged)
+
+**State**: done (PR #48 MERGED into main via `6a130e3da9b782817cf819332738df6e3b7ce5d8`; feat-024 confirmed done, feat-022 stays `done`, feat-023 stays `todo`)
+**Done**: Post-merge metadata closeout only — no `apps/`, plan, decision-log, `init.sh`, or `feature_index.json` change. `features/feat-024.md` Handoff State/Next rewritten to the merged state; acceptance/evidence text preserved intact.
+**Evidence**: `git cat-file -t 6a130e3da9b782817cf819332738df6e3b7ce5d8` = commit, on `main`; `git diff --check` clean; `feature_index.json` parses with feat-022 `done`, feat-024 `done`, feat-023 `todo` (depends on feat-022 + feat-024). No `init.sh` or manual QA run (docs-only closeout).
+**Blockers**: none.
+**Next**: feat-023 is the next approved feature (depends on feat-022 and feat-024, both done); it can activate after this closeout is merged.
