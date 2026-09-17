@@ -89,15 +89,65 @@ private extension VisionAnalysisService {
         let image = input.image
         // Each request runs independently: one request failing degrades its
         // own field only via try?.
+        let tierA = try await tierABaseline(image: image)
+        let faceCount = tierA.faceCount
+        let bestFaceQuality = tierA.bestFaceQuality
+        let similarity = tierA.similarity
+        // Universal facts (feat-018): adapter phase 1 collects the aesthetics +
+        // classify observations beside the face/print requests above, with the
+        // same 512 px `.up` input, independent degrade, and cancellation
+        // checks. Its `try` carries only CancellationError (every other
+        // failure lands in the unavailable arms of `Collected`); that error
+        // maps to `.cancelled` via the do/catch at the top of `analyze`.
+        try Task.checkCancellation()
+        let universal = try UniversalFactAdapter.collect(from: image)
+        let maxEdge = await AppConfiguration.default.selection.analysisImageMaxDimension
+        let technical = await Self.heuristics(on: image, edge: Double(maxEdge))
+        // Shared factory owned by PhotoAnalysis.swift — no local clamp.
+        // Phase 2 is a pure map to the frozen fact triple; `hasPrint` passes
+        // the existing first-print-or-nil signal for `featurePrintAvailable`.
+        let facts = await UniversalFactAdapter.map(universal, hasPrint: similarity != nil)
+        let tierB = try await tierBFacts(input: TierBInput(
+            image: image,
+            assetID: assetID,
+            faceCount: faceCount,
+            technical: technical,
+            universalIsUtility: facts.isUtility,
+            isScreenshotSubtype: input.isScreenshotSubtype
+        ))
+        let analysis = await PhotoAnalysis.make(
+            assetID: assetID,
+            technical: technical,
+            faceCount: faceCount,
+            groupPhotoScore: faceCount >= 2 ? Double(faceCount) / 6.0 : nil,
+            subjectPlacementScore: bestFaceQuality,
+            sceneType: faceCount > 0 ? .people : .unknown,
+            aestheticScore: facts.aestheticScore,
+            tags: facts.tags,
+            featurePrintAvailable: facts.featurePrintAvailable,
+            horizonScore: tierB.horizonScore,
+            visualBalanceScore: tierB.visualBalanceScore,
+            salientRegionCount: tierB.salientRegionCount,
+            hasText: tierB.hasText,
+            textLineCount: tierB.textLineCount,
+            screenshotProbability: tierB.screenshotProbability,
+            isDocument: tierB.isDocument
+        )
+        // Post-analysis cancel check: a cancel landing during the sync CPU
+        // pass must not return success — map through .cancelled in analyze.
+        try Task.checkCancellation()
+        return ImageAnalysisOutput(analysis: analysis, similarity: similarity)
+    }
+
+    /// Tier-A baseline requests (faces, face quality, feature print): the
+    /// pre-feat-019 lane, unchanged. Each request degrades independently via
+    /// `try?`; only cancellation escapes. Returns the face facts plus the
+    /// transient similarity artifact (nil when the print request degrades).
+    private nonisolated func tierABaseline(image: CGImage) async throws -> TierABaseline {
         let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
         let faceRects = VNDetectFaceRectanglesRequest()
         let faceQuality = VNDetectFaceCaptureQualityRequest()
         let printRequest = VNGenerateImageFeaturePrintRequest()
-
-        // Synchronous Vision work only inside autoreleasepool (no await
-        // inside). Cancellation is checked between requests, never inside
-        // the pool. The do/catch carries the throwing cancellation checks so
-        // CancellationError maps to .cancelled and anything else to .internal.
         do {
             try Task.checkCancellation()
             autoreleasepool {
@@ -119,48 +169,142 @@ private extension VisionAnalysisService {
         if Task.isCancelled {
             throw SelectionError.cancelled
         }
-        // Unknown-vs-zero: nil results degrade to zero-count with nil quality,
-        // a valid analysis — not a throw. Nil face detection additionally
-        // forces subjectPlacementScore nil even if the quality request
-        // returned scores (unknown quality).
         let faceObservations = faceRects.results ?? []
         let faceCount = faceObservations.count
         var bestFaceQuality: Double?
         if faceCount > 0, let qualityResults = faceQuality.results {
             bestFaceQuality = qualityResults.compactMap(\.faceCaptureQuality).map { Double($0) }.max()
         }
-        // faceQuality failing (nil results) leaves bestFaceQuality nil: per-field degrade.
-        // Universal facts (feat-018): adapter phase 1 collects the aesthetics +
-        // classify observations beside the face/print requests above, with the
-        // same 512 px `.up` input, independent degrade, and cancellation
-        // checks. Its `try` carries only CancellationError (every other
-        // failure lands in the unavailable arms of `Collected`); that error
-        // maps to `.cancelled` via the do/catch at the top of `analyze`.
-        try Task.checkCancellation()
-        let universal = try UniversalFactAdapter.collect(from: image)
-        let maxEdge = await AppConfiguration.default.selection.analysisImageMaxDimension
-        let technical = await Self.heuristics(on: image, edge: Double(maxEdge))
-        // Shared factory owned by PhotoAnalysis.swift — no local clamp.
-        // Phase 2 is a pure map to the frozen fact triple; `hasPrint` passes
-        // the existing first-print-or-nil signal for `featurePrintAvailable`.
         let similarity = (printRequest.results?.first as? VNFeaturePrintObservation)
             .map(ImageSimilarityArtifact.init(observation:))
-        let facts = await UniversalFactAdapter.map(universal, hasPrint: similarity != nil)
-        let analysis = await PhotoAnalysis.make(
-            assetID: assetID,
-            technical: technical,
-            faceCount: faceCount,
-            groupPhotoScore: faceCount >= 2 ? Double(faceCount) / 6.0 : nil,
-            subjectPlacementScore: bestFaceQuality,
-            sceneType: faceCount > 0 ? .people : .unknown,
-            aestheticScore: facts.aestheticScore,
-            tags: facts.tags,
-            featurePrintAvailable: facts.featurePrintAvailable
+        return TierABaseline(faceCount: faceCount, bestFaceQuality: bestFaceQuality, similarity: similarity)
+    }
+
+    /// Tier-B contextual pass (feat-019 frozen routing). Tier-A facts from the
+    /// same pass only. `technicallyUsable` mirrors the scorer floor
+    /// (`lowQualityThreshold`) so Tier-B never runs on a photo the scorer
+    /// already rejects — Tier-B cannot rescue a bad photo. Gated facts stay
+    /// nil for ineligible assets even when an observation exists.
+    /// Nonisolated: same cooperative-pool lane as `performAll`.
+    private nonisolated func tierBFacts(input: TierBInput) async throws -> TierBCollected {
+        let qualityProbe = await PhotoAnalysis.make(
+            assetID: input.assetID,
+            technical: input.technical,
+            faceCount: input.faceCount,
+            groupPhotoScore: nil,
+            subjectPlacementScore: nil,
+            sceneType: .unknown
         )
-        // Post-analysis cancel check: a cancel landing during the sync CPU
-        // pass must not return success — map through .cancelled in analyze.
-        try Task.checkCancellation()
-        return ImageAnalysisOutput(analysis: analysis, similarity: similarity)
+        let lowFloor = await AppConfiguration.default.selection.lowQualityThreshold
+        let technicallyUsable = qualityProbe.qualityScore >= lowFloor
+        let saliencyEligible = technicallyUsable && input.faceCount == 0
+        // Horizon eligibility needs the asset shape: landscape input only.
+        // performAll sees pixels only (AnalysisInput carries no PhotoAsset),
+        // so it gates on the image dims — the same comparison, no new data.
+        let horizonEligible = saliencyEligible && input.image.width >= input.image.height
+        let personSegEligible = technicallyUsable && input.faceCount >= 1
+        let utilityEligible = technicallyUsable && (input.isScreenshotSubtype || input.universalIsUtility)
+        let composition = try await gatedCompositionFacts(
+            image: input.image,
+            saliency: saliencyEligible,
+            horizon: horizonEligible,
+            personSeg: personSegEligible
+        )
+        var utility: UtilityEvidenceAdapter.MappedFacts?
+        var utilityRan = false
+        if utilityEligible {
+            try Task.checkCancellation()
+            do {
+                let collected = try UtilityEvidenceAdapter.collect(from: input.image)
+                utility = UtilityEvidenceAdapter.map(collected, isScreenshotSubtype: input.isScreenshotSubtype)
+                utilityRan = true
+            } catch is CancellationError {
+                throw SelectionError.cancelled
+            } catch {
+                utility = nil
+            }
+        }
+        return TierBCollected(
+            horizonScore: horizonEligible ? composition.horizonScore : nil,
+            visualBalanceScore: personSegEligible ? composition.visualBalanceScore : nil,
+            salientRegionCount: saliencyEligible ? composition.salientRegionCount : nil,
+            hasText: utilityRan ? utility?.hasText : nil,
+            textLineCount: utilityRan ? utility?.textLineCount : nil,
+            screenshotProbability: utilityRan ? utility?.screenshotProbability : nil,
+            isDocument: utilityRan ? utility?.isDocument : nil
+        )
+    }
+
+    /// Per-request composition gating (frozen contract: each eligible request
+    /// ONLY). Saliency runs iff faceless-usable, horizon iff saliency-eligible
+    /// AND landscape, person-seg iff has-faces-usable. No ineligible inference.
+    /// Each entry degrades to its nil arm; only cancellation escapes.
+    private nonisolated func gatedCompositionFacts(
+        image: CGImage,
+        saliency: Bool,
+        horizon: Bool,
+        personSeg: Bool
+    ) async throws -> CompositionEvidenceAdapter.MappedFacts {
+        var salientCount: Int?
+        var horizonAngle: Double?
+        var foregroundFraction: Double?
+        do {
+            if saliency {
+                try Task.checkCancellation()
+                salientCount = try CompositionEvidenceAdapter.collectSaliency(from: image).salientObjectCount
+            }
+            if horizon {
+                try Task.checkCancellation()
+                horizonAngle = try CompositionEvidenceAdapter.collectHorizon(from: image).horizonAngle
+            }
+            if personSeg {
+                try Task.checkCancellation()
+                foregroundFraction = try CompositionEvidenceAdapter.collectPersonSegmentation(from: image)
+                    .foregroundFraction
+            }
+        } catch is CancellationError {
+            throw SelectionError.cancelled
+        } catch {
+            throw SelectionError.internal
+        }
+        return await CompositionEvidenceAdapter.map(CompositionEvidenceAdapter.Collected(
+            salientObjectCount: saliency ? salientCount : nil,
+            horizonAngle: horizon ? horizonAngle : nil,
+            foregroundFraction: personSeg ? foregroundFraction : nil
+        ))
+    }
+
+    /// Tier-A baseline facts for one asset: face facts plus the transient
+    /// print signal. Plain value box so `performAll` stays short.
+    private nonisolated struct TierABaseline: Sendable {
+        let faceCount: Int
+        let bestFaceQuality: Double?
+        let similarity: ImageSimilarityArtifact?
+    }
+
+    /// Tier-B pass input: Tier-A facts plus the pixels they gate. One struct
+    /// so the helper takes a single parameter. All Sendable values; the image
+    /// is the same 512 px `.up` input the lane already holds.
+    private nonisolated struct TierBInput: Sendable {
+        let image: CGImage
+        let assetID: AssetID
+        let faceCount: Int
+        let technical: TechnicalAnalysis
+        let universalIsUtility: Bool
+        let isScreenshotSubtype: Bool
+    }
+
+    /// Gated Tier-B facts for one asset: every field nil when its predicate
+    /// is false or its request degrades. Plain value box so the off-main lane
+    /// carries results without hopping back to the MainActor.
+    private nonisolated struct TierBCollected: Sendable {
+        let horizonScore: Double?
+        let visualBalanceScore: Double?
+        let salientRegionCount: Int?
+        let hasText: Bool?
+        let textLineCount: Int?
+        let screenshotProbability: Double?
+        let isDocument: Bool?
     }
 
     /// Synchronous CPU pass on the 512 px `CGImage` returning a

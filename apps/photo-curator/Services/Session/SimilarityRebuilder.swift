@@ -20,7 +20,8 @@ struct SimilarityRebuilder: Sendable {
                         guard let cgImage = try? await imageLoader.analysisImage(for: id) else { return (id, nil) }
                         let artifact = try? await analyzer.similarityArtifact(for: AnalysisInput(
                             assetID: id,
-                            image: cgImage
+                            image: cgImage,
+                            isScreenshotSubtype: false
                         ))
                         return (id, artifact)
                     }

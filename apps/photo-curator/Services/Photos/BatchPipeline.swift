@@ -217,7 +217,8 @@ final class BatchPipeline: Sendable {
                         ) }
                         let artifact = try? await analyzer.similarityArtifact(for: AnalysisInput(
                             assetID: asset.id,
-                            image: cgImage
+                            image: cgImage,
+                            isScreenshotSubtype: false
                         ))
                         return (asset.id, artifact)
                     }
@@ -354,7 +355,11 @@ final class BatchPipeline: Sendable {
         // The synchronous Vision work with its autoreleasepool lives inside the
         // analyzer — never autoreleasepool { await … } here. The image releases
         // by scope exit: no stored CGImage outlives this call.
-        let input = AnalysisInput(assetID: asset.id, image: cgImage)
+        let input = AnalysisInput(
+            assetID: asset.id,
+            image: cgImage,
+            isScreenshotSubtype: asset.mediaSubtype == .screenshot
+        )
         do {
             let output = try await analyzer.analyze(input)
             // Post-analysis cancel check: a cancel landing during Vision work
