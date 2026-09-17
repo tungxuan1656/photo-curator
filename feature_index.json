@@ -451,7 +451,9 @@
         "Services/Analysis/VisionAnalysisService.swift",
         "Services/Photos/BatchPipeline.swift",
         "Infrastructure/FileAnalysisCache.swift",
-        "features/feat-019.md"
+        "features/feat-019.md",
+        "Configuration/AppConfiguration.swift",
+        "Services/Session/SimilarityRebuilder.swift"
       ],
       "status": "active",
       "title": "Contextual quality signals"

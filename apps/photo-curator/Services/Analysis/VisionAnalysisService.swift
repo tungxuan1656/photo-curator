@@ -204,18 +204,12 @@ private extension VisionAnalysisService {
         let horizonEligible = saliencyEligible && input.image.width >= input.image.height
         let personSegEligible = technicallyUsable && input.faceCount >= 1
         let utilityEligible = technicallyUsable && (input.isScreenshotSubtype || input.universalIsUtility)
-        var composition: CompositionEvidenceAdapter.MappedFacts?
-        if saliencyEligible || horizonEligible || personSegEligible {
-            try Task.checkCancellation()
-            do {
-                let collected = try CompositionEvidenceAdapter.collect(from: input.image)
-                composition = await CompositionEvidenceAdapter.map(collected)
-            } catch is CancellationError {
-                throw SelectionError.cancelled
-            } catch {
-                composition = nil
-            }
-        }
+        let composition = try await gatedCompositionFacts(
+            image: input.image,
+            saliency: saliencyEligible,
+            horizon: horizonEligible,
+            personSeg: personSegEligible
+        )
         var utility: UtilityEvidenceAdapter.MappedFacts?
         var utilityRan = false
         if utilityEligible {
@@ -231,14 +225,53 @@ private extension VisionAnalysisService {
             }
         }
         return TierBCollected(
-            horizonScore: horizonEligible ? composition?.horizonScore : nil,
-            visualBalanceScore: personSegEligible ? composition?.visualBalanceScore : nil,
-            salientRegionCount: saliencyEligible ? composition?.salientRegionCount : nil,
+            horizonScore: horizonEligible ? composition.horizonScore : nil,
+            visualBalanceScore: personSegEligible ? composition.visualBalanceScore : nil,
+            salientRegionCount: saliencyEligible ? composition.salientRegionCount : nil,
             hasText: utilityRan ? utility?.hasText : nil,
             textLineCount: utilityRan ? utility?.textLineCount : nil,
             screenshotProbability: utilityRan ? utility?.screenshotProbability : nil,
             isDocument: utilityRan ? utility?.isDocument : nil
         )
+    }
+
+    /// Per-request composition gating (frozen contract: each eligible request
+    /// ONLY). Saliency runs iff faceless-usable, horizon iff saliency-eligible
+    /// AND landscape, person-seg iff has-faces-usable. No ineligible inference.
+    /// Each entry degrades to its nil arm; only cancellation escapes.
+    private nonisolated func gatedCompositionFacts(
+        image: CGImage,
+        saliency: Bool,
+        horizon: Bool,
+        personSeg: Bool
+    ) async throws -> CompositionEvidenceAdapter.MappedFacts {
+        var salientCount: Int?
+        var horizonAngle: Double?
+        var foregroundFraction: Double?
+        do {
+            if saliency {
+                try Task.checkCancellation()
+                salientCount = try CompositionEvidenceAdapter.collectSaliency(from: image).salientObjectCount
+            }
+            if horizon {
+                try Task.checkCancellation()
+                horizonAngle = try CompositionEvidenceAdapter.collectHorizon(from: image).horizonAngle
+            }
+            if personSeg {
+                try Task.checkCancellation()
+                foregroundFraction = try CompositionEvidenceAdapter.collectPersonSegmentation(from: image)
+                    .foregroundFraction
+            }
+        } catch is CancellationError {
+            throw SelectionError.cancelled
+        } catch {
+            throw SelectionError.internal
+        }
+        return await CompositionEvidenceAdapter.map(CompositionEvidenceAdapter.Collected(
+            salientObjectCount: saliency ? salientCount : nil,
+            horizonAngle: horizon ? horizonAngle : nil,
+            foregroundFraction: personSeg ? foregroundFraction : nil
+        ))
     }
 
     /// Tier-A baseline facts for one asset: face facts plus the transient

@@ -25,7 +25,8 @@ build lanes, Simulator-only HARD RULE (never a physical iPhone via any channel).
   (`Infrastructure/FileAnalysisCache.swift`), `analysisVersion`
   (`Configuration/AppConfiguration.swift`, bumped 2 → 3 in Task 3), and pipeline
   wiring (`Services/Analysis/VisionAnalysisService.swift`,
-  `Services/Photos/BatchPipeline.swift` — no structural change needed).
+  `Services/Photos/BatchPipeline.swift` — no structural change needed — plus
+  `Services/Session/SimilarityRebuilder.swift` for the `AnalysisInput` initializer change).
   Children touch only their exact new files plus their own card: no shared-contract,
   sibling, or other `apps/` change.
 - No test targets or test files (repo policy; `./init.sh` reports `SKIP [test]`).

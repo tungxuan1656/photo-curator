@@ -5,13 +5,14 @@ import Vision
 
 /// Composition evidence adapter (mini-019a, feat-019).
 ///
-/// Two phases with no pipeline wiring: phase 1 (`collect`) runs the three
-/// frozen Tier-B composition requests on the 512 px analysis image with the
-/// same handler pattern as `VisionAnalysisService.performAll` (one handler,
-/// `.up`, independent `try?` per request, cancellation checks between
-/// requests); phase 2 (`map`) pure-maps the collected observations to the
-/// frozen fact triple (`horizonScore`, `visualBalanceScore`,
-/// `salientRegionCount`) per features/feat-019.md (frozen 2026-09-17).
+/// Two phases with no pipeline wiring: phase 1 (per-request entries
+/// `collectSaliency`/`collectHorizon`/`collectPersonSegmentation`) runs ONLY
+/// the eligible frozen Tier-B composition request on the 512 px analysis
+/// image with the same handler pattern as `VisionAnalysisService.performAll`
+/// (`.up`, independent `try?`, cancellation checked on entry); phase 2
+/// (`map`) pure-maps the collected observations to the frozen fact triple
+/// (`horizonScore`, `visualBalanceScore`, `salientRegionCount`) per
+/// features/feat-019.md (frozen 2026-09-17).
 ///
 /// Frozen requests: attention saliency rev 2, horizon rev 1, person
 /// segmentation rev 1 `.balanced`. Unavailable values are explicit: a thrown
@@ -42,41 +43,64 @@ enum CompositionEvidenceAdapter {
         let salientRegionCount: Int?
     }
 
-    /// Phase 1: collects the three frozen composition observations beside
-    /// the existing lane requests (parent Task 3 calls this from
-    /// `performAll`).
+    /// Phase 1: per-request collection entry points. The caller runs ONLY the
+    /// requests whose frozen eligibility predicate is true — never all three
+    /// unconditionally. Each entry keeps the lane pattern (`.up` input, own
+    /// `autoreleasepool`, cancellation checked on entry); only
+    /// `CancellationError` escapes, every other failure lands in the nil arm
+    /// of `Collected`, never a throw.
     ///
     /// Same input as the existing lane: the 512 px analysis `CGImage`,
-    /// orientation `.up`. Each request degrades independently (`try?` per
-    /// request in its own `autoreleasepool`); only `CancellationError`
-    /// escapes — every other failure lands in the unavailable arms of
-    /// `Collected`, never a throw. Cancellation is checked on entry and
-    /// between requests.
-    nonisolated static func collect(from image: CGImage) throws -> Collected {
+    /// orientation `.up`.
+    nonisolated static func collectSaliency(from image: CGImage) throws -> Collected {
         try Task.checkCancellation()
         let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
         let saliency = VNGenerateAttentionBasedSaliencyImageRequest()
         saliency.revision = VNGenerateAttentionBasedSaliencyImageRequestRevision2
-        let horizon = VNDetectHorizonRequest()
-        horizon.revision = VNDetectHorizonRequestRevision1
-        let personSegmentation = VNGeneratePersonSegmentationRequest()
-        personSegmentation.qualityLevel = .balanced
-        personSegmentation.revision = VNGeneratePersonSegmentationRequestRevision1
-        try Task.checkCancellation()
         autoreleasepool {
             try? handler.perform([saliency])
         }
+        return Collected(
+            salientObjectCount: saliency.results?.first.map { $0.salientObjects?.count ?? 0 },
+            horizonAngle: nil,
+            foregroundFraction: nil
+        )
+    }
+
+    /// Phase 1 (horizon only): runs `VNDetectHorizonRequest` rev 1. See
+    /// `collectSaliency` for the degrade/cancellation contract.
+    nonisolated static func collectHorizon(from image: CGImage) throws -> Collected {
         try Task.checkCancellation()
+        let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
+        let horizon = VNDetectHorizonRequest()
+        horizon.revision = VNDetectHorizonRequestRevision1
         autoreleasepool {
             try? handler.perform([horizon])
         }
+        return Collected(
+            salientObjectCount: nil,
+            horizonAngle: horizon.results?.first.map { Double($0.angle) },
+            foregroundFraction: nil
+        )
+    }
+
+    /// Phase 1 (person segmentation only): runs
+    /// `VNGeneratePersonSegmentationRequest` rev 1 `.balanced`. The mask is
+    /// reduced to a foreground fraction inside this entry so the pixel buffer
+    /// never crosses to the caller. See `collectSaliency` for the
+    /// degrade/cancellation contract.
+    nonisolated static func collectPersonSegmentation(from image: CGImage) throws -> Collected {
         try Task.checkCancellation()
+        let handler = VNImageRequestHandler(cgImage: image, orientation: .up, options: [:])
+        let personSegmentation = VNGeneratePersonSegmentationRequest()
+        personSegmentation.qualityLevel = .balanced
+        personSegmentation.revision = VNGeneratePersonSegmentationRequestRevision1
         autoreleasepool {
             try? handler.perform([personSegmentation])
         }
         return Collected(
-            salientObjectCount: saliency.results?.first.map { $0.salientObjects?.count ?? 0 },
-            horizonAngle: horizon.results?.first.map { Double($0.angle) },
+            salientObjectCount: nil,
+            horizonAngle: nil,
             foregroundFraction: personSegmentation.results?.first.flatMap { foregroundFraction(of: $0.pixelBuffer) }
         )
     }

@@ -38,13 +38,14 @@
   with `salientObjects: [VNRectangleObservation]`; `VNDetectHorizonRequest` rev 1 →
   first `VNHorizonObservation` with `angle` in radians; `VNGeneratePersonSegmentationRequest`
   rev 1 `.balanced` → `VNPixelBufferObservation` mask buffer)
-- Output: two-phase adapter in the new file — phase 1 collects the 3 observations
-  (independent degrade, cancellation checks between requests, same 512 px `.up` input);
-  phase 2 pure-maps to `(horizonScore = clamped01(1 - abs(angle)/(π/6))`
-  [nil when unavailable]; `visualBalanceScore = foreground pixel fraction from the
-  `OneComponent8` mask [nil when unavailable]; `salientRegionCount = min(10,
-  salientObjects.count)` [nil when unavailable]). No box, mask, or pixel buffer
-  crosses to the caller — scalars/counts only.
+- Output: two-phase adapter in the new file — phase 1 exposes per-request entries
+  (`collectSaliency`/`collectHorizon`/`collectPersonSegmentation`; the caller runs
+  ONLY the eligible request, independent degrade, cancellation checked on entry,
+  same 512 px `.up` input); phase 2 pure-maps to `(horizonScore =
+  clamped01(1 - abs(angle)/(π/6))` [nil when unavailable]; `visualBalanceScore =
+  foreground pixel fraction from the `OneComponent8` mask [nil when unavailable];
+  `salientRegionCount = min(10, salientObjects.count)` [nil when unavailable]).
+  No box, mask, or pixel buffer crosses to the caller — scalars/counts only.
 - Fallback: n/a in code beyond the frozen nil mapping (proven at parent Verify)
 - Version effect: none (no `analysisVersion` bump in the child)
 - Focused QA: parent Verify proof binary compiles this adapter verbatim (double-run
@@ -70,9 +71,9 @@
   **BUILD SUCCEEDED**, `SKIP [test]` per no-tests policy).
 
 ## Inline plan
-
-1. Write phase 1 (collect the 3 observations; same handler pattern as the existing
-   lane requests, independent degrade).
+1. Write phase 1 (per-request entries `collectSaliency`/`collectHorizon`/
+   `collectPersonSegmentation`; same handler pattern as the existing
+   lane requests, independent degrade; the caller gates each request).
 2. Write phase 2 (pure map to the frozen fact triple; explicit unavailable arms;
    mask math never leaves the adapter).
 3. Self-check the file compiles inside the parent branch build; record `./init.sh`.
