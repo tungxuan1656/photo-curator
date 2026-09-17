@@ -2,7 +2,7 @@
 
 ## Status and parent
 
-- Status: `todo` (task-ready; not active)
+- Status: `done` (code complete and reviewable; merge pending gate + independent review)
 - Parent integration feature: `feat-020`
 - Reserved ID: `mini-020a`
 
@@ -59,13 +59,22 @@
 
 ## Acceptance and evidence
 
-- [ ] Pure map: per-face values → bounded `(faceCount, minFaceQuality,
+- [x] Pure map: per-face values → bounded `(faceCount, minFaceQuality,
   meanFaceQuality)` with the frozen nil arms, no fabricated defaults.
-- [ ] No persisted or returned face box, landmark, crop, embedding, or pixel
+- [x] No persisted or returned face box, landmark, crop, embedding, or pixel
   data; no shared-contract, sibling, or other `apps/` diff (`git diff --name-only`).
-- [ ] Manual QA / benchmark command or procedure: n/a (code only; measured at parent Verify).
-- [ ] Evidence location: `Services/Analysis/GroupEvidenceCalculator.swift` (code) + parent
+- [x] Manual QA / benchmark command or procedure: n/a (code only; measured at parent Verify).
+- [x] Evidence location: `Services/Analysis/GroupEvidenceCalculator.swift` (code) + parent
   Verify proof-binary record.
+
+Evidence: `nonisolated static func map(faceCount:faceQualities:)` — no-faces
+(`faceCount <= 0`) → all-nil; quality nil/empty → count-only with
+`faceCount = max(0, count)`; otherwise min/mean over 0…1-clamped values
+(local clamp: `PhotoAnalysis.clamped01` is main-actor-isolated, so this
+off-main map clamps inline — same bound). Inputs are the Tier-A count plus
+`Double` quality values only; no observation, box, landmark, crop,
+embedding, or pixel type appears in the signature. `swiftformat --lint` and
+`swiftlint lint --strict` pass on the new file (2026-09-17).
 
 ## Inline plan
 
@@ -75,9 +84,10 @@
    only) in the file header.
 3. Self-check the file compiles inside the parent branch build; record `./init.sh`.
 
-## Handoff
-
-State `todo` (admitted by the parent contract commit; not started).
+State `done` (worker implementation complete; not yet merged into the parent branch).
+`git diff --name-only` shows only the two owned files. `./init.sh` PASS
+(2026-09-17: format PASS, lint --strict PASS, Simulator build SUCCEEDED, test SKIP by policy).
 Blockers: none.
-Next: dispatch as an isolated worker; merge into the parent branch only after
-the gate plus an independent review.
+Next: independent review (integration owner + one reviewer, never the module
+owner alone), then merge into `tungxuan1656/feat-020-integration`; parent
+Task 3 wires the calculator and runs the Verify proof binary.
