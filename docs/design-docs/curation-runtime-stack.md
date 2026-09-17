@@ -2,7 +2,7 @@
 
 **Status:** Current implementation selection for Curation Intelligence V2  
 **Architecture owner:** [curation-intelligence.md](curation-intelligence.md)  
-**Updated:** 2026-09-16
+**Updated:** 2026-09-17 (feat-024: Tier-C provider shipped, FastViT stays benchmark-only)
 
 This document owns the concrete implementation choices for Curation Intelligence V2: Apple APIs, model candidates, routing, fallbacks, and benchmark decisions. It is deliberately mutable. `curation-intelligence.md` owns the stable architecture; changing a model here does not require changing the architecture when the capability contract stays the same.
 
@@ -35,7 +35,7 @@ Before implementation, re-check API availability and model/license terms against
 | OCR/document | Vision text/document recognition | B | suspected utility images | SELECTED |
 | Lens smudge | Vision lens-smudge request | B | targeted technical cases | EXPERIMENTAL |
 | Body pose | Vision body-pose request | B | people/action cases | EXPERIMENTAL |
-| Rich visual embedding | FastViT headless family; smallest practical variant first | C | candidates/shortlist | SELECTED FOR BENCHMARK |
+| Rich visual embedding | native derived embedding (`NativeDerivedEmbeddingProvider`: 8-dim persisted-scalar vector, no model) default-on; FastViT headless family smallest-first stays benchmark-only, not vendored | C | shortlist ≤ 250 assets, ≤ 4,000 pairs | SELECTED (native) / BENCHMARK-ONLY (FastViT) |
 | Object/layout specialist | DETR-style segmentation, production-compatible license | D | difficult scenes only | EXPERIMENTAL |
 | Depth/context specialist | Depth Anything V2 Small or equivalent | D | difficult cases only | EXPERIMENTAL |
 | Precision segmentation | SAM 2.1 Tiny or equivalent | D | rare fallback | EXPERIMENTAL |
@@ -49,7 +49,7 @@ Before implementation, re-check API availability and model/license terms against
 |---|---:|---|---|
 | A — universal | all eligible assets | metadata, technical facts, FeaturePrint, basic faces | cheap selected Vision facts after benchmark |
 | B — contextual | relevant subsets | face detail, saliency, horizon, OCR/document, masks | smudge, pose, targeted native facts |
-| C — candidate | moment candidates / shortlist | visual embedding after gate | stronger representation |
+| C — candidate | moment candidates / shortlist ≤ 250 assets, ≤ 4,000 pairs | native derived embedding (no model, no license/size cost) | FastViT pixel-level representation only after its benchmark gate |
 | D — difficult | small ambiguous subsets | none by default | object/layout, depth, precision segmentation |
 | E — semantic jury | 2–6 images per ambiguity | none on iOS 26 | iOS 27 structured comparison |
 | F — verification | finalists/borderline rejects | higher-resolution targeted re-check | missing specialist/native fact |
@@ -83,13 +83,13 @@ Lens smudge is an experimental clue only: never hard-reject solely from it, and 
 
 ## 6. Visual embedding provider
 
-The engine should depend on a capability abstraction such as `VisualEmbeddingProvider`, never a FastViT-specific domain type.
+The engine depends on the `VisualEmbeddingProvider` capability abstraction (`Domain/Selection/VisualEmbeddingProvider.swift`), never a model-specific domain type. Tier-C routing is bounded by `VisualEmbeddingRouter` (shortlist-scale only: refuses > 250 assets, caps at 4,000 canonical pairs) and `SelectionEngine.select` consumes only explicitly supplied `tierCEdges` for diversity novelty — never cluster membership or moment boundaries. The default (`[]`) is the complete native FeaturePrint fallback. Both production selection paths (`SelectionSessionCoordinator.selectResult` + `finalizeAvailable`) route analyzed assets through `NativeDerivedEmbeddingProvider` via `AppContainer.tierCProvider`; router refusal or empty output falls back to `NoopVisualEmbeddingProvider` (no edges, FeaturePrint fallback exactly). Full decision: DEC-035.
 
-**Current benchmark choice: FastViT headless family.** Benchmark the smallest practical production-compatible variant first. Move larger only when the smaller one misses a documented failure mode. Do not call the embedding composition-aware unless evaluation demonstrates that behavior.
+**Selected production representation (feat-024, DEC-035): native derived embedding, wired by default.** Fixed 8-dim vector from already-persisted `PhotoAnalysis` scalars (sharpness, exposure, resolution, aesthetic/horizon/balance nil→0.5, faceCount/6, textLines/10); normalized Euclidean distance + 0.5 penalty when both scenes are known and differ. No pixels, no boxes, no new request, no weights file, no license/size/latency cost, CPU-only scalar math. Vectors are transient (never persisted, never leave the run); only pairwise distances cross as transient `SimilarityEdge` values. Full model record (status, target failure, inputs, fallback, baseline/benchmark evidence, reconsider trigger): `docs/plans/feat-024.md` (Model record section).
 
-Before vendoring a model, record exact source/version, license and commercial redistribution decision, checksum, Core ML conversion details, input/output, precision, packaged size, compute units, minimum device/OS, latency/memory/thermal measurements, and fallback.
+**FastViT headless family: benchmark-only, NOT vendored.** Benchmark the smallest practical production-compatible variant first only when a named residual failure shows persisted facts call two frames identical but diversity needs them separated. Before any vendoring, record exact source/version, license and commercial redistribution decision, checksum, Core ML conversion details, input/output, precision, packaged size, compute units, minimum device/OS, latency/memory/thermal measurements, and fallback. License terms must be re-verified at vendoring time; no license/source/version/checksum evidence exists yet because nothing is vendored.
 
-Fallback: FeaturePrint + native facts + deterministic rules.
+Fallback: FeaturePrint + native facts + deterministic rules (complete; proven identical by the feat-024 fallback/noop proof arms).
 
 ## 7. Specialist candidates
 

@@ -9,6 +9,10 @@ struct AppContainer: Sendable {
     let analysisCache: any AnalysisCache
     let checkpointStore: SessionCheckpointStore
     let selectionEngine: SelectionEngine
+    /// Tier-C visual-embedding provider (feat-024, DEC-035): native derived
+    /// by default, injected into `SelectionSessionCoordinator` for both
+    /// production selection paths. No model, no persisted state.
+    let tierCProvider: any VisualEmbeddingProvider
     let exporter: any AlbumExportService
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
@@ -35,6 +39,7 @@ struct AppContainer: Sendable {
             ),
             checkpointStore: SessionCheckpointStore(files: files),
             selectionEngine: SelectionEngine(),
+            tierCProvider: NativeDerivedEmbeddingProvider(),
             exporter: PhotoKitAlbumExporter(),
             analytics: NoopAnalytics(),
             memoryPressure: MemoryPressureObserver()

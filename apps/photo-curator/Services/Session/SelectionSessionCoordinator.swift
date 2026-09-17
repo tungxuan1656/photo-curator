@@ -82,6 +82,7 @@ actor SelectionSessionCoordinator {
     private let checkpointStore: SessionCheckpointStore
     private let pipeline: BatchPipeline
     private let engine: SelectionEngine
+    private let tierCProvider: any VisualEmbeddingProvider
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "selection"
     )
@@ -105,13 +106,15 @@ actor SelectionSessionCoordinator {
         checkpointStore: SessionCheckpointStore,
         engine: SelectionEngine,
         config: AppConfiguration = .default,
-        pressure: MemoryPressureObserver? = nil
+        pressure: MemoryPressureObserver? = nil,
+        tierCProvider: any VisualEmbeddingProvider = NativeDerivedEmbeddingProvider()
     ) {
         self.imageLoader = imageLoader
         self.analyzer = analyzer
         self.analysisCache = analysisCache
         self.checkpointStore = checkpointStore
         self.engine = engine
+        self.tierCProvider = tierCProvider
         pipeline = BatchPipeline(
             imageLoader: imageLoader,
             analyzer: analyzer,
@@ -257,7 +260,7 @@ actor SelectionSessionCoordinator {
         let edges = try await rebuildSimilarityEdges(for: assets, candidates: candidates, laneCount: laneCount)
         return try engine.select(
             assets: assets, analyses: analyses, configuration: configuration,
-            feedback: nil, similarityEdges: edges
+            feedback: nil, similarityEdges: edges, tierCEdges: tierCEdges(for: assets, analyses: analyses)
         )
     }
 
@@ -273,7 +276,7 @@ actor SelectionSessionCoordinator {
             analyses: batchResult.analyses,
             configuration: request.config.selection,
             feedback: nil,
-            similarityEdges: edges
+            similarityEdges: edges, tierCEdges: tierCEdges(for: assets, analyses: batchResult.analyses)
         )
         return SelectionResult(
             sessionID: request.sessionID,
@@ -303,6 +306,17 @@ actor SelectionSessionCoordinator {
             edges.append(SimilarityEdge(first: candidate.first, second: candidate.second, distance: distance))
         }
         return edges
+    }
+
+    /// Bounded Tier-C diversity edges (feat-024, DEC-035): native provider over
+    /// analyzed shortlist-scale assets; router refusal or empty output falls
+    /// back to noop (no edges, FeaturePrint fallback). Diversity novelty only.
+    private func tierCEdges(
+        for assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis]
+    ) -> [SimilarityEdge] {
+        let pairs = VisualEmbeddingRouter.tierCCandidates(for: assets.filter { analyses[$0.id] != nil })
+        let edges = pairs.isEmpty ? [] : tierCProvider.tierCDistances(for: pairs, analyses: analyses)
+        return edges.isEmpty ? NoopVisualEmbeddingProvider().tierCDistances(for: pairs, analyses: analyses) : edges
     }
 }
 

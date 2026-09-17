@@ -237,7 +237,7 @@
       ],
       "gate": "Embedding choice is benchmarked via reproducible automated proof (Simulator permitted), license/checksum is recorded, and Tier-C routing has a safe fallback; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
       "id": "feat-024",
-      "status": "todo",
+      "status": "done",
       "title": "Visual embedding foundation"
     },
     {
