@@ -564,3 +564,11 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Evidence**: JSON parsing and `git diff --check` pass.
 **Blockers**: none
 **Next**: User selects feat-030 after feat-029 is done; do not activate it before then.
+
+## 2026-09-18 — feat-029 immersive photo inspection
+
+**State**: done
+**Done**: Implemented fullscreen S11 inspection with bounded zoom/pan state, Fit-safe scoped paging, explicit album state, analysis navigation, retry/back recovery, safe-area overlays, accessibility actions, and Reduce Motion-aware transforms. Kept `ReviewModel` and the existing PhotoKit preview service boundary unchanged; only the current 2048-pixel `CGImage` is retained and superseded loads are cancelled or ignored.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 (`SCALE-CLAMP`, `OFFSET-CLAMP`, `RESET`, `FIT-PAGE`, `ZOOM-PAN`, `ASSET-RESET`, `ACCESSIBILITY-CONTROLS`, `CURRENT-ONLY`, `SERVICE-BOUNDARY`, and `ASSET-LIFECYCLE` PASS); `./init.sh` EXIT 0 (SwiftFormat PASS, SwiftLint strict PASS with 0 violations in 70 files, Simulator `BUILD SUCCEEDED`, policy test `SKIP`); Simulator install/launch EXIT 0 on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 95203`); `git diff --check` and no-test-artifact checks PASS.
+**Blockers**: none
+**Next**: User selects feat-030; it remains todo until then.

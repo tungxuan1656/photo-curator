@@ -294,7 +294,7 @@
       ],
       "gate": "S11 is a fullscreen, zoomable, accessible inspector that preserves scoped paging and shared selection; bounded image lifetime and reproducible interaction proof pass; ./init.sh passes.",
       "id": "feat-029",
-      "status": "todo",
+      "status": "done",
       "title": "Immersive photo inspection"
     },
     {
