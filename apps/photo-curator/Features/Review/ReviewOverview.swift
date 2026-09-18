@@ -52,11 +52,11 @@ struct ReviewOverview: View {
                                         .font(.title3.bold())
                                         .foregroundStyle(.white)
 
-                                    let totalStr = total == 1 ? "1 photo" : "\(total) photos"
-                                    let selStr = model.selectedIDs.count == 1 ? "1 photo selected" : "\(model.selectedIDs.count) selected"
-                                    Text("\(selStr) from \(totalStr)")
-                                        .font(.footnote)
-                                        .foregroundStyle(.white.opacity(0.9))
+                                    Text(
+                                        "\(model.selectedIDs.count) selected from \(total) photos"
+                                    )
+                                    .font(.footnote)
+                                    .foregroundStyle(.white.opacity(0.9))
                                 }
                                 .padding(16)
                             }
@@ -66,9 +66,7 @@ struct ReviewOverview: View {
                             VStack(spacing: 6) {
                                 Text("Your curated album is ready")
                                     .font(.title2.bold())
-                                let totalStr = total == 1 ? "1 photo" : "\(total) photos"
-                                let selStr = model.selectedIDs.count == 1 ? "1 photo selected" : "\(model.selectedIDs.count) selected"
-                                Text("\(selStr) from \(totalStr)")
+                                Text("\(model.selectedIDs.count) selected from \(total) photos")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -95,7 +93,7 @@ struct ReviewOverview: View {
                                             .font(.caption2)
                                             .foregroundStyle(.tertiary)
                                     }
-                                    Text("\(model.selectedIDs.count)")
+                                    Text(model.selectedIDs.count, format: .number)
                                         .font(.title2.bold())
                                         .foregroundStyle(.primary)
                                     Text("Best quality & moments")
@@ -126,7 +124,7 @@ struct ReviewOverview: View {
                                                 .foregroundStyle(.tertiary)
                                         }
                                     }
-                                    Text("\(model.similarGroups.count)")
+                                    Text(model.similarGroups.count, format: .number)
                                         .font(.title2.bold())
                                         .foregroundStyle(.primary)
                                     Text(model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen")
@@ -158,7 +156,7 @@ struct ReviewOverview: View {
                                                 .foregroundStyle(.tertiary)
                                         }
                                     }
-                                    Text("\(model.removedAssetIDs.count)")
+                                    Text(model.removedAssetIDs.count, format: .number)
                                         .font(.title2.bold())
                                         .foregroundStyle(.primary)
                                     Text("Can add back anytime")
@@ -191,12 +189,17 @@ struct ReviewOverview: View {
                         ReviewGuideCard()
 
                         if unavailable > 0 {
-                            Text(unavailable == 1
-                                ? "1 photo was unavailable and could not be analyzed."
-                                : "\(unavailable) photos were unavailable and could not be analyzed.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal)
+                            if unavailable == 1 {
+                                Text("1 photo was unavailable and could not be analyzed.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
+                            } else {
+                                Text("\(unavailable) photos were unavailable and could not be analyzed.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
+                            }
                         }
 
                         // Action Queue
@@ -241,7 +244,7 @@ struct ReviewOverview: View {
                                     HStack {
                                         Label("Needs Review", systemImage: "eye.trianglebadge.exclamationmark")
                                         Spacer()
-                                        Text("\(model.needsReviewItems.count)")
+                                        Text(model.needsReviewItems.count, format: .number)
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
                                         Image(systemName: "chevron.right")

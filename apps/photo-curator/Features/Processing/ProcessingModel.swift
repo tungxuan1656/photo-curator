@@ -164,7 +164,7 @@ final class ProcessingModel {
         } catch {
             if case SelectionError.cancelled = error {
                 if backgrounded {
-                    state = .paused(reason: "Curation paused. Your progress is saved. Reopen the app to continue.")
+                    state = .paused
                 } else {
                     state = .cancelled
                 }
@@ -172,10 +172,10 @@ final class ProcessingModel {
                 // Memory-critical pause: checkpoint already persisted at the
                 // batch boundary; resume continues without redo. Same plain
                 // copy as background pause, no memory vocabulary.
-                state = .paused(reason: "Curation paused. Your progress is saved. Reopen the app to continue.")
+                state = .paused
             } else if error is CancellationError {
                 if backgrounded {
-                    state = .paused(reason: "Curation paused. Your progress is saved. Reopen the app to continue.")
+                    state = .paused
                 } else {
                     state = .cancelled
                 }

@@ -17,9 +17,11 @@ struct Completion: View {
                 VStack(spacing: 12) {
                     Text("Album Saved").font(.title2.bold())
                     let added = state.addedIDs.count
-                    Text(added == 1
-                        ? "1 photo saved to \"\(state.albumTitle)\"."
-                        : "\(added) photos saved to \"\(state.albumTitle)\".")
+                    if added == 1 {
+                        Text("1 photo saved to \"\(state.albumTitle)\".")
+                    } else {
+                        Text("\(added) photos saved to \"\(state.albumTitle)\".")
+                    }
                     if !state.remainingIDs.isEmpty || !state.missingIDs.isEmpty {
                         Text("Some photos could not be added. Your originals are unchanged.")
                             .font(.footnote).foregroundStyle(.secondary)

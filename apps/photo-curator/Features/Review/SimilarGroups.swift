@@ -79,9 +79,7 @@ private struct SimilarGroupCard: View {
                 Text("Group \(index + 1) of \(total)").font(.headline)
                 let selected = group.selectedCount(in: model.selectedIDs)
                 let totalMember = group.memberIDs.count
-                let selText = selected == 1 ? "1 selected" : "\(selected) selected"
-                let totalText = totalMember == 1 ? "1 similar photo" : "\(totalMember) similar photos"
-                Text("\(selText) from \(totalText)")
+                Text("\(selected) selected from \(totalMember) similar photos")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 LazyVGrid(columns: columns, spacing: 2) {

@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: `todo`
-- Depends on: `feat-029` (todo; must be done before this feature starts)
+- Status: `done`
+- Depends on: `feat-029` (done)
 
 ## Goal
 
@@ -32,21 +32,24 @@ execution detail is [`docs/plans/feat-030.md`](../docs/plans/feat-030.md).
   About requirements.
 - Reproducible automated proof for resource completeness, fallback, and live
   selection, plus `./init.sh`.
+- Native-first localization architecture: SwiftUI localizable literals and
+  `LocalizedStringResource` at the presentation boundary; processing/session data
+  remains locale-independent. No SwiftGen or R.swift dependency is added.
 
 ## Acceptance
 
-- [ ] Every user-facing and accessibility string has complete English and Vietnamese
+- [x] Every user-facing and accessibility string has complete English and Vietnamese
   coverage, including `InfoPlist.xcstrings`, errors, and the Settings language picker.
-- [ ] System Default follows the current system locale rather than a locale captured
+- [x] System Default follows the current system locale rather than a locale captured
   when the preference was saved; explicit English or Tiếng Việt selection persists
   and takes effect immediately throughout the SwiftUI root.
-- [ ] Counts, dates, and interpolated values use the active locale correctly in both
+- [x] Counts, dates, and interpolated values use the active locale correctly in both
   languages, with safe catalog fallback behavior.
-- [ ] No raw user-facing literals are introduced; internal identifiers, logs, and
+- [x] No raw user-facing literals are introduced; internal identifiers, logs, and
   diagnostics are not translated, and no automatic translation service is added.
-- [ ] No language beyond English and Vietnamese, behavior/flow/selection change, or
+- [x] No language beyond English and Vietnamese, behavior/flow/selection change, or
   S11 contract change is included.
-- [ ] Reproducible automated localization proof and `./init.sh` pass. No test target,
+- [x] Reproducible automated localization proof and `./init.sh` pass. No test target,
   test framework, or manual-QA gate is added.
 
 ## Non-goals
@@ -78,8 +81,12 @@ See [`docs/plans/feat-030.md`](../docs/plans/feat-030.md).
 
 ## Handoff
 
-- State: todo
-- Evidence: approved feature record and execution plan created; `feat-029` remains the
-  prerequisite owner for complete S11 coverage.
+- State: done
+- Evidence: `scripts/proof/feat-030.sh` and `./init.sh` both pass. The proof verifies
+  complete en/vi catalog and Info.plist coverage, placeholder parity, no
+  `defaultValue`, native domain/presentation boundary, System Default resolution,
+  explicit language contracts, fallback, locale-aware formatting, persistence hooks,
+  root locale injection, and the Settings picker. `./init.sh` passes SwiftFormat,
+  SwiftLint strict with 0 violations, Simulator build, and the policy test skip.
 - Blockers: none
-- Next: user selects feat-030 after feat-029 is done, then activate it before implementation.
+- Next: none; feat-030 is complete.

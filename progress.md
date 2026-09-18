@@ -612,3 +612,34 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 — all state, accessibility, lifecycle, service-boundary, and `ASSET-CHANGE-RESET` checks PASS. `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict 0 violations in 71 files, Simulator build `SUCCEEDED`, policy test `SKIP` per DEC-040. No test target, framework, or `*Test*.swift` file added; no service contract changed.
 **Blockers**: none
 **Next**: feat-030 remains user-gated and `todo`.
+
+## 2026-09-18 — feat-030 activated
+
+**State**: active
+**Done**: User selected feat-030 after feat-029 reached `done`; activated the existing
+approved feature record and execution plan. Baseline `./init.sh` passed format, strict
+lint, and Simulator build; policy test step remains skipped under DEC-040.
+**Evidence**: `feature_index.json` and `features/feat-030.md` now mark feat-030 active;
+working tree was clean before activation.
+**Blockers**: none
+**Next**: inventory all user-facing strings, establish en/vi catalogs, and add the
+persistent root language contract and S18 picker.
+
+## 2026-09-18 — feat-030 completed
+
+**State**: done
+**Done**: Added English/Vietnamese String Catalogs and localized Info.plist resources;
+added persistent `AppLanguage` selection for System Default, English, and Tiếng Việt;
+propagated the selected locale at the SwiftUI root; and added the S18 Settings picker.
+Refactored dynamic copy to native SwiftUI localization APIs, kept processing/session
+models locale-independent with typed error codes, and did not add SwiftGen/R.swift or
+`defaultValue` fallbacks.
+**Evidence**: `scripts/proof/feat-030.sh` EXIT 0 — catalog completeness, Info.plist
+coverage, placeholder parity, fallback, live System Default resolution, explicit
+language contract, locale-aware number/date/interpolation formatting, persistence/root
+locale hooks, and Settings picker checks PASS. `./init.sh` EXIT 0 — SwiftFormat PASS,
+SwiftLint strict PASS with 0 violations, Simulator build `BUILD SUCCEEDED`, proof PASS,
+and policy test `SKIP` under DEC-040. `git diff --check` PASS; no test target,
+test framework, or `*Test*.swift` file added.
+**Blockers**: none
+**Next**: none — feat-030 is complete.

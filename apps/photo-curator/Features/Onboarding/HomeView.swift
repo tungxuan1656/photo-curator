@@ -91,7 +91,8 @@ struct HomeView: View {
     }
 
     private func resumeCard(snapshot: ResumeSnapshot, appModel: AppModel) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let stage = snapshot.processingStage?.localizedTitle ?? "In progress"
+        return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label("Unfinished Curation", systemImage: "clock.arrow.circlepath")
                     .font(.caption.bold())
@@ -106,7 +107,7 @@ struct HomeView: View {
                 .font(.headline)
 
             Text(
-                "\(snapshot.sourceCount) photos · \(snapshot.stageDescription) · \(snapshot.updatedAt, style: .relative)"
+                "\(snapshot.sourceCount) photos · \(stage) · \(snapshot.updatedAt, style: .relative)"
             )
             .font(.footnote)
             .foregroundStyle(.secondary)
@@ -127,7 +128,7 @@ struct HomeView: View {
         .padding(.horizontal)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(
-            "Continue curation, \(snapshot.sourceCount) photos, \(snapshot.stageDescription)"
+            "Continue curation, \(snapshot.sourceCount) photos, \(stage)"
         )
     }
 

@@ -15,22 +15,9 @@ struct ResumeSnapshot: Sendable, Equatable {
     let hasResult: Bool
     let hasSaveState: Bool
 
-    /// User-facing stage copy (ux-flows §7 phases); never the raw stored value.
-    var stageDescription: String {
-        switch ProcessingStage(rawValue: stage) {
-        case .loading:
-            "Preparing photos"
-        case .analysis:
-            "Analyzing photos"
-        case .clustering, .momentDetection:
-            "Grouping similar shots"
-        case .ranking:
-            "Choosing the best photos"
-        case .finalSelection:
-            "Finishing your album"
-        case nil:
-            "In progress"
-        }
+    /// The persisted stage stays data-only; presentation resolves its copy in the View layer.
+    var processingStage: ProcessingStage? {
+        ProcessingStage(rawValue: stage)
     }
 }
 
@@ -40,8 +27,15 @@ struct ResumeSnapshot: Sendable, Equatable {
 @Observable
 final class AppModel {
     private static let seenWelcomeKey = "hasSeenWelcome"
+    private static let appLanguageKey = "appLanguage"
 
     var path: [AppRoute] = []
+    var appLanguage: AppLanguage {
+        didSet {
+            UserDefaults.standard.set(appLanguage.rawValue, forKey: Self.appLanguageKey)
+        }
+    }
+
     var authorization: PhotoLibraryAuthorization = .notDetermined
     var hasSeenWelcome: Bool
     var sourceState: SourceLoadState = .idle
@@ -73,6 +67,9 @@ final class AppModel {
 
     init(container: AppContainer) {
         self.container = container
+        appLanguage = AppLanguage(
+            rawValue: UserDefaults.standard.string(forKey: Self.appLanguageKey) ?? ""
+        ) ?? .systemDefault
         hasSeenWelcome = UserDefaults.standard.bool(forKey: Self.seenWelcomeKey)
         container.memoryPressure.start()
         let coordinator = SelectionSessionCoordinator(

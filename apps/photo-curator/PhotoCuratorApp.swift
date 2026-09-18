@@ -20,6 +20,7 @@ struct PhotoCuratorApp: App {
         WindowGroup {
             RootView()
                 .environment(appModel)
+                .environment(\.locale, appModel.appLanguage.locale)
         }
     }
 }

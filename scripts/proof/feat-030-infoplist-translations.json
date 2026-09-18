@@ -1,0 +1,5 @@
+{
+  "CFBundleDisplayName": "Photos Curator",
+  "CFBundleName": "Photos Curator",
+  "NSPhotoLibraryUsageDescription": "Photos Curator cần quyền truy cập thư viện ảnh để phân tích và chọn những ảnh đẹp nhất. Phân tích ảnh được thực hiện trên thiết bị của bạn."
+}

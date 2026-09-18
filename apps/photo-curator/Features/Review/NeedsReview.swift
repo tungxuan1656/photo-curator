@@ -173,7 +173,7 @@ private struct NeedsReviewCell: View {
         }
     }
 
-    private func reasonText(for reason: UncertaintyReason) -> String {
+    private func reasonText(for reason: UncertaintyReason) -> LocalizedStringResource {
         switch reason {
         case .borderlineQuality:
             "Close to the quality floor — worth a look"
@@ -188,7 +188,7 @@ private struct NeedsReviewCell: View {
         }
     }
 
-    private func actionText(for action: UncertaintyAction) -> String {
+    private func actionText(for action: UncertaintyAction) -> LocalizedStringResource {
         switch action {
         case .inspectDetail:
             "Inspect"
@@ -201,7 +201,7 @@ private struct NeedsReviewCell: View {
         }
     }
 
-    private func accessibilityText(for action: UncertaintyAction) -> String {
+    private func accessibilityText(for action: UncertaintyAction) -> LocalizedStringResource {
         switch action {
         case .inspectDetail:
             "Inspect photo"
