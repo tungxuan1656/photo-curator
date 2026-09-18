@@ -9,17 +9,20 @@ struct SelectionRequest: Sendable {
     let sourceAssetIDs: [AssetID]
     let config: AppConfiguration
     let qualityMode: QualityMode
+    let qualityModelAvailableAtStart: Bool
 
     init(
         sessionID: SessionID,
         sourceAssetIDs: [AssetID],
         config: AppConfiguration,
-        qualityMode: QualityMode = .native
+        qualityMode: QualityMode = .native,
+        qualityModelAvailableAtStart: Bool = false
     ) {
         self.sessionID = sessionID
         self.sourceAssetIDs = sourceAssetIDs
         self.config = config
         self.qualityMode = qualityMode
+        self.qualityModelAvailableAtStart = qualityModelAvailableAtStart
     }
 }
 
@@ -284,6 +287,7 @@ actor SelectionSessionCoordinator {
         configuration: SelectionConfiguration,
         laneCount: Int,
         qualityMode: QualityMode = .native,
+        qualityModelAvailableAtStart: Bool = false,
         sessionID: SessionID = SessionID(rawValue: UUID())
     ) async throws -> SelectionResult {
         let candidates = engine.duplicateCandidates(for: assets, configuration: configuration)
@@ -296,6 +300,7 @@ actor SelectionSessionCoordinator {
                 similarityEdges: edges,
                 configuration: configuration,
                 requestedMode: qualityMode,
+                modelAvailableAtStart: qualityModelAvailableAtStart,
                 generation: runGeneration
             )
         }
@@ -327,6 +332,7 @@ actor SelectionSessionCoordinator {
                 similarityEdges: edges,
                 configuration: request.config.selection,
                 requestedMode: request.qualityMode,
+                modelAvailableAtStart: request.qualityModelAvailableAtStart,
                 generation: runGeneration
             )
         }

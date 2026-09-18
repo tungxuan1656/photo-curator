@@ -776,3 +776,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint, generic Simulator build, policy test skip); `git diff --check` PASS.
 **Blockers**: Awaiting user review of the written feature/plan record before implementation. Pixel grouping, model/resource admission, and runtime lifecycle evidence remain open.
 **Next**: Implement the accepted lifecycle after the written record is approved.
+
+## 2026-09-19 — feat-031 lifecycle implementation and snapshot enforcement
+
+**State**: active
+**Done**: Wired `ModelInstallationModel` through startup, Settings, download alert, processing disclosure, review provenance, and en/vi localization. Added the model-availability snapshot to `SelectionRequest` so normal, in-memory retry/resume, and partial-result paths cannot enable Qwen after a native-fallback run starts. Fixed the Settings SwiftLint brace violation.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` by DEC-040. Standalone lifecycle proof is not present, consistent with the repository no-proof-file rule.
+**Blockers**: Pixel-derived grouping, subject-detail verification, controlled image-sensitive Qwen comparisons, resource admission, arm64-device/runtime measurements, full lifecycle state proof, and complete resume model-identity evidence remain open.
+**Next**: Add lifecycle/resume evidence through the existing approved proof path, then complete the quality-admission gates before closing feat-031.

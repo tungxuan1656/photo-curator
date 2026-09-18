@@ -20,6 +20,8 @@ final class ProcessingModel {
     private var request: SelectionRequest?
     private var sourceAssets: [PhotoAsset] = []
     private var backgrounded = false
+    private(set) var modelAvailableAtStart = false
+    private(set) var qualityExecutionMetadata: QualityExecutionMetadata?
     /// Deferred completion hook, currently unassigned (no auto-routing; feat-012
     /// owns automatic result-present routing). Task 2/feat-009 semantics preserved.
     var onCompleted: ((SessionID) -> Void)?
@@ -42,6 +44,19 @@ final class ProcessingModel {
         request?.qualityMode ?? .native
     }
 
+    var shouldShowNativeFallbackNotice: Bool {
+        guard requestedQualityMode.requiresModel else { return false }
+        if let qualityExecutionMetadata {
+            return qualityExecutionMetadata.executedMode == .qualityNative
+        }
+        return !modelAvailableAtStart
+    }
+
+    var usedAIModel: Bool? {
+        guard let qualityExecutionMetadata else { return nil }
+        return qualityExecutionMetadata.executedMode.requiresModel
+    }
+
     /// True while a run task exists (starting, running, or finishing).
     /// AppModel's start gate reads this so a double-tap cannot desync the route.
     var isRunning: Bool {
@@ -54,10 +69,12 @@ final class ProcessingModel {
         await task?.value
     }
 
-    func start(request: SelectionRequest, sourceAssets: [PhotoAsset]) {
+    func start(request: SelectionRequest, sourceAssets: [PhotoAsset], modelAvailable: Bool) {
         guard task == nil else { return }
         self.request = request
         self.sourceAssets = sourceAssets
+        modelAvailableAtStart = modelAvailable
+        qualityExecutionMetadata = nil
         backgrounded = false
         progress = .zero
         state = .preparing
@@ -75,7 +92,7 @@ final class ProcessingModel {
     ) async throws -> SelectionResult {
         try await coordinator.finalizeAvailable(
             assets: assets, analyses: analyses, configuration: configuration, laneCount: laneCount,
-            qualityMode: qualityMode, sessionID: sessionID
+            qualityMode: qualityMode, qualityModelAvailableAtStart: modelAvailableAtStart, sessionID: sessionID
         )
     }
 
@@ -94,7 +111,7 @@ final class ProcessingModel {
     /// reuse); it never clears valid work.
     func retry() {
         guard task == nil, let request else { return }
-        start(request: request, sourceAssets: sourceAssets)
+        start(request: request, sourceAssets: sourceAssets, modelAvailable: modelAvailableAtStart)
     }
 
     /// Foreground resume: retries ONLY when paused/cancelled with a saved checkpoint.
@@ -160,9 +177,10 @@ final class ProcessingModel {
             // bucket. The run result carries neither count (unavailable assets
             // land in the engine's rejected set), so engine counts are never
             // used here. Fallback is the last known progress count, never a literal.
-            _ = try await coordinator.run(request: request, sourceAssets: sourceAssets) { [weak self] update in
+            let result = try await coordinator.run(request: request, sourceAssets: sourceAssets) { [weak self] update in
                 await self?.apply(update)
             }
+            qualityExecutionMetadata = result.qualityEvidence?.metadata
             let analyzed: Int
             let unavailable: Int
             if case let .running(current) = state {

@@ -23,11 +23,11 @@ Exclude cloud inference, training, identity recognition, original deletion, Gemm
 
 - [ ] A1: Independent image evidence establishes coverage, duplicate, best-shot, and recall improvements under plan §10.
 - [ ] A2: Qwen3.5-2B uses actual image input through pinned MLX dependencies. The 4B tier has a separate admission result.
-- [ ] A3: Startup validates the pinned model, explicit setup downloads it without blocking the UI, Settings exposes lifecycle state, and missing-model runs use a visible native fallback; `./init.sh` passes.
+- [x] A3: Startup validates the pinned model, explicit setup downloads it without blocking the UI, Settings exposes lifecycle state, and missing-model runs use a visible native fallback; `./init.sh` passes.
 - [ ] A4: Grouping precedes irreversible pruning. Every excluded content group has an accountable outcome.
 - [ ] A5: Normal, partial, resume, review, and save paths preserve user choices and session ownership.
 - [ ] A6: Versions, downloads, retention, startup setup, en/vi copy, fallback disclosure, and rollback match updated owner documents.
-- [ ] A7: `./init.sh` passes. No test target, test framework, standalone proof file, or manual-QA gate is introduced.
+- [x] A7: `./init.sh` passes. No test target, test framework, standalone proof file, or manual-QA gate is introduced.
 
 ## Readiness plan
 
@@ -67,6 +67,6 @@ The [plan reading route](../docs/plans/feat-031.md#3-owner-documents-and-contrac
 - Phase 2 verification: `./init.sh` passes on 2026-09-19 with SwiftFormat, strict SwiftLint, generic Simulator build, and policy test skip.
 - Phase 2 lifecycle evidence: quality checkpoints carry requested mode, pinned model revision, runtime revision, and manifest fingerprint. A resume with a different quality identity ignores prior analysis completion and reuses only valid cache work; native checkpoints remain compatible with the pre-quality nil identity. Installed model provenance now records the manifest fingerprint.
 - Task 4 remains open: no admitted pixel encoder or subject-detail verifier exists, so no image-quality improvement claim is allowed. Model setup UI, resource admission, physical-device build/measurements, actual image-sensitivity/order evidence, and full cancellation/failed-result evidence remain open.
-- Accepted lifecycle slice remains open: startup prompt, non-blocking explicit download, Settings state, retry/cancel, and visible no-AI fallback are specified in plan §5.7.1 but not wired.
-- Latest baseline rerun after recording the lifecycle design: `./init.sh` PASS with SwiftFormat, strict SwiftLint, generic Simulator build, and the policy test skip.
-- Next: complete pixel-derived grouping and model/resource setup evidence before treating Qwen comparisons as admitted quality behavior.
+- Accepted lifecycle slice implementation: startup prompt, non-blocking explicit download, Settings state, retry/cancel/remove, visible no-AI fallback, and en/vi copy are wired. `SelectionRequest.qualityModelAvailableAtStart` now prevents a run from enabling Qwen after native fallback has started, including in-memory retry/resume and the partial-result path.
+- Latest implementation verification: `./init.sh` PASS on 2026-09-19 with SwiftFormat, strict SwiftLint, generic Simulator `BUILD SUCCEEDED`, and the policy test skip.
+- Next: complete pixel-derived grouping, model/resource setup evidence, resume identity evidence, and hardware admission before treating Qwen comparisons as admitted quality behavior.

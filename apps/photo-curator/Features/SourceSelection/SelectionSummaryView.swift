@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SelectionSummaryView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(ModelInstallationModel.self) private var modelInstallation
     @Environment(\.dismiss) private var dismiss
 
     private var previewIDs: [AssetID] {
@@ -114,6 +115,29 @@ struct SelectionSummaryView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
+                }
+
+                if appModel.qualityModelNeededForCurrentSelection, !modelInstallation.isInstalled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("AI model not ready", systemImage: "info.circle")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.orange)
+                        Text("This run uses native analysis until Qwen is available.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        if modelInstallation.canStartDownload {
+                            Button("Download Model") { modelInstallation.download() }
+                                .font(.subheadline.weight(.semibold))
+                        } else if modelInstallation.isDownloading {
+                            Text("The model is downloading in Settings. Starting now will not switch this run later.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal)
                 }
 
                 Text("This may take a while for large libraries.")

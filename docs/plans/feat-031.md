@@ -681,10 +681,10 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Consumes:** Installation/admission state, stage progress, result provenance, reason/group references.
 **Produces:** en/vi setup, startup model prompt, shared download state, visible execution mode and fallback, actionable group explanations, unchanged shared review selection ownership.
 
-- [ ] Add model status, explicit Download Model, cancel, retry, remove, and installed-size presentation in Settings.
-- [ ] Check the pinned model once at startup and show one setup alert when it is missing.
-- [ ] Keep the explicit download non-blocking while the app is open and resume partial files after relaunch.
-- [ ] Show the selected quality mode and unavailable-model fallback before Start.
+- [x] Add model status, explicit Download Model, cancel, retry, remove, and installed-size presentation in Settings.
+- [x] Check the pinned model once at startup and show one setup alert when it is missing.
+- [x] Keep the explicit download non-blocking while the app is open and resume partial files after relaunch.
+- [x] Show the selected quality mode and unavailable-model fallback before Start.
 - [ ] Distinguish model download, iCloud download, native analysis, group comparison, and final selection stages.
 - [ ] Keep progress monotonic and bounded to the existing publish rate.
 - [ ] Show a partial-analysis notice when Qwen skips comparisons or the runtime degrades.
@@ -695,6 +695,12 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 - [ ] Verify photo inspection, selection toggles, export, and en/vi localization still work.
 
 **Evidence:** Automated state/presentation proof, catalog completeness, VoiceOver labels, review reopen without installed model, and user-override persistence.
+
+**Implementation evidence (2026-09-19):** `ModelInstallationModel` owns shared startup,
+Settings, alert, retry, cancel, removal, and progress state. `SelectionRequest` carries
+the model-availability snapshot through normal and partial selection into
+`QualityCurationRunner`. `./init.sh` passes; lifecycle state and resume identity proof
+remain open.
 
 ### Task 10 — Establish end-to-end quality and failure evidence
 

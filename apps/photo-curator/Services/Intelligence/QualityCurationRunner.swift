@@ -27,6 +27,7 @@ struct QualityCurationRunner: Sendable {
         similarityEdges: [SimilarityEdge],
         configuration: SelectionConfiguration,
         requestedMode: QualityMode,
+        modelAvailableAtStart: Bool,
         generation: Int
     ) async throws -> SelectionResult {
         let groups = groupBuilder.build(
@@ -46,7 +47,7 @@ struct QualityCurationRunner: Sendable {
             if requestedMode == .qualityQwen4B {
                 executedMode = .qualityNative
                 degradationReason = .modelUnavailable
-            } else if let judge, let modelInstallation {
+            } else if modelAvailableAtStart, let judge, let modelInstallation {
                 if let installation = await modelInstallation.installedModel() {
                     do {
                         try Task.checkCancellation()

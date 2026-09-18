@@ -56,6 +56,7 @@ final class AppModel {
     /// In-flight PhotoKit save, scoped per session: S14 Save claims it
     /// atomically; repeated taps join or stay disabled, never a second export.
     var saveFlight: (session: SessionID, task: Task<SaveOutcome, Never>)?
+    let modelInstallation: ModelInstallationModel
     let processing: ProcessingModel
     private var isRequesting = false
     private var sourceGeneration = 0
@@ -72,6 +73,7 @@ final class AppModel {
         ) ?? .systemDefault
         hasSeenWelcome = UserDefaults.standard.bool(forKey: Self.seenWelcomeKey)
         container.memoryPressure.start()
+        modelInstallation = ModelInstallationModel(service: container.modelInstallation)
         let coordinator = SelectionSessionCoordinator(
             imageLoader: container.imageLoader,
             analyzer: container.analyzer,
@@ -115,6 +117,12 @@ final class AppModel {
         authorization = await container.photoLibrary.authorizationStatus()
     }
 
+    func startup() async {
+        await modelInstallation.startupCheck()
+        await refreshAuthorization()
+        await refreshResumeSnapshot()
+    }
+
     func requestPermission() async {
         guard !isRequesting else { return }
         isRequesting = true
@@ -149,6 +157,17 @@ final class AppModel {
             selectedCount: selectedIDs.count,
             unavailableCount: unavailableCount
         )
+    }
+
+    var requestedQualityMode: QualityMode {
+        AppConfiguration.default.quality.mode(
+            for: .qualityQwen2B,
+            sourceCount: summary.selectedCount
+        )
+    }
+
+    var qualityModelNeededForCurrentSelection: Bool {
+        requestedQualityMode.requiresModel
     }
 
     /// True when any confirmed source asset needs iCloud fetch (S06 copy condition).
@@ -294,14 +313,13 @@ extension AppModel {
         freezeConfirmedSource()
         let assets = confirmedSourceAssets()
         guard !assets.isEmpty else { return }
+        let modelAvailable = modelInstallation.isInstalled
         let request = SelectionRequest(
             sessionID: SessionID(rawValue: UUID()),
             sourceAssetIDs: confirmedSourceIDs,
             config: .default,
-            qualityMode: AppConfiguration.default.quality.mode(
-                for: .qualityQwen2B,
-                sourceCount: assets.count
-            )
+            qualityMode: requestedQualityMode,
+            qualityModelAvailableAtStart: modelAvailable
         )
         let supersededID = activeSessionID
         // Supersede rule: exactly one owned session, no multi-session support.
@@ -322,7 +340,7 @@ extension AppModel {
                 await cancelSave(for: supersededID)
                 await processing.awaitTermination()
                 await deleteSessionData(supersededID, context: "Superseded curation")
-                beginRun(request: request, assets: assets)
+                beginRun(request: request, assets: assets, modelAvailable: modelAvailable)
             }
         } else {
             if supersededID != nil {
@@ -331,7 +349,7 @@ extension AppModel {
                     await deleteSessionData(supersededID, context: "Superseded curation")
                 }
             }
-            beginRun(request: request, assets: assets)
+            beginRun(request: request, assets: assets, modelAvailable: modelAvailable)
         }
     }
 
@@ -339,8 +357,8 @@ extension AppModel {
     /// navigating so termination before the first batch still resumes, then
     /// appends `.processing` with the session ID attached — but only while
     /// still owned (a supersede/discard in flight must not append a stale route).
-    private func beginRun(request: SelectionRequest, assets: [PhotoAsset]) {
-        processing.start(request: request, sourceAssets: assets)
+    private func beginRun(request: SelectionRequest, assets: [PhotoAsset], modelAvailable: Bool) {
+        processing.start(request: request, sourceAssets: assets, modelAvailable: modelAvailable)
         let store = container.checkpointStore
         let shell = SessionCheckpoint(
             sessionID: request.sessionID,
@@ -573,9 +591,14 @@ extension AppModel {
                     qualityMode: AppConfiguration.default.quality.mode(
                         for: .qualityQwen2B,
                         sourceCount: checkpoint.sourceAssetIDs.count
-                    )
+                    ),
+                    qualityModelAvailableAtStart: modelInstallation.isInstalled
                 )
-                processing.start(request: request, sourceAssets: ordered)
+                processing.start(
+                    request: request,
+                    sourceAssets: ordered,
+                    modelAvailable: modelInstallation.isInstalled
+                )
                 path.append(.processing(sessionID: snapshot.sessionID))
             } catch {
                 await releaseUnrecoverable(snapshot: snapshot)
