@@ -16,7 +16,7 @@ LINT_TASKS=(
 )
 
 BUILD_TASKS=(
-  "xcodebuild -project apps/photo-curator.xcodeproj -scheme photo-curator -configuration Debug -destination 'generic/platform=iOS Simulator' build"
+  "xcodebuild -skipPackagePluginValidation -project apps/photo-curator.xcodeproj -scheme photo-curator -configuration Debug -destination 'generic/platform=iOS Simulator' build"
 )
 
 PROOF_TASKS=(

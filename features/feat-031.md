@@ -44,6 +44,7 @@ The [plan reading route](../docs/plans/feat-031.md#3-owner-documents-and-contrac
 - Planning baseline: `./init.sh` PASS on 2026-09-18 at `54389e5`.
 - Planning verification: fresh `./init.sh` PASS, `git diff --check` PASS, and all 16 local documentation links/anchors resolve.
 - Index validation passes: `active`, completed dependencies, one execution-order entry, and no second active feature.
-- Implementation commands are proposed in plan §10; runtime and proof commands are added by T2/T10.
-- No application changes, dependency installation, model download, or model benchmark has occurred yet.
-- Next: complete Task 1, then pin and verify the MLX/Qwen runtime in Task 2.
+- Implementation slice verification: `./init.sh` PASS on 2026-09-18 after adding MLX products, the Qwen manifest/runtime, and the plugin-validation workaround; format, strict lint, Simulator build, feat-030 proof, and policy test skip all pass.
+- Task 2 partial evidence: MLX Swift LM, Swift Hugging Face, and Swift Transformers revisions are pinned; the app builds for the generic Simulator destination with the Swift 5 target and default actor-isolation settings.
+- Task 2 remains open: no weights are installed, no real local model load or image-sensitive inference has run, and no cancellation/teardown trace exists.
+- Next: commit the verified runtime slice, then implement Task 3 model installation and resource admission.

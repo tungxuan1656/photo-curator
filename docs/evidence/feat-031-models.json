@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "runtime": {
+    "repository": "https://github.com/ml-explore/mlx-swift-lm.git",
+    "revision": "c6446cf7bfb7cea76408013b614d4b2c530eaa03"
+  },
+  "models": [
+    {
+      "id": "mlx-community/Qwen3.5-2B-4bit",
+      "revision": "674aaa7240b91e8012fcad5d791b7dfe5ba90207",
+      "license": "Apache-2.0",
+      "pipelineTag": "image-text-to-text",
+      "architecture": "Qwen3_5ForConditionalGeneration",
+      "storageBytes": 1742261128,
+      "files": [
+        {"path": "chat_template.jinja", "byteCount": 7755, "sha256": "881551e657df505cc60895011213c9eef75ceb438b1958c71100324e32a12edf"},
+        {"path": "config.json", "byteCount": 3113, "sha256": "25a55c5ad15a39565d100f27951c0f315e81195203e5ac8058dab53f32fc6234"},
+        {"path": "model.safetensors", "byteCount": 1722271785, "sha256": "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d"},
+        {"path": "model.safetensors.index.json", "byteCount": 81722, "sha256": "f98668e3c4f6b10c71a8c0a0e125f7b1bed762bc57f6ded6191a1440d42fe8c3"},
+        {"path": "preprocessor_config.json", "byteCount": 390, "sha256": "28d900ccac323ac5ec852bb44bd249a1c49760fea4b83a4d6a68168c87a6333b"},
+        {"path": "processor_config.json", "byteCount": 1300, "sha256": "4618e8b1e6d70962fc22a9d0c5513bed5f5f59947d140f5313595b609bb33d71"},
+        {"path": "tokenizer.json", "byteCount": 19989343, "sha256": "7f65ee19ad4df5313fb24988b0843787dd3b3e3e9c64789228d503ff761e2805"},
+        {"path": "tokenizer_config.json", "byteCount": 1139, "sha256": "0e034f8b2d8b80d251154cb38aa422e6728ca1d378ab7405d950c5a774aab656"},
+        {"path": "video_preprocessor_config.json", "byteCount": 385, "sha256": "6dc463a837f46be1b9c56675e4ac21c4c6f1367ea6a04aa16555c8b67a122e87"},
+        {"path": "vocab.json", "byteCount": 6722759, "sha256": "abe987a1126d8abf43481b0186e107e087d21a0ca1a7266ca97b47eed8988475"}
+      ]
+    }
+  ]
+}

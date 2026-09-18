@@ -696,3 +696,11 @@ No model download, dependency installation, application implementation, or infer
 **Done**: Committed the planning artifacts as `600f413` (`docs(feat-031): add Qwen curation implementation plan`).
 Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Next**: Complete Task 1, then pin MLX Swift LM and verify actual Qwen image inference before wiring the selector.
+
+## 2026-09-18 — feat-031 MLX runtime slice
+
+**State**: active — Task 2 partial; Task 3 next.
+**Done**: Pinned MLX Swift LM, Swift Hugging Face, and Swift Transformers revisions; added the Qwen3.5-2B artifact manifest with immutable revision, file sizes, and SHA-256 metadata; added local-only `QwenRuntime` loading, tokenizer adaptation, bounded generation, cancellation checks, and unload; updated `init.sh` for the Xcode MLX plugin-validation requirement.
+**Evidence**: `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict PASS with 0 violations, generic Simulator `BUILD SUCCEEDED`, feat-030 proof PASS, and policy test `SKIP`; `git diff --check` PASS. Runtime/package code has not yet loaded downloaded weights or run image-sensitive inference.
+**Blockers**: Task 2 real-image inference, cancellation/teardown trace, and device build remain open; model weights are intentionally outside git and no installer exists yet.
+**Next**: Commit this verified runtime slice, then implement revision-pinned, resumable, hash-verified model installation.

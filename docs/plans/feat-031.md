@@ -501,15 +501,16 @@ If a model fails a gate, record the failure and keep its profile disabled. Do no
 **Consumes:** Qwen2B candidate, image pairs with independent expected distinctions, current Swift/Xcode build settings.
 **Produces:** Pinned image-capable runtime, complete artifact manifest, real inference evidence, simulator strategy.
 
-- [ ] Resolve the exact runtime revision and transitive dependency versions.
-- [ ] Verify package Swift requirements against the app's Swift 5 mode and default actor isolation.
+- [x] Resolve the exact runtime revision and transitive dependency versions.
+- [x] Verify package Swift requirements against the app's Swift 5 mode and default actor isolation.
 - [ ] Load the complete processor/tokenizer/model locally from the manifest.
 - [ ] Run two images in one request, with visible labels A/B matching the processor's image order.
 - [ ] Replace only image pixels while holding the prompt fixed. Verify the judgment responds to the changed content.
 - [ ] Reverse image order and map the preference back to the original pair.
 - [ ] Record load time, preprocessing time, prefill, decode, process footprint, and MLX allocation separately.
 - [ ] Exercise cancellation during loading and generation. Verify no second request starts before draining.
-- [ ] Build both arm64-device and the repository's generic Simulator configuration.
+- [x] Build the repository's generic Simulator configuration for arm64 and x86_64 slices.
+- [ ] Build the arm64-device configuration.
 - [ ] If MLX cannot link for a Simulator architecture, isolate the real adapter in a platform-conditioned package target.
 - [ ] Keep the domain and proof implementation buildable on the existing Simulator architectures. Do not hide link errors with a fabricated successful inference.
 - [ ] Repeat the feasibility arm for 4B after 2B works. Keep 4B evaluation separate from default admission.
@@ -875,9 +876,7 @@ Rollback does not delete models while leased, erase user overrides, or modify sa
 | Per-session data leaks into model logs/downloads | T3/T6/T8 | Prove local-only artifact requests and closed diagnostics |
 
 Planning evidence: baseline `./init.sh` passed at `54389e5` on 2026-09-18.
-It included format, strict lint, generic Simulator build, localization proof, and policy test skip.
-No model was installed, converted, or benchmarked during planning.
-All implementation checkboxes remain unchecked.
+Implementation evidence: the pinned MLX/Qwen package slice builds for the generic Simulator configuration and `./init.sh` passes format, strict lint, build, feat-030 proof, and the policy test skip. No model was installed, converted, or benchmarked yet; real image inference remains the Task 2 gate.
 
 **Next action:** Review this plan and approve implementation. Start with T1 and T2, not an immediate default-on Qwen adapter.
 

@@ -50,7 +50,7 @@ struct QualityCurationPolicy: Codable, Sendable {
     let minimumAdmissionReserveBytes: UInt64
     let policyVersion: Int
 
-    static let `default` = Self(
+    nonisolated static let `default` = Self(
         maxSourceAssets: 100,
         pairDistanceCap: 4950,
         maxActiveComparisons: 1,
