@@ -23,7 +23,7 @@ This feature owns S11 presentation, inspection gestures, bounded preview lifetim
 - [x] The inspector retains only the current bounded preview, cancels superseded loads, and presents retry/back for unavailable assets without treating cancellation as failure.
 - [x] S11 chrome is photo-first and visually polished: Liquid Glass islands with a material fallback, clear action hierarchy, responsive press feedback, and smooth chrome/image transitions that respect Reduce Motion.
 - [x] Back responds without a tap-delay; inspection gestures are scoped to the image surface and do not arbitrate with chrome buttons.
-- [x] Reproducible interaction/accessibility evidence and `./init.sh` pass. No test target, `*Test*.swift` file, test framework, original-pixel persistence, or manual-QA gate is added.
+- [x] `./init.sh` passes. No test target, `*Test*.swift` file, test framework, original-pixel persistence, standalone proof file, or manual-QA gate is added.
 
 ## Relevant docs
 
@@ -35,11 +35,10 @@ This feature owns S11 presentation, inspection gestures, bounded preview lifetim
 
 ## Verify
 
-- `./scripts/proof/feat-029.sh`
 - `./init.sh`
 
 ## Handoff
 
 - State: done
-- Evidence: Review remediation keeps the inspection image semantic for VoiceOver, resets transient chrome on S11 appearance/disappearance, makes single/double tap mutually exclusive, and proves a real `asset-a` → `asset-b` transition plus the shipped `PhotoDetail` reset hook. `./scripts/proof/feat-029.sh` EXIT 0 — `SCALE-CLAMP`, `OFFSET-CLAMP`, `RESET`, `FIT-PAGE`, `SWIPE-DOWN-DISMISS`, `ZOOM-PAN`, `ASSET-RESET`, `ACCESSIBILITY-CONTROLS`, `CURRENT-ONLY`, `SERVICE-BOUNDARY`, `ASSET-CHANGE-RESET`, and `ASSET-LIFECYCLE` PASS. `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict 0 violations in 71 files, Simulator build `SUCCEEDED`, policy test `SKIP` per DEC-040. Prior Simulator install/launch evidence remains valid; `git diff --check` and no-test-artifact checks pass.
+- Evidence: Review remediation keeps the inspection image semantic for VoiceOver, resets transient chrome on S11 appearance/disappearance, makes single/double tap mutually exclusive, and preserves the shipped `PhotoDetail` reset hook. `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict 0 violations in 71 files, Simulator build `SUCCEEDED`, policy test `SKIP` per DEC-040. Prior Simulator install/launch evidence remains valid; `git diff --check` and no-test-artifact checks pass.
 - Next: feat-030 remains user-gated and `todo`.

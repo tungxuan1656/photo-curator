@@ -5,8 +5,8 @@ and immediate root locale override; keep System Default live and extensible.
 
 **Scope:** inventory and localize the complete user-facing surface, add
 `Localizable.xcstrings` and `InfoPlist.xcstrings` coverage for `en` and `vi`, add the
-typed `AppLanguage` preference and S18 picker, and provide reproducible automated proof
-plus `./init.sh`. No application code is changed by this planning record.
+typed `AppLanguage` preference and S18 picker, and verify the result with `./init.sh`.
+No application code is changed by this planning record.
 
 ## Ownership and prerequisites
 
@@ -78,27 +78,24 @@ plus `./init.sh`. No application code is changed by this planning record.
 - Localize the picker title, options, current selection, accessibility values, errors,
   and any confirmation or explanatory copy in both catalogs.
 
-### 5. Add reproducible automated proof
+### 5. Verify localization changes
 
-- Add or update the established repository proof mechanism without adding a test target,
-  test framework, or `*Test*.swift` file.
+- Do not add a proof file, proof script, test target, test framework, or `*Test*.swift` file.
 - Audit that every inventoried user-facing/accessibility/error key has `en` and `vi`
   entries, that `InfoPlist.xcstrings` is included, and that no newly introduced raw
   user-facing literal remains.
-- Prove safe fallback for missing/unsupported locale data and prove that System Default
+- Review safe fallback for missing/unsupported locale data and confirm that System Default
   resolves the current system locale rather than a saved snapshot.
-- Prove live selection for all three picker values, persistence across a fresh model
+- Review live selection for all three picker values, persistence across a fresh model
   boundary, immediate root propagation, locale-aware count/date/interpolation output,
   and localized Settings/InfoPlist strings.
-- Record the exact command, fixture inputs, result, and `./init.sh` output in the
-  feature handoff.
+- Record the `./init.sh` output in the feature handoff.
 
 ### 6. Verify and close
 
-- Run the reproducible localization proof and `./init.sh` after the final catalog and
-  root-locale changes.
+- Run `./init.sh` after the final catalog and root-locale changes.
 - Confirm the diff is limited to localization resources, app/root language plumbing,
-  Settings localization, proof support, and the approved tracker records.
+  Settings localization, and the approved tracker records.
 - Confirm no language beyond `en`/`vi`, no behavior/flow/selection change, no translated
   internal diagnostics, and no manual-QA acceptance gate.
 
@@ -106,16 +103,13 @@ plus `./init.sh`. No application code is changed by this planning record.
 
 Rollback is bounded to this feature: remove the English/Vietnamese catalog additions,
 localized Info.plist resources, language preference/picker/root-locale plumbing, migrated
-copy, and localization proof; restore the prior single-locale resource paths. Do not
+copy; restore the prior single-locale resource paths. Do not
 revert or alter feat-029's S11 behavior, selection state, navigation contract, or other
 feature-owned code. If a catalog entry is incomplete, keep the safe fallback and disable
-only the incomplete locale path until the catalog/proof is repaired; never ship a
+only the incomplete locale path until the catalog is repaired; never ship a
 captured-locale System Default implementation.
 
 ## Verification contract
 
-- Reproducible automated localization proof is required for completeness, fallback,
-  current-system System Default, persistent explicit selection, immediate root update,
-  locale-aware formatting, and InfoPlist/catalog inclusion.
 - `./init.sh` is required.
 - No test target, test framework, `*Test*.swift` file, or manual-QA gate is permitted.

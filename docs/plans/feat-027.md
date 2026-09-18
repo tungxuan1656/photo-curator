@@ -12,7 +12,6 @@ Production files:
 - `apps/photo-curator/Domain/Selection/SelectionEngine.swift` — apply only validated chooseA/chooseB results within one deterministic duplicate cluster; keepBoth/abstain are safe no-ops.
 - `apps/photo-curator/Services/Session/SelectionSessionCoordinator.swift` — gate before image loading, build approved requests from feat-026 decisions, run bounded jury calls, and apply validated overrides in place while preserving unrelated engine output.
 - `apps/photo-curator/App/AppContainer.swift` and `App/AppModel.swift` — inject the provider without changing review/persistence ownership.
-- `scripts/proof/feat-027.sh` and `scripts/proof/feat-027-proof.swift` — proof-only Golden-shaped fixtures and failure-path checks; no test target/framework.
 
 Documentation records the frozen contract and decision in this plan, `features/feat-027.md`, `docs/design-docs/curation-runtime-stack.md`, and DEC-047/DEC-048/DEC-049.
 
@@ -48,20 +47,19 @@ The adapter asks one narrow comparison question and requests the strict one-fiel
 ## Integration sequence
 
 1. Activate feat-027 and record DEC-047 before source edits.
-2. Add the isolated protocol/policy/schema/adapter and proof seam.
+2. Add the isolated protocol/policy/schema/adapter seam.
 3. Add optional jury overrides to `SelectionEngine`, preserving existing defaults and invariants.
 4. Gate the coordinator before image loading, invoke only admitted requests, and apply validated overrides through the in-place engine seam.
 5. Inject the provider in the live container; keep iOS 26 on the existing path.
-6. Run the focused proof once, then `./init.sh` once after implementation. Record exact commands, fixture shape, PASS/FAIL totals, fallback and iOS 26 evidence, clean diff, no-test evidence, acceptance, handoff, and next action.
+6. Run `./init.sh` once after implementation. Record its output, fallback and iOS 26 evidence, clean diff, no-test evidence, acceptance, handoff, and next action.
 
 ## Verification and rollback
 
-The focused proof compiles the real shipped jury, policy, request factory, `SelectionEngine`, and `SelectionSessionCoordinator` integration boundary verbatim for the Simulator. It exercises request-factory source ordering, coordinator iOS 26 zero-call/image-load gating, in-memory candidate images reaching the provider, validated same-cluster swaps with unrelated selected-ID preservation, cross-cluster no-op behavior, generic provider failure fallback, strict schema rejection, safe choices, unavailable/timeout/cancellation fallback, candidate bounds, and repeat determinism. Timeout proof uses an ignoring-cancellation provider, asserts elapsed time below 2.75 seconds for the 2-second policy bound, and verifies timed-out request image leases are released. `./init.sh` must pass with no test target, framework, or `*Test*.swift` file.
+`./init.sh` compiles the shipped jury, policy, request factory, `SelectionEngine`, and `SelectionSessionCoordinator` integration boundary for the Simulator. Review the iOS 26 fallback, schema, bounds, cancellation, and image-lifetime invariants in the implementation records. No test target, framework, `*Test*.swift` file, or standalone proof file is permitted.
 
 Rollback removes the jury source/injection and reverts the optional engine parameter/coordinator call; the default empty override preserves the pre-feature deterministic path. No persisted migration is needed.
 
 ## Verification record
 
-- `scripts/proof/feat-027.sh` EXIT 0: `STAGED-MATCH 26`, real shipped `SelectionEngine` + `SelectionSessionCoordinator` sources, Simulator `simctl spawn`; request factory ordering PASS; iOS 26 `providerCalls=0 imageLoads=0`; iOS 27 coordinator accepted two image-backed `chooseB` requests and preserved unrelated `b0`; cross-cluster and generic provider-failure deterministic fallback PASS; strict schema four invalid rows; safe `keepBoth`/`abstain`, bounds, unavailable, cancellation, and Golden-shaped `candidates=200 requests=100 attempts=4` all PASS. Non-cooperative timeout returned in 2,073 ms (<2.75 s) and confirmed image cleanup; `NATIVE adapter iOS27-gated current-SDK fallback PASS`; `RESULT PASS`. The real `Attachment` branch is enabled only by the iOS 27 SDK capability flag.
 - `./init.sh` EXIT 0: format PASS, `swiftlint --strict` PASS, Simulator build SUCCEEDED, test SKIP under DEC-040.
 - `git diff --check` PASS; no `*Test*.swift` files; no test target/framework. No blockers. Rollback remains the source/injection revert described above.

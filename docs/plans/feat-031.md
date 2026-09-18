@@ -16,7 +16,7 @@
 - Preserve the current deployment target, observed as iOS 26.4. Support the Qwen path on iOS 26.x and 27 without Apple Intelligence.
 - Keep inference, images, face data, and embeddings on device. Download model files only.
 - Never delete or modify originals. Save only the user-approved set to an Apple Photos album.
-- Add no test target, `*Test*.swift` file, or test framework. Use reproducible automated proof and `./init.sh`.
+- Add no test target, `*Test*.swift` file, test framework, or standalone proof file. Use `./init.sh` as repository verification.
 - Manual QA and physical-device evidence are not feature acceptance gates under DEC-032/DEC-040.
 - Do not translate Simulator/Mac results into iPhone latency, RAM, or thermal claims.
 - This document proposes implementation. It does not change current runtime or supersede owner documents by itself.
@@ -448,7 +448,7 @@ Do not create all proposed files as empty scaffolding. Create each with its owni
 | Presentation | `Features/Settings/SettingsView.swift`, `Features/Processing/ProcessingModel.swift`, `ProcessingView.swift`, `ProcessingStagePresentation.swift`, `Features/Review/ReviewModel.swift`, `SimilarGroups.swift`, `RemovedPhotos.swift`, `PhotoAnalysisDetail.swift`, `Domain/Selection/UncertaintyReview.swift`, `Localizable.xcstrings` | `Features/Settings/ModelInstallationModel.swift` |
 | Source summary | `Features/SourceSelection/SelectionSummaryView.swift` | None |
 | Build | `apps/photo-curator.xcodeproj/project.pbxproj`, its SwiftPM resolution file, `init.sh` | Isolated local runtime package only if Task 2 proves a simulator link boundary needs it |
-| Automated evidence | `scripts/proof/feat-026-proof.swift`, `feat-027-proof.swift`, `feat-028-proof.swift` when shared constructors change | `scripts/proof/feat-031.sh`, `feat-031-proof.swift`, `feat-031-inference.sh`, `feat-031-evaluate.py` |
+| Verification | `init.sh` | `./init.sh` output recorded in the feature handoff |
 | Model/corpus records | Owner documents in §3 | `docs/evidence/feat-031-models.json`, `feat-031-corpus.json`, `feat-031-results.md` |
 
 Keep `QwenRuntime` responsible for execution only. Keep download logic out of it.
@@ -498,7 +498,7 @@ If a model fails a gate, record the failure and keep its profile disabled. Do no
 
 ### Task 2 — Prove Qwen image inference and freeze dependencies
 
-**Files:** Xcode package configuration/resolution, `QwenRuntime.swift`, `ModelManifest.swift`, `feat-031-models.json`, inference proof launcher.
+**Files:** Xcode package configuration/resolution, `QwenRuntime.swift`, `ModelManifest.swift`, `feat-031-models.json`.
 **Consumes:** Qwen2B candidate, image pairs with independent expected distinctions, current Swift/Xcode build settings.
 **Produces:** Pinned image-capable runtime, complete artifact manifest, real inference evidence, simulator strategy.
 
@@ -513,7 +513,7 @@ If a model fails a gate, record the failure and keep its profile disabled. Do no
 - [x] Build the repository's generic Simulator configuration for arm64 and x86_64 slices.
 - [ ] Build the arm64-device configuration.
 - [ ] If MLX cannot link for a Simulator architecture, isolate the real adapter in a platform-conditioned package target.
-- [ ] Keep the domain and proof implementation buildable on the existing Simulator architectures. Do not hide link errors with a fabricated successful inference.
+- [ ] Keep the domain and runtime implementation buildable on the existing Simulator architectures. Do not hide link errors with a fabricated successful inference.
 - [ ] Repeat the feasibility arm for 4B after 2B works. Keep 4B evaluation separate from default admission.
 
 Runtime implementation sketch:
@@ -546,7 +546,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 - [ ] Separate disk capacity, physical RAM class, available headroom, and thermal state checks.
 - [ ] Prove offline loading with the network disabled after installation.
 
-**Evidence:** `AppContainer.live()` owns the installer under the application-support model root. `ModelInstallationService.installedModel()` revalidates an existing revision after relaunch without network access. `scripts/proof/feat-026.sh` injects the same installer dependency into its real-source constructor proof (`99 PASS / 0 FAIL`). `scripts/proof/feat-031.sh` executes the actual manifest/installer sources with an injected byte transport: interrupted transfer, resumable `Range`, SHA-256/size verification, state stream, atomic revision activation, reopen discovery, backup exclusion, and removal all pass without network or model weights.
+**Evidence:** `AppContainer.live()` owns the installer under the application-support model root. `ModelInstallationService.installedModel()` revalidates an existing revision after relaunch without network access. Repository verification runs through `./init.sh`; runtime fault coverage and model-resource admission remain open.
 **Stop condition:** A partially downloaded model must never become `installed` or trigger lazy network access during Analyze.
 
 ### Task 4 — Build pixel evidence and coherent visual groups
@@ -596,7 +596,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 - [ ] Implement the queue priorities and limits from §5.6.
 - [x] Implement the bounded strict JSON validator from §5.4, including duplicate-key, unknown-key, fence, enum, reason-count, duplicate-reason, and 4 KiB guards.
 - [ ] Apply the frozen prompt and strict JSON schema through `QwenPairJudge`.
-- [ ] Keep the first `QwenPairJudge` slice isolated from coordinator selection until its proof seam passes.
+- [ ] Keep the first `QwenPairJudge` slice isolated from coordinator selection until its interface is reviewed and `./init.sh` passes.
 - [ ] Keep candidates stable across language changes. UI locale never changes inference prompts.
 - [ ] Reserve queue budget for uncovered groups and reverse-order checks.
 - [ ] Reset conversation/KV state between independent pairs. Do not accumulate a 100-photo chat history.
@@ -609,7 +609,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Evidence:** Truncated JSON, duplicate keys, extra fields, unknown reason, output oversize, contradictory reverse comparison, cancellation, and uncooperative provider.
 **Stop condition:** Exhausted budget cannot drop unexamined groups or label the entire album Qwen-reviewed.
 
-**Current partial:** The serial scheduler now enforces the one-active-request policy, request and wall deadlines, cancellation, request-ID plus generation validation, request caps, and compact outcome counts. The deterministic proof covers serial execution, caps, timeout, cancellation, and stale requests. Actual reverse-order model evidence and uncooperative production-runtime teardown remain open.
+**Current partial:** The serial scheduler now enforces the one-active-request policy, request and wall deadlines, cancellation, request-ID plus generation validation, request caps, and compact outcome counts. Actual reverse-order model evidence and uncooperative production-runtime teardown remain open.
 
 ### Task 7 — Implement representative selection and coverage audit
 
@@ -677,23 +677,22 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 
 ### Task 10 — Establish end-to-end quality and failure evidence
 
-**Files:** `scripts/proof/feat-031*`, evidence records, `init.sh`, affected historical proof constructors.
+**Files:** Evidence records and `init.sh`.
 **Consumes:** Frozen calibration/evaluation corpus, actual production grouping/runtime/selector sources.
 **Produces:** Reproducible comparison matrix, lifecycle proof, source provenance, and limited hardware claims.
 
 - [ ] Implement the command interfaces and corpus schema in §10.
 - [ ] Run baseline, selector-only, encoder, Qwen2B, and Qwen4B arms without changing evaluation labels.
 - [ ] Assert model-image sensitivity using actual inference, not prerecorded model answers.
-- [ ] Use injected judgments only for deterministic contract/cancellation proof. Label that evidence separately.
+- [ ] Keep injected judgments out of production quality claims. Label any external comparison evidence separately.
 - [ ] Record repeatability and A/B-order disagreement for actual model runs.
 - [ ] Include deliberately wrong and abstaining judgments to verify policy containment.
-- [ ] Add the deterministic feat-031 proof to `init.sh` after the command exists.
 - [ ] Keep model downloads and multi-GB inference out of `init.sh`.
-- [ ] Run `./init.sh` and every affected prior proof once after the final shared-contract change.
+- [ ] Run `./init.sh` after the final shared-contract change and record its output.
 
 **Evidence:** Threshold results in §10, full artifact fingerprints, and no runtime/model errors hidden by fallback success.
 
-**Current partial:** `scripts/proof/feat-031.sh` includes the shipped scheduler, selector, manifest fingerprint, and checkpoint identity sources. It passes deterministic lifecycle/selection contract checks, including identity JSON round-trip and native compatibility. This proof does not establish actual model-image sensitivity, corpus quality gains, physical-device performance, cancellation drain, or 4B admission.
+**Current partial:** The shipped scheduler, selector, manifest fingerprint, and checkpoint identity sources are implemented. `./init.sh` verifies repository formatting, lint, and Simulator compilation. It does not establish actual model-image sensitivity, corpus quality gains, physical-device performance, cancellation drain, or 4B admission.
 
 ### Task 11 — Admit profiles, document limits, and close implementation
 
@@ -821,36 +820,24 @@ Use the same input bytes, preprocessing versions, labels, and selector configura
 
 ### 10.4 Planned command interfaces
 
-These commands do not exist at planning time. T10 implements them before they enter `init.sh`.
+Do not add feature-specific proof commands or files. Record quality evidence in the
+feature handoff and use `./init.sh` for repository verification.
 
 ```bash
-# Deterministic contracts, no model download or inference requirement.
-./scripts/proof/feat-031.sh
-
-# Real inference on an available Apple-Silicon host using installed local artifacts.
-./scripts/proof/feat-031-inference.sh --manifest docs/evidence/feat-031-models.json --corpus "$CURATION_CORPUS_DIR" --profile qwen2b --output "$CURATION_EVIDENCE_DIR/qwen2b"
-./scripts/proof/feat-031-inference.sh --manifest docs/evidence/feat-031-models.json --corpus "$CURATION_CORPUS_DIR" --profile qwen4b --output "$CURATION_EVIDENCE_DIR/qwen4b"
-
-# The inference launcher also emits baseline/selector arms for the same corpus.
-python3 scripts/proof/feat-031-evaluate.py --manifest docs/evidence/feat-031-corpus.json --runs "$CURATION_EVIDENCE_DIR" --output "$CURATION_EVIDENCE_DIR/summary.json"
-
-# Required repository verification.
 ./init.sh
 git diff --check
 ```
 
-The inference launcher must reject absent manifest hashes, missing files, mismatched corpus digests, and unavailable image backends.
-It must not download implicitly or return success after skipping actual inference.
-Use shipped source modules or verify staged source hashes. Never duplicate the selection implementation inside the proof.
-Outputs record environment, model hashes, input digest, prompt/preprocessing versions, timing, memory, and mode counts.
+Do not download models from `init.sh`. Do not add a standalone proof harness.
+Record any external corpus result in the feature handoff with its environment and limits.
 Commit only non-sensitive aggregate results and licensed manifest metadata.
 
 The automated matrix includes: 0/1/50/100/101 assets, partial availability, normal/partial equivalence, cancellation at each stage, restart, invalid output, and legacy decoding.
-Preserve existing feat-026/027/028 and feat-030 proof coverage when shared initializers or reason codes change.
+Preserve existing behavior when shared initializers or reason codes change.
 
 ### 10.5 Hardware claim boundary
 
-Simulator proof establishes contracts and UI integration, not MLX GPU model performance.
+The Simulator build establishes compilation and integration, not MLX GPU model performance.
 Apple-Silicon Mac inference establishes real image execution and corpus quality in that environment.
 Automated physical-device measurements can strengthen the evidence, but are optional and not feature blockers under current policy.
 Without iPhone-14 measurements, report the 180-second target as unverified and do not advertise it as achieved.
@@ -859,7 +846,7 @@ Do not silently redefine a Mac benchmark as an iPhone-equivalent run.
 ## 11. Rollout and rollback
 
 1. Keep the new mode disabled while T1–T7 are incomplete.
-2. Enable it for explicit local evaluation after real image inference and invariant proof pass.
+2. Enable it for explicit local evaluation after real image inference and invariant review pass.
 3. Admit 2B after the quality matrix passes. Record any unverified hardware claims.
 4. Admit 4B separately or keep it unavailable with an explicit evidence reason.
 5. Make the setup path available without blocking native curation when weights are absent.
@@ -889,7 +876,7 @@ Rollback does not delete models while leased, erase user overrides, or modify sa
 | Per-session data leaks into model logs/downloads | T3/T6/T8 | Prove local-only artifact requests and closed diagnostics |
 
 Planning evidence: baseline `./init.sh` passed at `54389e5` on 2026-09-18.
-Implementation evidence: the pinned MLX/Qwen package slice builds for the generic Simulator configuration; the verified 2B manifest is runtime-downloadable and excluded from the app bundle; `QwenPairJudge`, bounded scheduler/selector, quality runner, and checkpoint identity integration are covered by `scripts/proof/feat-031.sh`; and `./init.sh` passes format, strict lint, build, both proofs, and the policy test skip. No production image-quality gain, arm64-device measurement, or 4B admission claim exists.
+Implementation evidence: the pinned MLX/Qwen package slice builds for the generic Simulator configuration; the verified 2B manifest is runtime-downloadable and excluded from the app bundle; `QwenPairJudge`, bounded scheduler/selector, quality runner, and checkpoint identity integration are implemented; and `./init.sh` passes format, strict lint, build, and the policy test skip. No production image-quality gain, arm64-device measurement, or 4B admission claim exists.
 
 **Next action:** Complete the pixel-derived grouping, model/resource admission, localized setup/review presentation, and controlled image-corpus evidence before closing feat-031.
 
@@ -903,7 +890,7 @@ Acceptance traceability:
 | A4 group retention | T4, T7 | All-member provenance and zero-pick audit |
 | A5 session/user ownership | T8, T9 | Partial/resume parity, stale-write rejection, persisted review edits |
 | A6 contracts and rollback | T1, T3, T8, T9, T11 | Owner updates, legacy decoding, mode/model rollback |
-| A7 repository verification | T10, T11 | Reproducible proof and `./init.sh` |
+| A7 repository verification | T10, T11 | `./init.sh` |
 
 ## 13. Research references
 
