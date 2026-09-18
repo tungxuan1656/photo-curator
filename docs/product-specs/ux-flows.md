@@ -475,15 +475,29 @@ with a persistent **126 selected** count. Every photo here is included.
   A cell reads its score only when it becomes visible. It never loads a
   full-size image or waits for scores for the whole grid.
 
-### 8.3 S11 — Photo Detail
+### 8.3 S11 — Photo Detail / Inspection
 
-Back, large photo, **In Album** / **Removed** toggle (checkmark state, no
-trash icon), previous/next inside the current context, optional compact
-info (date, location when authorized). Pinch zoom and horizontal swipe
-allowed; vertical swipe does nothing destructive.
+S11 is a fullscreen, near-black inspection canvas. It keeps the photo
+aspect-fit and displays Back, position (`4 of 18`), explicit **In Album** /
+**Removed** state, previous/next, and **View Analysis**. Controls stay inside
+safe areas, have readable contrast, and use text as well as icons. A single
+tap only hides or shows visual controls; it never changes selection.
 
-The detail has **View Analysis**, which opens S21 for the same photo. This
-action never changes its selection state.
+Pinch zoom is bounded. Double-tap changes between Fit and a useful inspection
+zoom. At Fit, a horizontal swipe moves one photo within the entry context. At
+zoom, every drag pans the photo and never pages it. **Fit** resets zoom and
+centers the image. Vertical movement never dismisses, removes, restores, or
+pages a photo. Previous/next do not wrap.
+
+The state control updates the shared review state immediately. It never
+deletes an original. Loading keeps safe navigation available. An unavailable
+photo says **We couldn't load this photo.** and offers **Try Again** and
+**Back** without changing selection. Every gesture has an accessible
+non-gesture path; VoiceOver exposes position, selection state, previous/next,
+zoom/Fit, and analysis actions.
+
+**View Analysis** opens S21 for the same photo. This action never changes its
+selection state.
 
 ### 8.4 S12 — Similar Group Review
 

@@ -32,7 +32,8 @@
     "feat-025",
     "feat-026",
     "feat-027",
-    "feat-028"
+    "feat-028",
+    "feat-029"
   ],
   "features": [
     {
@@ -285,6 +286,15 @@
       "id": "feat-028",
       "status": "done",
       "title": "Ranker decision gate"
+    },
+    {
+      "depends_on": [
+        "feat-028"
+      ],
+      "gate": "S11 is a fullscreen, zoomable, accessible inspector that preserves scoped paging and shared selection; bounded image lifetime and reproducible interaction proof pass; ./init.sh passes.",
+      "id": "feat-029",
+      "status": "todo",
+      "title": "Immersive photo inspection"
     }
   ],
   "rule": "One feature may be active at a time. A feature starts only after all dependencies are done, owns its complete implementation and verification, and closes only after its acceptance criteria and ./init.sh pass."
