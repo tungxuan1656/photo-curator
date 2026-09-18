@@ -40,14 +40,21 @@ struct ReviewOverview: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 18))
                                 )
 
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 6) {
                                     Text("CURATED ALBUM")
-                                        .font(.caption.bold())
-                                        .foregroundStyle(.white.opacity(0.85))
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(LinearGradient.curatorSunset, in: Capsule())
+
                                     Text("Your curated album is ready")
                                         .font(.title3.bold())
                                         .foregroundStyle(.white)
-                                    Text("\(model.selectedIDs.count) selected from \(total) photos")
+
+                                    let totalStr = total == 1 ? "1 photo" : "\(total) photos"
+                                    let selStr = model.selectedIDs.count == 1 ? "1 photo selected" : "\(model.selectedIDs.count) selected"
+                                    Text("\(selStr) from \(totalStr)")
                                         .font(.footnote)
                                         .foregroundStyle(.white.opacity(0.9))
                                 }
@@ -59,7 +66,9 @@ struct ReviewOverview: View {
                             VStack(spacing: 6) {
                                 Text("Your curated album is ready")
                                     .font(.title2.bold())
-                                Text("\(model.selectedIDs.count) selected from \(total) photos")
+                                let totalStr = total == 1 ? "1 photo" : "\(total) photos"
+                                let selStr = model.selectedIDs.count == 1 ? "1 photo selected" : "\(model.selectedIDs.count) selected"
+                                Text("\(selStr) from \(totalStr)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -71,47 +80,97 @@ struct ReviewOverview: View {
                             columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
                             spacing: 10
                         ) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Label("Curated", systemImage: "sparkles")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(Color.accentColor)
-                                Text("\(model.selectedIDs.count)")
-                                    .font(.title2.bold())
-                                Text("Best quality & moments")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                            Button {
+                                if appModel.path.last != .curatedGrid(sessionID: sessionID) {
+                                    appModel.path.append(.curatedGrid(sessionID: sessionID))
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Label("Curated", systemImage: "sparkles")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(LinearGradient.curatorSunset)
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption2)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    Text("\(model.selectedIDs.count)")
+                                        .font(.title2.bold())
+                                        .foregroundStyle(.primary)
+                                    Text("Best quality & moments")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            .buttonStyle(.plain)
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Label("Similar Groups", systemImage: "square.2.layers.3d")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(Color.accentColor)
-                                Text("\(model.similarGroups.count)")
-                                    .font(.title2.bold())
-                                Text(model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                            Button {
+                                guard !model.similarGroups.isEmpty else { return }
+                                if appModel.path.last != .similarGroups(sessionID: sessionID) {
+                                    appModel.path.append(.similarGroups(sessionID: sessionID))
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Label("Similar Groups", systemImage: "square.2.layers.3d")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(Color.curatorSunsetCoral)
+                                        Spacer()
+                                        if !model.similarGroups.isEmpty {
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption2)
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                    }
+                                    Text("\(model.similarGroups.count)")
+                                        .font(.title2.bold())
+                                        .foregroundStyle(.primary)
+                                    Text(model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            .buttonStyle(.plain)
+                            .disabled(model.similarGroups.isEmpty)
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Label("Removed", systemImage: "minus.circle")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.secondary)
-                                Text("\(model.removedAssetIDs.count)")
-                                    .font(.title2.bold())
-                                Text("Can add back anytime")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                            Button {
+                                guard !model.removedAssetIDs.isEmpty else { return }
+                                if appModel.path.last != .removedPhotos(sessionID: sessionID) {
+                                    appModel.path.append(.removedPhotos(sessionID: sessionID))
+                                }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Label("Removed", systemImage: "minus.circle")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        if !model.removedAssetIDs.isEmpty {
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption2)
+                                                .foregroundStyle(.tertiary)
+                                        }
+                                    }
+                                    Text("\(model.removedAssetIDs.count)")
+                                        .font(.title2.bold())
+                                        .foregroundStyle(.primary)
+                                    Text("Can add back anytime")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                             }
-                            .padding(12)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            .buttonStyle(.plain)
+                            .disabled(model.removedAssetIDs.isEmpty)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Label("Originals", systemImage: "lock.shield")
@@ -129,8 +188,12 @@ struct ReviewOverview: View {
                         }
                         .padding(.horizontal)
 
+                        ReviewGuideCard()
+
                         if unavailable > 0 {
-                            Text("\(unavailable) photos were unavailable and could not be analyzed.")
+                            Text(unavailable == 1
+                                ? "1 photo was unavailable and could not be analyzed."
+                                : "\(unavailable) photos were unavailable and could not be analyzed.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal)
@@ -248,5 +311,46 @@ struct ReviewLoadFailedView: View {
             secondary: { appModel.goHome() }
         )
         .navigationTitle("Review")
+    }
+}
+
+private struct ReviewGuideCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("How to review")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "photo.stack")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.curatorAccent)
+                    .frame(width: 20)
+                Text("Tap any photo to view full size and inspect quality details.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "checkmark.circle")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.curatorAccent)
+                    .frame(width: 20)
+                Text("Tap the checkmark circle to keep or remove photos.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "square.2.layers.3d")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.curatorSunsetCoral)
+                    .frame(width: 20)
+                Text("Review Similar Groups to swap the best pick among duplicates.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .padding(.horizontal)
     }
 }

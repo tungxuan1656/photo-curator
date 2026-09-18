@@ -25,10 +25,11 @@ struct CuratedGrid: View {
             if let model = appModel.reviewModel, model.sessionID == sessionID {
                 VStack(spacing: 8) {
                     HStack {
-                        Text("\(model.selectedIDs.count) selected")
+                        let count = model.selectedIDs.count
+                        Text(count == 1 ? "1 photo selected" : "\(count) photos selected")
                             .font(.headline)
                         Spacer()
-                        Text("Tap circle to toggle")
+                        Text("Tap photo to view · circle to toggle")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

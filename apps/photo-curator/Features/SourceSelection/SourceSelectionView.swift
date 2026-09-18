@@ -19,7 +19,7 @@ struct SourceSelectionView: View {
             Text(appModel.selectedIDs.count == 1 ? "1 photo selected" : "\(appModel.selectedIDs.count) photos selected")
                 .font(.headline)
             if appModel.selectedIDs.count == 1 {
-                Text("Photos Curator works best with a larger set.")
+                Text("Photos Curator works best with 50+ photos, but you can curate any amount.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Text("Photos Curator will analyze these photos and propose a smaller album. Your originals stay unchanged.")
@@ -33,12 +33,19 @@ struct SourceSelectionView: View {
             }
             .pickerStyle(.segmented)
             content
-            Button("Continue") { appModel.continueToSummary() }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(!appModel.canContinueToSummary)
-                .padding(.horizontal)
-                .padding(.bottom, 6)
+            VStack(spacing: 4) {
+                Button("Continue") { appModel.continueToSummary() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(!appModel.canContinueToSummary)
+                if appModel.selectedIDs.isEmpty {
+                    Text("Select at least 1 photo to continue")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 6)
         }
         .sheet(isPresented: $showsAccessGuidance) { AccessGuidanceSheet() }
         .navigationTitle("Choose source photos")

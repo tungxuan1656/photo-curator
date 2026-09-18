@@ -27,7 +27,7 @@ struct ProcessingView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 44))
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(LinearGradient.curatorSunset)
 
                         Text("Curating your photos")
                             .font(.title2.bold())
@@ -49,13 +49,19 @@ struct ProcessingView: View {
                         }
 
                         if progress.downloadingCount > 0 {
-                            Text("Waiting for \(progress.downloadingCount) photos from iCloud")
+                            let downloading = progress.downloadingCount
+                            Text(downloading == 1
+                                ? "Waiting for 1 photo from iCloud"
+                                : "Waiting for \(downloading) photos from iCloud")
                                 .font(.subheadline)
                             Text("Keep this iPhone connected to the internet.")
                                 .font(.footnote).foregroundStyle(.secondary)
                         }
                         if progress.unavailableCount > 0 {
-                            Text("\(progress.unavailableCount) photos were unavailable and could not be analyzed.")
+                            let unavail = progress.unavailableCount
+                            Text(unavail == 1
+                                ? "1 photo was unavailable and could not be analyzed."
+                                : "\(unavail) photos were unavailable and could not be analyzed.")
                                 .font(.footnote).foregroundStyle(.secondary)
                         }
                     }
@@ -92,7 +98,7 @@ struct ProcessingView: View {
                         VStack(spacing: 6) {
                             Text("Analysis complete")
                                 .font(.title.bold())
-                            Text("\(analyzed) photos analyzed")
+                            Text(analyzed == 1 ? "1 photo analyzed" : "\(analyzed) photos analyzed")
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
                         }
@@ -107,7 +113,9 @@ struct ProcessingView: View {
                             .font(.subheadline)
 
                         if unavailable > 0 {
-                            Text("\(unavailable) photos were unavailable and could not be analyzed.")
+                            Text(unavailable == 1
+                                ? "1 photo was unavailable and could not be analyzed."
+                                : "\(unavailable) photos were unavailable and could not be analyzed.")
                                 .font(.footnote).foregroundStyle(.secondary)
                                 .padding(.top, 4)
                         }

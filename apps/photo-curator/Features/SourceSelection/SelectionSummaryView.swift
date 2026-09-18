@@ -26,7 +26,9 @@ struct SelectionSummaryView: View {
                 }
 
                 VStack(spacing: 6) {
-                    Text("Ready to curate \(appModel.summary.selectedCount) photos")
+                    Text(appModel.summary.selectedCount == 1
+                        ? "Ready to curate 1 photo"
+                        : "Ready to curate \(appModel.summary.selectedCount) photos")
                         .font(.title2.bold())
                     Text("Photos Curator will evaluate your photos and propose a smaller, polished album.")
                         .font(.subheadline)
@@ -45,7 +47,7 @@ struct SelectionSummaryView: View {
                     } icon: {
                         Image(systemName: "sparkles")
                             .font(.title3)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(LinearGradient.curatorSunset)
                             .frame(width: 28)
                     }
 
@@ -58,7 +60,7 @@ struct SelectionSummaryView: View {
                     } icon: {
                         Image(systemName: "face.smiling")
                             .font(.title3)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(Color.curatorWarmAmber)
                             .frame(width: 28)
                     }
 
@@ -71,7 +73,7 @@ struct SelectionSummaryView: View {
                     } icon: {
                         Image(systemName: "square.2.layers.3d")
                             .font(.title3)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(Color.curatorSunsetCoral)
                             .frame(width: 28)
                     }
 
@@ -84,7 +86,7 @@ struct SelectionSummaryView: View {
                     } icon: {
                         Image(systemName: "lock.shield")
                             .font(.title3)
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(.green)
                             .frame(width: 28)
                     }
                 }
@@ -99,7 +101,10 @@ struct SelectionSummaryView: View {
                 }
 
                 if appModel.summary.unavailableCount > 0 {
-                    Text("\(appModel.summary.unavailableCount) photos were unavailable and could not be analyzed.")
+                    let unavail = appModel.summary.unavailableCount
+                    Text(unavail == 1
+                        ? "1 photo was unavailable and could not be analyzed."
+                        : "\(unavail) photos were unavailable and could not be analyzed.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
