@@ -174,6 +174,37 @@ final class AppModel {
         }
     }
 
+    func selectAllFiltered() {
+        selectedIDs = SourceSelectionMutation.selectAllFiltered(
+            filteredIDs: filteredAssets.map(\.id),
+            selectedIDs: selectedIDs
+        )
+    }
+
+    func deselectAllFiltered() {
+        selectedIDs = SourceSelectionMutation.deselectAllFiltered(
+            filteredIDs: filteredAssets.map(\.id),
+            selectedIDs: selectedIDs
+        )
+    }
+
+    func updateDragSelection(
+        initialSelected: Set<AssetID>,
+        startIndex: Int,
+        currentIndex: Int,
+        isSelecting: Bool
+    ) {
+        guard let updatedSelection = SourceSelectionMutation.updateDragSelection(
+            filteredIDs: filteredAssets.map(\.id),
+            initialSelected: initialSelected,
+            startIndex: startIndex,
+            currentIndex: currentIndex,
+            isSelecting: isSelecting
+        )
+        else { return }
+        selectedIDs = updatedSelection
+    }
+
     func loadSource() async {
         sourceGeneration += 1
         let generation = sourceGeneration

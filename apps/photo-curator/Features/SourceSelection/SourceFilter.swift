@@ -35,6 +35,39 @@ struct SourceFilter: Equatable, Sendable {
     }
 }
 
+enum SourceSelectionMutation {
+    static func selectAllFiltered(
+        filteredIDs: [AssetID],
+        selectedIDs: Set<AssetID>
+    ) -> Set<AssetID> {
+        selectedIDs.union(filteredIDs)
+    }
+
+    static func deselectAllFiltered(
+        filteredIDs: [AssetID],
+        selectedIDs: Set<AssetID>
+    ) -> Set<AssetID> {
+        selectedIDs.subtracting(filteredIDs)
+    }
+
+    static func updateDragSelection(
+        filteredIDs: [AssetID],
+        initialSelected: Set<AssetID>,
+        startIndex: Int,
+        currentIndex: Int,
+        isSelecting: Bool
+    ) -> Set<AssetID>? {
+        guard startIndex >= 0, startIndex < filteredIDs.count,
+              currentIndex >= 0, currentIndex < filteredIDs.count else { return nil }
+        let range = min(startIndex, currentIndex) ... max(startIndex, currentIndex)
+        let rangeIDs = Set(filteredIDs[range])
+        if isSelecting {
+            return initialSelected.union(rangeIDs)
+        }
+        return initialSelected.subtracting(rangeIDs)
+    }
+}
+
 struct SelectionSummary: Equatable, Sendable {
     let selectedCount: Int
     let unavailableCount: Int

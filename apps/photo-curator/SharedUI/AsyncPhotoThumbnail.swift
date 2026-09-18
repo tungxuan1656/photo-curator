@@ -13,13 +13,18 @@ struct AsyncPhotoThumbnail: View {
             .fill(.quaternary)
             .aspectRatio(1, contentMode: .fill)
             .overlay {
-                if let cgImage {
-                    Image(decorative: cgImage, scale: 1, orientation: .up)
-                        .resizable()
-                        .scaledToFill()
+                GeometryReader { geo in
+                    if let cgImage {
+                        Image(decorative: cgImage, scale: 1, orientation: .up)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: geo.size.height)
+                            .clipped()
+                    }
                 }
             }
             .clipped()
+            .contentShape(Rectangle())
             .task(id: assetID) {
                 do {
                     let cg = try await appModel.imageLoader.thumbnail(for: assetID, targetSize: targetSizePixels)

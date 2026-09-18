@@ -23,7 +23,8 @@ struct FinalReview: View {
             if let model = appModel.reviewModel, model.sessionID == sessionID {
                 let selected = model.selectedAssetIDs
                 VStack(spacing: 12) {
-                    Text("\(selected.count) photos ready").font(.title2.bold())
+                    Text(selected.count == 1 ? "1 photo ready" : "\(selected.count) photos ready")
+                        .font(.title2.bold())
                     if selected.isEmpty {
                         Text("Add at least one photo to save this album.")
                             .font(.footnote)

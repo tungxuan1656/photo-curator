@@ -218,18 +218,12 @@ private struct HomeHeroBanner: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.accentColor.opacity(0.2), Color.accentColor.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(.curatorSubtleGlow)
                     .frame(width: 80, height: 80)
 
                 Image(systemName: "sparkles.rectangle.stack")
                     .font(.system(size: 38))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(LinearGradient.curatorSunset)
             }
             .padding(.top, 4)
 
@@ -262,7 +256,7 @@ private struct HomeHowItWorksSection: View {
                 stepRow(
                     number: "1",
                     title: "Select Source Photos",
-                    subtitle: "Pick a trip, event, or album of 50–500 photos."
+                    subtitle: "Recommended: 50–500 photos from a trip, event, or album."
                 )
                 Divider().padding(.leading, 46)
                 stepRow(
@@ -287,11 +281,11 @@ private struct HomeHowItWorksSection: View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.15))
+                    .fill(.curatorSubtleGlow)
                     .frame(width: 32, height: 32)
                 Text(number)
                     .font(.subheadline.bold())
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color.curatorAccent)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.subheadline.bold())
@@ -309,14 +303,14 @@ private struct HomeFeatureHighlights: View {
         LazyVGrid(columns: columns, spacing: 10) {
             card(
                 icon: "sparkles",
-                iconColor: Color.accentColor,
+                iconColor: Color.curatorSunsetCoral,
                 title: "Quality First",
                 headline: "Best Smiles & Focus",
                 subtext: "Filters blurs, closed eyes, and bad lighting."
             )
             card(
                 icon: "square.2.layers.3d",
-                iconColor: Color.accentColor,
+                iconColor: Color.curatorAccent,
                 title: "Clustering",
                 headline: "Prunes Duplicates",
                 subtext: "Recommends the single top shot per moment."
