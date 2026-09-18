@@ -2,7 +2,7 @@
 
 **Status:** Current implementation selection for Curation Intelligence V2  
 **Architecture owner:** [curation-intelligence.md](curation-intelligence.md)  
-**Updated:** 2026-09-17 (feat-024: Tier-C provider shipped, FastViT stays benchmark-only; feat-025: Tier-D rejected per DEC-038)
+**Updated:** 2026-09-18 (feat-028: deterministic ranker retained; learned ranker rejected per DEC-050, evidence corrected by DEC-051/DEC-052)
 
 This document owns the concrete implementation choices for Curation Intelligence V2: Apple APIs, model candidates, routing, fallbacks, and benchmark decisions. It is deliberately mutable. `curation-intelligence.md` owns the stable architecture; changing a model here does not require changing the architecture when the capability contract stays the same.
 
@@ -41,7 +41,7 @@ Before implementation, re-check API availability and model/license terms against
 | Precision segmentation | SAM 2.1 Tiny or equivalent | D | rare fallback | REJECTED (DEC-038, 2026-09-17 — no triggering feat-023 failure) |
 | Semantic jury | Foundation Models `SystemLanguageModel` image input | E | 2–6 ambiguous candidates | SELECTED, iOS 27 OPTIONAL |
 | High-res verification | targeted PhotoKit load + re-check | F | finalists/borderline rejects | REQUIRED PATH |
-| Learned ranker | small Core ML learning-to-rank model | later | only after labels exist | NOT YET JUSTIFIED |
+| Learned ranker | small Core ML learning-to-rank model | later | only after labels exist and a material baseline gap is measured | REJECTED (DEC-050 no-ranker outcome; evidence provenance corrected by DEC-051/DEC-052 — no measurable gap) |
 
 ## 3. Routing contract
 
@@ -128,7 +128,7 @@ Use Must-Keep Recall, Good Selection Rate, Bad Pick Rate, Duplicate Leakage, Bes
 8. Add only specialist models that solve remaining measured failures (#18).
 9. Build uncertainty-first review (#22).
 10. Add iOS 27 semantic jury for remaining ambiguous high-impact cases (#23).
-11. Consider a learned ranker only after enough labels exist and simpler baselines are strong (#24 ranker phase).
+11. Close the ranker phase with the deterministic baseline unless a named residual failure and admissible labels justify a new gate (#24).
 
 Dependencies may move a measured lightweight embedding earlier. No issue requires shipping every candidate.
 

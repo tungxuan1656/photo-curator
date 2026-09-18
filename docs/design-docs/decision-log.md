@@ -1,6 +1,6 @@
 # Photos Curator — Decision Log
 
-**Doc:** `decision-log.md` · **Status:** Living · **Updated:** 2026-09-17
+**Doc:** `decision-log.md` · **Status:** Living · **Updated:** 2026-09-18
 
 **Ownership:** This doc OWNS rationale/history only (why a choice was made, append-only DEC-xxx).
 It never owns current operational values — those live in owner docs (linked per entry).
@@ -21,7 +21,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
 
-### 1a. Accepted (48 kept)
+### 1a. Accepted (50 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -72,6 +72,8 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-046 | Feat-026 feedback writer generation/ownership guard | `features/feat-026.md` |
 | DEC-048 | Feat-027 image-backed in-place jury integration and hard timeout | `features/feat-027.md`, `docs/plans/feat-027.md` |
 | DEC-049 | Feat-027 Foundation Models image-attachment SDK capability seam | `features/feat-027.md`, `docs/plans/feat-027.md` |
+| DEC-051 | Feat-028 independent oracle and recall gate remediation | `features/feat-028.md`, `docs/plans/feat-028.md` |
+| DEC-052 | Feat-028 proof contract completion | `features/feat-028.md`, `docs/plans/feat-028.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -111,7 +113,7 @@ non-destructive, collision-safe → 02, 07). See §3.
 | ID | Topic | Superseded by |
 |---|---|---|
 | DEC-031 | Feat-021 blocked pending physical QA inputs | DEC-032 |
-
+| DEC-050 | Feat-028 original ranker provenance wording | DEC-051 |
 Promoted to Accepted (rules owned in 03, linked not duplicated):
 OPEN-P06 (screenshots deprioritized, not forced), OPEN-P07 (Live Photo stills
 eligible), OPEN-P08 (edited version = soft bonus only), OPEN-P09 (Favorite =
@@ -477,6 +479,35 @@ Decision: Keep the adapter available and executable on the current toolchain, bu
 Alternatives considered: retain `#if compiler(>=6.4)` (rejected - couples behavior to compiler version and leaves supported Swift 6.3.3 without an executable adapter seam); downgrade to text-only prompting on the current SDK (rejected - violates image-backed jury contract); use runtime reflection or private symbols for `Attachment` (rejected - unsafe, unverifiable, and not an SDK-supported API); lower the deployment target (rejected - DEC-TBD-001).
 Evidence: `xcrun swiftc --version` reports Apple Swift 6.3.3; `xcrun --sdk iphonesimulator --show-sdk-version` reports 26.5; the installed `FoundationModels.swiftinterface` contains `LanguageModelSession` but no `Attachment`; Apple Foundation Models documentation marks `Attachment` iOS 27.0+. `scripts/proof/feat-027.sh` EXIT 0 compiles the current typed-unavailable seam and separately proves coordinator-loaded in-memory images reach the provider boundary; `./init.sh` remains required for final verification.
 Consequences: Current builds remain compile-safe and deterministic when the iOS 27 image-input SDK is unavailable. An iOS 27 SDK build must define the capability condition in its SDK-specific configuration to activate the real multimodal adapter; no source or API fallback may silently turn it into text-only inference. Reconsider when the repository adopts an iOS 27 SDK/toolchain and can record a real-device or Simulator image-backed Foundation Models run.
+
+# DEC-050 - Feat-028 closes V2 with the deterministic ranker
+Status: Superseded by DEC-051 · Date: 2026-09-18
+Owner: `features/feat-028.md`, `docs/plans/feat-028.md` - Affected: `curation-runtime-stack.md`, ranker evaluation gate
+Context: The ranker gate requires a frozen deterministic baseline, label provenance, prohibited-data boundary, disjoint evaluation splits, metrics, thresholds, rollback, and reproducible smoke/Golden-shaped/trip-shaped/1k evidence. A learned ranker is allowed only when the current baseline exposes a material measurable gap; no admissible user-data labels or named residual baseline failure exists in this repository.
+Decision: Retain the shipped deterministic `QualityScorer` and close the V2 ranker phase. Freeze `analysisVersion 4`, `engineVersion 3`, `configVersion 1`, the current centralized selection configuration, and deterministic tie-breaks. Use only `deterministic-synthetic-v1` structural labels for this gate, with no fit or calibration split and no persisted labels. Do not evaluate, vendor, or route a learning-to-rank model; add no model artifact, dependency, field, migration, network path, telemetry, or fallback adapter.
+Alternatives considered: evaluate a candidate from synthetic labels (rejected - those labels are structural proof inputs, not production taste or approved global-training data); accept a ranker without a named baseline gap (rejected - adds privacy, license, size, latency, thermal, and rollback risk without measured benefit); lower existing quality gates (rejected - would falsify the product contract); keep the deterministic baseline (accepted - all ranker-admission metrics pass on the disjoint focused proof shapes and replay is byte-stable).
+Evidence: `./scripts/proof/feat-028.sh` EXIT 0 with `STAGED-MATCH 17`; smoke 60, Golden-shaped 200, trip-shaped 150, and H-1000 1,000 all pass exact deterministic replay, good-selection `1.000`, bad-pick `0.000`, duplicate leakage `0.000`, best-shot `1.000`, and moment coverage `1.000`; outputs and synthetic-label caveat are recorded in `docs/plans/feat-028.md` and `features/feat-028.md`. Prior feat-023/026/027 proof records preserve the same deterministic engine and show no unresolved named baseline failure. Final `./init.sh` evidence is recorded in the feature handoff.
+Consequences: V2 remains on-device and deterministic on iOS 26, with the optional iOS 27 semantic jury and its deterministic fallback unchanged. No ranker migration or runtime rollback is needed; rollback is limited to the feature/plan/decision/runtime-status/proof records. A future ranker requires a new decision after a named residual failure, an approved non-user label source, and the full quality/privacy/license/performance/version/fallback gate.
+Reconsider when: a newly frozen admissible label set shows a repeatable residual failure after deterministic and jury paths, and a specific candidate demonstrates a material gain without violating existing recall, coverage, privacy, license, performance, or fallback gates.
+# DEC-051 - Feat-028 independent oracle and recall gate remediation
+Status: Accepted - Date: 2026-09-18
+Owner: `features/feat-028.md`, `docs/plans/feat-028.md` - Affected: `scripts/proof/feat-028-proof.swift`, ranker evaluation gate
+Context: Review found that feat-028 derived `MUST_KEEP`/`ACCEPTABLE`/`REJECT` from the same scalar rank facts used to build `PhotoAnalysis`, so the prior perfect metrics were not independent evidence. The owner contract also requires the `manual-qa.md` Must-Keep Recall reference target (`>=95%`), while the prior proof reported sub-target compression ratios and did not assert Recall.
+Decision: Keep DEC-050's no-ranker product decision, but replace the label source with `fixture-oracle-v2`, a repository-local static annotation manifest that never reads analyses, scalar scores, rank order, or engine output. Use the same manifest semantics across disjoint Smoke 60 (15 groups x 4), Golden-shaped 200 (20 x 10), Trip-shaped 150 (30 x 5), and H-1000 (1,000; 50 x 20) fixtures; assert full label coverage, cross-split asset-ID disjointness, complete frozen selection configuration, frozen weights/bonuses, tie-break policy, oracle/rank disagreement, and Must-Keep Recall `>=95%` before the remaining quality gates. No external benchmark, user data, app code, model, dependency, persistence, network path, telemetry, or test artifact is introduced.
+Alternatives considered: retain rank-derived labels (rejected - permits circular perfect metrics); lower or omit the owner Recall target (rejected - falsifies the owner contract); claim an approved exception (rejected - the corrected fixture shape makes the existing target directly assertable); admit a learned ranker (rejected - no named residual baseline gap or approved label source).
+Evidence: `./scripts/proof/feat-028.sh` EXIT 0 with `STAGED-MATCH 17`; independent oracle/config/split gates PASS; Smoke `60→15`, Golden-shaped `200→20`, Trip-shaped `150→30`, H-1000 `1,000→50`, each Recall/Good Selection/Best-Shot/Moment Coverage `1.000`, Bad Pick/Duplicate Leakage `0.000`, exact deterministic double replay; no external benchmark result is claimed. `./init.sh` EXIT 0 — SwiftFormat PASS (`2/87` files formatted), SwiftLint strict PASS (`0` violations in `66` files), Simulator build `BUILD SUCCEEDED`, tests `SKIP` by DEC-040; `git diff --check` clean and no `*Test*.swift` files found.
+Consequences: DEC-050's deterministic no-ranker outcome remains unchanged, but its evidence is now independent and Recall is an asserted owner gate rather than compression context. Reconsider only after a named residual failure and a newly approved non-user label source satisfy the full quality/privacy/license/performance/version/fallback gate.
+Reconsider when: a future admissible annotation set or named residual failure requires a different oracle, split, or metric contract; add a new evidence-backed decision before changing the gate.
+
+# DEC-052 - Feat-028 proof contract completion
+Status: Accepted - Date: 2026-09-18
+Owner: `features/feat-028.md`, `docs/plans/feat-028.md` - Affected: `scripts/proof/feat-028-proof.swift`, ranker evaluation gate, metric ledger
+Context: Follow-up review found four remaining evidence-contract gaps: the authored oracle still made every MUST_KEEP row the rank winner; tie-break values were printed but not behaviorally exercised; Duplicate Leakage used selected groups rather than the owner denominator of total selected; and DEC-050 retained stale provenance wording after DEC-051.
+Decision: Keep DEC-050's no-ranker product outcome and DEC-051's independent-evidence direction. Version the repository-local oracle as `fixture-oracle-v3` with authored rows and an explicit H-1000 MUST_KEEP-vs-rank mismatch/selection case; execute equal-score fixtures that assert edited > favorite > pixel-area > asset-ID under reversed input order; compute Duplicate Leakage as needless repeat selections / total selected and assert that denominator; and keep DEC-050 historical text append-only while marking it Superseded by DEC-051. No owner gate is lowered.
+Alternatives considered: retain a rank-winner-only MUST_KEEP row (rejected - circular evidence remains); print tie-break configuration without exercising behavior (rejected - values are not proof); retain selected-group denominator (rejected - contradicts the owner metric contract); rewrite DEC-050 history (rejected - violates append-only decision-log rules).
+Evidence: `./scripts/proof/feat-028.sh` EXIT 0 (`STAGED-MATCH 17`): explicit H-1000 rank-winner/MUST_KEEP mismatch and selection assertion PASS; four equal-score tie-break fixtures and reversed-input replay PASS; Smoke/Golden/Trip/H-1000 Recall `1.000/1.000/1.000/0.980`, Good Selection `1.000/1.000/1.000/0.980`, Bad Pick `0.000/0.000/0.000/0.020`, Duplicate Leakage `0.000` with selected-output denominators `15/20/30/50`, Best-Shot `1.000/1.000/1.000/0.980`, Moment Coverage `1.000` all; `./init.sh` EXIT 0 (format PASS, SwiftLint strict PASS, Simulator build SUCCEEDED, tests SKIP by DEC-040). No app code, user data, model, dependency, persistence, network path, telemetry, or test artifact is introduced.
+Consequences: deterministic no-ranker behavior and all existing Recall, Good Selection, Bad Pick, Duplicate Leakage, Best-Shot, Moment Coverage, smoke/Golden/trip/H-1000, privacy, split, and no-test gates remain unchanged; only proof/docs evidence is corrected.
+Reconsider when: a future admissible annotation set or named residual failure requires a new oracle, metric contract, or ranker decision; add another evidence-backed decision before changing these gates.
 
 ## 3. Deferred TBDs (structured — no answers invented)
 

@@ -494,3 +494,56 @@
 **Decisions**: DEC-047 bounded iOS 27 semantic jury; DEC-048 image-backed in-place integration and hard timeout; DEC-049 explicit Foundation Models SDK capability seam. No contract or data-model change; engine version remains 3 with no persistence/schema migration.
 **Blockers**: none
 **Next**: feat-028 (Ranker decision gate), activated from the latest `origin/main` after this closeout.
+
+## 2026-09-18 — feat-028 ranker decision gate
+
+**State**: done (DEC-050 no-ranker decision; no application-code change)
+**Done**: Activated feat-028 from merged feat-027; created `docs/plans/feat-028.md`; froze
+`analysisVersion 4`, `engineVersion 3`, `configVersion 1`, deterministic rank/tie-break policy,
+synthetic label provenance and prohibited-data boundary, disjoint evaluation splits, metrics,
+thresholds, rollback, and reconsider triggers. Rejected learned ranking because the frozen
+deterministic baseline exposed no material measurable gap; updated runtime-stack status and
+recorded DEC-050. Feature/index/plan handoff is synchronized and all feat-028 acceptance boxes
+are checked.
+**Evidence**: `./scripts/proof/feat-028.sh` EXIT 0 — `STAGED-MATCH 17`; Smoke 60→15,
+Golden-shaped 200→30, Trip-shaped 150→30, H-1000 1,000→50; all four deterministic replays
+pass with Good Selection 1.000, Bad Pick 0.000, Duplicate Leakage 0.000, Best-Shot Accuracy
+1.000, Moment Coverage 1.000, engineVersion 3. `./init.sh` EXIT 0 — SwiftFormat PASS (2/87
+files formatted), SwiftLint strict PASS (0 violations/66 files), Simulator build `BUILD
+SUCCEEDED`, test `SKIP` by DEC-040. No app model, dependency, persistence, migration, network,
+telemetry, or test artifacts added.
+**Decisions**: DEC-050 closes V2 with the deterministic ranker; synthetic labels are structural
+proof inputs only, not user data or training data; no candidate evaluation is admitted.
+**Blockers**: none
+**Next**: V2 ranker phase closed; reconsider only after a named residual failure and newly frozen
+admissible labels satisfy the full quality/privacy/license/performance/version/fallback gate.
+
+## 2026-09-18 — feat-028 Codex review remediation
+
+**State**: done (independent-evidence and owner-recall gate fix; no application-code change)
+**Done**: Replaced rank-derived labels with `fixture-oracle-v2`, a repository-local static
+annotation manifest in `scripts/proof/feat-028-proof.swift`. The manifest is shared by Smoke 60
+(15 groups × 4), Golden-shaped 200 (20 × 10), Trip-shaped 150 (30 × 5), and H-1000 1,000
+(50 × 20); labels never read `PhotoAnalysis`, scalar scores, rank order, or engine output. Added
+oracle/rank disagreement, complete label coverage, cross-split asset-ID disjointness, complete
+frozen config/weights/bonuses/tie-break checks, and Must-Keep Recall `≥95%` assertions; recorded
+DEC-051 and synchronized feature/plan/decision provenance.
+**Evidence**: `./scripts/proof/feat-028.sh` EXIT 0 — `STAGED-MATCH 17`; frozen config/weights/
+bonuses/tie-break, oracle provenance, label coverage, asset-ID disjointness, and oracle/rank
+independence PASS. Smoke `60→15`, Golden-shaped `200→20`, Trip-shaped `150→30`, H-1000
+`1,000→50`; Recall/Good Selection/Best-Shot/Moment Coverage `1.000`, Bad Pick/Duplicate
+Leakage `0.000`, deterministic replay PASS. `./init.sh` EXIT 0 — SwiftFormat PASS (`2/87` files
+formatted), SwiftLint strict PASS (`0` violations in `66` files), Simulator build `BUILD SUCCEEDED`,
+tests `SKIP` by DEC-040; `git diff --check` clean and no `*Test*.swift` files found.
+**Blockers**: none.
+**Next**: V2 ranker phase closed; reconsider only on a named residual failure with a newly approved
+admissible label source satisfying the full quality/privacy/license/performance/version/fallback gate.
+
+## 2026-09-18 — feat-028 proof contract completion
+
+**State**: done (DEC-050 no-ranker outcome retained; DEC-051 evidence direction completed by DEC-052; no application-code change)
+**Done**: Replaced the rank-winner-only fixture rows with `fixture-oracle-v3` authored annotation rows and an explicit H-1000 case where `MUST_KEEP` is below the deterministic rank winner; the proof asserts both the mismatch and the selected rank winner. Added behavioral equal-score fixtures for the frozen edited > favorite > pixel-area > asset-ID ordering with reversed-input replay. Aligned Duplicate Leakage to the owner definition, needless repeat selections / total selected, and asserted the selected-output denominator; marked DEC-050 Superseded by DEC-051 without rewriting its historical body and added DEC-052 for this completion.
+**Evidence**: `./scripts/proof/feat-028.sh` EXIT 0 (`STAGED-MATCH 17`); Smoke 60→15, Golden-shaped 200→20, Trip-shaped 150→30, H-1000 1,000→50; Recall/Good Selection/Best-Shot/Moment Coverage `1.000` on first three and `0.980/0.980/0.980/1.000` on H-1000; Bad Pick `0.000/0.000/0.000/0.020`; Duplicate Leakage `0.000` with selected-output denominators 15/20/30/50; tie-break and explicit mismatch assertions PASS. `./init.sh` EXIT 0 — SwiftFormat PASS (0/87 formatted), SwiftLint strict PASS (0 violations/66 files), Simulator build SUCCEEDED, tests SKIP by DEC-040; no test artifacts.
+**Decisions**: DEC-050 is Superseded by DEC-051 for its original provenance wording; DEC-052 records the explicit mismatch, tie-break behavior, canonical leakage denominator, and unchanged gates.
+**Blockers**: none.
+**Next**: V2 ranker phase closed; reconsider only after a named residual failure and newly approved admissible labels satisfy the full quality/privacy/license/performance/version/fallback gate.
