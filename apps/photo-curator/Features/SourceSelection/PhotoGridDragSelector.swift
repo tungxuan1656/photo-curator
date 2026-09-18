@@ -169,6 +169,11 @@ struct PhotoGridDragSelector: UIViewRepresentable {
             sv.panGestureRecognizer.isEnabled = true
 
             let pointInGrid = gesture.location(in: host)
+            guard host.bounds.contains(pointInGrid) else {
+                isDragging = false
+                activeGesture = nil
+                return
+            }
             startIndex = calculateIndex(at: pointInGrid)
             lastReportedIndex = startIndex
 
