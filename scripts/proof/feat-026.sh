@@ -46,6 +46,7 @@ grep -v -e '^App/RootView.swift$' \
   -e '^Features/Settings/' \
   -e '^Features/SourceSelection/SelectionSummaryView.swift$' \
   -e '^Features/SourceSelection/SourceSelectionView.swift$' \
+  -e '^Services/Intelligence/QwenRuntime.swift$' \
   "$FILES_LIST" > "$OUT/compiled-files.txt" || true
 mv "$OUT/compiled-files.txt" "$FILES_LIST"
 while IFS= read -r rel; do

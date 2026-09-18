@@ -18,6 +18,7 @@ struct AppContainer: Sendable {
     let exporter: any AlbumExportService
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
+    let modelInstallation: ModelInstallationService
 
     /// G1 wiring: real permission service + file-backed cache/checkpoint + real
     /// analysis pipeline (feat-006 flips the analyzer switch); analytics stays
@@ -45,7 +46,10 @@ struct AppContainer: Sendable {
             semanticJuryProvider: FoundationModelsSemanticJuryProvider(),
             exporter: PhotoKitAlbumExporter(),
             analytics: NoopAnalytics(),
-            memoryPressure: MemoryPressureObserver()
+            memoryPressure: MemoryPressureObserver(),
+            modelInstallation: ModelInstallationService(
+                rootDirectory: root.appendingPathComponent("models", isDirectory: true)
+            )
         )
     }
 }

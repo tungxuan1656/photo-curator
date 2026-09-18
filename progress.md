@@ -712,3 +712,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./scripts/proof/feat-031.sh` EXIT 0 — interrupted failure, resume via `Range`, hash/size verification, state stream, atomic activation, and removal PASS. `./init.sh` EXIT 0 — format, strict lint, Simulator build, feat-030 proof, feat-031 proof, and policy test skip PASS.
 **Blockers**: AppContainer/UI wiring, live inference leases/resource admission, offline local Qwen load, cancellation/teardown trace, and real image-sensitive inference remain open.
 **Next**: Commit the installer slice, then wire installation state into AppContainer and run the real 2B model feasibility gate.
+
+## 2026-09-18 — feat-031 AppContainer wiring
+
+**State**: active (Task 3 partial)
+**Done**: Committed the verified installer as `7d9e3ce` (`feat(feat-031): add verified model installer`). Wired `ModelInstallationService` into `AppContainer.live()` under the application-support model root and updated the real-source feat-026 proof to inject the same dependency while excluding only the MLX runtime adapter from its standalone compiler boundary.
+**Evidence**: `./scripts/proof/feat-026.sh` — `99 PASS / 0 FAIL`; `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 installer proof, and policy test skip all PASS.
+**Blockers**: Real downloaded local model load, image-sensitive inference, cancellation/teardown trace, resource admission, and UI availability state remain open.
+**Next**: Run the 2B model feasibility gate with actual local weights before implementing the quality selector.

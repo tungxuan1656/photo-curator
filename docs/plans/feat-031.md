@@ -545,7 +545,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 - [ ] Separate disk capacity, physical RAM class, available headroom, and thermal state checks.
 - [ ] Prove offline loading with the network disabled after installation.
 
-**Evidence:** `scripts/proof/feat-031.sh` executes the actual manifest/installer sources with an injected byte transport: interrupted transfer, resumable `Range`, SHA-256/size verification, state stream, atomic revision activation, backup exclusion, and removal all pass without network or model weights.
+**Evidence:** `AppContainer.live()` owns the installer under the application-support model root. `scripts/proof/feat-026.sh` injects the same installer dependency into its real-source constructor proof (`99 PASS / 0 FAIL`). `scripts/proof/feat-031.sh` executes the actual manifest/installer sources with an injected byte transport: interrupted transfer, resumable `Range`, SHA-256/size verification, state stream, atomic revision activation, backup exclusion, and removal all pass without network or model weights.
 **Stop condition:** A partially downloaded model must never become `installed` or trigger lazy network access during Analyze.
 
 ### Task 4 — Build pixel evidence and coherent visual groups

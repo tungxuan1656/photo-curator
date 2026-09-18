@@ -768,7 +768,10 @@ struct HarnessExporter: AlbumExportService {
         semanticJuryProvider: NoopSemanticJuryProvider(),
         exporter: HarnessExporter(failFirstAdd: failFirstAdd, attempts: HarnessAttempts()),
         analytics: NoopAnalytics(),
-        memoryPressure: MemoryPressureObserver()
+        memoryPressure: MemoryPressureObserver(),
+        modelInstallation: ModelInstallationService(
+            rootDirectory: root.appendingPathComponent("models", isDirectory: true)
+        )
     )
     let model = AppModel(container: container)
     model.allAssets = assets

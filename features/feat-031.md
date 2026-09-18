@@ -48,5 +48,6 @@ The [plan reading route](../docs/plans/feat-031.md#3-owner-documents-and-contrac
 - Task 2 partial evidence: MLX Swift LM, Swift Hugging Face, and Swift Transformers revisions are pinned; the app builds for the generic Simulator destination with the Swift 5 target and default actor-isolation settings.
 - Task 2 remains open: no weights are installed, no real local model load or image-sensitive inference has run, and no cancellation/teardown trace exists.
 - Task 3 partial evidence: `ModelInstallationService` now performs revision-derived, resumable per-file streaming into staging, hash/size validation, atomic activation, state streaming, cancellation, backup exclusion, and removal; it is covered by `scripts/proof/feat-031.sh` without network or weights.
-- Task 3 remains open: AppContainer/UI wiring, live inference leases/resource admission, offline runtime load, and transport fault coverage beyond the deterministic proof are not complete.
-- Next: commit the installer slice, then wire model availability into AppContainer and prove a real downloaded local model load/image-sensitive inference.
+- Task 3 partial evidence: `AppContainer.live()` now owns the installer under the application-support model root; the feat-026 whole-source proof injects the same dependency and remains green (`99 PASS / 0 FAIL`).
+- Task 3 remains open: UI wiring, live inference leases/resource admission, offline runtime load, and transport fault coverage beyond the deterministic proof are not complete.
+- Next: prove a real downloaded local model load and image-sensitive 2B inference before building the quality selector.
