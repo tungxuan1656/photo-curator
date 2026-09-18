@@ -547,3 +547,12 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Decisions**: DEC-050 is Superseded by DEC-051 for its original provenance wording; DEC-052 records the explicit mismatch, tie-break behavior, canonical leakage denominator, and unchanged gates.
 **Blockers**: none.
 **Next**: V2 ranker phase closed; reconsider only after a named residual failure and newly approved admissible labels satisfy the full quality/privacy/license/performance/version/fallback gate.
+
+## 2026-09-18 — feat-028 post-merge closeout (PR #59 merged)
+
+**State**: done/merged
+**Done**: Post-merge documentation closeout only. PR #59 (`https://github.com/tungxuan1656/photo-curator/pull/59`) was merged into `main` at `986f5dd82970afd5cd46fe2651fad689bf9eb87f`, confirmed on `origin/main`; `feature_index.json` remains `done` for feat-028. All four feat-028 acceptance criteria remain checked; no application code changed. The full approved feature sequence is complete and there is no next feature.
+**Evidence**: `./scripts/proof/feat-028.sh` EXIT 0 — `STAGED-MATCH 17`; independent `fixture-oracle-v3` evidence, explicit H-1000 `MUST_KEEP`/rank mismatch and deterministic rank-winner assertion, equal-score edited/favorite/pixel-area/asset-ID tie-break behavior under reversed input order, Smoke `60→15`, Golden-shaped `200→20`, Trip-shaped `150→30`, H-1000 `1,000→50`, deterministic replay, Recall/Good Selection/Best-Shot/Moment Coverage `1.000/1.000/1.000/1.000` on the first three and `0.980/0.980/0.980/1.000` on H-1000, Bad Pick `0.000/0.000/0.000/0.020`, and Duplicate Leakage `0.000` with selected-output denominators `15/20/30/50` all PASS. Retained `./init.sh` EXIT 0 — SwiftFormat PASS (`0/87` files formatted), SwiftLint strict PASS (`0 violations in 66 files`), Simulator build `BUILD SUCCEEDED`, tests `SKIP` by DEC-040; manual QA remains removed and non-gating per DEC-040; no automated tests, test targets, `*Test*.swift` files, or test frameworks. `git diff --check` and targeted consistency checks PASS.
+**Decisions**: DEC-050 no-ranker outcome retained; DEC-051 independent oracle and recall-gate remediation; DEC-052 proof-contract completion. No contract or data-model change; no model, dependency, persistence, migration, network path, telemetry, or fallback adapter added.
+**Blockers**: none
+**Next**: none — the full approved feature sequence is complete; reconsider a ranker only after a named residual failure and newly approved admissible labels satisfy the full quality/privacy/license/performance/version/fallback gate.
