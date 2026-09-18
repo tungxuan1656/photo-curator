@@ -744,3 +744,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 installer/response proofs, and policy test skip all PASS.
 **Blockers**: No pixel encoder, controlled grouping corpus, Qwen judge integration, or quality-path selector consumes this seam yet.
 **Next**: Add the quality runner/selector contract only after pixel-derived grouping evidence and the admitted Qwen response path are available.
+
+## 2026-09-18 — feat-031 verified model availability discovery
+
+**State**: active (Task 3 partial)
+**Done**: Added `ModelInstallationService.installedModel()`, which locally revalidates the active revision after relaunch and publishes `.installed` without invoking the downloader. Removal clears the verified installation reference.
+**Evidence**: `./scripts/proof/feat-031.sh` — interrupted transfer, resume/hash, atomic activation, `REOPEN-DISCOVERY PASS`, removal, and response validation all PASS. `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 proofs, and policy test skip all PASS.
+**Blockers**: UI setup state, inference leases, offline MLX runtime load through the app-owned installation, resource admission, and real cancellation/teardown remain open.
+**Next**: Implement the generation-bound local Qwen pair judge after the quality grouping input contract is complete.

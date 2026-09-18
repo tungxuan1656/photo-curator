@@ -97,6 +97,19 @@ struct Feat031InstallationProof {
         print("RESUME-AND-HASH PASS")
         print("ATOMIC-ACTIVATION PASS")
 
+        let reopened = ModelInstallationService(
+            manifest: manifest,
+            rootDirectory: root,
+            downloader: { _ in fatalError("relaunch discovery attempted network access") }
+        )
+        guard let discovered = await reopened.installedModel(),
+              discovered.directory == installation.directory,
+              await reopened.currentState() == .installed
+        else {
+            fatalError("reopened service did not discover the verified installation")
+        }
+        print("REOPEN-DISCOVERY PASS")
+
         try await service.remove()
         guard await service.currentState() == .notInstalled,
               !FileManager.default.fileExists(atPath: installation.directory.path)

@@ -37,6 +37,7 @@ actor ModelInstallationService {
     private let rootDirectory: URL
     private let downloader: ModelDownloader
     private var state: ModelInstallationState = .notInstalled
+    private var verifiedInstallation: ModelInstallation?
     private var installationTask: Task<ModelInstallation, Error>?
     private var observers: [UUID: AsyncStream<ModelInstallationState>.Continuation] = [:]
 
@@ -52,6 +53,27 @@ actor ModelInstallationService {
 
     func currentState() -> ModelInstallationState {
         state
+    }
+
+    /// Revalidates the active revision without network access. Callers use this
+    /// after launch before offering a model-backed run.
+    func installedModel() -> ModelInstallation? {
+        if let verifiedInstallation {
+            return verifiedInstallation
+        }
+        guard installationTask == nil, FileManager.default.fileExists(atPath: revisionDirectory.path) else {
+            return nil
+        }
+        do {
+            try manifest.validate(at: revisionDirectory)
+            let installation = installation(at: revisionDirectory)
+            verifiedInstallation = installation
+            publish(.installed)
+            return installation
+        } catch {
+            publish(.notInstalled)
+            return nil
+        }
     }
 
     func stateStream() -> AsyncStream<ModelInstallationState> {
@@ -73,6 +95,7 @@ actor ModelInstallationService {
         let task = Task { [self] in
             do {
                 let installation = try await performInstall()
+                verifiedInstallation = installation
                 publish(.installed)
                 return installation
             } catch is CancellationError {
@@ -103,6 +126,7 @@ actor ModelInstallationService {
         if FileManager.default.fileExists(atPath: directory.path) {
             try FileManager.default.removeItem(at: directory)
         }
+        verifiedInstallation = nil
         state = .notInstalled
         publish(state)
     }
