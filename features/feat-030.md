@@ -81,12 +81,12 @@ See [`docs/plans/feat-030.md`](../docs/plans/feat-030.md).
 
 ## Handoff
 
-- State: done
+- State: done — follow-up localization audit corrected runtime `String` values in Home,
+  Source Selection, Review, and Photo Analysis that bypassed SwiftUI localization.
 - Evidence: `scripts/proof/feat-030.sh` and `./init.sh` both pass. The proof verifies
-  complete en/vi catalog and Info.plist coverage, placeholder parity, no
-  `defaultValue`, native domain/presentation boundary, System Default resolution,
-  explicit language contracts, fallback, locale-aware formatting, persistence hooks,
-  root locale injection, and the Settings picker. `./init.sh` passes SwiftFormat,
-  SwiftLint strict with 0 violations, Simulator build, and the policy test skip.
+  382 en/vi catalog entries, placeholder parity, no `defaultValue`, native
+  presentation-boundary localization, root locale/persistence hooks, fallback, and
+  locale-aware formatting. `./init.sh` passes SwiftFormat, SwiftLint strict with 0
+  violations, Simulator build, the proof task, and the policy test skip.
 - Blockers: none
 - Next: none; feat-030 is complete.

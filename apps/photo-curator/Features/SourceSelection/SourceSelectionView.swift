@@ -57,7 +57,7 @@ struct SourceSelectionView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !appModel.filteredAssets.isEmpty {
-                    Button(allFilteredSelected ? "Deselect All" : "Select All") {
+                    Button(selectAllTitle) {
                         if allFilteredSelected {
                             appModel.deselectAllFiltered()
                         } else {
@@ -79,6 +79,10 @@ struct SourceSelectionView: View {
         let assets = appModel.filteredAssets
         guard !assets.isEmpty else { return false }
         return assets.allSatisfy { appModel.selectedIDs.contains($0.id) }
+    }
+
+    private var selectAllTitle: LocalizedStringResource {
+        allFilteredSelected ? "Deselect All" : "Select All"
     }
 
     private func selectionLabel(isSelected: Bool, isFavorite: Bool) -> LocalizedStringResource {
@@ -172,8 +176,8 @@ struct SourceSelectionView: View {
                             .font(.subheadline.bold())
                             .foregroundStyle(Color.accentColor)
                         Text(
-                            "Photos Curator analyzes sharpness, expressions, and duplicate shots to find your "
-                                + "best moments."
+                            // swiftlint:disable:next line_length
+                            "Photos Curator analyzes sharpness, expressions, and duplicate shots to find your best moments."
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)

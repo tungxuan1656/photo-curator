@@ -137,15 +137,15 @@ struct PhotoAnalysisDetail: View {
         return facts
     }
 
-    private func score(_ value: Double) -> String {
+    private func score(_ value: Double) -> LocalizedStringResource {
         "\(Int((value * 100).rounded())) / 100"
     }
 
-    private func risk(_ value: Double) -> String {
+    private func risk(_ value: Double) -> LocalizedStringResource {
         "\(Int((value * 100).rounded()))%"
     }
 
-    private func sceneName(_ scene: SceneType) -> String {
+    private func sceneName(_ scene: SceneType) -> LocalizedStringResource {
         switch scene {
         case .people: "People"
         case .group: "Group"
@@ -186,36 +186,33 @@ private struct AnalysisScoreCard: View {
     }
 }
 
-private struct AnalysisFact: Identifiable {
-    let label: String
-    let value: String
+private struct AnalysisFact {
+    let label: LocalizedStringResource
+    let value: LocalizedStringResource
 
-    var id: String {
-        label
-    }
-
-    init(_ label: String, _ value: String) {
+    init(_ label: LocalizedStringResource, _ value: LocalizedStringResource) {
         self.label = label
         self.value = value
     }
 }
 
 private struct AnalysisFactSection: View {
-    let title: String
+    let title: LocalizedStringResource
     let facts: [AnalysisFact]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
-            ForEach(facts) { fact in
-                LabeledContent(fact.label) {
+            ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in
+                LabeledContent {
                     Text(fact.value)
                         .monospacedDigit()
+                } label: {
+                    Text(fact.label)
                 }
                 .font(.body)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(fact.label), \(fact.value)")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -234,18 +231,16 @@ private struct SelectionResultSection: View {
             Text("Selection result")
                 .font(.headline)
             LabeledContent("Current state") {
-                Text(isSelected ? "Selected" : "Removed")
+                Text(currentState)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Current state, \(isSelected ? "Selected" : "Removed")")
+            .accessibilityLabel(currentStateAccessibilityLabel)
             if let decision {
                 LabeledContent("Original result") {
-                    Text(decision.status == .selected ? "Selected" : "Removed")
+                    Text(originalState(for: decision))
                 }
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(
-                    "Original result, \(decision.status == .selected ? "Selected" : "Removed")"
-                )
+                .accessibilityLabel(originalStateAccessibilityLabel(for: decision))
                 if let score = decision.score {
                     LabeledContent("Selection score") {
                         Text("\(Int((score * 100).rounded())) / 100")
@@ -260,7 +255,7 @@ private struct SelectionResultSection: View {
                             .multilineTextAlignment(.trailing)
                     }
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Reason, \(reasonText(for: reason))")
+                    .accessibilityLabel(reasonText(for: reason))
                 }
             } else {
                 Text("The original automatic result is unavailable.")
@@ -273,12 +268,28 @@ private struct SelectionResultSection: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func reasonText(for reason: String) -> String {
+    private var currentState: LocalizedStringResource {
+        isSelected ? "Selected" : "Removed"
+    }
+
+    private var currentStateAccessibilityLabel: LocalizedStringResource {
+        isSelected ? "Current state, Selected" : "Current state, Removed"
+    }
+
+    private func originalState(for decision: Decision) -> LocalizedStringResource {
+        decision.status == .selected ? "Selected" : "Removed"
+    }
+
+    private func originalStateAccessibilityLabel(for decision: Decision) -> LocalizedStringResource {
+        decision.status == .selected ? "Original result, Selected" : "Original result, Removed"
+    }
+
+    private func reasonText(for reason: String) -> LocalizedStringResource {
         Self.reasonTextByCode[reason] ?? "A recorded selection rule applied"
     }
 
-    private static let reasonTextByCode: [String: String] = {
-        var textByCode: [String: String] = [:]
+    private static let reasonTextByCode: [String: LocalizedStringResource] = {
+        var textByCode: [String: LocalizedStringResource] = [:]
         textByCode["assetUnavailable"] = "Analysis was unavailable"
         textByCode["unsupportedAsset"] = "This item is not a supported photo"
         textByCode["corruptedAsset"] = "This photo could not be read"

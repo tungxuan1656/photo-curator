@@ -17,6 +17,10 @@ struct SelectionToggle: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
-        .accessibilityLabel(isSelected ? "Remove photo from album" : "Add photo to album")
+        .accessibilityLabel(accessibilityTitle)
+    }
+
+    private var accessibilityTitle: LocalizedStringResource {
+        isSelected ? "Remove photo from album" : "Add photo to album"
     }
 }

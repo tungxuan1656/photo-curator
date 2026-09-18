@@ -127,7 +127,7 @@ struct ReviewOverview: View {
                                     Text(model.similarGroups.count, format: .number)
                                         .font(.title2.bold())
                                         .foregroundStyle(.primary)
-                                    Text(model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen")
+                                    Text(similarGroupsSummary(for: model))
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                 }
@@ -293,6 +293,10 @@ struct ReviewOverview: View {
                 Text("Your original photos will stay unchanged. The current analysis and selection will be removed.")
             }
         )
+    }
+
+    private func similarGroupsSummary(for model: ReviewModel) -> LocalizedStringResource {
+        model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen"
     }
 }
 

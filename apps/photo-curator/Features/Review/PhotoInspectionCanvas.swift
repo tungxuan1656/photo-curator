@@ -207,11 +207,7 @@ struct PhotoInspectionCanvas: View {
         .offset(inspectionState.offset)
         .clipped()
         .accessibilityLabel("Photo \(position) of \(total)")
-        .accessibilityValue(
-            isSelected
-                ? "In album, \(zoomValue)"
-                : "Removed, \(zoomValue)"
-        )
+        .accessibilityValue(zoomValue)
         .accessibilityHint("Double tap to inspect. Swipe left or right at Fit to change photos.")
         .accessibilityAction(named: "Zoom in") {
             animate {
@@ -276,8 +272,8 @@ struct PhotoInspectionCanvas: View {
         }
     }
 
-    private var zoomValue: String {
-        inspectionState.isAtFit ? "Fit" : "Zoomed to \(inspectionState.scale) times"
+    private var zoomValue: LocalizedStringResource {
+        inspectionState.isAtFit ? "Fit" : "Zoomed"
     }
 }
 
@@ -388,10 +384,11 @@ private struct PhotoInspectionChrome: View {
                 feedbackTrigger += 1
                 toggleSelection()
             } label: {
-                Label(
-                    isSelected ? "In Album" : "Removed",
-                    systemImage: isSelected ? "checkmark.circle.fill" : "circle"
-                )
+                Label {
+                    Text(albumStateTitle)
+                } icon: {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                }
             }
             .buttonStyle(
                 InspectionButtonStyle(
@@ -399,7 +396,7 @@ private struct PhotoInspectionChrome: View {
                     reduceMotion: reduceMotion
                 )
             )
-            .accessibilityValue(isSelected ? "In album" : "Removed")
+            .accessibilityValue(albumStateAccessibilityValue)
             .accessibilityHint("Changes whether this photo is in the album.")
 
             Button(action: showAnalysis) {
@@ -431,6 +428,14 @@ private struct PhotoInspectionChrome: View {
     private func changePage(_ action: () -> Void) {
         feedbackTrigger += 1
         animate(action)
+    }
+
+    private var albumStateTitle: LocalizedStringResource {
+        isSelected ? "In Album" : "Removed"
+    }
+
+    private var albumStateAccessibilityValue: LocalizedStringResource {
+        isSelected ? "In album" : "Removed"
     }
 
     private func animate(_ action: () -> Void) {

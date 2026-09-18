@@ -109,7 +109,7 @@ private struct SimilarGroupCard: View {
                                 Text("Best pick").font(.caption).bold()
                                     .accessibilityLabel("Best pick")
                             }
-                            Text(model.isSelected(id) ? "In album" : "Removed")
+                            Text(albumStateLabel(for: id, model: model))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             if id != current {
@@ -128,5 +128,9 @@ private struct SimilarGroupCard: View {
                 }
             }
         }
+    }
+
+    private func albumStateLabel(for id: AssetID, model: ReviewModel) -> LocalizedStringResource {
+        model.isSelected(id) ? "In album" : "Removed"
     }
 }

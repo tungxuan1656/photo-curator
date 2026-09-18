@@ -178,9 +178,9 @@ struct HomeView: View {
     private func permissionCard(
         icon: String,
         iconColor: Color,
-        title: String,
-        message: String,
-        primaryButtonTitle: String?,
+        title: LocalizedStringResource,
+        message: LocalizedStringResource,
+        primaryButtonTitle: LocalizedStringResource?,
         primaryAction: (() -> Void)? = nil
     ) -> some View {
         VStack(spacing: 12) {
@@ -234,8 +234,8 @@ private struct HomeHeroBanner: View {
                     .multilineTextAlignment(.center)
 
                 Text(
-                    "Pick a trip, event, or batch of photos. "
-                        + "Photos Curator will find the strongest set for you to review."
+                    // swiftlint:disable:next line_length
+                    "Pick a trip, event, or batch of photos. Photos Curator will find the strongest set for you to review."
                 )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -278,7 +278,11 @@ private struct HomeHowItWorksSection: View {
         }
     }
 
-    private func stepRow(number: String, title: String, subtitle: String) -> some View {
+    private func stepRow(
+        number: String,
+        title: LocalizedStringResource,
+        subtitle: LocalizedStringResource
+    ) -> some View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
@@ -338,14 +342,18 @@ private struct HomeFeatureHighlights: View {
     private func card(
         icon: String,
         iconColor: Color,
-        title: String,
-        headline: String,
-        subtext: String
+        title: LocalizedStringResource,
+        headline: LocalizedStringResource,
+        subtext: LocalizedStringResource
     ) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Label(title, systemImage: icon)
-                .font(.caption.bold())
-                .foregroundStyle(iconColor)
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: icon)
+            }
+            .font(.caption.bold())
+            .foregroundStyle(iconColor)
             Text(headline)
                 .font(.subheadline.bold())
             Text(subtext)

@@ -17,6 +17,22 @@
         }
       }
     },
+    "%lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld"
+          }
+        }
+      }
+    },
     "%lld / %lld": {
       "localizations": {
         "en": {
@@ -114,22 +130,6 @@
         }
       }
     },
-    "%lld photos · %@ · %@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$lld photos · %2$@ · %3$@"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld ảnh · %@ · %@"
-          }
-        }
-      }
-    },
     "%lld photos analyzed": {
       "localizations": {
         "vi": {
@@ -210,6 +210,22 @@
         }
       }
     },
+    "%lld photos · %@ · %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld photos · %2$@ · %3$@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ảnh · %@ · %@"
+          }
+        }
+      }
+    },
     "%lld selected from %lld photos": {
       "localizations": {
         "en": {
@@ -238,6 +254,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã chọn %lld trên %lld ảnh tương tự"
+          }
+        }
+      }
+    },
+    "%lld%%": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld%%"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%%"
           }
         }
       }
@@ -355,18 +387,18 @@
         }
       }
     },
-    "3 Months": {
+    "100% On-Device": {
       "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 tháng"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "3 Months"
+            "value": "100% On-Device"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100% trên thiết bị"
           }
         }
       }
@@ -387,6 +419,54 @@
         }
       }
     },
+    "3 Months": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 tháng"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "3 Months"
+          }
+        }
+      }
+    },
+    "A different view added more information": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "A different view added more information"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một góc nhìn khác bổ sung thêm thông tin"
+          }
+        }
+      }
+    },
+    "A distinct second view of this moment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "A distinct second view of this moment"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một góc nhìn thứ hai khác biệt của khoảnh khắc này"
+          }
+        }
+      }
+    },
     "A few photos could use your judgment. Your originals are unchanged.": {
       "localizations": {
         "vi": {
@@ -403,6 +483,22 @@
         }
       }
     },
+    "A recorded selection rule applied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "A recorded selection rule applied"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã áp dụng một quy tắc tuyển chọn được ghi nhận"
+          }
+        }
+      }
+    },
     "A second view of this moment — keep both only if distinct": {
       "localizations": {
         "vi": {
@@ -415,6 +511,22 @@
           "stringUnit": {
             "state": "new",
             "value": "A second view of this moment — keep both only if distinct"
+          }
+        }
+      }
+    },
+    "A similar photo was preferred": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "A similar photo was preferred"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một ảnh tương tự được ưu tiên"
           }
         }
       }
@@ -515,6 +627,54 @@
         }
       }
     },
+    "Added by your choice": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Added by your choice"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Được thêm theo lựa chọn của bạn"
+          }
+        }
+      }
+    },
+    "Aesthetic signal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Aesthetic signal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tín hiệu thẩm mỹ"
+          }
+        }
+      }
+    },
+    "Album Saved": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã lưu album"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Album Saved"
+          }
+        }
+      }
+    },
     "Album name": {
       "localizations": {
         "vi": {
@@ -543,22 +703,6 @@
           "stringUnit": {
             "state": "new",
             "value": "Album partially saved"
-          }
-        }
-      }
-    },
-    "Album Saved": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đã lưu album"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Album Saved"
           }
         }
       }
@@ -643,6 +787,22 @@
         }
       }
     },
+    "An identical photo was preferred": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "An identical photo was preferred"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một ảnh giống hệt được ưu tiên"
+          }
+        }
+      }
+    },
     "Analysis complete": {
       "localizations": {
         "vi": {
@@ -707,6 +867,22 @@
         }
       }
     },
+    "Analysis was unavailable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Analysis was unavailable"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phân tích không khả dụng"
+          }
+        }
+      }
+    },
     "Analyzing photos": {
       "localizations": {
         "vi": {
@@ -719,6 +895,54 @@
           "stringUnit": {
             "state": "new",
             "value": "Analyzing photos"
+          }
+        }
+      }
+    },
+    "Animal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Animal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Động vật"
+          }
+        }
+      }
+    },
+    "Another scene added more variety": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Another scene added more variety"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bối cảnh khác tạo thêm sự đa dạng"
+          }
+        }
+      }
+    },
+    "Architecture": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Architecture"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiến trúc"
           }
         }
       }
@@ -771,6 +995,22 @@
         }
       }
     },
+    "Best Smiles & Focus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Best Smiles & Focus"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nụ cười và tiêu điểm tốt nhất"
+          }
+        }
+      }
+    },
     "Best pick": {
       "localizations": {
         "vi": {
@@ -819,6 +1059,38 @@
         }
       }
     },
+    "Best representative for this moment": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Best representative for this moment"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh đại diện tốt nhất cho khoảnh khắc này"
+          }
+        }
+      }
+    },
+    "Blur risk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Blur risk"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguy cơ mờ"
+          }
+        }
+      }
+    },
     "Burst & similar shots grouped": {
       "localizations": {
         "vi": {
@@ -831,6 +1103,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Burst & similar shots grouped"
+          }
+        }
+      }
+    },
+    "CURATED ALBUM": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ALBUM ĐÃ TUYỂN CHỌN"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "CURATED ALBUM"
           }
         }
       }
@@ -899,22 +1187,6 @@
         }
       }
     },
-    "Choose as best pick": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chọn làm ảnh tốt nhất"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Choose as best pick"
-          }
-        }
-      }
-    },
     "Choose More Photos": {
       "localizations": {
         "vi": {
@@ -927,6 +1199,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Choose More Photos"
+          }
+        }
+      }
+    },
+    "Choose as best pick": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn làm ảnh tốt nhất"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Choose as best pick"
           }
         }
       }
@@ -1043,6 +1331,22 @@
         }
       }
     },
+    "Clustering": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Clustering"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phân nhóm"
+          }
+        }
+      }
+    },
     "Combines sharpness and exposure. It helps compare photos, but it does not decide the album.": {
       "localizations": {
         "vi": {
@@ -1123,6 +1427,22 @@
         }
       }
     },
+    "Composition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Composition"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bố cục"
+          }
+        }
+      }
+    },
     "Connection Needed": {
       "localizations": {
         "vi": {
@@ -1135,6 +1455,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Connection Needed"
+          }
+        }
+      }
+    },
+    "Content": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Content"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung"
           }
         }
       }
@@ -1171,6 +1507,22 @@
         }
       }
     },
+    "Continue Without Them": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục không có các ảnh này"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Continue Without Them"
+          }
+        }
+      }
+    },
     "Continue curation, %lld photos, %@": {
       "localizations": {
         "en": {
@@ -1183,22 +1535,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tiếp tục tuyển chọn, %lld ảnh, %@"
-          }
-        }
-      }
-    },
-    "Continue to photo access setup": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tiếp tục thiết lập quyền truy cập ảnh"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Continue to photo access setup"
           }
         }
       }
@@ -1235,18 +1571,18 @@
         }
       }
     },
-    "Continue Without Them": {
+    "Continue to photo access setup": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tiếp tục không có các ảnh này"
+            "value": "Tiếp tục thiết lập quyền truy cập ảnh"
           }
         },
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Continue Without Them"
+            "value": "Continue to photo access setup"
           }
         }
       }
@@ -1263,6 +1599,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Couldn't Continue Curation"
+          }
+        }
+      }
+    },
+    "Couldn't Save Album": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể lưu album"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Couldn't Save Album"
           }
         }
       }
@@ -1299,22 +1651,6 @@
         }
       }
     },
-    "Couldn't Save Album": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không thể lưu album"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Couldn't Save Album"
-          }
-        }
-      }
-    },
     "Curate Photos": {
       "localizations": {
         "vi": {
@@ -1343,22 +1679,6 @@
           "stringUnit": {
             "state": "new",
             "value": "Curated"
-          }
-        }
-      }
-    },
-    "CURATED ALBUM": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ALBUM ĐÃ TUYỂN CHỌN"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "CURATED ALBUM"
           }
         }
       }
@@ -1475,6 +1795,38 @@
         }
       }
     },
+    "Current state, Removed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Current state, Removed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trạng thái hiện tại, Đã bỏ"
+          }
+        }
+      }
+    },
+    "Current state, Selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Current state, Selected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trạng thái hiện tại, Đã chọn"
+          }
+        }
+      }
+    },
     "Deselect All": {
       "localizations": {
         "vi": {
@@ -1551,6 +1903,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "Document": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Document"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu"
           }
         }
       }
@@ -1635,6 +2003,22 @@
         }
       }
     },
+    "Evaluates sharpness, expressions, and groups similar angles.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Evaluates sharpness, expressions, and groups similar angles."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đánh giá độ sắc nét, biểu cảm và nhóm các góc chụp tương tự."
+          }
+        }
+      }
+    },
     "Evaluates sharpness, focus, lighting, and composition.": {
       "localizations": {
         "vi": {
@@ -1683,6 +2067,22 @@
         }
       }
     },
+    "Exposure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Exposure"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phơi sáng"
+          }
+        }
+      }
+    },
     "Faces & Best Smiles": {
       "localizations": {
         "vi": {
@@ -1699,6 +2099,22 @@
         }
       }
     },
+    "Favorite status helped its rank": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Favorite status helped its rank"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trạng thái ưa thích giúp ảnh được xếp hạng cao hơn"
+          }
+        }
+      }
+    },
     "Favorites": {
       "localizations": {
         "vi": {
@@ -1711,6 +2127,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Favorites"
+          }
+        }
+      }
+    },
+    "Filters blurs, closed eyes, and bad lighting.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Filters blurs, closed eyes, and bad lighting."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lọc ảnh mờ, mắt nhắm và ánh sáng kém."
           }
         }
       }
@@ -1795,6 +2227,22 @@
         }
       }
     },
+    "Food": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Food"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đồ ăn"
+          }
+        }
+      }
+    },
     "Full Access": {
       "localizations": {
         "vi": {
@@ -1843,6 +2291,22 @@
         }
       }
     },
+    "Group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Group"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhóm"
+          }
+        }
+      }
+    },
     "Group %lld of %lld": {
       "localizations": {
         "en": {
@@ -1855,6 +2319,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhóm %lld trên %lld"
+          }
+        }
+      }
+    },
+    "Group photo signal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Group photo signal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tín hiệu ảnh nhóm"
           }
         }
       }
@@ -1903,6 +2383,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Groups similar shots and recommends the strongest moment."
+          }
+        }
+      }
+    },
+    "Horizon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Horizon"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đường chân trời"
           }
         }
       }
@@ -1971,22 +2467,6 @@
         }
       }
     },
-    "In album": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trong album"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "In album"
-          }
-        }
-      }
-    },
     "In Album": {
       "localizations": {
         "vi": {
@@ -1999,6 +2479,22 @@
           "stringUnit": {
             "state": "new",
             "value": "In Album"
+          }
+        }
+      }
+    },
+    "In album": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong album"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "In album"
           }
         }
       }
@@ -2035,6 +2531,22 @@
         }
       }
     },
+    "Indoor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Indoor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong nhà"
+          }
+        }
+      }
+    },
     "Inspect": {
       "localizations": {
         "vi": {
@@ -2063,6 +2575,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Inspect photo"
+          }
+        }
+      }
+    },
+    "Inspect the proposed album and export back to Apple Photos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Inspect the proposed album and export back to Apple Photos."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra album được đề xuất và xuất lại vào Apple Photos."
           }
         }
       }
@@ -2127,6 +2655,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Keep this iPhone connected to the internet."
+          }
+        }
+      }
+    },
+    "Landscape": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Landscape"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phong cảnh"
           }
         }
       }
@@ -2419,6 +2963,22 @@
         }
       }
     },
+    "Never Deletes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Never Deletes"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không bao giờ xóa"
+          }
+        }
+      }
+    },
     "Never modified or deleted": {
       "localizations": {
         "vi": {
@@ -2451,18 +3011,18 @@
         }
       }
     },
-    "No duplicates found": {
+    "No": {
       "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không tìm thấy ảnh trùng"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "No duplicates found"
+            "value": "No"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không"
           }
         }
       }
@@ -2479,6 +3039,22 @@
           "stringUnit": {
             "state": "new",
             "value": "No Photos Available"
+          }
+        }
+      }
+    },
+    "No duplicates found": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy ảnh trùng"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "No duplicates found"
           }
         }
       }
@@ -2515,6 +3091,38 @@
         }
       }
     },
+    "Not analyzed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Not analyzed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa phân tích"
+          }
+        }
+      }
+    },
+    "Not classified": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Not classified"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa phân loại"
+          }
+        }
+      }
+    },
     "Nothing needs review": {
       "localizations": {
         "vi": {
@@ -2543,6 +3151,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Nothing removed"
+          }
+        }
+      }
+    },
+    "On-Device AI Curation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "On-Device AI Curation"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuyển chọn bằng AI trên thiết bị"
           }
         }
       }
@@ -2611,6 +3235,22 @@
         }
       }
     },
+    "Original library stays completely intact.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Original library stays completely intact."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư viện gốc luôn được giữ nguyên."
+          }
+        }
+      }
+    },
     "Original result": {
       "localizations": {
         "vi": {
@@ -2639,6 +3279,38 @@
           "stringUnit": {
             "state": "new",
             "value": "Original result, %1$@"
+          }
+        }
+      }
+    },
+    "Original result, Removed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Original result, Removed"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết quả ban đầu, Đã bỏ"
+          }
+        }
+      }
+    },
+    "Original result, Selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Original result, Selected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết quả ban đầu, Đã chọn"
           }
         }
       }
@@ -2675,6 +3347,134 @@
         }
       }
     },
+    "Other": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Other"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khác"
+          }
+        }
+      }
+    },
+    "Other photos added more composition variety": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Other photos added more composition variety"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các ảnh khác tạo thêm sự đa dạng về bố cục"
+          }
+        }
+      }
+    },
+    "Other photos covered people more distinctly": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Other photos covered people more distinctly"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các ảnh khác thể hiện người rõ nét hơn"
+          }
+        }
+      }
+    },
+    "Other photos improved coverage of the session": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Other photos improved coverage of the session"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các ảnh khác cải thiện độ bao quát của phiên"
+          }
+        }
+      }
+    },
+    "Outdoor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Outdoor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngoài trời"
+          }
+        }
+      }
+    },
+    "Overexposure risk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Overexposure risk"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguy cơ dư sáng"
+          }
+        }
+      }
+    },
+    "People": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "People"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Người"
+          }
+        }
+      }
+    },
+    "People detected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "People detected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã phát hiện người"
+          }
+        }
+      }
+    },
     "Photo %lld of %lld": {
       "localizations": {
         "en": {
@@ -2707,6 +3507,22 @@
         }
       }
     },
+    "Photo Analysis": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phân tích ảnh"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Photo Analysis"
+          }
+        }
+      }
+    },
     "Photo access is not set up yet.": {
       "localizations": {
         "vi": {
@@ -2735,22 +3551,6 @@
           "stringUnit": {
             "state": "new",
             "value": "Photo access is turned off. Enable it in Settings to curate photos."
-          }
-        }
-      }
-    },
-    "Photo Analysis": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Phân tích ảnh"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Photo Analysis"
           }
         }
       }
@@ -2867,38 +3667,6 @@
         }
       }
     },
-    "Photos access changed before the album could be saved.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quyền truy cập ảnh đã thay đổi trước khi album được lưu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Photos access changed before the album could be saved."
-          }
-        }
-      }
-    },
-    "Photos access is restricted on this device.": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quyền truy cập ảnh bị hạn chế trên thiết bị này."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Photos access is restricted on this device."
-          }
-        }
-      }
-    },
     "Photos Access Needed": {
       "localizations": {
         "vi": {
@@ -2931,18 +3699,18 @@
         }
       }
     },
-    "Photos access: %@": {
+    "Photos Access Restricted": {
       "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quyền truy cập ảnh: %@"
-          }
-        },
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Photos access: %1$@"
+            "value": "Photos Access Restricted"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền truy cập ảnh bị hạn chế"
           }
         }
       }
@@ -2979,6 +3747,22 @@
         }
       }
     },
+    "Photos Curator analyzes sharpness, expressions, and duplicate shots to find your best moments.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Photos Curator analyzes sharpness, expressions, and duplicate shots to find your best moments."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos Curator phân tích độ sắc nét, biểu cảm và ảnh trùng để tìm ra những khoảnh khắc đẹp nhất của bạn."
+          }
+        }
+      }
+    },
     "Photos Curator can only use the photos currently shared with the app.": {
       "localizations": {
         "vi": {
@@ -2991,6 +3775,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Photos Curator can only use the photos currently shared with the app."
+          }
+        }
+      }
+    },
+    "Photos Curator needs access to the photos you choose so it can analyze them and build your curated album. Photo analysis happens on this iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Photos Curator needs access to the photos you choose so it can analyze them and build your curated album. Photo analysis happens on this iPhone."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos Curator cần quyền truy cập vào những ảnh bạn chọn để phân tích và tạo album đã tuyển chọn. Phân tích ảnh diễn ra trên iPhone này."
           }
         }
       }
@@ -3039,6 +3839,150 @@
           "stringUnit": {
             "state": "new",
             "value": "Photos Curator works best with 50+ photos, but you can curate any amount."
+          }
+        }
+      }
+    },
+    "Photos access changed before the album could be saved.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền truy cập ảnh đã thay đổi trước khi album được lưu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Photos access changed before the album could be saved."
+          }
+        }
+      }
+    },
+    "Photos access is restricted on this device.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền truy cập ảnh bị hạn chế trên thiết bị này."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Photos access is restricted on this device."
+          }
+        }
+      }
+    },
+    "Photos access: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền truy cập ảnh: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Photos access: %1$@"
+          }
+        }
+      }
+    },
+    "Photos never leave your iPhone.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Photos never leave your iPhone."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh không bao giờ rời khỏi iPhone của bạn."
+          }
+        }
+      }
+    },
+    "Pick a trip, event, or batch of photos. Photos Curator will find the strongest set for you to review.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Pick a trip, event, or batch of photos. Photos Curator will find the strongest set for you to review."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn chuyến đi, sự kiện hoặc nhóm ảnh. Photos Curator sẽ tìm ra bộ ảnh nổi bật nhất để bạn xem lại."
+          }
+        }
+      }
+    },
+    "Preferred group photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Preferred group photo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh nhóm được ưu tiên"
+          }
+        }
+      }
+    },
+    "Preferred landscape view": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Preferred landscape view"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Góc nhìn phong cảnh được ưu tiên"
+          }
+        }
+      }
+    },
+    "Preferred portrait in a similar group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Preferred portrait in a similar group"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh chân dung được ưu tiên trong nhóm tương tự"
+          }
+        }
+      }
+    },
+    "Preferred scene representative": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Preferred scene representative"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh đại diện bối cảnh được ưu tiên"
           }
         }
       }
@@ -3123,6 +4067,22 @@
         }
       }
     },
+    "Private": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Private"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riêng tư"
+          }
+        }
+      }
+    },
     "Processing stopped. Your progress is saved.": {
       "localizations": {
         "vi": {
@@ -3135,6 +4095,38 @@
           "stringUnit": {
             "state": "new",
             "value": "Processing stopped. Your progress is saved."
+          }
+        }
+      }
+    },
+    "Prunes Duplicates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Prunes Duplicates"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lọc ảnh trùng"
+          }
+        }
+      }
+    },
+    "Quality First": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Quality First"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ưu tiên chất lượng"
           }
         }
       }
@@ -3251,6 +4243,38 @@
         }
       }
     },
+    "Recommended: 50–500 photos from a trip, event, or album.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Recommended: 50–500 photos from a trip, event, or album."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khuyên dùng: 50–500 ảnh từ một chuyến đi, sự kiện hoặc album."
+          }
+        }
+      }
+    },
+    "Recommends the single top shot per moment.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Recommends the single top shot per moment."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề xuất một ảnh nổi bật nhất cho mỗi khoảnh khắc."
+          }
+        }
+      }
+    },
     "Reload didn't work. Your progress is saved.": {
       "localizations": {
         "vi": {
@@ -3299,22 +4323,6 @@
         }
       }
     },
-    "Removed from album — Undo": {
-      "localizations": {
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đã bỏ khỏi album — Hoàn tác"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Removed from album — Undo"
-          }
-        }
-      }
-    },
     "Removed Photos": {
       "localizations": {
         "vi": {
@@ -3327,6 +4335,38 @@
           "stringUnit": {
             "state": "new",
             "value": "Removed Photos"
+          }
+        }
+      }
+    },
+    "Removed by your choice": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Removed by your choice"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Được bỏ theo lựa chọn của bạn"
+          }
+        }
+      }
+    },
+    "Removed from album — Undo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bỏ khỏi album — Hoàn tác"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Removed from album — Undo"
           }
         }
       }
@@ -3391,6 +4431,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Reset analysis results?"
+          }
+        }
+      }
+    },
+    "Resolution": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Resolution"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ phân giải"
           }
         }
       }
@@ -3503,6 +4559,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Review"
+          }
+        }
+      }
+    },
+    "Review & Save Album": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Review & Save Album"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem lại và lưu album"
           }
         }
       }
@@ -3699,6 +4771,54 @@
         }
       }
     },
+    "Scene": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Scene"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bối cảnh"
+          }
+        }
+      }
+    },
+    "Screenshot": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Screenshot"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh chụp màn hình"
+          }
+        }
+      }
+    },
+    "Screenshot likelihood": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Screenshot likelihood"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khả năng là ảnh chụp màn hình"
+          }
+        }
+      }
+    },
     "Select All": {
       "localizations": {
         "vi": {
@@ -3711,6 +4831,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Select All"
+          }
+        }
+      }
+    },
+    "Select Source Photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Select Source Photos"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn ảnh nguồn"
           }
         }
       }
@@ -3839,6 +4975,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Settings"
+          }
+        }
+      }
+    },
+    "Sharpness": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Sharpness"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ sắc nét"
           }
         }
       }
@@ -4099,6 +5251,38 @@
         }
       }
     },
+    "Stronger visible-face signal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Stronger visible-face signal"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tín hiệu khuôn mặt nhìn thấy rõ hơn"
+          }
+        }
+      }
+    },
+    "Subject placement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Subject placement"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vị trí chủ thể"
+          }
+        }
+      }
+    },
     "Summary": {
       "localizations": {
         "vi": {
@@ -4195,6 +5379,38 @@
         }
       }
     },
+    "Technical details": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Technical details"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết kỹ thuật"
+          }
+        }
+      }
+    },
+    "Technical quality was below the selection floor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Technical quality was below the selection floor"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chất lượng kỹ thuật thấp hơn ngưỡng tuyển chọn"
+          }
+        }
+      }
+    },
     "Technical score": {
       "localizations": {
         "vi": {
@@ -4243,6 +5459,22 @@
         }
       }
     },
+    "Text detected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Text detected"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã phát hiện văn bản"
+          }
+        }
+      }
+    },
     "That didn't work either. Your progress is saved — try again or go home.": {
       "localizations": {
         "vi": {
@@ -4255,6 +5487,22 @@
           "stringUnit": {
             "state": "new",
             "value": "That didn't work either. Your progress is saved — try again or go home."
+          }
+        }
+      }
+    },
+    "The edited version was preferred": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "The edited version was preferred"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên bản đã chỉnh sửa được ưu tiên"
           }
         }
       }
@@ -4275,6 +5523,54 @@
         }
       }
     },
+    "The photo had too many bright areas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "The photo had too many bright areas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh có quá nhiều vùng sáng"
+          }
+        }
+      }
+    },
+    "The photo looked accidental": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "The photo looked accidental"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh có vẻ được chụp ngoài ý muốn"
+          }
+        }
+      }
+    },
+    "The photo was too dark for the selection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "The photo was too dark for the selection"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh quá tối để được tuyển chọn"
+          }
+        }
+      }
+    },
     "These photos are not in your curated album. Your originals are unchanged.": {
       "localizations": {
         "vi": {
@@ -4291,6 +5587,22 @@
         }
       }
     },
+    "This item is not a supported photo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "This item is not a supported photo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục này không phải là ảnh được hỗ trợ"
+          }
+        }
+      }
+    },
     "This may take a while for large libraries.": {
       "localizations": {
         "vi": {
@@ -4303,6 +5615,70 @@
           "stringUnit": {
             "state": "new",
             "value": "This may take a while for large libraries."
+          }
+        }
+      }
+    },
+    "This photo could not be read": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "This photo could not be read"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể đọc ảnh này"
+          }
+        }
+      }
+    },
+    "This photo represents a burst": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "This photo represents a burst"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh này đại diện cho một loạt ảnh liên tiếp"
+          }
+        }
+      }
+    },
+    "This photo represents identical copies": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "This photo represents identical copies"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh này đại diện cho các bản sao giống hệt"
+          }
+        }
+      }
+    },
+    "This photo represents similar photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "This photo represents similar photos"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ảnh này đại diện cho các ảnh tương tự"
           }
         }
       }
@@ -4371,6 +5747,22 @@
         }
       }
     },
+    "Underexposure risk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Underexposure risk"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguy cơ thiếu sáng"
+          }
+        }
+      }
+    },
     "Unfinished Curation": {
       "localizations": {
         "vi": {
@@ -4399,6 +5791,22 @@
           "stringUnit": {
             "state": "new",
             "value": "View Analysis"
+          }
+        }
+      }
+    },
+    "Visual balance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Visual balance"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cân bằng thị giác"
           }
         }
       }
@@ -4511,6 +5919,22 @@
           "stringUnit": {
             "state": "new",
             "value": "Year"
+          }
+        }
+      }
+    },
+    "Yes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Yes"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có"
           }
         }
       }

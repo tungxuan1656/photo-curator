@@ -643,3 +643,20 @@ and policy test `SKIP` under DEC-040. `git diff --check` PASS; no test target,
 test framework, or `*Test*.swift` file added.
 **Blockers**: none
 **Next**: none — feat-030 is complete.
+
+## 2026-09-18 — feat-030 localization follow-up
+
+**State**: done
+**Done**: Audited the Vietnamese Home and Photo Analysis surfaces after runtime
+  screenshots exposed English strings. Replaced presentation-time `String` values,
+  concatenated copy, conditional labels, analysis fact labels/values, and selection
+  reason text with native SwiftUI localization boundaries. Added the missing English
+  and Vietnamese catalog entries while keeping proper names such as Photos Curator,
+  Apple Photos, iPhone, and iCloud unchanged.
+**Evidence**: `scripts/proof/feat-030.sh` EXIT 0 with 382 en/vi entries, placeholder
+  parity, no `defaultValue`, and language-contract checks; `./init.sh` EXIT 0 with
+  SwiftFormat PASS, SwiftLint strict PASS (0 violations), Simulator build
+  `BUILD SUCCEEDED`, proof PASS, and policy test `SKIP` under DEC-040; `git diff --check`
+  PASS. No test target, test framework, or `*Test*.swift` file added.
+**Blockers**: none
+**Next**: none — feat-030 is complete.
