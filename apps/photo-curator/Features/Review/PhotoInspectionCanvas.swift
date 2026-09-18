@@ -286,6 +286,13 @@ private struct PhotoInspectionChrome: View {
                 .opacity(isVisible ? 1 : 0)
                 .offset(y: isVisible ? 0 : -18)
                 .allowsHitTesting(isVisible)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+
+            topPagerChrome
+                .opacity(isVisible ? 1 : 0)
+                .offset(y: isVisible ? 0 : -18)
+                .allowsHitTesting(isVisible)
+                .frame(maxWidth: .infinity, alignment: .topTrailing)
 
             VStack {
                 Spacer()
@@ -313,100 +320,88 @@ private struct PhotoInspectionChrome: View {
                 .font(.subheadline.weight(.semibold).monospacedDigit())
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10)
+                .frame(minHeight: 44)
+                .modifier(InspectionGlassLabelStyle())
                 .accessibilityLabel("Photo position, \(position) of \(total)")
         }
-        .padding(6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay {
-            Capsule()
-                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        .inspectionGlassGroup()
+        .padding(.leading, 16)
+        .padding(.top, 10)
+    }
+
+    private var topPagerChrome: some View {
+        HStack(spacing: 8) {
+            Button {
+                changePage(previous)
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(InspectionButtonStyle(kind: .navigation, reduceMotion: reduceMotion))
+            .frame(width: 48, height: 48)
+            .opacity(canGoPrevious ? 1 : 0.42)
+            .disabled(!canGoPrevious)
+            .accessibilityLabel("Previous photo")
+            .accessibilityHint("Shows the previous photo in this review set.")
+
+            Button {
+                changePage(next)
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(InspectionButtonStyle(kind: .navigation, reduceMotion: reduceMotion))
+            .frame(width: 48, height: 48)
+            .opacity(canGoNext ? 1 : 0.42)
+            .disabled(!canGoNext)
+            .accessibilityLabel("Next photo")
+            .accessibilityHint("Shows the next photo in this review set.")
         }
-        .shadow(color: .black.opacity(0.28), radius: 16, y: 8)
-        .padding(.horizontal, 16)
+        .inspectionGlassGroup()
+        .padding(.trailing, 16)
         .padding(.top, 10)
     }
 
     private var bottomChrome: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 8) {
-                Button {
-                    feedbackTrigger += 1
-                    toggleSelection()
-                } label: {
-                    Label(
-                        isSelected ? "In Album" : "Removed",
-                        systemImage: isSelected ? "checkmark.circle.fill" : "circle"
-                    )
-                }
-                .buttonStyle(
-                    InspectionButtonStyle(
-                        kind: isSelected ? .primary : .secondary,
-                        reduceMotion: reduceMotion
-                    )
+        HStack(spacing: 8) {
+            Button {
+                feedbackTrigger += 1
+                toggleSelection()
+            } label: {
+                Label(
+                    isSelected ? "In Album" : "Removed",
+                    systemImage: isSelected ? "checkmark.circle.fill" : "circle"
                 )
-                .accessibilityValue(isSelected ? "In album" : "Removed")
-                .accessibilityHint("Changes whether this photo is in the album.")
+            }
+            .buttonStyle(
+                InspectionButtonStyle(
+                    kind: isSelected ? .primary : .secondary,
+                    reduceMotion: reduceMotion
+                )
+            )
+            .accessibilityValue(isSelected ? "In album" : "Removed")
+            .accessibilityHint("Changes whether this photo is in the album.")
 
-                Button(action: showAnalysis) {
-                    Image(systemName: "chart.bar.xaxis")
+            Button(action: showAnalysis) {
+                Image(systemName: "chart.bar.xaxis")
+            }
+            .buttonStyle(InspectionButtonStyle(kind: .secondary, reduceMotion: reduceMotion))
+            .frame(width: 48, height: 48)
+            .accessibilityLabel("View Analysis")
+            .accessibilityHint("Shows the saved analysis for this photo.")
+
+            if isZoomed {
+                Button {
+                    animate { inspectionState.reset() }
+                } label: {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
                 }
                 .buttonStyle(InspectionButtonStyle(kind: .secondary, reduceMotion: reduceMotion))
                 .frame(width: 48, height: 48)
-                .accessibilityLabel("View Analysis")
-                .accessibilityHint("Shows the saved analysis for this photo.")
-
-                if isZoomed {
-                    Button {
-                        animate { inspectionState.reset() }
-                    } label: {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                    }
-                    .buttonStyle(InspectionButtonStyle(kind: .secondary, reduceMotion: reduceMotion))
-                    .frame(width: 48, height: 48)
-                    .accessibilityLabel("Fit")
-                    .accessibilityValue("Zoomed")
-                    .accessibilityHint("Restores the full photo and centers it.")
-                }
-            }
-            .padding(6)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay {
-                Capsule()
-                    .strokeBorder(.white.opacity(0.14), lineWidth: 1)
-            }
-
-            HStack(spacing: 8) {
-                Button {
-                    changePage(previous)
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-                .buttonStyle(InspectionButtonStyle(kind: .navigation, reduceMotion: reduceMotion))
-                .frame(width: 48, height: 48)
-                .opacity(canGoPrevious ? 1 : 0.42)
-                .disabled(!canGoPrevious)
-                .accessibilityLabel("Previous photo")
-                .accessibilityHint("Shows the previous photo in this review set.")
-
-                Button {
-                    changePage(next)
-                } label: {
-                    Image(systemName: "chevron.right")
-                }
-                .buttonStyle(InspectionButtonStyle(kind: .navigation, reduceMotion: reduceMotion))
-                .frame(width: 48, height: 48)
-                .opacity(canGoNext ? 1 : 0.42)
-                .disabled(!canGoNext)
-                .accessibilityLabel("Next photo")
-                .accessibilityHint("Shows the next photo in this review set.")
-            }
-            .padding(6)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay {
-                Capsule()
-                    .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+                .accessibilityLabel("Fit")
+                .accessibilityValue("Zoomed")
+                .accessibilityHint("Restores the full photo and centers it.")
             }
         }
+        .inspectionGlassGroup()
         .padding(.horizontal, 16)
         .padding(.bottom, 10)
     }
@@ -422,56 +417,5 @@ private struct PhotoInspectionChrome: View {
         } else {
             withAnimation(.spring(response: 0.32, dampingFraction: 0.86), action)
         }
-    }
-}
-
-private struct InspectionButtonStyle: ButtonStyle {
-    enum Kind {
-        case primary
-        case secondary
-        case navigation
-
-        var background: Color {
-            switch self {
-            case .primary:
-                Color.curatorAccent
-            case .secondary:
-                .white.opacity(0.14)
-            case .navigation:
-                .white.opacity(0.10)
-            }
-        }
-
-        var foreground: Color {
-            .white
-        }
-
-        var stroke: Color {
-            switch self {
-            case .primary:
-                .white.opacity(0.22)
-            case .secondary, .navigation:
-                .white.opacity(0.12)
-            }
-        }
-    }
-
-    let kind: Kind
-    let reduceMotion: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(kind.foreground)
-            .padding(.horizontal, 14)
-            .frame(minHeight: 44)
-            .background(kind.background, in: Capsule())
-            .overlay {
-                Capsule()
-                    .strokeBorder(kind.stroke, lineWidth: 1)
-            }
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .opacity(configuration.isPressed ? 0.84 : 1)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: configuration.isPressed)
     }
 }

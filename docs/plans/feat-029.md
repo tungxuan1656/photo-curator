@@ -92,10 +92,10 @@
 **Interfaces:**
 
 - Consumes: the existing `PhotoInspectionState`, image/pager callbacks, `accessibilityReduceMotion`, and current S11 accessibility labels.
-- Produces: compact material control islands, scoped image-only gestures, animated chrome/image state changes, responsive button feedback, and unchanged pager/selection/navigation contracts.
+- Produces: Liquid Glass control islands with a material fallback, scoped image-only gestures, animated chrome/image state changes, responsive button feedback, and unchanged pager/selection/navigation contracts.
 
 - [x] Move single-tap, double-tap, magnification, and drag recognizers from the full canvas onto the image interaction surface so Back and other controls receive taps immediately.
-- [x] Replace the large opaque chrome panels and default bordered styles with compact material islands: accent selection state, secondary analysis/Fit action, icon-only pager controls with explicit accessibility labels, and 44-point hit targets.
+- [x] Replace the large opaque chrome panels and default bordered styles with iOS 26 Liquid Glass islands: Back/position at top-left, Previous/Next at top-right, lower selection/analysis/Fit actions, continuous rounded corners, explicit accessibility labels, 44-point hit targets, and a translucent-material fallback.
 - [x] Animate chrome visibility with short edge-aware fade/offset transitions; crossfade loading/image changes; animate discrete zoom/page actions with a responsive spring or ease curve; keep continuous pinch/pan unanimated.
 - [x] Add selection/page sensory feedback only to discrete actions and preserve Reduce Motion behavior for all explicit animations.
 - [x] Run focused SwiftFormat/SwiftLint, `./scripts/proof/feat-029.sh`, `./init.sh`, Simulator launch smoke, and `git diff --check`; record evidence before closing the feature.

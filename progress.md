@@ -581,6 +581,22 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Blockers**: none
 **Next**: feat-030 remains user-gated and `todo`.
 
+## 2026-09-18 — feat-029 S11 Liquid Glass controls
+
+**State**: done
+**Done**: Replaced the S11 material chrome surfaces with native iOS 26 `glassEffect` controls grouped by `GlassEffectContainer`; the In Album action uses the accent tint, while navigation and analysis controls use neutral interactive glass. Kept the continuous rounded shapes, top-left/top-right/bottom placement, accessibility labels, and material fallback.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0; `./init.sh` EXIT 0 with SwiftFormat PASS, SwiftLint strict 0 violations in 71 files, Simulator build `SUCCEEDED`, and policy test `SKIP` per DEC-040; CUA simulator smoke displayed the three Liquid Glass control groups and preserved individual Back, Previous, Next, In Album, and View Analysis accessibility controls; `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.
+
+## 2026-09-18 — feat-029 S11 control placement refinement
+
+**State**: done
+**Done**: Repositioned S11 controls to match photo-inspection behavior: Back and position at top-left, Previous/Next at top-right, and In Album/Analysis/Fit in the lower action island. Replaced capsule borders with consistent continuous rounded rectangles.
+**Evidence**: Focused SwiftLint and `./scripts/proof/feat-029.sh` EXIT 0; `./init.sh` EXIT 0 with Simulator build `SUCCEEDED` and policy test `SKIP` per DEC-040; Simulator install/launch PASS on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 39069`); CUA screenshot and accessibility tree verified the requested placement and individual controls; `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.
+
 ## 2026-09-18 — feat-029 S11 visual and gesture polish
 
 **State**: done
