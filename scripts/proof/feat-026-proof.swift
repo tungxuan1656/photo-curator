@@ -765,6 +765,7 @@ struct HarnessExporter: AlbumExportService {
         checkpointStore: store,
         selectionEngine: SelectionEngine(),
         tierCProvider: NoopVisualEmbeddingProvider(),
+        semanticJuryProvider: NoopSemanticJuryProvider(),
         exporter: HarnessExporter(failFirstAdd: failFirstAdd, attempts: HarnessAttempts()),
         analytics: NoopAnalytics(),
         memoryPressure: MemoryPressureObserver()

@@ -100,15 +100,13 @@ DEC-038 (2026-09-17) records the feat-025 no-op verdict: all three candidates re
 
 ## 8. iOS 27 semantic jury
 
-**Production target:** Foundation Models `SystemLanguageModel` with image input. Use only for 2–6 ambiguous, high-impact candidates. The iOS 26 path remains complete without it.
+**Production target:** `SemanticJuryProvider` with a Foundation Models `LanguageModelSession` adapter behind an explicit `#available(iOS 27.0, *)` product gate. Use only for admitted `faceTradeoff` and `similarAlternatives` pairs (current integration: two candidates, maximum four requests per run). The iOS 26 path exits before jury image loading/provider invocation and remains the complete deterministic fallback.
 
-Input: supplied images, deterministic candidate IDs, relevant derived facts, moment/cluster context, and one narrow question.
+**Provider contract (feat-027, DEC-047/048/049):** requests contain a narrow question, the feat-026 uncertainty reason, deterministic candidate IDs, persisted scalar facts, and in-memory analysis images. An iOS 27 SDK build with the `FOUNDATION_MODELS_IMAGE_ATTACHMENTS` capability condition attaches each candidate `CGImage` to the Foundation Models multimodal prompt; it never substitutes a text-only request. The current Swift 6.3.3/iOS 26.5 SDK compiles the same adapter seam but throws typed unavailable because `Attachment` is not present, preserving deterministic fallback. The provider returns opaque structured JSON; the router accepts exactly one top-level `choice` field with one of `chooseA`, `chooseB`, `keepBoth`, or `abstain`. Unknown/missing keys, invalid choices, candidate mismatches, unavailable model, timeout, cancellation, provider failure, and unsafe cross-cluster results are deterministic fallback; diagnostics include the explicit `deterministicFallback` enum.
 
-Structured output: `decision = chooseA | chooseB | keepBoth | abstain`, `certainty = clear | ambiguous`, `reasonCodes`, sameMoment/sameSubject/meaningfulVariants, and candidate IDs constrained to the supplied set.
+**Bounds and integration:** candidate count is capped at six (current path requires exactly two); each request has a 2-second hard timeout that returns even when a provider ignores cancellation, and the run attempts at most four requests. Only validated `chooseA`/`chooseB` outputs within one usable deterministic duplicate cluster are applied in place to that compared cluster; every unrelated selected ID is preserved. `keepBoth` and `abstain` never bypass duplicate, moment, album-size, or quality invariants. Requests, images, responses, IDs, and diagnostics are run-local and never persisted or sent to analytics/cloud.
 
-Do not treat model certainty as a calibrated probability. `abstain` is valid. The deterministic engine still enforces technical floor, album size, user override, duplicate invariants, privacy, and fallback.
-
-The production privacy target is on-device `SystemLanguageModel`. Any path that can send photo content to PCC/server/another provider requires a separate explicit privacy/product decision.
+**Foundation Models adapter:** greedy, low-token structured generation on the on-device system model; model-unavailable and generation errors throw into the router's fallback path. The typed `Attachment(CGImage)` path is selected by the iOS 27 SDK capability condition, not a compiler-version guard; current Swift 6.3.3 remains compile-safe and unavailable by design until that SDK capability exists. No downloaded weights, third-party dependency, network provider, or telemetry path is added. The minimum deployment remains iOS 26; this optional tier is never required for a complete curation.
 
 ## 9. Evaluation-first gate
 
