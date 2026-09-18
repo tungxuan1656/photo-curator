@@ -483,11 +483,12 @@ aspect-fit and displays Back, position (`4 of 18`), explicit **In Album** /
 safe areas, have readable contrast, and use text as well as icons. A single
 tap only hides or shows visual controls; it never changes selection.
 
-Pinch zoom is bounded. Double-tap changes between Fit and a useful inspection
-zoom. At Fit, a horizontal swipe moves one photo within the entry context. At
-zoom, every drag pans the photo and never pages it. **Fit** resets zoom and
-centers the image. Vertical movement never dismisses, removes, restores, or
-pages a photo. Previous/next do not wrap.
+Pinch zoom is bounded to a 6× maximum. Double-tap changes between Fit and a
+useful inspection zoom. At Fit, a horizontal swipe moves one photo within the
+entry context and a deliberate downward swipe dismisses S11 back to the
+originating photo list. At zoom, every drag pans the photo and never pages or
+dismisses it. **Fit** resets zoom and centers the image. Previous/next do not
+wrap.
 
 The state control updates the shared review state immediately. It never
 deletes an original. Loading keeps safe navigation available. An unavailable

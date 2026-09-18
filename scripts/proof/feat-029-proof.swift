@@ -38,7 +38,7 @@ struct PhotoInspectionProof {
         print("SCALE-CLAMP PASS")
 
         scale.applyPan(
-            CGSize(width: 900, height: -900),
+            CGSize(width: 9000, height: -9000),
             from: .zero,
             viewportSize: viewport,
             renderedImageSize: rendered
@@ -63,6 +63,17 @@ struct PhotoInspectionProof {
         )
         print("FIT-PAGE PASS")
 
+        let fitState = PhotoInspectionState()
+        try require(
+            fitState.canDismissVertically(for: CGSize(width: 10, height: 160)),
+            "Fit downward swipe did not dismiss"
+        )
+        try require(
+            !fitState.canDismissVertically(for: CGSize(width: 160, height: 10)),
+            "horizontal swipe incorrectly dismissed"
+        )
+        print("SWIPE-DOWN-DISMISS PASS")
+
         var zoomed = PhotoInspectionState()
         zoomed.applyMagnification(
             2,
@@ -73,6 +84,10 @@ struct PhotoInspectionProof {
         try require(
             zoomed.pageDirection(for: CGSize(width: -120, height: 0)) == nil,
             "zoomed drag incorrectly paged"
+        )
+        try require(
+            !zoomed.canDismissVertically(for: CGSize(width: 10, height: 160)),
+            "zoomed drag incorrectly dismissed"
         )
         zoomed.applyPan(
             CGSize(width: 100, height: 0),

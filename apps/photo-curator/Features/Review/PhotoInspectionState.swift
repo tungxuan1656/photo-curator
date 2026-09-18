@@ -7,8 +7,9 @@ import CoreGraphics
 struct PhotoInspectionState: Equatable {
     static let fitScale: CGFloat = 1
     static let doubleTapScale: CGFloat = 2
-    static let maximumScale: CGFloat = 3
+    static let maximumScale: CGFloat = 6
     static let minimumPageTranslation: CGFloat = 40
+    static let minimumDismissTranslation: CGFloat = 120
 
     enum PageDirection: Equatable {
         case previous
@@ -85,6 +86,12 @@ struct PhotoInspectionState: Equatable {
     func pageDirection(for translation: CGSize) -> PageDirection? {
         guard canPageHorizontally(for: translation) else { return nil }
         return translation.width < 0 ? .next : .previous
+    }
+
+    func canDismissVertically(for translation: CGSize) -> Bool {
+        isAtFit
+            && translation.height >= Self.minimumDismissTranslation
+            && translation.height > abs(translation.width)
     }
 
     static func aspectFitSize(imageSize: CGSize, in viewportSize: CGSize) -> CGSize {

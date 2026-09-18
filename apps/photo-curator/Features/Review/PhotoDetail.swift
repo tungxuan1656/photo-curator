@@ -13,6 +13,7 @@ struct PhotoDetail: View {
     /// Scoped pager order from the entry grid (`[assetID]` freeforms to this).
     var pagerIDs: [AssetID]?
     @Environment(AppModel.self) private var appModel
+    @Environment(\.dismiss) private var dismiss
     @State private var currentAssetID: AssetID
     @State private var cgImage: CGImage?
     @State private var inspectionState = PhotoInspectionState()
@@ -44,7 +45,7 @@ struct PhotoDetail: View {
                         isSelected: model.isSelected(currentAssetID),
                         canGoPrevious: index > 0,
                         canGoNext: index < order.count - 1,
-                        back: { appModel.path.removeLast() },
+                        back: { dismiss() },
                         previous: {
                             guard index > 0 else { return }
                             currentAssetID = order[index - 1]
@@ -98,7 +99,7 @@ struct PhotoDetail: View {
                         title: "We couldn't load this photo.",
                         message: "Your progress is saved.",
                         primaryTitle: "Back",
-                        primary: { appModel.path.removeLast() }
+                        primary: { dismiss() }
                     )
                 }
             } else {

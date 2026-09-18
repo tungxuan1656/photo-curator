@@ -17,7 +17,7 @@
 - Retain one current `CGImage` only. Cancel superseded loads, clear it on exit, and reject stale results.
 - Keep PhotoKit behind `PhotoImageLoader`. Do not persist image pixels, add cache fields, or change selection/ranking/analysis behavior.
 - Do not make pinch, drag, or double-tap the only path: provide operable buttons and VoiceOver actions.
-- Vertical gestures never dismiss, remove, restore, or page a photo.
+- At Fit, a deliberate downward swipe dismisses S11; at zoom, vertical gestures pan and never dismiss, remove, restore, or page a photo.
 - Respect Dynamic Type, Reduce Motion, safe areas, portrait, and landscape.
 - Do not add test targets, `*Test*.swift` files, test frameworks, or a manual-QA gate. Required evidence is `scripts/proof/feat-029.sh` plus `./init.sh`.
 
@@ -47,13 +47,13 @@
 - Produces: `PhotoInspectionState`, which exposes `scale`, `offset`, `isAtFit`, `reset()`, bounded zoom/pan updates, and one-step paging eligibility.
 
 - [x] Define a value type that imports `CoreGraphics` only and starts at `scale == 1` with `.zero` offset.
-- [x] Define the constants in one place: `fitScale = 1`, `doubleTapScale = 2`, and `maximumScale = 3`.
-- [x] Implement a clamp that restricts scale to `1...3` and offset to the excess rendered image area at the current scale. When an axis has no excess, its offset is zero.
+- [x] Define the constants in one place: `fitScale = 1`, `doubleTapScale = 2`, and `maximumScale = 6`.
+- [x] Implement a clamp that restricts scale to `1...6` and offset to the excess rendered image area at the current scale. When an axis has no excess, its offset is zero.
 - [x] Implement `reset()` to return exactly to Fit and centered offset.
 - [x] Implement a double-tap transition: Fit → `doubleTapScale`; any zoomed state → Fit.
-- [x] Expose `canPageHorizontally` only when `scale` equals Fit and the horizontal drag clears a documented minimum translation. Do not infer page direction while zoomed.
+- [x] Expose `canPageHorizontally` only when `scale` equals Fit and the horizontal drag clears a documented minimum translation. Expose Fit-only downward dismissal separately; do not infer either action while zoomed.
 - [x] Write the Swift proof as an executable, not a test target. Compile the shipped state source together with the proof using `swiftc`.
-- [x] Assert: scale clamps at 3; offset clamps on both axes; reset clears the offset; Fit drag produces one page direction; zoomed drag produces no page; and changing an asset resets state.
+- [x] Assert: scale clamps at 6; offset clamps on both axes; reset clears the offset; Fit drag produces one page direction; Fit downward drag dismisses; zoomed drag produces no page or dismissal; and changing an asset resets state.
 - [x] In `feat-029.sh`, fail if the proof source differs from the staged state source, then compile and run the proof. Print named PASS lines for each asserted rule.
 - [x] Run `./scripts/proof/feat-029.sh` and record the exact output in the active feature handoff.
 
@@ -73,7 +73,7 @@
 - [x] Render loading as a neutral placeholder that retains Back and pager controls where valid. Render failure as “We couldn't load this photo.” with **Try Again** and **Back**.
 - [x] Add a top overlay with Back and `current / total`; add a bottom overlay with explicit **In Album**/**Removed**, **View Analysis**, and a visible **Fit** action only while zoomed.
 - [x] Add previous/next buttons with disabled first/last boundaries. Do not wrap the pager.
-- [x] Wire pinch and double-tap to the state machine. While zoomed, route drag translation to bounded panning; at Fit, route a qualifying horizontal drag to the pager closure. Ignore vertical-drag decisions.
+- [x] Wire pinch and double-tap to the state machine. While zoomed, route drag translation to bounded panning; at Fit, route qualifying horizontal drags to paging and qualifying downward drags to the dismiss closure.
 - [x] Reset the transform whenever `currentAssetID` changes, on retry before a successful new image displays, and after the user activates **Fit**.
 - [x] Let one tap hide/show decorative chrome only. Essential VoiceOver actions remain available even when visual chrome is hidden.
 - [x] Add accessibility labels and hints for photo position, selected/removed state, Previous photo, Next photo, View Analysis, Fit, zoom state, Try Again, and Back. Add custom accessible zoom-in/zoom-out or reset actions.
@@ -96,7 +96,7 @@
 - [x] Retain one bounded `CGImage?` in `PhotoDetail`; set it to `nil` before a new asset load and when the view disappears.
 - [x] Keep the existing `PhotoImageLoader.preview` request and 2048-pixel cap. Do not change `ServiceProtocols.swift` or `ImageLoaderService.swift` unless measured feature evidence proves that this bounded request cannot support the agreed inspector; any exception requires a revised plan and explicit bounded memory proof.
 - [x] Route the selection control directly to `model.toggle(currentAssetID)`. Re-read `model.isSelected(currentAssetID)` on render; do not add local selected state.
-- [x] Preserve `View Analysis` navigation for the current asset and return to the same pager context afterward.
+- [x] Preserve `View Analysis` navigation for the current asset and return to the same pager context afterward; Back and Fit-only downward dismissal pop only S11.
 - [x] Preserve every caller's supplied `pagerIDs` order. Navigation and selection edits must not rebuild or reorder the active pager.
 - [x] Verify by source inspection that no change is needed in the four entry surfaces or `ReviewModel`; if a caller contract must change, stop and amend this plan before coding it.
 

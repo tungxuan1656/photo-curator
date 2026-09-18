@@ -87,9 +87,12 @@ struct PhotoInspectionCanvas: View {
                             dragStartOffset = nil
                             dragStartedZoomed = false
                         }
-                        guard image != nil, !dragStartedZoomed,
-                              let direction = inspectionState.pageDirection(for: value.translation)
-                        else { return }
+                        guard image != nil, !dragStartedZoomed else { return }
+                        if inspectionState.canDismissVertically(for: value.translation) {
+                            back()
+                            return
+                        }
+                        guard let direction = inspectionState.pageDirection(for: value.translation) else { return }
                         switch direction {
                         case .previous:
                             previous()

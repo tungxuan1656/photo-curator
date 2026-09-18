@@ -44,6 +44,8 @@ require_source() {
     fi
 }
 
+require_source "$STATE_SOURCE" 'static let maximumScale: CGFloat = 6' "ZOOM-BOUND"
+echo "ZOOM-BOUND PASS"
 require_source "$CANVAS_SOURCE" 'Button("Back"' "BACK-CONTROL"
 require_source "$CANVAS_SOURCE" 'Text("\(position) of \(total)"' "POSITION-CONTROL"
 require_source "$CANVAS_SOURCE" 'Button(isSelected ? "In Album" : "Removed"' "SELECTION-CONTROL"
@@ -53,7 +55,9 @@ require_source "$CANVAS_SOURCE" 'Button("Next"' "NEXT-CONTROL"
 require_source "$CANVAS_SOURCE" 'Button("Fit"' "FIT-CONTROL"
 require_source "$CANVAS_SOURCE" 'accessibilityAction(named: "Zoom in")' "ZOOM-ACCESSIBILITY"
 require_source "$CANVAS_SOURCE" 'accessibilityHint("Double tap to inspect.' "GESTURE-ACCESSIBILITY"
+require_source "$CANVAS_SOURCE" 'canDismissVertically(for: value.translation)' "DISMISS-GESTURE"
 echo "ACCESSIBILITY-CONTROLS PASS"
+echo "DISMISS-GESTURE SURFACE PASS"
 
 require_source "$DETAIL_SOURCE" 'appModel.imageLoader.preview(' "PREVIEW-BOUNDARY"
 require_source "$DETAIL_SOURCE" 'targetSize: CGSize(width: 2048, height: 2048)' "PREVIEW-CAP"
@@ -63,6 +67,8 @@ require_source "$DETAIL_SOURCE" '@State private var cgImage: CGImage?' "CURRENT-
 require_source "$DETAIL_SOURCE" '.task(id: "\(currentAssetID.rawValue)-\(retryToken)")' "TASK-IDENTITY"
 require_source "$DETAIL_SOURCE" '.onChange(of: currentAssetID)' "ASSET-CHANGE-HOOK"
 require_source "$DETAIL_SOURCE" '.onDisappear' "DISAPPEAR-HOOK"
+require_source "$DETAIL_SOURCE" '@Environment(\.dismiss) private var dismiss' "NAVIGATION-DISMISS"
+require_source "$DETAIL_SOURCE" 'back: { dismiss() }' "NAVIGATION-BACK-DISMISS"
 echo "CURRENT-ONLY PASS"
 echo "SERVICE-BOUNDARY PASS"
 echo "ASSET-LIFECYCLE PASS"

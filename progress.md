@@ -572,3 +572,11 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 (`SCALE-CLAMP`, `OFFSET-CLAMP`, `RESET`, `FIT-PAGE`, `ZOOM-PAN`, `ASSET-RESET`, `ACCESSIBILITY-CONTROLS`, `CURRENT-ONLY`, `SERVICE-BOUNDARY`, and `ASSET-LIFECYCLE` PASS); `./init.sh` EXIT 0 (SwiftFormat PASS, SwiftLint strict PASS with 0 violations in 70 files, Simulator `BUILD SUCCEEDED`, policy test `SKIP`); Simulator install/launch EXIT 0 on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 95203`); `git diff --check` and no-test-artifact checks PASS.
 **Blockers**: none
 **Next**: User selects feat-030; it remains todo until then.
+
+## 2026-09-18 — feat-029 follow-up behavior fix
+
+**State**: done
+**Done**: Raised S11 maximum zoom from 3× to 6×, changed Back to dismiss only the nested inspector so it returns to the originating photo list, and added Fit-only downward swipe dismissal; vertical drags while zoomed remain pan-only.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 with zoom, Fit-page, swipe-down dismissal, zoom-pan, accessibility, lifecycle, and service-boundary checks PASS; `./init.sh` EXIT 0 with SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build `SUCCEEDED`, and policy test `SKIP` per DEC-040; Simulator install/launch PASS on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 5974`); `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.
