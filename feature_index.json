@@ -281,9 +281,9 @@
       "depends_on": [
         "feat-027"
       ],
-      "gate": "Ranker evidence supports a versioned and reversible decision; a recorded no-ranker decision is also valid; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
+      "gate": "Frozen deterministic baseline, label provenance/privacy boundary, and disjoint smoke/Golden-shaped/trip-shaped/1k evidence support a versioned/reversible ranker decision; a recorded no-ranker decision is also valid; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
       "id": "feat-028",
-      "status": "todo",
+      "status": "done",
       "title": "Ranker decision gate"
     }
   ],
