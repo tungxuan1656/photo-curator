@@ -259,6 +259,22 @@
         }
       }
     },
+    "%lld selected from 1 photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld selected from 1 photo"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã chọn %lld trên 1 ảnh"
+          }
+        }
+      }
+    },
     "%lld/100" : {
       "localizations" : {
         "en" : {
@@ -3623,34 +3639,66 @@
         }
       }
     },
-    "Photo, %@" : {
+    "Photo, favorite, not selected" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Photo, %1$@"
+            "value" : "Photo, favorite, not selected"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ảnh, %@"
+            "value" : "Ảnh, mục ưa thích, chưa chọn"
           }
         }
       }
     },
-    "Photo, favorite, %@" : {
+    "Photo, favorite, selected" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Photo, favorite, %1$@"
+            "value" : "Photo, favorite, selected"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ảnh, mục ưa thích, %@"
+            "value" : "Ảnh, mục ưa thích, đã chọn"
+          }
+        }
+      }
+    },
+    "Photo, not selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photo, not selected"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh, chưa chọn"
+          }
+        }
+      }
+    },
+    "Photo, selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photo, selected"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh, đã chọn"
           }
         }
       }

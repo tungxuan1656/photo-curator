@@ -644,6 +644,20 @@ test framework, or `*Test*.swift` file added.
 **Blockers**: none
 **Next**: none — feat-030 is complete.
 
+## 2026-09-18 — feat-030 review remediation
+
+**State**: done
+**Done**: Resolved PR review findings by using fully localized English/Vietnamese
+accessibility state resources, restoring the singular review-summary resource,
+giving analysis facts stable IDs for `ForEach`, and wiring the feat-030 proof into
+the canonical `./init.sh` verification path.
+**Evidence**: `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict PASS with 0
+violations, Simulator build `BUILD SUCCEEDED`, feat-030 proof PASS, and policy test
+`SKIP` under DEC-040. The proof covers 385 en/vi entries, source-level accessibility,
+singular-summary, and stable-identity contracts; `git diff --check` PASS.
+**Blockers**: none
+**Next**: none — feat-030 is complete.
+
 ## 2026-09-18 — feat-030 localization follow-up
 
 **State**: done

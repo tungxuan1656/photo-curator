@@ -78,63 +78,127 @@ struct PhotoAnalysisDetail: View {
 
     private func technicalFacts(for analysis: PhotoAnalysis) -> [AnalysisFact] {
         var facts = [AnalysisFact]()
-        facts.append(AnalysisFact("Sharpness", score(analysis.technical.sharpnessScore)))
-        facts.append(AnalysisFact("Exposure", score(analysis.technical.exposureScore)))
-        facts.append(AnalysisFact("Resolution", score(analysis.technical.resolutionScore)))
-        facts.append(AnalysisFact("Blur risk", risk(analysis.technical.blurProbability)))
-        facts.append(AnalysisFact("Underexposure risk", risk(analysis.technical.underexposureProbability)))
-        facts.append(AnalysisFact("Overexposure risk", risk(analysis.technical.overexposureProbability)))
+        facts.append(AnalysisFact(
+            id: "technical.sharpness",
+            label: "Sharpness",
+            value: score(analysis.technical.sharpnessScore)
+        ))
+        facts.append(AnalysisFact(
+            id: "technical.exposure",
+            label: "Exposure",
+            value: score(analysis.technical.exposureScore)
+        ))
+        facts.append(AnalysisFact(
+            id: "technical.resolution",
+            label: "Resolution",
+            value: score(analysis.technical.resolutionScore)
+        ))
+        facts.append(AnalysisFact(
+            id: "technical.blurRisk",
+            label: "Blur risk",
+            value: risk(analysis.technical.blurProbability)
+        ))
+        facts.append(
+            AnalysisFact(
+                id: "technical.underexposureRisk",
+                label: "Underexposure risk",
+                value: risk(analysis.technical.underexposureProbability)
+            )
+        )
+        facts.append(
+            AnalysisFact(
+                id: "technical.overexposureRisk",
+                label: "Overexposure risk",
+                value: risk(analysis.technical.overexposureProbability)
+            )
+        )
         return facts
     }
 
     private func peopleFacts(for analysis: PhotoAnalysis) -> [AnalysisFact] {
-        var facts = [AnalysisFact("People detected", "\(analysis.people.faceCount)")]
-        if let groupScore = analysis.people.groupPhotoScore {
-            facts.append(AnalysisFact("Group photo signal", score(groupScore)))
-        } else {
-            facts.append(AnalysisFact("Group photo signal", "Not analyzed"))
-        }
+        var facts = [AnalysisFact]()
+        facts.append(
+            AnalysisFact(
+                id: "people.faceCount",
+                label: "People detected",
+                value: "\(analysis.people.faceCount)"
+            )
+        )
+        facts.append(
+            analysisFact(
+                id: "people.groupPhotoSignal",
+                label: "Group photo signal",
+                value: analysis.people.groupPhotoScore.map { score($0) }
+            )
+        )
         return facts
     }
 
     private func compositionFacts(for analysis: PhotoAnalysis) -> [AnalysisFact] {
         var facts = [AnalysisFact]()
-        if let aestheticScore = analysis.composition.aestheticScore {
-            facts.append(AnalysisFact("Aesthetic signal", score(aestheticScore)))
-        } else {
-            facts.append(AnalysisFact("Aesthetic signal", "Not analyzed"))
-        }
-        if let subjectPlacement = analysis.composition.subjectPlacementScore {
-            facts.append(AnalysisFact("Subject placement", score(subjectPlacement)))
-        } else {
-            facts.append(AnalysisFact("Subject placement", "Not analyzed"))
-        }
-        if let horizonScore = analysis.composition.horizonScore {
-            facts.append(AnalysisFact("Horizon", score(horizonScore)))
-        } else {
-            facts.append(AnalysisFact("Horizon", "Not analyzed"))
-        }
-        if let visualBalance = analysis.composition.visualBalanceScore {
-            facts.append(AnalysisFact("Visual balance", score(visualBalance)))
-        } else {
-            facts.append(AnalysisFact("Visual balance", "Not analyzed"))
-        }
+        facts.append(
+            analysisFact(
+                id: "composition.aestheticSignal",
+                label: "Aesthetic signal",
+                value: analysis.composition.aestheticScore.map { score($0) }
+            )
+        )
+        facts.append(
+            analysisFact(
+                id: "composition.subjectPlacement",
+                label: "Subject placement",
+                value: analysis.composition.subjectPlacementScore.map { score($0) }
+            )
+        )
+        facts.append(
+            analysisFact(
+                id: "composition.horizon",
+                label: "Horizon",
+                value: analysis.composition.horizonScore.map { score($0) }
+            )
+        )
+        facts.append(
+            analysisFact(
+                id: "composition.visualBalance",
+                label: "Visual balance",
+                value: analysis.composition.visualBalanceScore.map { score($0) }
+            )
+        )
         return facts
     }
 
     private func contentFacts(for analysis: PhotoAnalysis) -> [AnalysisFact] {
-        var facts = [AnalysisFact("Scene", sceneName(analysis.content.sceneType))]
-        if let hasText = analysis.content.hasText {
-            facts.append(AnalysisFact("Text detected", hasText ? "Yes" : "No"))
-        } else {
-            facts.append(AnalysisFact("Text detected", "Not analyzed"))
-        }
-        if let screenshot = analysis.content.screenshotProbability {
-            facts.append(AnalysisFact("Screenshot likelihood", risk(screenshot)))
-        } else {
-            facts.append(AnalysisFact("Screenshot likelihood", "Not analyzed"))
-        }
+        var facts = [AnalysisFact]()
+        facts.append(
+            analysisFact(
+                id: "content.scene",
+                label: "Scene",
+                value: sceneName(analysis.content.sceneType)
+            )
+        )
+        facts.append(
+            analysisFact(
+                id: "content.textDetected",
+                label: "Text detected",
+                value: analysis.content.hasText.map { $0 ? "Yes" : "No" }
+            )
+        )
+        facts.append(
+            analysisFact(
+                id: "content.screenshotLikelihood",
+                label: "Screenshot likelihood",
+                value: analysis.content.screenshotProbability.map { risk($0) }
+            )
+        )
         return facts
+    }
+
+    private func analysisFact(
+        id: String,
+        label: LocalizedStringResource,
+        value: LocalizedStringResource?
+    ) -> AnalysisFact {
+        AnalysisFact(id: id, label: label, value: value ?? "Not analyzed")
     }
 
     private func score(_ value: Double) -> LocalizedStringResource {
@@ -186,14 +250,10 @@ private struct AnalysisScoreCard: View {
     }
 }
 
-private struct AnalysisFact {
+private struct AnalysisFact: Identifiable {
+    let id: String
     let label: LocalizedStringResource
     let value: LocalizedStringResource
-
-    init(_ label: LocalizedStringResource, _ value: LocalizedStringResource) {
-        self.label = label
-        self.value = value
-    }
 }
 
 private struct AnalysisFactSection: View {
@@ -204,7 +264,7 @@ private struct AnalysisFactSection: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
-            ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in
+            ForEach(facts) { fact in
                 LabeledContent {
                     Text(fact.value)
                         .monospacedDigit()

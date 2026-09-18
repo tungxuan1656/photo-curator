@@ -52,11 +52,9 @@ struct ReviewOverview: View {
                                         .font(.title3.bold())
                                         .foregroundStyle(.white)
 
-                                    Text(
-                                        "\(model.selectedIDs.count) selected from \(total) photos"
-                                    )
-                                    .font(.footnote)
-                                    .foregroundStyle(.white.opacity(0.9))
+                                    Text(selectedSummary(selectedCount: model.selectedIDs.count, total: total))
+                                        .font(.footnote)
+                                        .foregroundStyle(.white.opacity(0.9))
                                 }
                                 .padding(16)
                             }
@@ -66,7 +64,7 @@ struct ReviewOverview: View {
                             VStack(spacing: 6) {
                                 Text("Your curated album is ready")
                                     .font(.title2.bold())
-                                Text("\(model.selectedIDs.count) selected from \(total) photos")
+                                Text(selectedSummary(selectedCount: model.selectedIDs.count, total: total))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -297,6 +295,13 @@ struct ReviewOverview: View {
 
     private func similarGroupsSummary(for model: ReviewModel) -> LocalizedStringResource {
         model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen"
+    }
+
+    private func selectedSummary(selectedCount: Int, total: Int) -> LocalizedStringResource {
+        if total == 1 {
+            return "\(selectedCount) selected from 1 photo"
+        }
+        return "\(selectedCount) selected from \(total) photos"
     }
 }
 

@@ -104,6 +104,16 @@ require_source "$ROOT_DIR/apps/photo-curator/PhotoCuratorApp.swift" '.environmen
 require_source "$ROOT_DIR/apps/photo-curator/App/AppModel.swift" 'UserDefaults.standard.set(appLanguage.rawValue, forKey: Self.appLanguageKey)' "PERSISTENCE-WRITE"
 require_source "$ROOT_DIR/apps/photo-curator/App/AppModel.swift" 'UserDefaults.standard.string(forKey: Self.appLanguageKey)' "PERSISTENCE-READ"
 require_source "$ROOT_DIR/apps/photo-curator/Features/Settings/SettingsView.swift" 'Picker("Language", selection: $appModel.appLanguage)' "LANGUAGE-PICKER"
+require_source "$ROOT_DIR/apps/photo-curator/Features/SourceSelection/SourceSelectionView.swift" 'return isSelected ? "Photo, favorite, selected" : "Photo, favorite, not selected"' "SELECTION-STATE-LOCALIZATION"
+require_source "$ROOT_DIR/apps/photo-curator/Features/SourceSelection/SourceSelectionView.swift" 'return isSelected ? "Photo, selected" : "Photo, not selected"' "SELECTION-STATE-LOCALIZATION"
+require_source "$ROOT_DIR/apps/photo-curator/Features/Review/ReviewOverview.swift" 'if total == 1' "SINGULAR-REVIEW-SUMMARY"
+require_source "$ROOT_DIR/apps/photo-curator/Features/Review/ReviewOverview.swift" 'return "\(selectedCount) selected from 1 photo"' "SINGULAR-REVIEW-SUMMARY"
+require_source "$ROOT_DIR/apps/photo-curator/Features/Review/PhotoAnalysisDetail.swift" 'ForEach(facts) { fact in' "ANALYSIS-FACT-IDENTITY"
+if rg -n --fixed-strings 'ForEach(Array(facts.enumerated()), id: \.offset)' "$ROOT_DIR/apps/photo-curator/Features/Review/PhotoAnalysisDetail.swift"; then
+    echo "ANALYSIS-FACT-OFFSET-IDENTITY FAIL" >&2
+    exit 1
+fi
+echo "ACCESSIBILITY-AND-IDENTITY-CONTRACT PASS"
 echo "ROOT-LOCALE-AND-PERSISTENCE PASS"
 
 SDK="$(xcrun --sdk iphonesimulator --show-sdk-path)"

@@ -86,11 +86,10 @@ struct SourceSelectionView: View {
     }
 
     private func selectionLabel(isSelected: Bool, isFavorite: Bool) -> LocalizedStringResource {
-        let state = isSelected ? "selected" : "not selected"
         if isFavorite {
-            return "Photo, favorite, \(state)"
+            return isSelected ? "Photo, favorite, selected" : "Photo, favorite, not selected"
         }
-        return "Photo, \(state)"
+        return isSelected ? "Photo, selected" : "Photo, not selected"
     }
 
     @ViewBuilder
