@@ -83,7 +83,8 @@ final class AppModel {
             engine: container.selectionEngine,
             config: .default,
             pressure: container.memoryPressure,
-            tierCProvider: container.tierCProvider
+            tierCProvider: container.tierCProvider,
+            semanticJuryProvider: container.semanticJuryProvider
         )
         processing = ProcessingModel(
             coordinator: coordinator,

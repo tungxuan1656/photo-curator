@@ -459,3 +459,29 @@
 **Decisions**: DEC-042 deterministic uncertainty contract; DEC-043 tombstone-safe cleanup race; DEC-044 exact seven-key aggregate feedback schema; DEC-045 strong hook ownership with weak model capture; DEC-046 strict schema decoding and generation-guarded persistence.
 **Blockers**: none
 **Next**: Activate feat-027 from the latest `origin/main`; not user-gated.
+
+## 2026-09-18 — feat-027 semantic jury complete
+
+**State**: done (implemented and verified; parent PR NOT yet opened)
+**Done**: Activated feat-027, recorded external plan `docs/plans/feat-027.md` and DEC-047, implemented the iOS 27 Foundation Models semantic-jury seam with strict one-key choice validation, bounded admitted requests, timeout/cancellation/failure fallback, privacy-safe diagnostics, and deterministic same-cluster `chooseA`/`chooseB` integration. iOS 26 remains unchanged and provider injection is live only through the app container.
+**Evidence**: `scripts/proof/feat-027.sh` EXIT 0 — `STAGED-MATCH 8`, Simulator `simctl spawn`, iOS 26 `providerCalls=0`, iOS 27 `chooseB`, strict schema four invalid rows, safe-choice fallback, bounds, unavailable, timeout, cancellation, and Golden-shaped `candidates=200 requests=100 attempts=4` all PASS; `RESULT PASS`. `./init.sh` EXIT 0 — format PASS, SwiftLint strict 0 violations, Simulator build SUCCEEDED, test SKIP per DEC-040. `git diff --check` PASS; no `*Test*.swift` files, test targets, or test frameworks.
+**Decisions**: DEC-047 bounded iOS 27 semantic jury contract; engine version remains 3 and no persistence/schema migration is introduced.
+**Blockers**: none
+**Next**: PR `tungxuan1656/feat-027-integration` → main (squash in a separate merge task).
+
+## 2026-09-18 — feat-027 Codex review fixes
+
+**State**: done (review-fix integration; parent PR NOT yet opened)
+**Done**: Wired coordinator-loaded in-memory `CGImage` values into the iOS 27 Foundation Models image-attachment prompt (future image-input SDK branch, no text-only downgrade); replaced global jury rerun with a same-cluster in-place swap that preserves unrelated selected IDs; replaced the task-group timeout with a hard-bounded cancellation race; expanded the proof to compile and exercise the shipped `SelectionEngine` + `SelectionSessionCoordinator` boundary; aligned `deterministicFallback` docs and recorded DEC-048.
+**Evidence**: `scripts/proof/feat-027.sh` EXIT 0 — `STAGED-MATCH 26`, request-factory ordering, iOS 26 zero provider/image calls, iOS 27 image-backed coordinator requests, same-cluster-only, unrelated-selection preservation, generic provider failure, strict schema, bounds, unavailable, non-cooperative timeout, cancellation, and Golden-shaped deterministic cap all PASS; `RESULT PASS`. `./init.sh` EXIT 0 — format PASS, SwiftLint strict 0 violations, Simulator build SUCCEEDED, test SKIP per DEC-040; `git diff --check` PASS; no test artifacts/framework.
+**Decisions**: DEC-047 bounded iOS 27 semantic jury; DEC-048 image-backed in-place integration and hard timeout; engine version remains 3 and no persistence/schema migration is introduced.
+**Blockers**: none
+**Next**: PR `tungxuan1656/feat-027-integration` → main (squash in a separate merge task).
+## 2026-09-18 — feat-027 Codex review remediation
+
+**State**: done (review remediation; parent PR NOT yet opened)
+**Done**: Added the SDK-capability adapter seam for Foundation Models image attachments: current Swift 6.3.3/iOS 26.5 builds compile and deterministically fall back, while an iOS 27 SDK build can enable the typed `Attachment(CGImage)` branch without a compiler-version guard. Added releasable run-local image leases and detached hard-timeout cleanup, repaired the feat-026 `AppContainer` compatibility fixture, moved feat-027 proof output under ignored `scripts/proof/out`, and reconciled in-place apply semantics plus DEC-049 across feature/plan/decision docs.
+**Evidence**: `./scripts/proof/feat-026.sh` EXIT 0 — `STAGED-49-MD5-MATCH`, 99 PASS / 0 FAIL. `./scripts/proof/feat-027.sh` EXIT 0 — `STAGED-MATCH 26`, timeout 2,073 ms under the 2.75 s proof bound with image leases released, native adapter current-SDK fallback and all focused jury/fallback/GOLDEN checks PASS, `RESULT PASS`. `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build SUCCEEDED, test SKIP per DEC-040. `git diff --check` PASS; no automated test artifacts; `.build/proof-feat-027` absent and output remains under ignored `scripts/proof/out`.
+**Decisions**: DEC-047 bounded iOS 27 semantic jury; DEC-048 image-backed in-place integration and hard timeout; DEC-049 explicit Foundation Models SDK capability seam; engine version remains 3 and no persistence/schema migration is introduced.
+**Blockers**: none
+**Next**: open PR `tungxuan1656/feat-027-integration` → main (squash in a separate merge task).

@@ -1,3 +1,6 @@
+import CoreGraphics
+
+// swiftlint:disable file_length
 import Foundation
 import OSLog
 
@@ -83,6 +86,8 @@ actor SelectionSessionCoordinator {
     private let pipeline: BatchPipeline
     private let engine: SelectionEngine
     private let tierCProvider: any VisualEmbeddingProvider
+    private let semanticJuryProvider: any SemanticJuryProvider
+    private let semanticJuryAvailability: @Sendable () -> Bool
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "selection"
     )
@@ -107,7 +112,9 @@ actor SelectionSessionCoordinator {
         engine: SelectionEngine,
         config: AppConfiguration = .default,
         pressure: MemoryPressureObserver? = nil,
-        tierCProvider: any VisualEmbeddingProvider = NativeDerivedEmbeddingProvider()
+        tierCProvider: any VisualEmbeddingProvider = NativeDerivedEmbeddingProvider(),
+        semanticJuryProvider: any SemanticJuryProvider = NoopSemanticJuryProvider(),
+        semanticJuryAvailability: @escaping @Sendable () -> Bool = { SemanticJuryPolicy.isAvailableOnProductOS() }
     ) {
         self.imageLoader = imageLoader
         self.analyzer = analyzer
@@ -115,6 +122,8 @@ actor SelectionSessionCoordinator {
         self.checkpointStore = checkpointStore
         self.engine = engine
         self.tierCProvider = tierCProvider
+        self.semanticJuryAvailability = semanticJuryAvailability
+        self.semanticJuryProvider = semanticJuryProvider
         pipeline = BatchPipeline(
             imageLoader: imageLoader,
             analyzer: analyzer,
@@ -258,12 +267,16 @@ actor SelectionSessionCoordinator {
     ) async throws -> SelectionResult {
         let candidates = engine.duplicateCandidates(for: assets, configuration: configuration)
         let edges = try await rebuildSimilarityEdges(for: assets, candidates: candidates, laneCount: laneCount)
-        return try engine.select(
+        let tierC = tierCEdges(
+            forShortlistOf: assets, analyses: analyses, configuration: configuration, similarityEdges: edges
+        )
+        let deterministic = try engine.select(
             assets: assets, analyses: analyses, configuration: configuration,
-            feedback: nil, similarityEdges: edges,
-            tierCEdges: tierCEdges(
-                forShortlistOf: assets, analyses: analyses, configuration: configuration, similarityEdges: edges
-            )
+            feedback: nil, similarityEdges: edges, tierCEdges: tierC
+        )
+        return try await applySemanticJury(
+            to: deterministic, assets: assets, analyses: analyses, configuration: configuration,
+            similarityEdges: edges, tierCEdges: tierC
         )
     }
 
@@ -278,17 +291,21 @@ actor SelectionSessionCoordinator {
             forShortlistOf: assets, analyses: batchResult.analyses,
             configuration: request.config.selection, similarityEdges: edges
         )
-        let engineOut = try engine.select(
+        let deterministic = try engine.select(
             assets: assets, analyses: batchResult.analyses, configuration: request.config.selection,
             feedback: nil, similarityEdges: edges, tierCEdges: tierC
         )
+        let juried = try await applySemanticJury(
+            to: deterministic, assets: assets, analyses: batchResult.analyses,
+            configuration: request.config.selection, similarityEdges: edges, tierCEdges: tierC
+        )
         return SelectionResult(
             sessionID: request.sessionID,
-            selectedAssetIDs: engineOut.selectedAssetIDs,
-            rejectedAssetIDs: engineOut.rejectedAssetIDs,
-            decisions: engineOut.decisions,
-            generatedAt: engineOut.generatedAt,
-            engineVersion: engineOut.engineVersion
+            selectedAssetIDs: juried.selectedAssetIDs,
+            rejectedAssetIDs: juried.rejectedAssetIDs,
+            decisions: juried.decisions,
+            generatedAt: juried.generatedAt,
+            engineVersion: juried.engineVersion
         )
     }
 
@@ -323,6 +340,53 @@ actor SelectionSessionCoordinator {
         let pairs = VisualEmbeddingRouter.tierCCandidates(for: scope.filter { analyses[$0.id] != nil })
         let edges = pairs.isEmpty ? [] : tierCProvider.tierCDistances(for: pairs, analyses: analyses)
         return edges.isEmpty ? NoopVisualEmbeddingProvider().tierCDistances(for: pairs, analyses: analyses) : edges
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func applySemanticJury(
+        to result: SelectionResult,
+        assets: [PhotoAsset],
+        analyses: [AssetID: PhotoAnalysis],
+        configuration: SelectionConfiguration,
+        similarityEdges: [SimilarityEdge],
+        tierCEdges: [SimilarityEdge]
+    ) async throws -> SelectionResult {
+        // The product gate is checked before request construction or image loading:
+        // iOS 26 never calls the jury and retains the exact deterministic path.
+        guard semanticJuryAvailability() else { return result }
+        let baseRequests = SemanticJuryRequestFactory.requests(
+            result: result, sourceAssets: assets, analyses: analyses
+        )
+        guard !baseRequests.isEmpty else { return result }
+        var requests: [SemanticJuryRequest] = []
+        for request in baseRequests.prefix(SemanticJuryPolicy.maximumRequests) {
+            try Task.checkCancellation()
+            var images: [AssetID: CGImage] = [:]
+            for candidate in request.candidates {
+                guard let image = try? await imageLoader.analysisImage(for: candidate.assetID) else {
+                    images = [:]
+                    break
+                }
+                images[candidate.assetID] = image
+            }
+            if let request = request.withImages(images) {
+                requests.append(request)
+            }
+        }
+        guard !requests.isEmpty else { return result }
+        defer { requests.forEach { $0.releaseImages() } }
+        let evaluation = await SemanticJuryRouter(
+            provider: semanticJuryProvider, availability: semanticJuryAvailability
+        ).evaluate(requests)
+        guard !evaluation.overrides.isEmpty else { return result }
+        return try engine.applyJuryOverrides(
+            to: result,
+            assets: assets,
+            analyses: analyses,
+            configuration: configuration,
+            similarityEdges: similarityEdges,
+            overrides: evaluation.overrides
+        )
     }
 }
 

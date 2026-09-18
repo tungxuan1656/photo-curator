@@ -13,6 +13,8 @@ struct AppContainer: Sendable {
     /// by default, injected into `SelectionSessionCoordinator` for both
     /// production selection paths. No model, no persisted state.
     let tierCProvider: any VisualEmbeddingProvider
+    /// Optional iOS 27 semantic jury; router gates invocation and all fallbacks are deterministic.
+    let semanticJuryProvider: any SemanticJuryProvider
     let exporter: any AlbumExportService
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
@@ -40,6 +42,7 @@ struct AppContainer: Sendable {
             checkpointStore: SessionCheckpointStore(files: files),
             selectionEngine: SelectionEngine(),
             tierCProvider: NativeDerivedEmbeddingProvider(),
+            semanticJuryProvider: FoundationModelsSemanticJuryProvider(),
             exporter: PhotoKitAlbumExporter(),
             analytics: NoopAnalytics(),
             memoryPressure: MemoryPressureObserver()

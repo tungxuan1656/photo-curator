@@ -274,7 +274,7 @@
       ],
       "gate": "The iOS 27 semantic jury is gated, schema-validates its decision, and retains iOS 26 deterministic fallback; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
       "id": "feat-027",
-      "status": "todo",
+      "status": "done",
       "title": "Semantic jury"
     },
     {

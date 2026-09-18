@@ -8,6 +8,7 @@ enum SelectionError: Error, Sendable {
     case memoryCritical
 }
 
+// swiftlint:disable type_body_length function_body_length function_parameter_count
 /// Pure deterministic selection facade. Same assets + analyses + configuration + feedback give the same
 /// result (tie-breaks: selection-rules §15). Pipeline: chrono order → available partition → duplicate
 /// resolution → moment construction → quality rank/shortlist → diversity selection → final verify/order.
@@ -87,7 +88,7 @@ struct SelectionEngine: Sendable {
             return $0.id.rawValue < $1.id.rawValue
         }
         let available = ordered.filter { analyses[$0.id] != nil }
-        // feat-021/feat-022 frozen: duplicates and moments see FeaturePrint edges only.
+        // Feat-021/feat-022 frozen: duplicates and moments see FeaturePrint edges only.
         let resolution = duplicateResolver.resolve(
             assets: available, analyses: analyses, edges: similarityEdges, configuration: configuration
         )
@@ -101,8 +102,8 @@ struct SelectionEngine: Sendable {
             clusters: resolution.clusters, moments: moments
         )
         // Every duplicate loser inherits its representative's moment so restored
-        // losers and swap winners resolve to a real moment even though moments
-        // are built from representatives only. Existing entries win.
+        // losers and swap winners resolve to a real moment even though moments are built
+        // from representatives only. Existing entries win.
         let memberMomentByID = Dictionary(uniqueKeysWithValues: resolution.clusters.flatMap { cluster in
             guard let rep = cluster.representativeAssetID, let momentID = lookups.momentByID[rep] else {
                 return [] as [(AssetID, MomentID)]
@@ -143,6 +144,107 @@ struct SelectionEngine: Sendable {
                 clusters: resolution.clusters, scored: overridden, feedback: feedback
             ),
             moments: moments, scored: overridden, selectedIDs: picked, configuration: configuration
+        )
+    }
+
+    /// Applies validated jury swaps to the existing deterministic result.
+    /// Unlike a fresh selection pass, this changes only one compared cluster;
+    /// every unrelated selected ID and decision remains untouched.
+    func applyJuryOverrides(
+        to result: SelectionResult,
+        assets: [PhotoAsset],
+        analyses: [AssetID: PhotoAnalysis],
+        configuration: SelectionConfiguration,
+        similarityEdges: [SimilarityEdge],
+        overrides: [SemanticJuryOverride]
+    ) throws -> SelectionResult {
+        guard !overrides.isEmpty else { return result }
+        let available = assets.filter { analyses[$0.id] != nil }
+        let resolution = duplicateResolver.resolve(
+            assets: available, analyses: analyses, edges: similarityEdges, configuration: configuration
+        )
+        let selectedBefore = Set(result.selectedAssetIDs)
+        guard selectedBefore.count == result.selectedAssetIDs.count else { throw SelectionError.internal }
+        var selected = selectedBefore
+        var decisionsByID = Dictionary(uniqueKeysWithValues: result.decisions.map { ($0.assetID, $0) })
+        var touchedClusters = Set<ClusterID>()
+        var changed = false
+
+        for override in overrides where override.choice == .chooseA || override.choice == .chooseB {
+            guard override.first != override.second,
+                  let cluster = resolution.clusters.first(where: {
+                      $0.assetIDs.contains(override.first) && $0.assetIDs.contains(override.second)
+                  }),
+                  !touchedClusters.contains(cluster.id)
+            else { continue }
+            let winner = override.choice == .chooseA ? override.first : override.second
+            let loser = winner == override.first ? override.second : override.first
+            guard selected.contains(loser), !selected.contains(winner),
+                  let winnerAsset = available.first(where: { $0.id == winner }),
+                  let winnerAnalysis = analyses[winner]
+            else { continue }
+            let replacement = qualityScorer.score(
+                asset: winnerAsset,
+                analysis: winnerAnalysis,
+                clusterID: cluster.id,
+                momentID: MomentID(rawValue: UUID()),
+                configuration: configuration
+            )
+            guard replacement.disposition == .usable else { continue }
+
+            selected.remove(loser)
+            selected.insert(winner)
+            touchedClusters.insert(cluster.id)
+            changed = true
+
+            let winnerScore = replacement.score
+            var reasons = decisionsByID[winner]?.reasons.filter { $0 != "nearDuplicate" } ?? []
+            if !reasons.contains("nearDuplicateRepresentative") {
+                reasons.append("nearDuplicateRepresentative")
+            }
+            if winnerAnalysis.people.faceCount >= 2 {
+                if !reasons.contains("bestGroupPhoto") {
+                    reasons.append("bestGroupPhoto")
+                }
+                if winnerAnalysis.people.minFaceQuality != nil, !reasons.contains("betterFaceQuality") {
+                    reasons.append("betterFaceQuality")
+                }
+            } else if winnerAnalysis.people.faceCount == 1, !reasons.contains("bestPortrait") {
+                reasons.append("bestPortrait")
+            }
+            decisionsByID[winner] = Decision(
+                assetID: winner,
+                status: .selected,
+                score: winnerScore,
+                qualityBreakdown: winnerAnalysis.qualityBreakdown,
+                reasons: reasons,
+                competingIDs: []
+            )
+            decisionsByID[loser] = Decision(
+                assetID: loser,
+                status: .rejected,
+                score: nil,
+                qualityBreakdown: nil,
+                reasons: ["nearDuplicate"],
+                competingIDs: [winner]
+            )
+        }
+
+        guard changed else { return result }
+        let sourceOrder = Dictionary(uniqueKeysWithValues: assets.enumerated().map { ($1.id, $0) })
+        let orderedSelected = selected.sorted {
+            (sourceOrder[$0] ?? Int.max) < (sourceOrder[$1] ?? Int.max)
+        }
+        let orderedRejected = assets.map(\.id).filter { !selected.contains($0) }
+        let orderedDecisions = assets.compactMap { decisionsByID[$0.id] }
+        guard orderedDecisions.count == assets.count else { throw SelectionError.internal }
+        return SelectionResult(
+            sessionID: result.sessionID,
+            selectedAssetIDs: orderedSelected,
+            rejectedAssetIDs: orderedRejected,
+            decisions: orderedDecisions,
+            generatedAt: result.generatedAt,
+            engineVersion: result.engineVersion
         )
     }
 
@@ -246,7 +348,6 @@ struct SelectionEngine: Sendable {
         }
     }
 
-    // swiftlint:disable:next function_parameter_count
     private func unionRestoredCandidates(
         scored: [ScoredCandidate], shortlist: [ScoredCandidate], feedback: SelectionFeedback?,
         available: [PhotoAsset], analyses: [AssetID: PhotoAnalysis],
@@ -296,3 +397,5 @@ struct SelectionEngine: Sendable {
         }
     }
 }
+
+// swiftlint:enable type_body_length function_body_length function_parameter_count
