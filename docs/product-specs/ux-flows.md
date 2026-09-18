@@ -7,7 +7,7 @@
 **Primary platform:** iOS (SwiftUI)
 
 **Ownership:** This doc owns user-visible flow, states, copy, and review
-behavior only: screens S01–S20, navigation, permission UX copy and
+behavior only: screens S01–S22, navigation, permission UX copy and
 transitions, processing phase labels, review grids/detail/groups,
 save/complete, resume and interruption UX, accessibility, and the
 user-facing error taxonomy.
@@ -52,7 +52,7 @@ These are the only hard rules in this doc. Everything else is guidance.
 
 ### 2.1 Screen inventory
 
-The MVP has 21 screens/sheets. All are required.
+The MVP has 22 screens/sheets. All are required.
 
 | ID  | Screen                                  | Role in flow                                  |
 | --- | --------------------------------------- | --------------------------------------------- |
@@ -64,7 +64,7 @@ The MVP has 21 screens/sheets. All are required.
 | S06 | Selection Summary / Start               | Checkpoint before expensive processing        |
 | S07 | Processing                              | Progress, phase, waiting and leave behavior   |
 | S08 | Processing Blocked / Attention Required | Only when processing cannot continue alone    |
-| S09 | Review Overview                         | Confidence summary, entry to the three queues |
+| S09 | Review Overview                         | Confidence summary, entry to the four queues  |
 | S10 | Curated Grid                            | Inspect and prune the selected set            |
 | S11 | Photo Detail                            | One photo at useful size, toggle its state    |
 | S12 | Similar Group Review                    | Fix best picks group by group                 |
@@ -77,7 +77,7 @@ The MVP has 21 screens/sheets. All are required.
 | S19 | Photo Access Management Guidance        | Sheet: limited vs denied recovery paths       |
 | S20 | Generic Recoverable Error               | Reusable title / body / two-action template   |
 | S21 | Photo Analysis                          | Explain one photo's local analysis and result |
-
+| S22 | Needs Review                            | Bounded uncertain-decision queue with actions |
 There is no account, sync, social, subscription, or editing flow in the MVP.
 
 ### 2.2 Screen-level state matrix
@@ -97,6 +97,7 @@ each screen needs to handle.
 | S11 Photo Detail     | Yes    | Full image load | —                          | Asset unavailable    | Sometimes        |
 | S12 Similar Groups   | Yes    | Group load      | No groups (hide entry)     | Group reload         | Sometimes        |
 | S13 Removed Photos   | Yes    | Thumbnails      | Nothing removed            | Thumbnail retry      | Sometimes        |
+| S22 Needs Review     | Yes    | Thumbnails      | Clear queue (hide entry)   | Thumbnail retry      | Sometimes        |
 | S14 Final Review     | Yes    | Preview load    | No selected (Save off)     | Preview retry        | Sometimes        |
 | S15 Saving           | Yes    | Core state      | —                          | Yes (retry / finish) | Yes              |
 | S16 Completion       | Yes    | —               | —                          | Destination missing  | —                |
@@ -123,10 +124,12 @@ Choose source photos (S05) → Confirm count (S06)
 Processing (S07, S08 only when blocked)
   ↓
 Review Overview (S09)
+  ├─ Needs Review (S22, hidden when the queue is empty)
   ↓
 Curated Grid (S10) ⇄ Photo Detail (S11) → Photo Analysis (S21)
   ├─ Similar Groups (S12) ⇄ Photo Detail (S11) → Photo Analysis (S21)
-  └─ Removed Photos (S13) ⇄ Photo Detail (S11) → Photo Analysis (S21)
+  ├─ Removed Photos (S13) ⇄ Photo Detail (S11) → Photo Analysis (S21)
+  └─ Needs Review (S22) routes into S11/S12/S13 without mutating selection
   ↓
 Final Review (S14) → Saving (S15) → Completion (S16)
 ```
@@ -169,7 +172,8 @@ Use these words in UI and code. Do not invent synonyms.
 Review Overview (S09)
   ├─ Curated Grid (S10) ─ Photo Detail (S11)
   ├─ Similar Groups (S12) ─ Photo Detail
-  └─ Removed Photos (S13) ─ Photo Detail
+  ├─ Removed Photos (S13) ─ Photo Detail
+  └─ Needs Review (S22) routes into S11/S12/S13 without mutating selection
 ```
 
 ### 4.2 Back
@@ -401,7 +405,7 @@ Discard). Diagnostics stay internal.
 
 ---
 
-## 8. Review (S09–S13)
+## 8. Review (S09–S14, S21–S22)
 
 Review answers three questions: what did the app choose, what did it
 leave out, and where is a decision genuinely useful. Default review never
@@ -416,9 +420,11 @@ flowchart TD
     B --> C[Curated Grid]
     B --> D[Similar Groups]
     B --> E[Removed Photos]
+    B --> G[S22 Needs Review]
     C --> F[Final Review]
     D --> F
     E --> F
+    G --> F
 ```
 
 Interaction rules (apply everywhere):
@@ -442,9 +448,11 @@ Interaction rules (apply everywhere):
 Example: **Your curated album is ready** — **126 selected from 842
 photos**, plus compact stats (not selected, groups worth reviewing).
 Sections: Selected Photos (**Review Selection**), Similar Photos /
-Needs Attention (**Review Similar Photos**, hidden when empty), Removed
-Photos (**Review Removed**). Primary action **Review & Save** opens the
-Curated Grid first so users see the album before saving.
+Needs Attention (**Review Similar Photos**, hidden when empty), Needs
+Review (S22, **Needs Review** with the queue count, hidden when empty —
+same rule as Similar), Removed Photos (**Review Removed**). Primary
+action **Review & Save** opens the Curated Grid first so users see the
+album before saving.
 
 Zero-result safety: **We couldn't build a selection** — "Try processing
 this set again or choose different photos." Actions: Retry / Choose
@@ -507,7 +515,21 @@ never build full-resolution state eagerly.
 Each visible removed thumbnail uses the same Technical score badge as S10.
 If no saved analysis exists, the badge says **Analysis unavailable**.
 
-### 8.6 S21 — Photo Analysis
+### 8.6 S22 — Needs Review
+
+Title **Needs Review**: the bounded queue of uncertain decisions (cap 30,
+priority borderlineQuality > faceTradeoff > similarAlternatives >
+secondMomentView > coverageCut) that most need user judgment, in queue
+order with one plain reason per photo plus a **Reviewed** mark once the
+user edits that photo (remove, restore, or swap-winner). Queue entries
+never mutate selection themselves: inspect/compare-moment open the
+queue-scoped Photo Detail pager (S11, with S21 one tap deeper), similar
+routes to Similar Groups (S12), add-back routes to Removed Photos (S13);
+the standalone selection toggle stays separate. Empty queues render the
+same empty-state shape as S13 (never an error) and hide the S09 entry.
+Copy avoids scores, Vision terms, and deletion vocabulary.
+
+### 8.7 S21 — Photo Analysis
 
 S21 shows the current photo and the saved result for that photo. It is an
 explanation screen, not a control for selection weights or thresholds.
@@ -535,7 +557,7 @@ explanation screen, not a control for selection weights or thresholds.
 
 ```mermaid
 flowchart TD
-    A[Review] --> B[Final Review]
+    A[S22 Needs Review] --> B[Final Review]
     B --> C{Any selected?}
     C -- No --> D[Save disabled]
     C -- Yes --> E[Name + Save]

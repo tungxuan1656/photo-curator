@@ -39,7 +39,8 @@ extension AppModel {
             result: result,
             sourceByID: live,
             analysisCache: container.analysisCache,
-            feedback: feedback
+            feedback: feedback,
+            lowQualityThreshold: AppConfiguration.default.selection.lowQualityThreshold
         )
         // Persisted unavailable bucket: frozen checkpoint source count minus
         // decided IDs, plus `assetUnavailable` decisions (full-result path).
@@ -48,11 +49,26 @@ extension AppModel {
         model.persistedUnavailableCount = ReviewModel.unavailableCount(
             result: result, frozenSourceCount: frozenCount?.sourceAssetIDs.count
         )
-        // Ordered writes: the latest snapshot always persists last, so rapid
-        // toggles cannot land out of order on disk.
-        let persist = PersistLatest(store: container.checkpointStore, sessionID: sessionID)
-        model.setFeedbackHook { snapshot in
-            Task { await persist.save(snapshot) }
+        // Ordered writes: the latest snapshots always persist last, so rapid
+        // toggles cannot land out of order on disk. The bounded aggregate
+        // snapshot follows the full feedback write in one actor call.
+        // Closed-session guard (DEC-043) + generation owner (DEC-046): a live
+        // re-entry reopens the store tombstone AND mints a new generation,
+        // captured here in the same statement; the installed hook owns its
+        // PersistLatest actor strongly (closure owned by the model, model
+        // owned by reviewModel), so feedback writes fire while review is
+        // live. The model is captured weakly to avoid a retain cycle
+        // (model -> hook -> model); cleanup releases reviewModel first,
+        // then retire drops late writes AND stale old-session writers pinned
+        // to the previous generation — no cycle, no resurrection.
+        let generation = await container.checkpointStore.reopenSession(sessionID)
+        let persist = PersistLatest(store: container.checkpointStore, sessionID: sessionID, generation: generation)
+        model.setFeedbackHook { [weak model, persist] snapshot in
+            guard let model else { return }
+            let uncertainty = model.uncertaintySnapshot()
+            Task { [persist] in
+                await persist.save(snapshot, uncertainty: uncertainty)
+            }
         }
         reviewModel = model
         // Interrupted-save reconciliation: never a duplicate album. A
@@ -286,17 +302,32 @@ extension AppModel {
 
 /// Orders feedback writes so the newest snapshot always lands last. Each
 /// mutation captures a monotonically newer snapshot; the actor serializes
-/// the writes, so rapid toggles cannot persist out of order.
+/// the writes, so rapid toggles cannot persist out of order. Session-scoped
+/// (DEC-043) + generation-pinned (DEC-046): the store drops writes for
+/// tombstoned sessions AND for writers pinned to a retired generation, so a
+/// late Task queued before discard/reset/finish deletes cannot recreate the
+/// rows — even when a same-process reopen minted a newer generation first.
 private actor PersistLatest {
     private let store: SessionCheckpointStore
     private let sessionID: SessionID
+    private let generation: UInt64?
 
-    init(store: SessionCheckpointStore, sessionID: SessionID) {
+    init(store: SessionCheckpointStore, sessionID: SessionID, generation: UInt64?) {
         self.store = store
         self.sessionID = sessionID
+        self.generation = generation
     }
 
+    /// Ordered feedback pair: the full edit snapshot first, then the bounded
+    /// aggregate snapshot derived from it (never throws — disk failure keeps
+    /// in-memory review alive and the next mutation retries; a closed-session
+    /// drop is also silent, by tombstone design).
     func save(_ snapshot: SelectionFeedback) async {
-        try? await store.saveFeedback(snapshot, for: sessionID)
+        try? await store.saveFeedback(snapshot, for: sessionID, generation: generation)
+    }
+
+    func save(_ feedback: SelectionFeedback, uncertainty: UncertaintyFeedbackSnapshot) async {
+        try? await store.saveFeedback(feedback, for: sessionID, generation: generation)
+        try? await store.saveUncertaintyFeedback(uncertainty, for: sessionID, generation: generation)
     }
 }

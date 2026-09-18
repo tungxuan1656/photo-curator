@@ -355,6 +355,16 @@ extension AppModel {
                     "\(context, privacy: .public) feedback cleanup failed: \(error.localizedDescription, privacy: .public)"
                 )
         }
+        // feat-026 uncertainty snapshot: same all-attempted/idempotent rule.
+        do {
+            try await container.checkpointStore.deleteUncertaintyFeedback(sessionID: sessionID)
+        } catch {
+            cleaned = false
+            logger
+                .error(
+                    "\(context, privacy: .public) uncertainty-feedback cleanup failed: \(error.localizedDescription, privacy: .public)"
+                )
+        }
         do {
             try await container.checkpointStore.deleteSaveState(sessionID: sessionID)
         } catch {

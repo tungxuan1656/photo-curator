@@ -33,6 +33,13 @@ final class ReviewModel {
     /// progress counter resets). Assigned by the owner at review entry from
     /// `unavailableCount(result:frozenSourceCount:)`; defaults to hidden.
     var persistedUnavailableCount = 0
+    /// Needs Review queue (feat-026): one `UncertaintyReviewState` owns queue
+    /// derivation, resolution, and snapshot (derived once at review entry;
+    /// resolution recomputes from live edits per read).
+    @ObservationIgnored private let reviewState: UncertaintyReviewState
+    var needsReviewItems: [NeedsReviewItem] {
+        reviewState.items
+    }
 
     private let engineSelected: Set<AssetID>
     @ObservationIgnored private let analysisCache: any AnalysisCache
@@ -52,7 +59,8 @@ final class ReviewModel {
         sourceByID: [AssetID: PhotoAsset],
         analysisCache: any AnalysisCache,
         feedback: SelectionFeedback? = nil,
-        onFeedbackChanged: ((SelectionFeedback) -> Void)? = nil
+        onFeedbackChanged: ((SelectionFeedback) -> Void)? = nil,
+        lowQualityThreshold: Double? = nil
     ) {
         self.sessionID = sessionID
         self.result = result
@@ -60,6 +68,7 @@ final class ReviewModel {
         self.analysisCache = analysisCache
         decisionByID = Dictionary(uniqueKeysWithValues: result.decisions.map { ($0.assetID, $0) })
         self.onFeedbackChanged = onFeedbackChanged
+        let threshold = lowQualityThreshold ?? AppConfiguration.default.selection.lowQualityThreshold
         let live = Set(sourceByID.keys)
         let allResultIDs = Set(result.selectedAssetIDs + result.rejectedAssetIDs)
         let chrono = Self.chronoOrder(ids: allResultIDs, sourceByID: sourceByID)
@@ -83,6 +92,10 @@ final class ReviewModel {
         removedEditIDs = removed
         restoredEditIDs = restored
         selectedIDs = engineSelectedIDs.subtracting(removed).union(restored).intersection(liveSet)
+        reviewState = UncertaintyReviewState(
+            decisions: result.decisions.filter { liveSet.contains($0.assetID) },
+            lowQualityThreshold: threshold
+        )
         cachedSimilarGroups = Self.buildSimilarGroups(
             result: result, displayIDs: displayIDs, sourceByID: sourceByID
         )
@@ -274,6 +287,28 @@ final class ReviewModel {
             restoredIDs: restoredEditIDs,
             favoriteIDs: favoriteEditIDs,
             swapWinner: swapWinnerByGroup
+        )
+    }
+
+    /// Resolution for one queue member: true once the user edits it (remove,
+    /// restore, or swap-winner). Queue membership is fixed at review entry;
+    /// only the edit sets grow. Delegates to the owned review state.
+    func isUncertaintyResolved(_ id: AssetID) -> Bool {
+        reviewState.isResolved(id, feedback: feedbackSnapshot())
+    }
+
+    func resolvedUncertaintyCount() -> Int {
+        reviewState.resolvedCount(feedback: feedbackSnapshot())
+    }
+
+    /// Bounded snapshot for the on-disk row: aggregate counts only.
+    /// Delegates to the owned review state.
+    func uncertaintySnapshot() -> UncertaintyFeedbackSnapshot {
+        reviewState.snapshot(
+            sessionID: sessionID,
+            engineVersion: result.engineVersion,
+            feedback: feedbackSnapshot(),
+            updatedAt: Date()
         )
     }
 
