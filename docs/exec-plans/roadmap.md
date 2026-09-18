@@ -52,6 +52,10 @@ Rules:
 | P7 — Personalization | Learn per-user taste from corrections | Can it learn this user? | Repeat corrections fall over sessions; bad photos never beat sharp ones on taste alone |
 | P8 — Future intelligence | Semantic judging, story-aware albums, learned ranking | Can it reason about ambiguous curation choices without weakening the core? | Only after P0–P6 pass and the relevant quality/license/performance gates in [curation-intelligence.md](../design-docs/curation-intelligence.md) pass |
 
+Feat-031 is the staged P4 quality-mode implementation. It does not change the
+large-set native route, and it cannot graduate a Qwen profile without actual
+image-sensitive, quality, privacy, license, lifecycle, and resource evidence.
+
 Do not skip phases. If P2 output still looks random, stay in P2. Do not cover it with UI polish.
 
 ---

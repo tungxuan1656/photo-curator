@@ -108,6 +108,19 @@ DEC-038 (2026-09-17) records the feat-025 no-op verdict: all three candidates re
 
 **Foundation Models adapter:** greedy, low-token structured generation on the on-device system model; model-unavailable and generation errors throw into the router's fallback path. The typed `Attachment(CGImage)` path is selected by the iOS 27 SDK capability condition, not a compiler-version guard; current Swift 6.3.3 remains compile-safe and unavailable by design until that SDK capability exists. No downloaded weights, third-party dependency, network provider, or telemetry path is added. The minimum deployment remains iOS 26; this optional tier is never required for a complete curation.
 
+## 8.1 Feat-031 local VLM tier
+
+| Capability | Implementation | Routing | Status |
+|---|---|---|---|
+| Small-set image comparison | MLX Swift LM `MLXVLM` with revision-pinned `mlx-community/Qwen3.5-2B-4bit` | 1–100 assets, bounded pair queue | Candidate; image-sensitive evidence required |
+| Enhanced image comparison | MLX Swift LM `MLXVLM` with a separately admitted Qwen3.5 4B artifact | Explicit opt-in only after resource/quality evidence | Candidate; never default by storage size |
+
+The Qwen tier downloads only its allowlisted model artifacts to Application
+Support, verifies every file before activation, and loads locally without a
+network fallback. It is disabled until the manifest, runtime revision,
+license, image-sensitive proof, quality comparison, and resource envelope are
+recorded. Missing or rejected artifacts use `qualityNative`.
+
 ## 9. Evaluation-first gate
 
 Before #16–#23 change selection behavior, record the current demo baseline on A–G/Golden per `manual-qa.md` and create a failure inventory.

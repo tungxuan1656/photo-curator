@@ -673,6 +673,13 @@ build; full policy in `privacy.md`), About (version,
 privacy policy, help when available). No MVP toggles for ranking
 weights, thresholds, models, cache, or thread counts.
 
+Feat-031 adds a model section only when quality mode is available. It shows
+the local model state, verified installed size, download progress, pause,
+retry, remove, and the native fallback. Start discloses the selected mode and
+does not begin a hidden model download. Processing distinguishes model setup,
+native analysis, grouping, comparison, and final selection; a degraded run
+states that some comparisons were unavailable.
+
 S19 is a sheet, not a full flow. Limited: "Photos Curator can only use
 the photos currently shared with the app." with **Choose More Photos**
 via the Apple flow. Denied: "Photo access is turned off. Enable it in

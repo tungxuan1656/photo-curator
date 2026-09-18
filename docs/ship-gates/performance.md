@@ -52,6 +52,21 @@ One table. All numbers are starting defaults. Centralize them in code in one pol
 
 Conditions for completion targets: assets local, normal thermals, Low Power off, normal config, oldest supported device preferred (Simulator-permitted automated equivalents acceptable per DEC-032). Separate iCloud download time from compute time. Recalibrate targets from the working prototype rather than bending selection quality to hit a number.
 
+### Quality-mode budget
+
+| Budget | Starting value |
+|---|---:|
+| Quality source cap | 100 assets |
+| Cheap unordered distances | 4,950 per representation |
+| Qwen requests | 32 maximum, one active |
+| Qwen wall budget | 100 seconds inside a 180-second job |
+| Qwen image edge | 768 px, orientation preserved |
+| Detail image edge | 1,536 px, one unit at a time |
+| Quality memory policy | 2.5 GiB soft ceiling for 2B; 4 GiB for admitted 4B |
+
+These are admission and abort thresholds, not device guarantees. Mac and
+Simulator evidence cannot establish iPhone latency, RAM, or thermal claims.
+
 ## 2. Workloads
 
 | Workload | Assets | Use |

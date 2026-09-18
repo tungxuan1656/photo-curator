@@ -208,6 +208,21 @@ function curate(assets, config):
     return orderChronologically(album)
 ```
 
+### 10.1 Quality-mode stage order
+
+For 1–100 assets, quality mode uses a separate stage contract:
+
+```text
+all available assets → native facts → pixel/FeaturePrint groups
+  → bounded detail checks → bounded Qwen comparisons
+  → coverage-first album selection → zero-pick audit → persisted decisions
+```
+
+The legacy engine keeps its existing behavior. Quality mode does not route
+through the iOS 27 Foundation Models jury, and it returns `qualityNative` when
+the Qwen runtime is unavailable, cancelled, timed out, or over its resource
+envelope.
+
 ## 11. Stages 9–10 — Verify + order
 
 Verify pass checks: no double-picked cluster, no dropped protected pick, per-moment caps hold, count in range, assets still resolvable, order valid. Higher-resolution re-check is allowed for a small subset of close finalists only. Default output order is capture-date ascending; rank decides inclusion, date decides display. Editorial sequencing is out of scope. Review-surface behavior: [02](../product-specs/ux-flows.md).

@@ -1,6 +1,6 @@
 # Quality-first on-device Qwen curation Implementation Plan
 
-> **Execution:** Follow the repository's implementation and verification rules. Steps use checkbox (`- [ ]`) syntax for tracking. Implementation requires separate user approval.
+> **Execution:** Follow the repository's implementation and verification rules. Steps use checkbox (`- [ ]`) syntax for tracking. Implementation is approved by the user on 2026-09-18.
 
 **Goal:** Improve representative quality and content coverage for 50–100 photos with on-device Qwen image comparisons.
 
@@ -25,13 +25,13 @@
 
 ## 1. State, authorization, and reading order
 
-Feature: [feat-031](../../features/feat-031.md). State: `todo`.
-Planning branch: `feat/feat-031-qwen-curation`, based on `54389e5` on `main`.
+Feature: [feat-031](../../features/feat-031.md). State: `active`.
+Implementation branch: `feat/feat-031-qwen-curation`, based on `600f413` on `main`.
 Both dependencies, feat-028 and feat-030, are done. No feature was active at planning time.
 
-The user approved creating the feature, branch, and detailed Qwen plan only.
-Do not install dependencies, download weights, or implement this plan until the user approves implementation.
-Do not mark the feature done when this plan is complete.
+The user approved implementation, including dependency installation and model download.
+Keep model weights outside git and record immutable artifact metadata in the evidence manifest.
+Do not mark the feature done until all acceptance criteria and `./init.sh` pass.
 
 Read §§2–5 for intent and contracts, §§6–9 for implementation, and §§10–12 for evidence and handoff.
 All new paths and API sketches below are proposed. Existing source paths refer to the planning baseline.
@@ -483,8 +483,8 @@ If a model fails a gate, record the failure and keep its profile disabled. Do no
 **Consumes:** User constraints, baseline code, DEC-032/040, existing result/session types.
 **Produces:** Approved quality-mode policy, §5 domain contracts, corpus/metric definition, version decision.
 
-- [ ] Activate feat-031 after user approval and re-run `./init.sh`.
-- [ ] Record the new base SHA and reconcile concurrent feature/version changes.
+- [x] Activate feat-031 after user approval and re-run `./init.sh`.
+- [x] Record the new base SHA and reconcile concurrent feature/version changes.
 - [ ] Append a decision that scopes the V2 contract replacements to small-set quality mode.
 - [ ] Update each owner listed in §3 before adding the corresponding behavior.
 - [ ] Define the closed mode, relation, preference, reason, and degradation enums from §5.

@@ -509,6 +509,14 @@ Evidence: `./scripts/proof/feat-028.sh` EXIT 0 (`STAGED-MATCH 17`): explicit H-1
 Consequences: deterministic no-ranker behavior and all existing Recall, Good Selection, Bad Pick, Duplicate Leakage, Best-Shot, Moment Coverage, smoke/Golden/trip/H-1000, privacy, split, and no-test gates remain unchanged; only proof/docs evidence is corrected.
 Reconsider when: a future admissible annotation set or named residual failure requires a new oracle, metric contract, or ranker decision; add another evidence-backed decision before changing these gates.
 
+# DEC-053 - Feat-031 bounded local Qwen quality mode
+Status: Accepted - Date: 2026-09-18
+Owner: `features/feat-031.md`, `docs/plans/feat-031.md` - Affected: quality-mode policy, MLX runtime, selection runner, model delivery, review provenance
+Context: The shipped native engine protects large-set throughput and deterministic fallback, but the accepted feat-031 target requires better coverage and best-shot choices for 1–100 photos using actual image evidence.
+Decision: Add an explicit quality-mode route for at most 100 available assets. Analyze all available assets before pruning, keep coverage and retake groups separate, use revision-pinned local MLX Swift LM/MLXVLM Qwen artifacts only after manifest and image-sensitive gates, and preserve `qualityNative` as the complete degraded route. Keep the legacy native route and iOS 27 Foundation Models jury unchanged outside this mode. Store only compact execution metadata; keep images, prompts, raw output, tensors, and pair judgments transient.
+Alternatives considered: route every source through Qwen (rejected - breaks large-set budgets); replace the native engine (rejected - removes rollback); use text-only Qwen or prerecorded answers (rejected - cannot establish image inference); download implicitly during Analyze (rejected - violates disclosure and offline review).
+Reconsider when: independent corpus evidence fails to show incremental value, the admitted runtime cannot meet its resource envelope, or a future Apple/local API provides a lower-cost equivalent.
+
 ## 3. Deferred TBDs (structured — no answers invented)
 
 **DEC-TBD-001 — Min iOS 26 (Accepted).**

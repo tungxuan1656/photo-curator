@@ -398,6 +398,13 @@ struct AppConfiguration: Sendable {
 - Defaults and policy meaning: [03](../product-specs/selection-rules.md) and [04](selection-engine.md). Numeric caps and intervals: [08](../ship-gates/performance.md).
 - Every result carries engine, analysis-schema, and config versions so caches invalidate, evaluations compare, and builds debug. Stored version fields: [06](data-model.md).
 
+Quality mode adds one actor-owned runtime boundary. `QwenRuntime` owns the
+MLX model container, tensors, KV state, generation lease, cancellation drain,
+and cache release. `ModelInstallationService` owns downloads and verified
+revisions; the coordinator owns sequencing and never downloads a model during
+Analyze. The quality runner selects `qualityNative` before it can expose an
+unavailable or stale Qwen result.
+
 ---
 
 ## 14. OSLog
@@ -425,7 +432,7 @@ Deferred until a product need appears: cloud inference, accounts, cross-device s
 - Expensive work uses bounded structured concurrency; cancellation flows from UI to work; no full-job image retention; shared mutable infrastructure is actor-isolated.
 - Engine I/O uses domain models; runs reproduce from inputs plus versions and config; decisions carry reason codes; policy can evolve without touching PhotoKit or UI.
 - One bad asset does not fail a job; interruption reuses valid work; cache corruption recovers by recomputation; curation never deletes or edits originals.
-- No unneeded frameworks, packages, databases, test targets, or background-execution dependence.
+- No unneeded frameworks, packages, databases, test targets, or background-execution dependence. MLX Swift LM is the scoped exception for feat-031's local VLM tier and remains outside the native fallback.
 
 ---
 

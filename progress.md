@@ -689,3 +689,10 @@ Feature/dependency JSON validation and 16 local links/anchors PASS;
 No model download, dependency installation, application implementation, or inference benchmark occurred.
 **Blockers**: none for planning; model/runtime and image-corpus admission remain explicit implementation tasks.
 **Next**: Review the plan and obtain user approval before activating feat-031.
+
+## 2026-09-18 — feat-031 implementation started
+
+**State**: active — implementation approved.
+**Done**: Committed the planning artifacts as `600f413` (`docs(feat-031): add Qwen curation implementation plan`).
+Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
+**Next**: Complete Task 1, then pin MLX Swift LM and verify actual Qwen image inference before wiring the selector.

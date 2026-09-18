@@ -54,7 +54,48 @@ struct AppConfiguration: Codable, Sendable {
     var selection: SelectionConfiguration
     var performance: PerformanceConfiguration
     var cache: CacheConfiguration
+    var quality: QualityCurationPolicy
     var configVersion: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case analysis, selection, performance, cache, quality, configVersion
+    }
+
+    init(
+        analysis: AnalysisConfiguration,
+        selection: SelectionConfiguration,
+        performance: PerformanceConfiguration,
+        cache: CacheConfiguration,
+        quality: QualityCurationPolicy = .default,
+        configVersion: Int
+    ) {
+        self.analysis = analysis
+        self.selection = selection
+        self.performance = performance
+        self.cache = cache
+        self.quality = quality
+        self.configVersion = configVersion
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        analysis = try container.decode(AnalysisConfiguration.self, forKey: .analysis)
+        selection = try container.decode(SelectionConfiguration.self, forKey: .selection)
+        performance = try container.decode(PerformanceConfiguration.self, forKey: .performance)
+        cache = try container.decode(CacheConfiguration.self, forKey: .cache)
+        quality = try container.decodeIfPresent(QualityCurationPolicy.self, forKey: .quality) ?? .default
+        configVersion = try container.decode(Int.self, forKey: .configVersion)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(analysis, forKey: .analysis)
+        try container.encode(selection, forKey: .selection)
+        try container.encode(performance, forKey: .performance)
+        try container.encode(cache, forKey: .cache)
+        try container.encode(quality, forKey: .quality)
+        try container.encode(configVersion, forKey: .configVersion)
+    }
 
     static var `default`: Self {
         Self(
@@ -92,6 +133,7 @@ struct AppConfiguration: Codable, Sendable {
                 progressMaxHertz: 4
             ),
             cache: CacheConfiguration(enabled: true, schemaVersion: 1),
+            quality: .default,
             configVersion: 1
         )
     }

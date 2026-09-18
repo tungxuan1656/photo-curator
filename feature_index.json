@@ -314,7 +314,7 @@
       ],
       "gate": "Qwen-backed small-set curation improves independent image-corpus coverage and best-shot selection, validates model lifecycle and bounded fallback, preserves review overrides, and passes reproducible automated evidence plus ./init.sh; model/device performance claims remain evidence-scoped.",
       "id": "feat-031",
-      "status": "todo",
+      "status": "active",
       "title": "Quality-first on-device Qwen curation"
     }
   ],

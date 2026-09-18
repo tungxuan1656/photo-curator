@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `todo` — planning complete, implementation awaits user approval.
+- Status: `active` — implementation approved by the user on 2026-09-18.
 - Depends on: `feat-028`, `feat-030` (both done).
 - Branch: `feat/feat-031-qwen-curation`.
 
@@ -31,8 +31,8 @@ Exclude cloud inference, training, identity recognition, original deletion, Gemm
 
 ## Readiness plan
 
-Review the linked plan, approve implementation, then activate this feature.
-Execute its stages in order. Freeze artifacts and corpus labels before quality comparisons.
+Implementation is approved. Execute the linked plan stages in order.
+Freeze artifacts and corpus labels before quality comparisons.
 Keep hardware claims separate from Simulator evidence.
 
 ## Relevant docs
@@ -43,7 +43,7 @@ The [plan reading route](../docs/plans/feat-031.md#3-owner-documents-and-contrac
 
 - Planning baseline: `./init.sh` PASS on 2026-09-18 at `54389e5`.
 - Planning verification: fresh `./init.sh` PASS, `git diff --check` PASS, and all 16 local documentation links/anchors resolve.
-- Index validation passes: `todo`, completed dependencies, one execution-order entry, and no active-feature conflict.
-- Implementation commands are proposed in plan §10, not yet available.
-- No application changes, dependency installation, model download, or model benchmark occurred in this planning session.
-- Next: review `docs/plans/feat-031.md` and approve implementation.
+- Index validation passes: `active`, completed dependencies, one execution-order entry, and no second active feature.
+- Implementation commands are proposed in plan §10; runtime and proof commands are added by T2/T10.
+- No application changes, dependency installation, model download, or model benchmark has occurred yet.
+- Next: complete Task 1, then pin and verify the MLX/Qwen runtime in Task 2.

@@ -264,6 +264,15 @@ Definition of done (proven by reproducible automated evidence plus `./init.sh` w
 choose album size → curate → review → fix picks → save, without developer
 help, with good quality, duplicate control, moment coverage, diversity,
 safe originals, and clearly less manual work.
+
+### 10.1 Quality-mode scope
+
+Feat-031 adds an explicit quality mode for 1–100 available photos. It analyzes
+the complete available set before pruning and can use a locally installed,
+revision-pinned Qwen VLM. A source set above 100 remains on the native path;
+the app never silently truncates it for Qwen. Missing model files or an
+unadmitted device use the complete native quality fallback and remain visible
+to the user.
 ---
 
 ## 11. Open product questions
