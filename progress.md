@@ -674,3 +674,18 @@ singular-summary, and stable-identity contracts; `git diff --check` PASS.
   PASS. No test target, test framework, or `*Test*.swift` file added.
 **Blockers**: none
 **Next**: none — feat-030 is complete.
+
+## 2026-09-18 — feat-031 Qwen planning
+
+**State**: todo — plan only; implementation awaits approval.
+**Done**: Created `feat/feat-031-qwen-curation` from `main` at `54389e5`.
+Registered feat-031 and wrote `docs/plans/feat-031.md` with 11 ordered tasks,
+Qwen2B/4B admission, pre-pruning grouping, model lifecycle, coverage audit,
+session integration, automated quality metrics, and rollback.
+**Evidence**: Fresh `./init.sh` EXIT 0 — format PASS, strict lint PASS,
+Simulator build `BUILD SUCCEEDED`, localization proof PASS, policy test SKIP.
+Feature/dependency JSON validation and 16 local links/anchors PASS;
+`git diff --check` PASS. Only documentation and tracker files changed.
+No model download, dependency installation, application implementation, or inference benchmark occurred.
+**Blockers**: none for planning; model/runtime and image-corpus admission remain explicit implementation tasks.
+**Next**: Review the plan and obtain user approval before activating feat-031.
