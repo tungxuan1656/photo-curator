@@ -556,3 +556,11 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Decisions**: DEC-050 no-ranker outcome retained; DEC-051 independent oracle and recall-gate remediation; DEC-052 proof-contract completion. No contract or data-model change; no model, dependency, persistence, migration, network path, telemetry, or fallback adapter added.
 **Blockers**: none
 **Next**: none — the full approved feature sequence is complete; reconsider a ranker only after a named residual failure and newly approved admissible labels satisfy the full quality/privacy/license/performance/version/fallback gate.
+
+## 2026-09-18 — feat-030 feature record
+
+**State**: todo
+**Done**: Created the approved feat-030 feature record and separate execution plan for English/Vietnamese localization; appended feat-030 after feat-029 with a concise dependency gate. No `apps/` change.
+**Evidence**: JSON parsing and `git diff --check` pass.
+**Blockers**: none
+**Next**: User selects feat-030 after feat-029 is done; do not activate it before then.
