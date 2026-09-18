@@ -450,3 +450,12 @@
 **Evidence**: `git diff --check` clean; `./scripts/proof/feat-026.sh` EXIT 0 — `STAGED-48-MD5-MATCH`, Simulator `simctl spawn`, harness `c824f3baa9b249146c5fdd760d15107aaf56b6147fc849a8e254197e2b063bf3`, binary `fe6169f322c32bc20fb908bd30eefc1ea56229737abb58cb60e1d20dfde10984`, `99 PASS / 0 FAIL`; no new `./init.sh` run because this closeout changes documentation only and retains the prior `./init.sh` EXIT 0 evidence.
 **Blockers**: none
 **Next**: PR `tungxuan1656/feat-026-integration` → main (squash in a separate merge task); feat-027 is next after this closes.
+
+## 2026-09-18 — feat-026 post-merge closeout (PR #55 merged)
+
+**State**: done/merged
+**Done**: Post-merge documentation closeout only. PR #55 (`https://github.com/tungxuan1656/photo-curator/pull/55`) from branch `tungxuan1656/feat-026-integration` was squash-merged as `2e84812f97aa7099cdb15902f1fedc218585d0fa`, confirmed on `origin/main`; feat-023 is done and `feature_index.json` remains done for feat-026.
+**Evidence**: `STAGED-48-MD5-MATCH`; `99 PASS / 0 FAIL`; U15 shipped `NeedsReview` route/action checks; retained `./init.sh` evidence is format PASS, SwiftLint 0 violations, Simulator build SUCCEEDED, and test SKIP by DEC-040; Codex Luna xhigh final review found zero actionable findings. No tests, test target, or test framework; no app build was needed for this docs-only closeout.
+**Decisions**: DEC-042 deterministic uncertainty contract; DEC-043 tombstone-safe cleanup race; DEC-044 exact seven-key aggregate feedback schema; DEC-045 strong hook ownership with weak model capture; DEC-046 strict schema decoding and generation-guarded persistence.
+**Blockers**: none
+**Next**: Activate feat-027 from the latest `origin/main`; not user-gated.
