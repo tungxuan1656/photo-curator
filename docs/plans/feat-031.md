@@ -565,6 +565,8 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 - [ ] If the encoder gives no material gain, record rejection and retain the FeaturePrint grouping arm explicitly.
 
 **Evidence:** A–B–C chain, same venue/different subject, missing dates, same composition/different people arrangement, and cross-time retakes.
+
+**Current partial:** `QualityGroupBuilder` now preserves every analyzed candidate while exposing existing coherent retake clusters and chronological coverage groups. It is an explicit FeaturePrint/time fallback and is not yet wired into selection; no pixel encoder or quality comparison claim exists.
 **Stop condition:** Global pooling similarity alone cannot serve as proof that one image substitutes for another.
 
 ### Task 5 — Verify borderline subject quality

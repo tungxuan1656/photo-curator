@@ -51,4 +51,5 @@ The [plan reading route](../docs/plans/feat-031.md#3-owner-documents-and-contrac
 - Task 3 partial evidence: `ModelInstallationService` now performs revision-derived, resumable per-file streaming into staging, hash/size validation, atomic activation, state streaming, cancellation, backup exclusion, and removal; it is covered by `scripts/proof/feat-031.sh` without network or weights.
 - Task 3 partial evidence: `AppContainer.live()` now owns the installer under the application-support model root; the feat-026 whole-source proof injects the same dependency and remains green (`99 PASS / 0 FAIL`).
 - Task 3 remains open: UI wiring, live inference leases/resource admission, offline runtime load, and transport fault coverage beyond the deterministic proof are not complete.
-- Next: add strict response validation and a reproducible inference proof, then complete the 2B feasibility evidence before building the quality selector.
+- Task 4 partial evidence: `QualityGroupBuilder` preserves every analyzed candidate and exposes existing coherent retake clusters plus chronological coverage groups without selecting or discarding assets. It remains an explicit FeaturePrint/time fallback; no pixel encoder or quality gain is claimed.
+- Next: add the quality runner/selector contract only after pixel-derived grouping evidence and the admitted Qwen response path are available.

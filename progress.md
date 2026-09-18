@@ -736,3 +736,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./scripts/proof/feat-031.sh` — installer cases and `RESPONSE-VALIDATION PASS`; `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 proof, and policy test skip all PASS.
 **Blockers**: The temporary real-model run still returns fenced free-form arrays; `QwenPairJudge` must route those responses through the validator and degrade to native evidence instead of admitting them.
 **Next**: Implement the single-runtime `QwenPairJudge` and its generation-bound image lease after visual grouping contracts are ready.
+
+## 2026-09-18 — feat-031 non-destructive quality grouping seam
+
+**State**: active (Task 4 partial)
+**Done**: Added `QualityGroupBuilder` and `QualityGroupSet`. The builder filters to analyzed assets, preserves stable candidate order, reuses existing coherent FeaturePrint duplicate clusters, and builds chronological coverage groups without choosing or dropping representatives.
+**Evidence**: `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 installer/response proofs, and policy test skip all PASS.
+**Blockers**: No pixel encoder, controlled grouping corpus, Qwen judge integration, or quality-path selector consumes this seam yet.
+**Next**: Add the quality runner/selector contract only after pixel-derived grouping evidence and the admitted Qwen response path are available.
