@@ -40,9 +40,9 @@ The feature owns the iOS gate, provider protocol, bounded request policy, exact 
 
 ## Handoff
 
-- State: done (review fixes implemented and verified; parent PR not yet opened)
-- Evidence: `scripts/proof/feat-027.sh` EXIT 0 — `STAGED-MATCH 26` compiles real shipped jury, request factory/image lease seam, `SelectionEngine`, and `SelectionSessionCoordinator`; request-factory ordering, iOS 26 `providerCalls=0 imageLoads=0`, iOS 27 coordinator image-backed requests, same-cluster-only swaps, unrelated selected-ID preservation, generic provider failure, strict schema, safe choices, bounds, unavailable, cancellation, non-cooperative timeout elapsed 2,073 ms under the 2.75 s proof bound with image leases released, and Golden-shaped deterministic cap all PASS; `RESULT PASS`. The current iOS 26.5 SDK compile exercises the typed-unavailable adapter seam; the real `Attachment(CGImage)` branch is selected only by the iOS 27 SDK capability condition.
-- `./init.sh` EXIT 0 — format PASS, SwiftLint strict 0 violations, Simulator build SUCCEEDED, test SKIP per DEC-040. `git diff --check` PASS; no `*Test*.swift` files; no test target/framework.
-- Decisions: DEC-047 bounded iOS 27 semantic jury; DEC-048 image-backed in-place integration and hard timeout; DEC-049 explicit SDK capability seam for Foundation Models `Attachment`; engine version remains 3 and no persistence/schema migration is introduced.
+- State: done/merged — PR #57 (`https://github.com/tungxuan1656/photo-curator/pull/57`) is merged into `main` at `2e57ecbfa65eb12fff51d0c6af96d9da69b5fd85`, confirmed on `origin/main`; `feature_index.json` confirms `feat-027` status `done`.
+- Evidence: all acceptance criteria are checked. `scripts/proof/feat-027.sh` EXIT 0 — `STAGED-MATCH 26`, real shipped jury/engine/coordinator boundary, iOS 26 zero provider/image calls, iOS 27 image-backed requests, same-cluster swaps with unrelated-selection preservation, strict schema, safe choices, bounds, unavailable/cancellation, hard timeout with image leases released, and Golden-shaped deterministic cap all PASS; `RESULT PASS`.
+- `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build SUCCEEDED, test SKIP per DEC-040; `git diff --check` PASS; no `*Test*.swift` files, test target, or test framework. Manual QA remains removed and non-gating per DEC-040.
+- Decisions: DEC-047 bounded iOS 27 semantic jury; DEC-048 image-backed in-place integration and hard timeout; DEC-049 explicit SDK capability seam for Foundation Models `Attachment`; engine version remains 3, with no persistence/schema, contract, or data-model change.
 - Blockers: none
-- Next: parent PR `tungxuan1656/feat-027-integration` → main (squash in a separate merge task).
+- Next: feat-028 (Ranker decision gate), activated from the latest `origin/main` after this closeout.
