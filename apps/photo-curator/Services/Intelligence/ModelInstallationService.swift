@@ -22,6 +22,7 @@ struct ModelInstallation: Sendable {
     let directory: URL
     let modelID: String
     let revision: String
+    let manifestDigest: String
 }
 
 struct ModelDownloadResponse: Sendable {
@@ -181,7 +182,12 @@ actor ModelInstallationService {
     }
 
     private func installation(at directory: URL) -> ModelInstallation {
-        ModelInstallation(directory: directory, modelID: manifest.modelID, revision: manifest.revision)
+        ModelInstallation(
+            directory: directory,
+            modelID: manifest.modelID,
+            revision: manifest.revision,
+            manifestDigest: manifest.manifestDigest
+        )
     }
 
     private func download(_ file: ModelArtifactFile, into directory: URL) async throws {

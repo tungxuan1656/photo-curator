@@ -609,6 +609,8 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Evidence:** Truncated JSON, duplicate keys, extra fields, unknown reason, output oversize, contradictory reverse comparison, cancellation, and uncooperative provider.
 **Stop condition:** Exhausted budget cannot drop unexamined groups or label the entire album Qwen-reviewed.
 
+**Current partial:** The serial scheduler now enforces the one-active-request policy, request and wall deadlines, cancellation, request-ID plus generation validation, request caps, and compact outcome counts. The deterministic proof covers serial execution, caps, timeout, cancellation, and stale requests. Actual reverse-order model evidence and uncooperative production-runtime teardown remain open.
+
 ### Task 7 — Implement representative selection and coverage audit
 
 **Files:** `QualityAlbumSelector.swift`, `SelectionEngine.swift`, `FinalAlbumBuilder.swift`, native scorer/group integration.
@@ -630,6 +632,8 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Evidence:** Screenshot-shaped missing-canopy/two-person cases, duplicate-heavy input, all-unique input, all-unusable input, and contradictory user restores.
 **Checkpoint:** Review group traces and failure metrics before coordinator/UI integration.
 
+**Current partial:** `QualityAlbumSelector` is a separate quality-path entry point. It scores all analyzed candidates, uses a content-sized target without the native 30-photo minimum, applies pair preferences only within existing retake groups, rejects unusable pair winners, and persists group audits plus execution metadata. Pixel-derived grouping, coverage repair, cyclic preference handling, user feedback, and photo-quality comparison evidence remain open.
+
 ### Task 8 — Integrate normal, partial, resume, and persistence paths
 
 **Files:** `QualityCurationRunner.swift`, `SelectionSessionCoordinator.swift`, `AppContainer.swift`, `AppModel.swift`, result/checkpoint/store files.
@@ -649,6 +653,8 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 
 **Evidence:** Normal/partial equivalence on the same available set, kill/resume boundaries, revision removal, stale completion, and failed result writes.
 **Stop condition:** A resumed run cannot silently combine model revisions or persist native fallback as Qwen success.
+
+**Current partial:** `QualityCurationRunner` is wired through both normal and Continue Without Them coordinator entry points. It checks for a verified installed 2B revision, loads and unloads the pair judge, records compact provenance including the pinned manifest fingerprint, and degrades to `qualityNative` when the model is unavailable or unsupported. Checkpoints now carry the requested mode plus model/runtime identity; identity mismatches invalidate prior completion while native checkpoints remain backward-compatible. Resource admission, unconditional production-runtime drain evidence, and full resume/revision-failure evidence remain open.
 
 ### Task 9 — Add localized model setup and truthful review explanations
 
@@ -686,6 +692,8 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 - [ ] Run `./init.sh` and every affected prior proof once after the final shared-contract change.
 
 **Evidence:** Threshold results in §10, full artifact fingerprints, and no runtime/model errors hidden by fallback success.
+
+**Current partial:** `scripts/proof/feat-031.sh` includes the shipped scheduler, selector, manifest fingerprint, and checkpoint identity sources. It passes deterministic lifecycle/selection contract checks, including identity JSON round-trip and native compatibility. This proof does not establish actual model-image sensitivity, corpus quality gains, physical-device performance, cancellation drain, or 4B admission.
 
 ### Task 11 — Admit profiles, document limits, and close implementation
 
@@ -881,9 +889,9 @@ Rollback does not delete models while leased, erase user overrides, or modify sa
 | Per-session data leaks into model logs/downloads | T3/T6/T8 | Prove local-only artifact requests and closed diagnostics |
 
 Planning evidence: baseline `./init.sh` passed at `54389e5` on 2026-09-18.
-Implementation evidence: the pinned MLX/Qwen package slice builds for the generic Simulator configuration and `./init.sh` passes format, strict lint, build, feat-030 proof, and the policy test skip. No model was installed, converted, or benchmarked yet; real image inference remains the Task 2 gate.
+Implementation evidence: the pinned MLX/Qwen package slice builds for the generic Simulator configuration; the verified 2B manifest is runtime-downloadable and excluded from the app bundle; `QwenPairJudge`, bounded scheduler/selector, quality runner, and checkpoint identity integration are covered by `scripts/proof/feat-031.sh`; and `./init.sh` passes format, strict lint, build, both proofs, and the policy test skip. No production image-quality gain, arm64-device measurement, or 4B admission claim exists.
 
-**Next action:** Review this plan and approve implementation. Start with T1 and T2, not an immediate default-on Qwen adapter.
+**Next action:** Complete the pixel-derived grouping, model/resource admission, localized setup/review presentation, and controlled image-corpus evidence before closing feat-031.
 
 Acceptance traceability:
 

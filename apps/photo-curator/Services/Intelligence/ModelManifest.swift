@@ -80,6 +80,24 @@ struct ModelManifest: Codable, Sendable {
         files.reduce(0) { $0 + $1.byteCount }
     }
 
+    /// Fingerprint of the pinned manifest, not of the downloaded model bytes.
+    /// Artifact digests remain in the manifest and are validated separately.
+    nonisolated var manifestDigest: String {
+        let material = [
+            "schemaVersion=\(schemaVersion)",
+            "modelID=\(modelID)",
+            "revision=\(revision)",
+            "runtimeRevision=\(runtimeRevision)",
+            "license=\(license)",
+            files.sorted { $0.path < $1.path }.map {
+                "\($0.path)|\($0.byteCount)|\($0.sha256)"
+            }.joined(separator: "\n"),
+        ].joined(separator: "\n")
+        return SHA256.hash(data: Data(material.utf8))
+            .map { String(format: "%02x", $0) }
+            .joined()
+    }
+
     nonisolated func validate(at directory: URL) throws {
         for file in files {
             try validate(file: file, at: directory)

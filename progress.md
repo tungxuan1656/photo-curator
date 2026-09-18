@@ -12,6 +12,22 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-18 — feat-031 phase 2
+
+**State**: active
+**Done**: Added the quality-path scheduler, selector, runner, coordinator wiring, optional runtime Qwen judge dependency, quality provenance on `SelectionResult`, automatic small-set quality-mode request selection, and runtime-downloaded model fallback. The quality route remains separate from the legacy selector and bypasses the Foundation Models jury.
+**Evidence**: `bash scripts/proof/feat-031.sh` PASS with installer, response validator, pair judge, scheduler serial/cap, deadline, cancellation, stale-request, selector target, and usable-winner checks. `./init.sh` PASS with SwiftFormat, strict SwiftLint, generic Simulator `BUILD SUCCEEDED`, feat-030 proof, feat-031 proof, and `SKIP [test]` by DEC-040. `git diff --check` PASS.
+**Blockers**: Actual pixel-derived grouping, subject-detail verification, image-sensitive Qwen quality comparison, arm64-device/runtime measurements, resource admission, setup/review UI, and complete resume/model-revision persistence evidence remain open. Weights are intentionally not bundled; verified model files are downloaded at runtime under Application Support.
+**Next**: Complete the pixel-evidence and model-admission gates before claiming quality improvement or closing feat-031.
+
+## 2026-09-19 — feat-031 provenance and resume safety
+
+**State**: active
+**Done**: Added deterministic pinned-manifest fingerprints and immutable quality checkpoint identity. Mode, model revision, runtime revision, and manifest identity now flow through loading shells, background checkpoints, batch checkpoints, normal completion, partial completion, and resume filtering. Installed model provenance records the same fingerprint; old native checkpoints remain compatible.
+**Evidence**: `bash scripts/proof/feat-031.sh` PASS, including `QUALITY-CHECKPOINT-IDENTITY PASS`. `swiftlint lint --strict` PASS with 0 violations. `./init.sh` PASS: SwiftFormat, strict lint, generic Simulator `BUILD SUCCEEDED`, feat-030 proof, feat-031 proof, and `SKIP [test]` by DEC-040. `git diff --check` PASS.
+**Blockers**: Pixel-derived grouping, subject-detail verification, real image-sensitive Qwen comparisons, arm64-device/runtime measurements, resource admission, setup/review UI, and full production cancellation-drain evidence remain open. Weights remain runtime-only and are not bundled.
+**Next**: Implement the pixel-evidence and model-admission gates before claiming quality improvement or closing feat-031.
+
 ## 2026-09-11 — feat-003
 
 **State**: done

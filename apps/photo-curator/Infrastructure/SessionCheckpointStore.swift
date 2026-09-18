@@ -11,6 +11,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
     let sourceAssetIDs: [AssetID]
     let configVersion: Int
     let analysisVersion: Int
+    let qualityIdentity: QualityCheckpointIdentity?
     let updatedAt: Date
 
     /// Explicit init so pre-006 call sites keep compiling: sourceAssetIDs defaults to [].
@@ -21,6 +22,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         sourceAssetIDs: [AssetID] = [],
         configVersion: Int,
         analysisVersion: Int,
+        qualityIdentity: QualityCheckpointIdentity? = nil,
         updatedAt: Date
     ) {
         self.sessionID = sessionID
@@ -29,6 +31,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         self.sourceAssetIDs = sourceAssetIDs
         self.configVersion = configVersion
         self.analysisVersion = analysisVersion
+        self.qualityIdentity = qualityIdentity
         self.updatedAt = updatedAt
     }
 
@@ -39,6 +42,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         case sourceAssetIDs
         case configVersion
         case analysisVersion
+        case qualityIdentity
         case updatedAt
     }
 
@@ -51,6 +55,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         sourceAssetIDs = try container.decodeIfPresent([AssetID].self, forKey: .sourceAssetIDs) ?? []
         configVersion = try container.decode(Int.self, forKey: .configVersion)
         analysisVersion = try container.decode(Int.self, forKey: .analysisVersion)
+        qualityIdentity = try container.decodeIfPresent(QualityCheckpointIdentity.self, forKey: .qualityIdentity)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }
 
@@ -62,6 +67,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         try container.encode(sourceAssetIDs, forKey: .sourceAssetIDs)
         try container.encode(configVersion, forKey: .configVersion)
         try container.encode(analysisVersion, forKey: .analysisVersion)
+        try container.encodeIfPresent(qualityIdentity, forKey: .qualityIdentity)
         try container.encode(updatedAt, forKey: .updatedAt)
     }
 }

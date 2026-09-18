@@ -21,6 +21,25 @@ struct SelectionResult: Codable, Sendable {
     let decisions: [Decision]
     let generatedAt: Date
     let engineVersion: Int
+    let qualityEvidence: QualityCurationEvidence?
+
+    init(
+        sessionID: SessionID,
+        selectedAssetIDs: [AssetID],
+        rejectedAssetIDs: [AssetID],
+        decisions: [Decision],
+        generatedAt: Date,
+        engineVersion: Int,
+        qualityEvidence: QualityCurationEvidence? = nil
+    ) {
+        self.sessionID = sessionID
+        self.selectedAssetIDs = selectedAssetIDs
+        self.rejectedAssetIDs = rejectedAssetIDs
+        self.decisions = decisions
+        self.generatedAt = generatedAt
+        self.engineVersion = engineVersion
+        self.qualityEvidence = qualityEvidence
+    }
 }
 
 /// Review overrides collected by UI. Stored per session; learning from it is post-MVP (DEC-020).

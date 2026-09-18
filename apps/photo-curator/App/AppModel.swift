@@ -81,7 +81,12 @@ final class AppModel {
             config: .default,
             pressure: container.memoryPressure,
             tierCProvider: container.tierCProvider,
-            semanticJuryProvider: container.semanticJuryProvider
+            semanticJuryProvider: container.semanticJuryProvider,
+            qualityRunner: QualityCurationRunner(
+                modelInstallation: container.modelInstallation,
+                judge: container.qwenJudge,
+                policy: .default
+            )
         )
         processing = ProcessingModel(
             coordinator: coordinator,
@@ -292,7 +297,11 @@ extension AppModel {
         let request = SelectionRequest(
             sessionID: SessionID(rawValue: UUID()),
             sourceAssetIDs: confirmedSourceIDs,
-            config: .default
+            config: .default,
+            qualityMode: AppConfiguration.default.quality.mode(
+                for: .qualityQwen2B,
+                sourceCount: assets.count
+            )
         )
         let supersededID = activeSessionID
         // Supersede rule: exactly one owned session, no multi-session support.
@@ -340,6 +349,7 @@ extension AppModel {
             sourceAssetIDs: request.sourceAssetIDs,
             configVersion: request.config.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
+            qualityIdentity: QualityCheckpointIdentity.expected(for: request.qualityMode),
             updatedAt: Date()
         )
         Task {
@@ -559,7 +569,11 @@ extension AppModel {
                 let request = SelectionRequest(
                     sessionID: snapshot.sessionID,
                     sourceAssetIDs: checkpoint.sourceAssetIDs,
-                    config: .default
+                    config: .default,
+                    qualityMode: AppConfiguration.default.quality.mode(
+                        for: .qualityQwen2B,
+                        sourceCount: checkpoint.sourceAssetIDs.count
+                    )
                 )
                 processing.start(request: request, sourceAssets: ordered)
                 path.append(.processing(sessionID: snapshot.sessionID))
@@ -670,7 +684,9 @@ extension AppModel {
             let available = assets.filter { analyses[$0.id] != nil }
             let engineOut = try await processing.finalizeAvailable(
                 assets: available, analyses: analyses, configuration: AppConfiguration.default.selection,
-                laneCount: AppConfiguration.default.performance.maxConcurrentImageRequests
+                laneCount: AppConfiguration.default.performance.maxConcurrentImageRequests,
+                qualityMode: processing.requestedQualityMode,
+                sessionID: sessionID
             )
             // Race gate: a retry resumed the run — never persist under it.
             guard !Task.isCancelled, case .failed = processing.state else { return }
@@ -680,7 +696,8 @@ extension AppModel {
                 rejectedAssetIDs: engineOut.rejectedAssetIDs,
                 decisions: engineOut.decisions,
                 generatedAt: engineOut.generatedAt,
-                engineVersion: engineOut.engineVersion
+                engineVersion: engineOut.engineVersion,
+                qualityEvidence: engineOut.qualityEvidence
             )
             try await container.checkpointStore.saveResult(partial)
             let done = SessionCheckpoint(
@@ -690,6 +707,7 @@ extension AppModel {
                 sourceAssetIDs: confirmedSourceIDs,
                 configVersion: AppConfiguration.default.configVersion,
                 analysisVersion: PhotoAnalysis.currentVersion,
+                qualityIdentity: QualityCheckpointIdentity.expected(for: processing.requestedQualityMode),
                 updatedAt: Date()
             )
             try await container.checkpointStore.save(done)

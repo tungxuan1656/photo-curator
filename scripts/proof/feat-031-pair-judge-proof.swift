@@ -118,7 +118,8 @@ struct Feat031PairJudgeProof {
         let installation = ModelInstallation(
             directory: FileManager.default.temporaryDirectory,
             modelID: ModelManifest.qwen35TwoBFourBit.modelID,
-            revision: ModelManifest.qwen35TwoBFourBit.revision
+            revision: ModelManifest.qwen35TwoBFourBit.revision,
+            manifestDigest: ModelManifest.qwen35TwoBFourBit.manifestDigest
         )
         _ = try await judge.load(from: installation)
 
