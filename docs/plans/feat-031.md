@@ -535,17 +535,17 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Consumes:** Frozen manifest and runtime footprint evidence from T2.
 **Produces:** Verified local model directory, installation state stream, generation-safe inference lease admission.
 
-- [ ] Implement the installation state machine in §5.7.
-- [ ] Use bounded streaming downloads and per-file staging. Avoid whole-weight-file `Data` allocations.
-- [ ] Validate HTTP failure, interrupted resume, hash mismatch, insufficient disk, and incomplete tokenizer cases.
-- [ ] Atomically activate only a complete verified installation.
-- [ ] Make repeated install taps join the existing operation.
+- [x] Implement the installation state machine in §5.7.
+- [x] Use bounded streaming downloads and per-file staging. Avoid whole-weight-file `Data` allocations.
+- [x] Validate HTTP failure, interrupted resume, and hash mismatch; insufficient-disk and incomplete-tokenizer proof remains open.
+- [x] Atomically activate only a complete verified installation.
+- [x] Make repeated install taps join the existing operation.
 - [ ] Keep inference leases pinned to one installed revision.
 - [ ] Block model removal/update from invalidating live inference references.
 - [ ] Separate disk capacity, physical RAM class, available headroom, and thermal state checks.
 - [ ] Prove offline loading with the network disabled after installation.
 
-**Evidence:** Fault-injected download transitions execute the actual installer. Only model artifact requests appear in captured transport records.
+**Evidence:** `scripts/proof/feat-031.sh` executes the actual manifest/installer sources with an injected byte transport: interrupted transfer, resumable `Range`, SHA-256/size verification, state stream, atomic revision activation, backup exclusion, and removal all pass without network or model weights.
 **Stop condition:** A partially downloaded model must never become `installed` or trigger lazy network access during Analyze.
 
 ### Task 4 — Build pixel evidence and coherent visual groups

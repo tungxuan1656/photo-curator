@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		E2124E72305D68AF007BCD12 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = B03100000000000000000001 /* MLXVLM */; };
 		E2124E73305D68AF007BCD12 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B03100000000000000000002 /* MLXLMCommon */; };
-		E2124E74305D68AF007BCD12 /* MLXHuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B03100000000000000000003 /* MLXHuggingFace */; };
 		E2124E75305D68AF007BCD12 /* HuggingFace in Frameworks */ = {isa = PBXBuildFile; productRef = B03100000000000000000004 /* HuggingFace */; };
 		E2124E76305D68AF007BCD12 /* Tokenizers in Frameworks */ = {isa = PBXBuildFile; productRef = B03100000000000000000005 /* Tokenizers */; };
 /* End PBXBuildFile section */
@@ -33,7 +32,6 @@
 			files = (
 				E2124E76305D68AF007BCD12 /* Tokenizers in Frameworks */,
 				E2124E75305D68AF007BCD12 /* HuggingFace in Frameworks */,
-				E2124E74305D68AF007BCD12 /* MLXHuggingFace in Frameworks */,
 				E2124E73305D68AF007BCD12 /* MLXLMCommon in Frameworks */,
 				E2124E72305D68AF007BCD12 /* MLXVLM in Frameworks */,
 			);

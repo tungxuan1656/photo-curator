@@ -13,6 +13,7 @@ struct ModelArtifactFile: Codable, Hashable, Sendable {
 enum ModelManifestError: Error, Sendable {
     case invalidPath(String)
     case missingFile(String)
+    case unexpectedFile(String)
     case sizeMismatch(String)
     case digestMismatch(String)
 }
@@ -75,27 +76,48 @@ struct ModelManifest: Codable, Sendable {
         ]
     )
 
+    var totalByteCount: Int64 {
+        files.reduce(0) { $0 + $1.byteCount }
+    }
+
     nonisolated func validate(at directory: URL) throws {
         for file in files {
-            guard isSafeRelativePath(file.path) else {
-                throw ModelManifestError.invalidPath(file.path)
-            }
+            try validate(file: file, at: directory)
+        }
 
-            let url = directory.appending(path: file.path)
-            guard FileManager.default.fileExists(atPath: url.path) else {
-                throw ModelManifestError.missingFile(file.path)
+        let expected = Set(files.map(\.path))
+        let actual = try FileManager.default.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: [.isDirectoryKey]
+        ).compactMap { url -> String? in
+            guard (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) != true else {
+                return nil
             }
+            return url.lastPathComponent
+        }
+        for path in Set(actual).subtracting(expected) {
+            throw ModelManifestError.unexpectedFile(path)
+        }
+    }
 
-            let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
-            guard values.isRegularFile == true,
-                  let fileSize = values.fileSize,
-                  Int64(fileSize) == file.byteCount
-            else {
-                throw ModelManifestError.sizeMismatch(file.path)
-            }
-            guard try digest(of: url) == file.sha256 else {
-                throw ModelManifestError.digestMismatch(file.path)
-            }
+    nonisolated func validate(file: ModelArtifactFile, at directory: URL) throws {
+        guard isSafeRelativePath(file.path) else {
+            throw ModelManifestError.invalidPath(file.path)
+        }
+
+        let url = directory.appending(path: file.path)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw ModelManifestError.missingFile(file.path)
+        }
+
+        let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+        guard values.isRegularFile == true,
+              let fileSize = values.fileSize,
+              Int64(fileSize) == file.byteCount
+        else {
+            throw ModelManifestError.sizeMismatch(file.path)
+        }
+        guard try digest(of: url) == file.sha256 else {
+            throw ModelManifestError.digestMismatch(file.path)
         }
     }
 

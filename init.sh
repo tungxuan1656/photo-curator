@@ -21,6 +21,7 @@ BUILD_TASKS=(
 
 PROOF_TASKS=(
   "./scripts/proof/feat-030.sh"
+  "./scripts/proof/feat-031.sh"
 )
 
 TEST_TASKS=(

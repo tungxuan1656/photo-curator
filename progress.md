@@ -704,3 +704,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict PASS with 0 violations, generic Simulator `BUILD SUCCEEDED`, feat-030 proof PASS, and policy test `SKIP`; `git diff --check` PASS. Runtime/package code has not yet loaded downloaded weights or run image-sensitive inference.
 **Blockers**: Task 2 real-image inference, cancellation/teardown trace, and device build remain open; model weights are intentionally outside git and no installer exists yet.
 **Next**: Commit this verified runtime slice, then implement revision-pinned, resumable, hash-verified model installation.
+
+## 2026-09-18 — feat-031 model installer slice
+
+**State**: active — Task 3 partial; AppContainer/runtime admission still open.
+**Done**: Added `ModelInstallationService` with revision-derived artifact URLs, resumable bounded byte streaming, per-file staging and manifest verification, atomic revision activation, cancellation/state streams, backup exclusion, and removal. Added deterministic `feat-031` proof coverage using the shipped manifest/installer sources with an injected interrupted transport; no model weights or network are used by repository verification.
+**Evidence**: `./scripts/proof/feat-031.sh` EXIT 0 — interrupted failure, resume via `Range`, hash/size verification, state stream, atomic activation, and removal PASS. `./init.sh` EXIT 0 — format, strict lint, Simulator build, feat-030 proof, feat-031 proof, and policy test skip PASS.
+**Blockers**: AppContainer/UI wiring, live inference leases/resource admission, offline local Qwen load, cancellation/teardown trace, and real image-sensitive inference remain open.
+**Next**: Commit the installer slice, then wire installation state into AppContainer and run the real 2B model feasibility gate.

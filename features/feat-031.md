@@ -47,4 +47,6 @@ The [plan reading route](../docs/plans/feat-031.md#3-owner-documents-and-contrac
 - Implementation slice verification: `./init.sh` PASS on 2026-09-18 after adding MLX products, the Qwen manifest/runtime, and the plugin-validation workaround; format, strict lint, Simulator build, feat-030 proof, and policy test skip all pass.
 - Task 2 partial evidence: MLX Swift LM, Swift Hugging Face, and Swift Transformers revisions are pinned; the app builds for the generic Simulator destination with the Swift 5 target and default actor-isolation settings.
 - Task 2 remains open: no weights are installed, no real local model load or image-sensitive inference has run, and no cancellation/teardown trace exists.
-- Next: commit the verified runtime slice, then implement Task 3 model installation and resource admission.
+- Task 3 partial evidence: `ModelInstallationService` now performs revision-derived, resumable per-file streaming into staging, hash/size validation, atomic activation, state streaming, cancellation, backup exclusion, and removal; it is covered by `scripts/proof/feat-031.sh` without network or weights.
+- Task 3 remains open: AppContainer/UI wiring, live inference leases/resource admission, offline runtime load, and transport fault coverage beyond the deterministic proof are not complete.
+- Next: commit the installer slice, then wire model availability into AppContainer and prove a real downloaded local model load/image-sensitive inference.
