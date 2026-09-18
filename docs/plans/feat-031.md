@@ -439,7 +439,7 @@ Do not create all proposed files as empty scaffolding. Create each with its owni
 | Domain contracts | `Domain/Models/SelectionResult.swift`, `Domain/Selection/SemanticJury.swift` | `Domain/Selection/QualityCurationEvidence.swift` |
 | Grouping | `Domain/Selection/DuplicateResolver.swift`, `MomentBuilder.swift`, `VisualEmbeddingProvider.swift` | `Domain/Selection/QualityGroupBuilder.swift` |
 | Representative/album policy | `Domain/Scoring/QualityScorer.swift`, `Domain/Selection/SelectionEngine.swift`, `DiversitySelector.swift`, `FinalAlbumBuilder.swift` | `Domain/Selection/QualityAlbumSelector.swift` |
-| Runtime | `Services/ServiceProtocols.swift` | `Services/Intelligence/QwenRuntime.swift`, `QwenPairJudge.swift`, `QualityComparisonScheduler.swift` |
+| Runtime | `Services/ServiceProtocols.swift` | `Services/Intelligence/QwenRuntime.swift`, `QwenPairResponseValidator.swift`, `QwenPairJudge.swift`, `QualityComparisonScheduler.swift` |
 | Model delivery | None | `Services/Intelligence/ModelManifest.swift`, `ModelInstallationService.swift` |
 | Pixel evidence | `Services/Photos/ImageLoaderService.swift`, `Services/Analysis/VisionAnalysisService.swift` | `Services/Intelligence/VisualEmbeddingService.swift`, `SubjectDetailVerifier.swift` |
 | Orchestration | `Services/Session/SelectionSessionCoordinator.swift`, `App/AppContainer.swift`, `App/AppModel.swift` | `Services/Session/QualityCurationRunner.swift` |
@@ -586,12 +586,13 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 
 ### Task 6 — Schedule and validate Qwen comparisons
 
-**Files:** `QwenPairJudge.swift`, `QualityComparisonScheduler.swift`, `QwenRuntime.swift`, `QualityCurationEvidence.swift`.
+**Files:** `QwenPairResponseValidator.swift`, `QwenPairJudge.swift`, `QualityComparisonScheduler.swift`, `QwenRuntime.swift`, `QualityCurationEvidence.swift`.
 **Consumes:** Groups, representative candidates, images, native facts, frozen model execution profile.
 **Produces:** Validated generation-bound judgments and aggregate comparison outcomes.
 
 - [ ] Implement the queue priorities and limits from §5.6.
-- [ ] Apply the frozen prompt and strict JSON schema from §5.4.
+- [x] Implement the bounded strict JSON validator from §5.4, including duplicate-key, unknown-key, fence, enum, reason-count, duplicate-reason, and 4 KiB guards.
+- [ ] Apply the frozen prompt and strict JSON schema through `QwenPairJudge`.
 - [ ] Keep candidates stable across language changes. UI locale never changes inference prompts.
 - [ ] Reserve queue budget for uncovered groups and reverse-order checks.
 - [ ] Reset conversation/KV state between independent pairs. Do not accumulate a 100-photo chat history.

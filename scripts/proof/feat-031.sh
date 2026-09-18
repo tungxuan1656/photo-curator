@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# feat-031 deterministic model-installation proof; no network or model weights.
+# feat-031 deterministic model-delivery and response-contract proof; no network or model weights.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -14,3 +14,15 @@ xcrun swiftc \
     -o "$OUT_DIR/feat-031-installation-proof"
 
 "$OUT_DIR/feat-031-installation-proof"
+
+xcrun swiftc \
+    -O \
+    "$ROOT_DIR/apps/photo-curator/Configuration/QualityCurationPolicy.swift" \
+    "$ROOT_DIR/apps/photo-curator/Domain/Models/AssetIDs.swift" \
+    "$ROOT_DIR/apps/photo-curator/Domain/Models/PhotoAsset.swift" \
+    "$ROOT_DIR/apps/photo-curator/Domain/Selection/QualityCurationEvidence.swift" \
+    "$ROOT_DIR/apps/photo-curator/Services/Intelligence/QwenPairResponseValidator.swift" \
+    "$ROOT_DIR/scripts/proof/feat-031-response-proof.swift" \
+    -o "$OUT_DIR/feat-031-response-proof"
+
+"$OUT_DIR/feat-031-response-proof"

@@ -17,6 +17,7 @@ struct QwenLoadResult: Sendable {
 
 enum QwenRuntimeError: Error, Sendable {
     case notLoaded
+    case responseTooLarge
     case supersededGeneration
 }
 
@@ -89,6 +90,9 @@ actor QwenRuntime {
                 throw CancellationError()
             }
             if case let .chunk(text) = event {
+                guard response.utf8.count + text.utf8.count <= QwenPairResponseValidator.maxResponseBytes else {
+                    throw QwenRuntimeError.responseTooLarge
+                }
                 response += text
             }
         }

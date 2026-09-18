@@ -728,3 +728,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: Runtime output: `MANIFEST-VALID PASS`, `LOCAL-LOAD PASS` (1.75 s / 1.41 s), image generation (8.56 s / 5.46 s), and `UNLOAD PASS`. The model descriptions changed with the swapped app-icon pixels, but both responses were fenced free-form arrays, not the required strict JSON object; this is runtime feasibility evidence, not production admission. `./init.sh` still needs to be rerun after the metadata correction.
 **Blockers**: Strict response adapter, controlled corpus comparison, arm64-device build, cancellation/teardown trace, allocator/footprint record, offline network-disabled proof, and resource admission remain open.
 **Next**: Implement strict bounded Qwen response validation and a reproducible inference proof, then rerun `./init.sh`.
+
+## 2026-09-18 — feat-031 bounded Qwen response contract
+
+**State**: active (Task 2 partial, Task 3 partial)
+**Done**: Added `QwenPairResponseValidator` for the frozen three-key response shape and bounded `QwenRuntime` generation at 4 KiB before appending chunks. The validator rejects fenced output, arrays, unknown/missing/duplicate keys, invalid enums, duplicate reasons, and more than three reasons. Added the cases to the existing no-test-target feat-031 proof.
+**Evidence**: `./scripts/proof/feat-031.sh` — installer cases and `RESPONSE-VALIDATION PASS`; `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 proof, and policy test skip all PASS.
+**Blockers**: The temporary real-model run still returns fenced free-form arrays; `QwenPairJudge` must route those responses through the validator and degrade to native evidence instead of admitting them.
+**Next**: Implement the single-runtime `QwenPairJudge` and its generation-bound image lease after visual grouping contracts are ready.
