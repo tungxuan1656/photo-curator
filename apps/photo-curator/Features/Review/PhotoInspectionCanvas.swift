@@ -37,81 +37,28 @@ struct PhotoInspectionCanvas: View {
                 Color.black
                     .ignoresSafeArea()
 
-                imageSurface(
+                imageInteractionSurface(
                     viewportSize: viewportSize,
                     renderedImageSize: renderedImageSize
                 )
 
-                chrome
-                    .opacity(controlsVisible || loadFailed ? 1 : 0)
-                    .accessibilityHidden(false)
-            }
-            .contentShape(Rectangle())
-            .simultaneousGesture(
-                MagnifyGesture()
-                    .onChanged { value in
-                        guard image != nil else { return }
-                        if magnificationStartScale == nil {
-                            magnificationStartScale = inspectionState.scale
-                        }
-                        inspectionState.applyMagnification(
-                            value.magnification,
-                            from: magnificationStartScale ?? PhotoInspectionState.fitScale,
-                            viewportSize: viewportSize,
-                            renderedImageSize: renderedImageSize
-                        )
-                    }
-                    .onEnded { _ in
-                        magnificationStartScale = nil
-                    }
-            )
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 10, coordinateSpace: .local)
-                    .onChanged { value in
-                        guard image != nil else { return }
-                        if dragStartOffset == nil {
-                            dragStartOffset = inspectionState.offset
-                            dragStartedZoomed = !inspectionState.isAtFit
-                        }
-                        if dragStartedZoomed {
-                            inspectionState.applyPan(
-                                value.translation,
-                                from: dragStartOffset ?? .zero,
-                                viewportSize: viewportSize,
-                                renderedImageSize: renderedImageSize
-                            )
-                        }
-                    }
-                    .onEnded { value in
-                        defer {
-                            dragStartOffset = nil
-                            dragStartedZoomed = false
-                        }
-                        guard image != nil, !dragStartedZoomed else { return }
-                        if inspectionState.canDismissVertically(for: value.translation) {
-                            back()
-                            return
-                        }
-                        guard let direction = inspectionState.pageDirection(for: value.translation) else { return }
-                        switch direction {
-                        case .previous:
-                            previous()
-                        case .next:
-                            next()
-                        }
-                    }
-            )
-            .onTapGesture {
-                controlsVisible.toggle()
-            }
-            .onTapGesture(count: 2) {
-                guard image != nil else { return }
-                animate {
-                    inspectionState.toggleDoubleTap(
-                        viewportSize: viewportSize,
-                        renderedImageSize: renderedImageSize
-                    )
-                }
+                PhotoInspectionChrome(
+                    controlsVisible: controlsVisible,
+                    loadFailed: loadFailed,
+                    position: position,
+                    total: total,
+                    isSelected: isSelected,
+                    isZoomed: !inspectionState.isAtFit,
+                    canGoPrevious: canGoPrevious,
+                    canGoNext: canGoNext,
+                    inspectionState: $inspectionState,
+                    back: back,
+                    previous: previous,
+                    next: next,
+                    toggleSelection: toggleSelection,
+                    showAnalysis: showAnalysis
+                )
+                .accessibilityHidden(false)
             }
             .onChange(of: currentAssetID) {
                 inspectionState.reset()
@@ -122,138 +69,173 @@ struct PhotoInspectionCanvas: View {
             }
         }
         .background(.black)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Photo \(position) of \(total)")
-        .accessibilityValue(isSelected ? "In album" : "Removed")
-        .accessibilityHint("Double tap to inspect. Swipe left or right at Fit to change photos.")
     }
 
     @ViewBuilder
-    private func imageSurface(viewportSize: CGSize, renderedImageSize: CGSize) -> some View {
-        if let image {
-            Image(decorative: image, scale: 1, orientation: .up)
-                .resizable()
-                .scaledToFit()
-                .frame(width: viewportSize.width, height: viewportSize.height)
-                .scaleEffect(inspectionState.scale)
-                .offset(inspectionState.offset)
-                .clipped()
-                .accessibilityLabel("Photo \(position) of \(total)")
-                .accessibilityValue(
-                    isSelected
-                        ? "In album, \(zoomValue)"
-                        : "Removed, \(zoomValue)"
-                )
-                .accessibilityAction(named: "Zoom in") {
-                    animate {
-                        inspectionState.applyMagnification(
-                            PhotoInspectionState.doubleTapScale / max(inspectionState.scale, 1),
-                            from: inspectionState.scale,
-                            viewportSize: viewportSize,
-                            renderedImageSize: renderedImageSize
-                        )
-                    }
-                }
-                .accessibilityAction(named: "Fit") {
-                    animate { inspectionState.reset() }
-                }
-        } else if isLoading {
-            ProgressView()
-                .tint(.white)
-                .accessibilityLabel("Loading photo")
-        } else if loadFailed {
-            VStack(spacing: 12) {
-                Text("We couldn't load this photo.")
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                Button("Try Again", action: retry)
-                    .buttonStyle(.borderedProminent)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .accessibilityHint("Loads this photo again.")
-                Button("Back", action: back)
-                    .buttonStyle(.bordered)
-                    .frame(minWidth: 44, minHeight: 44)
-            }
-            .foregroundStyle(.white)
-            .padding()
-            .accessibilityElement(children: .contain)
+    private func imageInteractionSurface(viewportSize: CGSize, renderedImageSize: CGSize) -> some View {
+        if image != nil {
+            interactiveImageSurface(viewportSize: viewportSize, renderedImageSize: renderedImageSize)
         } else {
-            ProgressView()
-                .tint(.white)
-                .accessibilityLabel("Loading photo")
+            imageSurface(viewportSize: viewportSize, renderedImageSize: renderedImageSize)
         }
     }
 
-    private var chrome: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Button("Back", systemImage: "chevron.left", action: back)
-                    .labelStyle(.titleAndIcon)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .accessibilityHint("Returns to the review surface.")
-                Spacer(minLength: 12)
-                Text("\(position) of \(total)")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .accessibilityLabel("Photo position, \(position) of \(total)")
+    private func interactiveImageSurface(viewportSize: CGSize, renderedImageSize: CGSize) -> some View {
+        imageSurface(viewportSize: viewportSize, renderedImageSize: renderedImageSize)
+            .contentShape(Rectangle())
+            .simultaneousGesture(magnificationGesture(viewportSize: viewportSize, renderedImageSize: renderedImageSize))
+            .simultaneousGesture(dragGesture(viewportSize: viewportSize, renderedImageSize: renderedImageSize))
+            .onTapGesture {
+                controlsVisible.toggle()
             }
-            .padding(12)
-            .background(.black.opacity(0.65), in: Capsule())
-            .padding(.top, 12)
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    Button(isSelected ? "In Album" : "Removed", action: toggleSelection)
-                        .buttonStyle(.borderedProminent)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .accessibilityValue(isSelected ? "In album" : "Removed")
-                        .accessibilityHint("Changes whether this photo is in the album.")
-
-                    Button("View Analysis", systemImage: "chart.bar.xaxis", action: showAnalysis)
-                        .buttonStyle(.bordered)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .accessibilityHint("Shows the saved analysis for this photo.")
-
-                    if !inspectionState.isAtFit {
-                        Button("Fit", systemImage: "arrow.up.left.and.arrow.down.right") {
-                            animate { inspectionState.reset() }
-                        }
-                        .buttonStyle(.bordered)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .accessibilityValue("Zoomed")
-                        .accessibilityHint("Restores the full photo and centers it.")
-                    }
+            .onTapGesture(count: 2) {
+                animate {
+                    inspectionState.toggleDoubleTap(
+                        viewportSize: viewportSize,
+                        renderedImageSize: renderedImageSize
+                    )
                 }
-                .frame(maxWidth: .infinity)
-
-                HStack {
-                    Button("Previous", systemImage: "chevron.left", action: previous)
-                        .labelStyle(.titleAndIcon)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .disabled(!canGoPrevious)
-                        .accessibilityHint("Shows the previous photo in this review set.")
-                    Spacer()
-                    Button("Next", systemImage: "chevron.right", action: next)
-                        .labelStyle(.titleAndIcon)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .disabled(!canGoNext)
-                        .accessibilityHint("Shows the next photo in this review set.")
-                }
-                .padding(.horizontal, 12)
             }
-            .padding(12)
-            .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 18))
-            .padding(.bottom, 12)
+    }
+
+    private func magnificationGesture(viewportSize: CGSize, renderedImageSize: CGSize) -> some Gesture {
+        MagnifyGesture()
+            .onChanged { value in
+                if magnificationStartScale == nil {
+                    magnificationStartScale = inspectionState.scale
+                }
+                inspectionState.applyMagnification(
+                    value.magnification,
+                    from: magnificationStartScale ?? PhotoInspectionState.fitScale,
+                    viewportSize: viewportSize,
+                    renderedImageSize: renderedImageSize
+                )
+            }
+            .onEnded { _ in
+                magnificationStartScale = nil
+            }
+    }
+
+    private func dragGesture(viewportSize: CGSize, renderedImageSize: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 10, coordinateSpace: .local)
+            .onChanged { value in
+                if dragStartOffset == nil {
+                    dragStartOffset = inspectionState.offset
+                    dragStartedZoomed = !inspectionState.isAtFit
+                }
+                if dragStartedZoomed {
+                    inspectionState.applyPan(
+                        value.translation,
+                        from: dragStartOffset ?? .zero,
+                        viewportSize: viewportSize,
+                        renderedImageSize: renderedImageSize
+                    )
+                }
+            }
+            .onEnded { value in
+                defer {
+                    dragStartOffset = nil
+                    dragStartedZoomed = false
+                }
+                guard !dragStartedZoomed else { return }
+                if inspectionState.canDismissVertically(for: value.translation) {
+                    back()
+                    return
+                }
+                guard let direction = inspectionState.pageDirection(for: value.translation) else { return }
+                switch direction {
+                case .previous:
+                    animate(previous)
+                case .next:
+                    animate(next)
+                }
+            }
+    }
+
+    private func imageSurface(viewportSize: CGSize, renderedImageSize: CGSize) -> some View {
+        ZStack {
+            if let image {
+                inspectionImage(
+                    image,
+                    viewportSize: viewportSize,
+                    renderedImageSize: renderedImageSize
+                )
+            } else if isLoading {
+                loadingSurface
+            } else if loadFailed {
+                loadFailureSurface
+            } else {
+                loadingSurface
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: image != nil)
+    }
+
+    private func inspectionImage(
+        _ image: CGImage,
+        viewportSize: CGSize,
+        renderedImageSize: CGSize
+    ) -> some View {
+        Image(decorative: image, scale: 1, orientation: .up)
+            .resizable()
+            .scaledToFit()
+            .frame(width: viewportSize.width, height: viewportSize.height)
+            .scaleEffect(inspectionState.scale)
+            .offset(inspectionState.offset)
+            .clipped()
+            .accessibilityLabel("Photo \(position) of \(total)")
+            .accessibilityValue(
+                isSelected
+                    ? "In album, \(zoomValue)"
+                    : "Removed, \(zoomValue)"
+            )
+            .accessibilityHint("Double tap to inspect. Swipe left or right at Fit to change photos.")
+            .accessibilityAction(named: "Zoom in") {
+                animate {
+                    inspectionState.applyMagnification(
+                        PhotoInspectionState.doubleTapScale / max(inspectionState.scale, 1),
+                        from: inspectionState.scale,
+                        viewportSize: viewportSize,
+                        renderedImageSize: renderedImageSize
+                    )
+                }
+            }
+            .accessibilityAction(named: "Fit") {
+                animate { inspectionState.reset() }
+            }
+            .transition(reduceMotion ? .identity : .opacity)
+    }
+
+    private var loadingSurface: some View {
+        ProgressView()
+            .tint(.white)
+            .accessibilityLabel("Loading photo")
+            .transition(reduceMotion ? .identity : .opacity)
+    }
+
+    private var loadFailureSurface: some View {
+        VStack(spacing: 14) {
+            Text("We couldn't load this photo.")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+
+            Button("Try Again", action: retry)
+                .buttonStyle(InspectionButtonStyle(kind: .primary, reduceMotion: reduceMotion))
+                .accessibilityHint("Loads this photo again.")
+
+            Button("Back", action: back)
+                .buttonStyle(InspectionButtonStyle(kind: .secondary, reduceMotion: reduceMotion))
         }
         .foregroundStyle(.white)
-        .buttonStyle(.bordered)
-        .safeAreaPadding(.horizontal, 12)
-    }
-
-    private var zoomValue: String {
-        inspectionState.isAtFit ? "Fit" : "Zoomed to \(inspectionState.scale) times"
+        .padding(20)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .transition(reduceMotion ? .identity : .opacity)
     }
 
     private func fittedImageSize(in viewportSize: CGSize) -> CGSize {
@@ -268,7 +250,228 @@ struct PhotoInspectionCanvas: View {
         if reduceMotion {
             action()
         } else {
-            withAnimation(.easeOut(duration: 0.2), action)
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86), action)
         }
+    }
+
+    private var zoomValue: String {
+        inspectionState.isAtFit ? "Fit" : "Zoomed to \(inspectionState.scale) times"
+    }
+}
+
+private struct PhotoInspectionChrome: View {
+    let controlsVisible: Bool
+    let loadFailed: Bool
+    let position: Int
+    let total: Int
+    let isSelected: Bool
+    let isZoomed: Bool
+    let canGoPrevious: Bool
+    let canGoNext: Bool
+    @Binding var inspectionState: PhotoInspectionState
+    let back: () -> Void
+    let previous: () -> Void
+    let next: () -> Void
+    let toggleSelection: () -> Void
+    let showAnalysis: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var feedbackTrigger = 0
+
+    var body: some View {
+        let isVisible = controlsVisible || loadFailed
+
+        return ZStack(alignment: .top) {
+            topChrome
+                .opacity(isVisible ? 1 : 0)
+                .offset(y: isVisible ? 0 : -18)
+                .allowsHitTesting(isVisible)
+
+            VStack {
+                Spacer()
+                bottomChrome
+                    .opacity(isVisible ? 1 : 0)
+                    .offset(y: isVisible ? 0 : 24)
+                    .allowsHitTesting(isVisible)
+            }
+        }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.22), value: isVisible)
+        .sensoryFeedback(.selection, trigger: feedbackTrigger)
+    }
+
+    private var topChrome: some View {
+        HStack(spacing: 8) {
+            Button(action: back) {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(InspectionButtonStyle(kind: .secondary, reduceMotion: reduceMotion))
+            .frame(width: 48, height: 48)
+            .accessibilityLabel("Back")
+            .accessibilityHint("Returns to the review surface.")
+
+            Text("\(position) / \(total)")
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .accessibilityLabel("Photo position, \(position) of \(total)")
+        }
+        .padding(6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay {
+            Capsule()
+                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.28), radius: 16, y: 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+    }
+
+    private var bottomChrome: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Button {
+                    feedbackTrigger += 1
+                    toggleSelection()
+                } label: {
+                    Label(
+                        isSelected ? "In Album" : "Removed",
+                        systemImage: isSelected ? "checkmark.circle.fill" : "circle"
+                    )
+                }
+                .buttonStyle(
+                    InspectionButtonStyle(
+                        kind: isSelected ? .primary : .secondary,
+                        reduceMotion: reduceMotion
+                    )
+                )
+                .accessibilityValue(isSelected ? "In album" : "Removed")
+                .accessibilityHint("Changes whether this photo is in the album.")
+
+                Button(action: showAnalysis) {
+                    Image(systemName: "chart.bar.xaxis")
+                }
+                .buttonStyle(InspectionButtonStyle(kind: .secondary, reduceMotion: reduceMotion))
+                .frame(width: 48, height: 48)
+                .accessibilityLabel("View Analysis")
+                .accessibilityHint("Shows the saved analysis for this photo.")
+
+                if isZoomed {
+                    Button {
+                        animate { inspectionState.reset() }
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    }
+                    .buttonStyle(InspectionButtonStyle(kind: .secondary, reduceMotion: reduceMotion))
+                    .frame(width: 48, height: 48)
+                    .accessibilityLabel("Fit")
+                    .accessibilityValue("Zoomed")
+                    .accessibilityHint("Restores the full photo and centers it.")
+                }
+            }
+            .padding(6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    changePage(previous)
+                } label: {
+                    Image(systemName: "chevron.left")
+                }
+                .buttonStyle(InspectionButtonStyle(kind: .navigation, reduceMotion: reduceMotion))
+                .frame(width: 48, height: 48)
+                .opacity(canGoPrevious ? 1 : 0.42)
+                .disabled(!canGoPrevious)
+                .accessibilityLabel("Previous photo")
+                .accessibilityHint("Shows the previous photo in this review set.")
+
+                Button {
+                    changePage(next)
+                } label: {
+                    Image(systemName: "chevron.right")
+                }
+                .buttonStyle(InspectionButtonStyle(kind: .navigation, reduceMotion: reduceMotion))
+                .frame(width: 48, height: 48)
+                .opacity(canGoNext ? 1 : 0.42)
+                .disabled(!canGoNext)
+                .accessibilityLabel("Next photo")
+                .accessibilityHint("Shows the next photo in this review set.")
+            }
+            .padding(6)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay {
+                Capsule()
+                    .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 10)
+    }
+
+    private func changePage(_ action: () -> Void) {
+        feedbackTrigger += 1
+        animate(action)
+    }
+
+    private func animate(_ action: () -> Void) {
+        if reduceMotion {
+            action()
+        } else {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.86), action)
+        }
+    }
+}
+
+private struct InspectionButtonStyle: ButtonStyle {
+    enum Kind {
+        case primary
+        case secondary
+        case navigation
+
+        var background: Color {
+            switch self {
+            case .primary:
+                Color.curatorAccent
+            case .secondary:
+                .white.opacity(0.14)
+            case .navigation:
+                .white.opacity(0.10)
+            }
+        }
+
+        var foreground: Color {
+            .white
+        }
+
+        var stroke: Color {
+            switch self {
+            case .primary:
+                .white.opacity(0.22)
+            case .secondary, .navigation:
+                .white.opacity(0.12)
+            }
+        }
+    }
+
+    let kind: Kind
+    let reduceMotion: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(kind.foreground)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 44)
+            .background(kind.background, in: Capsule())
+            .overlay {
+                Capsule()
+                    .strokeBorder(kind.stroke, lineWidth: 1)
+            }
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .opacity(configuration.isPressed ? 0.84 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: configuration.isPressed)
     }
 }

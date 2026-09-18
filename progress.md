@@ -580,3 +580,11 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 with zoom, Fit-page, swipe-down dismissal, zoom-pan, accessibility, lifecycle, and service-boundary checks PASS; `./init.sh` EXIT 0 with SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build `SUCCEEDED`, and policy test `SKIP` per DEC-040; Simulator install/launch PASS on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 5974`); `git diff --check` PASS.
 **Blockers**: none
 **Next**: feat-030 remains user-gated and `todo`.
+
+## 2026-09-18 — feat-029 S11 visual and gesture polish
+
+**State**: done
+**Done**: Scoped inspection gestures to the image surface so Back/buttons do not wait for tap arbitration; replaced the heavy default button panels with compact material islands and a single accent action; added edge-aware chrome motion, image crossfade, spring feedback for discrete actions, sensory feedback, and individual VoiceOver controls. Native `NavigationLink` navigation remains unchanged; modal navigation was not needed.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0; focused SwiftLint 0 violations; `./init.sh` EXIT 0 with SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build `SUCCEEDED`, and policy test `SKIP` per DEC-040; Simulator install/launch PASS on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 30051`); CUA smoke reached S11, verified individual Back/Analysis/Previous/Next controls and Fit after zoom, then returned to Selection; `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.

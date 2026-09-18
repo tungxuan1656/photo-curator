@@ -2,7 +2,7 @@
 
 > **Execution:** Follow the repository's implementation and verification rules. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn S11 into a fullscreen, gesture-safe photo inspector that lets users inspect details without weakening selection, paging, privacy, or memory guarantees.
+**Goal:** Turn S11 into a fullscreen, gesture-safe, visually polished photo inspector that lets users inspect details without weakening selection, paging, privacy, or memory guarantees.
 
 **Architecture:** Keep `PhotoDetail` as the session-aware coordinator: it owns the current `AssetID`, calls the existing bounded `PhotoImageLoader.preview`, and delegates selection to `ReviewModel`. Add a value-type inspection transform state for zoom/pan/page arbitration and a focused SwiftUI canvas for fullscreen rendering. The transform state is compiled into a repository proof; the view layer consumes it without storing pixels outside the current `CGImage`.
 
@@ -18,6 +18,8 @@
 - Keep PhotoKit behind `PhotoImageLoader`. Do not persist image pixels, add cache fields, or change selection/ranking/analysis behavior.
 - Do not make pinch, drag, or double-tap the only path: provide operable buttons and VoiceOver actions.
 - At Fit, a deliberate downward swipe dismisses S11; at zoom, vertical gestures pan and never dismiss, remove, restore, or page a photo.
+- Scope tap, double-tap, and drag inspection gestures to the image surface; chrome buttons must not wait for gesture arbitration.
+- Keep native `NavigationLink` dismissal unless the focused gesture-scope fix fails to remove the Back delay; do not broaden to modal navigation preemptively.
 - Respect Dynamic Type, Reduce Motion, safe areas, portrait, and landscape.
 - Do not add test targets, `*Test*.swift` files, test frameworks, or a manual-QA gate. Required evidence is `scripts/proof/feat-029.sh` plus `./init.sh`.
 
@@ -79,6 +81,24 @@
 - [x] Add accessibility labels and hints for photo position, selected/removed state, Previous photo, Next photo, View Analysis, Fit, zoom state, Try Again, and Back. Add custom accessible zoom-in/zoom-out or reset actions.
 - [x] Use 44-point minimum interactive frames, text labels plus symbols, system Dynamic Type styles, and Reduce Motion-aware state transitions.
 - [x] Run `swiftlint lint --strict apps/photo-curator/Features/Review/PhotoInspectionState.swift apps/photo-curator/Features/Review/PhotoInspectionCanvas.swift apps/photo-curator/Features/Review/PhotoDetail.swift`.
+
+### Task 5: Polish S11 chrome, motion, and gesture ownership
+
+**Files:**
+
+- Modify: `apps/photo-curator/Features/Review/PhotoInspectionCanvas.swift`
+- Modify: `features/feat-029.md` and `progress.md` only while verifying and closing this follow-up.
+
+**Interfaces:**
+
+- Consumes: the existing `PhotoInspectionState`, image/pager callbacks, `accessibilityReduceMotion`, and current S11 accessibility labels.
+- Produces: compact material control islands, scoped image-only gestures, animated chrome/image state changes, responsive button feedback, and unchanged pager/selection/navigation contracts.
+
+- [x] Move single-tap, double-tap, magnification, and drag recognizers from the full canvas onto the image interaction surface so Back and other controls receive taps immediately.
+- [x] Replace the large opaque chrome panels and default bordered styles with compact material islands: accent selection state, secondary analysis/Fit action, icon-only pager controls with explicit accessibility labels, and 44-point hit targets.
+- [x] Animate chrome visibility with short edge-aware fade/offset transitions; crossfade loading/image changes; animate discrete zoom/page actions with a responsive spring or ease curve; keep continuous pinch/pan unanimated.
+- [x] Add selection/page sensory feedback only to discrete actions and preserve Reduce Motion behavior for all explicit animations.
+- [x] Run focused SwiftFormat/SwiftLint, `./scripts/proof/feat-029.sh`, `./init.sh`, Simulator launch smoke, and `git diff --check`; record evidence before closing the feature.
 
 ### Task 3: Preserve review and PhotoKit lifecycle invariants
 

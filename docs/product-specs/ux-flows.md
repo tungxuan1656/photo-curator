@@ -490,6 +490,15 @@ originating photo list. At zoom, every drag pans the photo and never pages or
 dismisses it. **Fit** resets zoom and centers the image. Previous/next do not
 wrap.
 
+The photo remains the visual priority. Controls use compact translucent material
+islands with one accent-colored state action; analysis, Fit, and pager controls
+use quiet icon buttons with explicit accessible labels and 44-point hit targets.
+Chrome fades and moves a short distance from its edge when hidden or shown, and
+image availability crossfades during bounded preview replacement. Discrete
+zoom, paging, and selection actions may use short spring/selection feedback;
+continuous pinch and pan remain direct, and Reduce Motion removes explicit
+motion.
+
 The state control updates the shared review state immediately. It never
 deletes an original. Loading keeps safe navigation available. An unavailable
 photo says **We couldn't load this photo.** and offers **Try Again** and
