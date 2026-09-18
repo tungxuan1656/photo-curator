@@ -175,13 +175,17 @@ final class AppModel {
     }
 
     func selectAllFiltered() {
-        let ids = filteredAssets.map(\.id)
-        selectedIDs.formUnion(ids)
+        selectedIDs = SourceSelectionMutation.selectAllFiltered(
+            filteredIDs: filteredAssets.map(\.id),
+            selectedIDs: selectedIDs
+        )
     }
 
     func deselectAllFiltered() {
-        let ids = filteredAssets.map(\.id)
-        selectedIDs.subtract(ids)
+        selectedIDs = SourceSelectionMutation.deselectAllFiltered(
+            filteredIDs: filteredAssets.map(\.id),
+            selectedIDs: selectedIDs
+        )
     }
 
     func updateDragSelection(
@@ -190,16 +194,15 @@ final class AppModel {
         currentIndex: Int,
         isSelecting: Bool
     ) {
-        let assets = filteredAssets
-        guard startIndex >= 0, startIndex < assets.count,
-              currentIndex >= 0, currentIndex < assets.count else { return }
-        let range = min(startIndex, currentIndex) ... max(startIndex, currentIndex)
-        let rangeIDs = Set(assets[range].map(\.id))
-        if isSelecting {
-            selectedIDs = initialSelected.union(rangeIDs)
-        } else {
-            selectedIDs = initialSelected.subtracting(rangeIDs)
-        }
+        guard let updatedSelection = SourceSelectionMutation.updateDragSelection(
+            filteredIDs: filteredAssets.map(\.id),
+            initialSelected: initialSelected,
+            startIndex: startIndex,
+            currentIndex: currentIndex,
+            isSelecting: isSelecting
+        )
+        else { return }
+        selectedIDs = updatedSelection
     }
 
     func loadSource() async {

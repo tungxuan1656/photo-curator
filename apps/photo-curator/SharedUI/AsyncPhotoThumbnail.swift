@@ -11,7 +11,7 @@ struct AsyncPhotoThumbnail: View {
     var body: some View {
         Rectangle()
             .fill(.quaternary)
-            .aspectRatio(1, contentMode: .fit)
+            .aspectRatio(1, contentMode: .fill)
             .overlay {
                 GeometryReader { geo in
                     if let cgImage {
