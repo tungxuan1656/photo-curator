@@ -174,6 +174,34 @@ final class AppModel {
         }
     }
 
+    func selectAllFiltered() {
+        let ids = filteredAssets.map(\.id)
+        selectedIDs.formUnion(ids)
+    }
+
+    func deselectAllFiltered() {
+        let ids = filteredAssets.map(\.id)
+        selectedIDs.subtract(ids)
+    }
+
+    func updateDragSelection(
+        initialSelected: Set<AssetID>,
+        startIndex: Int,
+        currentIndex: Int,
+        isSelecting: Bool
+    ) {
+        let assets = filteredAssets
+        guard startIndex >= 0, startIndex < assets.count,
+              currentIndex >= 0, currentIndex < assets.count else { return }
+        let range = min(startIndex, currentIndex) ... max(startIndex, currentIndex)
+        let rangeIDs = Set(assets[range].map(\.id))
+        if isSelecting {
+            selectedIDs = initialSelected.union(rangeIDs)
+        } else {
+            selectedIDs = initialSelected.subtracting(rangeIDs)
+        }
+    }
+
     func loadSource() async {
         sourceGeneration += 1
         let generation = sourceGeneration

@@ -49,12 +49,31 @@ struct SourceSelectionView: View {
         }
         .sheet(isPresented: $showsAccessGuidance) { AccessGuidanceSheet() }
         .navigationTitle("Choose source photos")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if !appModel.filteredAssets.isEmpty {
+                    Button(allFilteredSelected ? "Deselect All" : "Select All") {
+                        if allFilteredSelected {
+                            appModel.deselectAllFiltered()
+                        } else {
+                            appModel.selectAllFiltered()
+                        }
+                    }
+                }
+            }
+        }
         .task { await appModel.loadSource() }
         .task {
             for await _ in NotificationCenter.default.notifications(named: .photoLibraryDidChange) {
                 await appModel.refreshSourceAfterLibraryChange()
             }
         }
+    }
+
+    private var allFilteredSelected: Bool {
+        let assets = appModel.filteredAssets
+        guard !assets.isEmpty else { return false }
+        return assets.allSatisfy { appModel.selectedIDs.contains($0.id) }
     }
 
     private func selectionLabel(isSelected: Bool, isFavorite: Bool) -> String {
@@ -103,7 +122,6 @@ struct SourceSelectionView: View {
                         } label: {
                             ZStack(alignment: .topTrailing) {
                                 AsyncPhotoThumbnail(assetID: asset.id, targetSizePixels: thumbPixels)
-                                    .clipped()
                                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                     .font(.title2)
                                     .foregroundStyle(isSelected ? Color.accentColor : .white)
@@ -116,9 +134,31 @@ struct SourceSelectionView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .contentShape(Rectangle())
                         .accessibilityLabel(selectionLabel(isSelected: isSelected, isFavorite: asset.isFavorite))
                         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
                     }
+                }
+                .background {
+                    PhotoGridDragSelector(
+                        itemCount: appModel.filteredAssets.count,
+                        columnsCount: 3,
+                        spacing: 2,
+                        onDragStart: { startIndex in
+                            let asset = appModel.filteredAssets[startIndex]
+                            let isSelected = appModel.selectedIDs.contains(asset.id)
+                            return (isSelecting: !isSelected, initialSelection: appModel.selectedIDs)
+                        },
+                        onDragUpdate: { startIndex, currentIndex, isSelecting, initialSelection in
+                            appModel.updateDragSelection(
+                                initialSelected: initialSelection,
+                                startIndex: startIndex,
+                                currentIndex: currentIndex,
+                                isSelecting: isSelecting
+                            )
+                        },
+                        onDragEnd: {}
+                    )
                 }
 
                 if appModel.filteredAssets.count < 15 {
