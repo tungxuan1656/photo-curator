@@ -720,3 +720,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./scripts/proof/feat-026.sh` — `99 PASS / 0 FAIL`; `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 installer proof, and policy test skip all PASS.
 **Blockers**: Real downloaded local model load, image-sensitive inference, cancellation/teardown trace, resource admission, and UI availability state remain open.
 **Next**: Run the 2B model feasibility gate with actual local weights before implementing the quality selector.
+
+## 2026-09-18 — feat-031 artifact and runtime feasibility gate
+
+**State**: active (Task 2 partial, Task 3 partial)
+**Done**: Downloaded the pinned `mlx-community/Qwen3.5-2B-4bit` revision outside the repository. Corrected eight stale non-shard SHA-256 values plus the truncated model-shard digest in `ModelManifest` and `docs/evidence/feat-031-models.json`; every manifest file now matches its downloaded byte count and digest. A temporary Swift executable linked the shipped `QwenRuntime` against the pinned MLX checkouts and passed local manifest validation, model load, two-image generation in both orders, and unload on macOS/Metal.
+**Evidence**: Runtime output: `MANIFEST-VALID PASS`, `LOCAL-LOAD PASS` (1.75 s / 1.41 s), image generation (8.56 s / 5.46 s), and `UNLOAD PASS`. The model descriptions changed with the swapped app-icon pixels, but both responses were fenced free-form arrays, not the required strict JSON object; this is runtime feasibility evidence, not production admission. `./init.sh` still needs to be rerun after the metadata correction.
+**Blockers**: Strict response adapter, controlled corpus comparison, arm64-device build, cancellation/teardown trace, allocator/footprint record, offline network-disabled proof, and resource admission remain open.
+**Next**: Implement strict bounded Qwen response validation and a reproducible inference proof, then rerun `./init.sh`.

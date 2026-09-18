@@ -35,43 +35,43 @@ struct ModelManifest: Codable, Sendable {
         files: [
             .init(
                 path: "chat_template.jinja", byteCount: 7755,
-                sha256: "881551e657df505cc60895011213c9eef75ceb438b1958c71100324e32a12edf"
+                sha256: "273d8e0e683b885071fb17e08d71e5f2a5ddfb5309756181681de4f5a1822d80"
             ),
             .init(
                 path: "config.json", byteCount: 3113,
-                sha256: "25a55c5ad15a39565d100f27951c0f315e81195203e5ac8058dab53f32fc6234"
+                sha256: "beb7fc5a6e0405fe332821cf1a8ef7b69bb390a8c8933171647de5579debf949"
             ),
             .init(
                 path: "model.safetensors", byteCount: 1_722_271_785,
-                sha256: "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d"
+                sha256: "713fe7e5d3c3965f7106b0d0ee17615f7869c23c8d327996df8c1196fbcf07d5"
             ),
             .init(
                 path: "model.safetensors.index.json", byteCount: 81722,
-                sha256: "f98668e3c4f6b10c71a8c0a0e125f7b1bed762bc57f6ded6191a1440d42fe8c3"
+                sha256: "8294c05cca7d53a6c33e3db2b379539bd296d054e0b689711b16b6ac93c7e49d"
             ),
             .init(
                 path: "preprocessor_config.json", byteCount: 390,
-                sha256: "28d900ccac323ac5ec852bb44bd249a1c49760fea4b83a4d6a68168c87a6333b"
+                sha256: "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516"
             ),
             .init(
                 path: "processor_config.json", byteCount: 1300,
-                sha256: "4618e8b1e6d70962fc22a9d0c5513bed5f5f59947d140f5313595b609bb33d71"
+                sha256: "14932921ca485d458a04dafd8069fbb0a4505622a48208d19ed247115801385b"
             ),
             .init(
                 path: "tokenizer.json", byteCount: 19_989_343,
-                sha256: "7f65ee19ad4df5313fb24988b0843787dd3b3e3e9c64789228d503ff761e2805"
+                sha256: "87a7830d63fcf43bf241c3c5242e96e62dd3fdc29224ca26fed8ea333db72de4"
             ),
             .init(
                 path: "tokenizer_config.json", byteCount: 1139,
-                sha256: "0e034f8b2d8b80d251154cb38aa422e6728ca1d378ab7405d950c5a774aab656"
+                sha256: "e98f1901ac6f0adff67b1d540bfa0c36ac1a0cf59eb72ed78146ef89aafa1182"
             ),
             .init(
                 path: "video_preprocessor_config.json", byteCount: 385,
-                sha256: "6dc463a837f46be1b9c56675e4ac21c4c6f1367ea6a04aa16555c8b67a122e87"
+                sha256: "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13"
             ),
             .init(
                 path: "vocab.json", byteCount: 6_722_759,
-                sha256: "abe987a1126d8abf43481b0186e107e087d21a0ca1a7266ca97b47eed8988475"
+                sha256: "ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003"
             ),
         ]
     )

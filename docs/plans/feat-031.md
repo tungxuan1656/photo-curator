@@ -503,8 +503,8 @@ If a model fails a gate, record the failure and keep its profile disabled. Do no
 
 - [x] Resolve the exact runtime revision and transitive dependency versions.
 - [x] Verify package Swift requirements against the app's Swift 5 mode and default actor isolation.
-- [ ] Load the complete processor/tokenizer/model locally from the manifest.
-- [ ] Run two images in one request, with visible labels A/B matching the processor's image order.
+- [x] Load the complete processor/tokenizer/model locally from the manifest.
+- [x] Run two images in one request, with visible labels A/B matching the processor's image order.
 - [ ] Replace only image pixels while holding the prompt fixed. Verify the judgment responds to the changed content.
 - [ ] Reverse image order and map the preference back to the original pair.
 - [ ] Record load time, preprocessing time, prefill, decode, process footprint, and MLX allocation separately.
@@ -526,7 +526,7 @@ cancel(generation): mark cancelled -> stop token loop -> reject late result
 unload(): wait for active lease -> release container/tensors -> clear permitted cache
 ```
 
-**Evidence:** Actual image-dependent results, local-only loading, both build configurations, cancellation/teardown trace.
+**Evidence:** On 2026-09-18, a temporary Swift executable linked the shipped `ModelManifest`/`QwenRuntime` sources against the pinned MLX checkouts and loaded the downloaded revision locally on macOS/Metal. It produced `MANIFEST-VALID PASS`, `LOCAL-LOAD PASS` (1.75 s and 1.41 s), two-image generation (8.56 s and 5.46 s), and `UNLOAD PASS` for both image orders. The responses described the changed app-icon pixels, but both were fenced free-form arrays rather than the required strict JSON object, so no production judgment admission or quality claim is made. Generic Simulator build remains green; arm64-device, cancellation/teardown, allocator/footprint, and formal image corpus evidence remain open.
 **Stop condition:** A load-only or text-only success cannot pass this task. Simulator fallback cannot establish real VLM inference.
 
 ### Task 3 — Implement model delivery and resource admission
