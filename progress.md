@@ -564,3 +564,51 @@ admissible label source satisfying the full quality/privacy/license/performance/
 **Evidence**: JSON parsing and `git diff --check` pass.
 **Blockers**: none
 **Next**: User selects feat-030 after feat-029 is done; do not activate it before then.
+
+## 2026-09-18 — feat-029 immersive photo inspection
+
+**State**: done
+**Done**: Implemented fullscreen S11 inspection with bounded zoom/pan state, Fit-safe scoped paging, explicit album state, analysis navigation, retry/back recovery, safe-area overlays, accessibility actions, and Reduce Motion-aware transforms. Kept `ReviewModel` and the existing PhotoKit preview service boundary unchanged; only the current 2048-pixel `CGImage` is retained and superseded loads are cancelled or ignored.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 (`SCALE-CLAMP`, `OFFSET-CLAMP`, `RESET`, `FIT-PAGE`, `ZOOM-PAN`, `ASSET-RESET`, `ACCESSIBILITY-CONTROLS`, `CURRENT-ONLY`, `SERVICE-BOUNDARY`, and `ASSET-LIFECYCLE` PASS); `./init.sh` EXIT 0 (SwiftFormat PASS, SwiftLint strict PASS with 0 violations in 70 files, Simulator `BUILD SUCCEEDED`, policy test `SKIP`); Simulator install/launch EXIT 0 on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 95203`); `git diff --check` and no-test-artifact checks PASS.
+**Blockers**: none
+**Next**: User selects feat-030; it remains todo until then.
+
+## 2026-09-18 — feat-029 follow-up behavior fix
+
+**State**: done
+**Done**: Raised S11 maximum zoom from 3× to 6×, changed Back to dismiss only the nested inspector so it returns to the originating photo list, and added Fit-only downward swipe dismissal; vertical drags while zoomed remain pan-only.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 with zoom, Fit-page, swipe-down dismissal, zoom-pan, accessibility, lifecycle, and service-boundary checks PASS; `./init.sh` EXIT 0 with SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build `SUCCEEDED`, and policy test `SKIP` per DEC-040; Simulator install/launch PASS on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 5974`); `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.
+
+## 2026-09-18 — feat-029 S11 Liquid Glass controls
+
+**State**: done
+**Done**: Replaced the S11 material chrome surfaces with native iOS 26 `glassEffect` controls grouped by `GlassEffectContainer`; the In Album action uses the accent tint, while navigation and analysis controls use neutral interactive glass. Kept the continuous rounded shapes, top-left/top-right/bottom placement, accessibility labels, and material fallback.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0; `./init.sh` EXIT 0 with SwiftFormat PASS, SwiftLint strict 0 violations in 71 files, Simulator build `SUCCEEDED`, and policy test `SKIP` per DEC-040; CUA simulator smoke displayed the three Liquid Glass control groups and preserved individual Back, Previous, Next, In Album, and View Analysis accessibility controls; `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.
+
+## 2026-09-18 — feat-029 S11 control placement refinement
+
+**State**: done
+**Done**: Repositioned S11 controls to match photo-inspection behavior: Back and position at top-left, Previous/Next at top-right, and In Album/Analysis/Fit in the lower action island. Replaced capsule borders with consistent continuous rounded rectangles.
+**Evidence**: Focused SwiftLint and `./scripts/proof/feat-029.sh` EXIT 0; `./init.sh` EXIT 0 with Simulator build `SUCCEEDED` and policy test `SKIP` per DEC-040; Simulator install/launch PASS on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 39069`); CUA screenshot and accessibility tree verified the requested placement and individual controls; `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.
+
+## 2026-09-18 — feat-029 S11 visual and gesture polish
+
+**State**: done
+**Done**: Scoped inspection gestures to the image surface so Back/buttons do not wait for tap arbitration; replaced the heavy default button panels with compact material islands and a single accent action; added edge-aware chrome motion, image crossfade, spring feedback for discrete actions, sensory feedback, and individual VoiceOver controls. Native `NavigationLink` navigation remains unchanged; modal navigation was not needed.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0; focused SwiftLint 0 violations; `./init.sh` EXIT 0 with SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build `SUCCEEDED`, and policy test `SKIP` per DEC-040; Simulator install/launch PASS on `iPhone 17 Pro` (`com.tungxuan.photo-curator: 30051`); CUA smoke reached S11, verified individual Back/Analysis/Previous/Next controls and Fit after zoom, then returned to Selection; `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.
+
+## 2026-09-18 — feat-029 review remediation
+
+**State**: done (review-fix integration; feat-029 remains done; feat-030 remains todo)
+**Done**: Exposed the inspection image as a semantic VoiceOver element, reset transient chrome and gesture bookkeeping whenever S11 appears or disappears, and replaced independent tap recognizers with an exclusive double/single-tap gesture. Corrected the proof to change from `asset-a` to `asset-b`, reset only after that change, and assert the shipped `PhotoDetail` asset-change reset hook.
+**Evidence**: `./scripts/proof/feat-029.sh` EXIT 0 — all state, accessibility, lifecycle, service-boundary, and `ASSET-CHANGE-RESET` checks PASS. `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict 0 violations in 71 files, Simulator build `SUCCEEDED`, policy test `SKIP` per DEC-040. No test target, framework, or `*Test*.swift` file added; no service contract changed.
+**Blockers**: none
+**Next**: feat-030 remains user-gated and `todo`.

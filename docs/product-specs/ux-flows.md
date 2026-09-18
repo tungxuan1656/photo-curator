@@ -483,11 +483,25 @@ aspect-fit and displays Back, position (`4 of 18`), explicit **In Album** /
 safe areas, have readable contrast, and use text as well as icons. A single
 tap only hides or shows visual controls; it never changes selection.
 
-Pinch zoom is bounded. Double-tap changes between Fit and a useful inspection
-zoom. At Fit, a horizontal swipe moves one photo within the entry context. At
-zoom, every drag pans the photo and never pages it. **Fit** resets zoom and
-centers the image. Vertical movement never dismisses, removes, restores, or
-pages a photo. Previous/next do not wrap.
+Pinch zoom is bounded to a 6× maximum. Double-tap changes between Fit and a
+useful inspection zoom. At Fit, a horizontal swipe moves one photo within the
+entry context and a deliberate downward swipe dismisses S11 back to the
+originating photo list. At zoom, every drag pans the photo and never pages or
+dismisses it. **Fit** resets zoom and centers the image. Previous/next do not
+wrap.
+
+The photo remains the visual priority. Controls use native iOS 26 Liquid Glass
+surfaces grouped by island, with one accent-tinted state action. Back and photo
+position stay in a left group at the top; Previous/Next stay in a separate
+right group at the top; In Album/Removed, View Analysis, and Fit stay in the
+lower action group. Pager controls use quiet glass icon buttons with explicit
+accessible labels and 44-point hit targets. Older supported systems use the
+existing translucent-material fallback.
+Chrome fades and moves a short distance from its edge when hidden or shown, and
+image availability crossfades during bounded preview replacement. Discrete
+zoom, paging, and selection actions may use short spring/selection feedback;
+continuous pinch and pan remain direct, and Reduce Motion removes explicit
+motion.
 
 The state control updates the shared review state immediately. It never
 deletes an original. Loading keeps safe navigation available. An unavailable
