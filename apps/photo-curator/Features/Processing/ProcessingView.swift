@@ -32,7 +32,7 @@ struct ProcessingView: View {
                         Text("Curating your photos")
                             .font(.title2.bold())
 
-                        Text(progress.stage.userPhase)
+                        Text(progress.stage.localizedTitle)
                             .font(.headline)
                             .foregroundStyle(.secondary)
                     }
@@ -50,19 +50,25 @@ struct ProcessingView: View {
 
                         if progress.downloadingCount > 0 {
                             let downloading = progress.downloadingCount
-                            Text(downloading == 1
-                                ? "Waiting for 1 photo from iCloud"
-                                : "Waiting for \(downloading) photos from iCloud")
-                                .font(.subheadline)
+                            if downloading == 1 {
+                                Text("Waiting for 1 photo from iCloud")
+                                    .font(.subheadline)
+                            } else {
+                                Text("Waiting for \(downloading) photos from iCloud")
+                                    .font(.subheadline)
+                            }
                             Text("Keep this iPhone connected to the internet.")
                                 .font(.footnote).foregroundStyle(.secondary)
                         }
                         if progress.unavailableCount > 0 {
                             let unavail = progress.unavailableCount
-                            Text(unavail == 1
-                                ? "1 photo was unavailable and could not be analyzed."
-                                : "\(unavail) photos were unavailable and could not be analyzed.")
-                                .font(.footnote).foregroundStyle(.secondary)
+                            if unavail == 1 {
+                                Text("1 photo was unavailable and could not be analyzed.")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            } else {
+                                Text("\(unavail) photos were unavailable and could not be analyzed.")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            }
                         }
                     }
                     .padding()
@@ -98,9 +104,15 @@ struct ProcessingView: View {
                         VStack(spacing: 6) {
                             Text("Analysis complete")
                                 .font(.title.bold())
-                            Text(analyzed == 1 ? "1 photo analyzed" : "\(analyzed) photos analyzed")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
+                            if analyzed == 1 {
+                                Text("1 photo analyzed")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("\(analyzed) photos analyzed")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
 
@@ -113,11 +125,15 @@ struct ProcessingView: View {
                             .font(.subheadline)
 
                         if unavailable > 0 {
-                            Text(unavailable == 1
-                                ? "1 photo was unavailable and could not be analyzed."
-                                : "\(unavailable) photos were unavailable and could not be analyzed.")
-                                .font(.footnote).foregroundStyle(.secondary)
-                                .padding(.top, 4)
+                            if unavailable == 1 {
+                                Text("1 photo was unavailable and could not be analyzed.")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                                    .padding(.top, 4)
+                            } else {
+                                Text("\(unavailable) photos were unavailable and could not be analyzed.")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                                    .padding(.top, 4)
+                            }
                         }
                     }
                     .padding()
@@ -143,9 +159,9 @@ struct ProcessingView: View {
                 }.padding()
             case .cancelling:
                 ProgressView("Stopping…")
-            case let .paused(reason):
+            case .paused:
                 VStack(spacing: 12) {
-                    Text(reason)
+                    Text("Curation paused. Your progress is saved. Reopen the app to continue.")
                     Button("Resume Processing") { appModel.retryProcessing() }
                     Button("Return Home") { appModel.goHome() }
                 }.padding()
@@ -175,8 +191,8 @@ struct AttentionView: View {
 
     var body: some View {
         ErrorStateView(
-            title: error.title,
-            message: error.message,
+            title: title(for: error.code),
+            message: message(for: error.code),
             primaryTitle: label(for: error.primary),
             primary: { perform(error.primary) },
             secondaryTitle: label(for: error.secondary),
@@ -184,7 +200,33 @@ struct AttentionView: View {
         )
     }
 
-    private func label(for action: RecoveryAction) -> String {
+    private func title(for code: UserFacingErrorCode) -> LocalizedStringResource {
+        switch code {
+        case .curationPaused:
+            "Curation Paused"
+        case .connectionNeeded:
+            "Connection Needed"
+        case .unableToContinue:
+            "Couldn't Continue Curation"
+        case .photosAccessNeeded:
+            "Photos Access Needed"
+        }
+    }
+
+    private func message(for code: UserFacingErrorCode) -> LocalizedStringResource {
+        switch code {
+        case .curationPaused:
+            "Your progress is saved. Curation will continue when the app is active again."
+        case .connectionNeeded:
+            "Some photos need to download from iCloud. Connect and try again — saved work is kept."
+        case .unableToContinue:
+            "Your progress is saved. Try again to continue processing."
+        case .photosAccessNeeded:
+            "Allow photo access to continue. Your progress is saved."
+        }
+    }
+
+    private func label(for action: RecoveryAction) -> LocalizedStringResource {
         switch action {
         case .retry: return "Try Again"
         case .openSettings: return "Open Settings"

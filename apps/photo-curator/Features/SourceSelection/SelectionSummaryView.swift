@@ -26,10 +26,13 @@ struct SelectionSummaryView: View {
                 }
 
                 VStack(spacing: 6) {
-                    Text(appModel.summary.selectedCount == 1
-                        ? "Ready to curate 1 photo"
-                        : "Ready to curate \(appModel.summary.selectedCount) photos")
-                        .font(.title2.bold())
+                    if appModel.summary.selectedCount == 1 {
+                        Text("Ready to curate 1 photo")
+                            .font(.title2.bold())
+                    } else {
+                        Text("Ready to curate \(appModel.summary.selectedCount) photos")
+                            .font(.title2.bold())
+                    }
                     Text("Photos Curator will evaluate your photos and propose a smaller, polished album.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -102,11 +105,15 @@ struct SelectionSummaryView: View {
 
                 if appModel.summary.unavailableCount > 0 {
                     let unavail = appModel.summary.unavailableCount
-                    Text(unavail == 1
-                        ? "1 photo was unavailable and could not be analyzed."
-                        : "\(unavail) photos were unavailable and could not be analyzed.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if unavail == 1 {
+                        Text("1 photo was unavailable and could not be analyzed.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("\(unavail) photos were unavailable and could not be analyzed.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Text("This may take a while for large libraries.")

@@ -303,7 +303,7 @@
       ],
       "gate": "en/vi catalogs, live persistent language picker, completeness proof, and ./init.sh pass",
       "id": "feat-030",
-      "status": "todo",
+      "status": "done",
       "title": "Bilingual localization"
     }
   ],

@@ -16,25 +16,6 @@ enum ProcessingStage: String, Codable, Sendable {
     case loading, analysis, clustering, momentDetection, ranking, finalSelection
 }
 
-/// UI-only display string — a computed property, NOT a separate enum. Never persisted,
-/// never written to checkpoint.stage.
-extension ProcessingStage {
-    var userPhase: String {
-        switch self {
-        case .loading:
-            return "Preparing photos"
-        case .analysis:
-            return "Analyzing photos"
-        case .clustering, .momentDetection:
-            return "Grouping similar shots"
-        case .ranking:
-            return "Choosing the best photos"
-        case .finalSelection:
-            return "Finishing your album"
-        }
-    }
-}
-
 struct ProcessingProgress: Sendable, Equatable {
     var stage: ProcessingStage
     var completedUnits: Int
@@ -56,7 +37,7 @@ enum ProcessingState: Equatable {
     case preparing
     case running(ProcessingProgress)
     case cancelling
-    case paused(reason: String)
+    case paused
     case completed(sessionID: SessionID, analyzed: Int, unavailable: Int)
     case cancelled
     case failed(UserFacingError)
@@ -72,10 +53,16 @@ enum RecoveryAction: Equatable, Sendable {
 }
 
 struct UserFacingError: Equatable {
-    let title: String
-    let message: String
+    let code: UserFacingErrorCode
     let primary: RecoveryAction
     let secondary: RecoveryAction
+}
+
+enum UserFacingErrorCode: Equatable, Sendable {
+    case curationPaused
+    case connectionNeeded
+    case unableToContinue
+    case photosAccessNeeded
 }
 
 actor SelectionSessionCoordinator {
@@ -517,16 +504,14 @@ extension SelectionSessionCoordinator {
     ) -> UserFacingError {
         if case SelectionError.cancelled = error {
             return UserFacingError(
-                title: "Curation Paused",
-                message: "Your progress is saved. Curation will continue when the app is active again.",
+                code: .curationPaused,
                 primary: .goHome,
                 secondary: .discard
             )
         }
         if error is CancellationError {
             return UserFacingError(
-                title: "Curation Paused",
-                message: "Your progress is saved. Curation will continue when the app is active again.",
+                code: .curationPaused,
                 primary: .goHome,
                 secondary: .discard
             )
@@ -538,15 +523,13 @@ extension SelectionSessionCoordinator {
             let secondary: RecoveryAction =
                 (unavailable > 0 && analyzed > 0) ? .continueWithoutUnavailable : .goHome
             return UserFacingError(
-                title: "Connection Needed",
-                message: "Some photos need to download from iCloud. Connect and try again — saved work is kept.",
+                code: .connectionNeeded,
                 primary: .retry,
                 secondary: secondary
             )
         }
         return UserFacingError(
-            title: "Couldn't Continue Curation",
-            message: "Your progress is saved. Try again to continue processing.",
+            code: .unableToContinue,
             primary: .retry,
             secondary: .goHome
         )
@@ -555,8 +538,7 @@ extension SelectionSessionCoordinator {
     /// Permission-removed path (called by ProcessingModel when authorization is denied/restricted).
     nonisolated static func permissionError() -> UserFacingError {
         UserFacingError(
-            title: "Photos Access Needed",
-            message: "Allow photo access to continue. Your progress is saved.",
+            code: .photosAccessNeeded,
             primary: .openSettings,
             secondary: .goHome
         )

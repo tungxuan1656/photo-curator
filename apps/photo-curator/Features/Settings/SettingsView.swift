@@ -10,12 +10,16 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var appModel
     @State private var confirmingReset = false
 
-    private var accessLabel: String {
+    private var accessLabel: LocalizedStringResource {
         switch appModel.authorization {
-        case .authorized: return "Full Access"
-        case .limited: return "Limited Photos Access"
-        case .denied, .restricted: return "Photos Access Needed"
-        case .notDetermined: return "Photos Access Not Set Up"
+        case .authorized:
+            "Full Access"
+        case .limited:
+            "Limited Photos Access"
+        case .denied, .restricted:
+            "Photos Access Needed"
+        case .notDetermined:
+            "Photos Access Not Set Up"
         }
     }
 
@@ -24,7 +28,18 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        @Bindable var appModel = appModel
         List {
+            Section("Language") {
+                Picker("Language", selection: $appModel.appLanguage) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(languageName(language))
+                            .tag(language)
+                    }
+                }
+                .accessibilityLabel("Language")
+                .accessibilityValue(languageName(appModel.appLanguage))
+            }
             Section("Photos Access") {
                 Text(accessLabel)
                     .accessibilityLabel("Photos access: \(accessLabel)")
@@ -78,6 +93,17 @@ struct SettingsView: View {
             Button("Keep Results", role: .cancel) {}
         } message: {
             Text("Saved analysis is removed. Your original photos stay unchanged.")
+        }
+    }
+
+    private func languageName(_ language: AppLanguage) -> LocalizedStringResource {
+        switch language {
+        case .systemDefault:
+            "System Default"
+        case .english:
+            "English"
+        case .vietnamese:
+            "Tiếng Việt"
         }
     }
 }

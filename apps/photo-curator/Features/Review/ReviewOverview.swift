@@ -52,9 +52,7 @@ struct ReviewOverview: View {
                                         .font(.title3.bold())
                                         .foregroundStyle(.white)
 
-                                    let totalStr = total == 1 ? "1 photo" : "\(total) photos"
-                                    let selStr = model.selectedIDs.count == 1 ? "1 photo selected" : "\(model.selectedIDs.count) selected"
-                                    Text("\(selStr) from \(totalStr)")
+                                    Text(selectedSummary(selectedCount: model.selectedIDs.count, total: total))
                                         .font(.footnote)
                                         .foregroundStyle(.white.opacity(0.9))
                                 }
@@ -66,9 +64,7 @@ struct ReviewOverview: View {
                             VStack(spacing: 6) {
                                 Text("Your curated album is ready")
                                     .font(.title2.bold())
-                                let totalStr = total == 1 ? "1 photo" : "\(total) photos"
-                                let selStr = model.selectedIDs.count == 1 ? "1 photo selected" : "\(model.selectedIDs.count) selected"
-                                Text("\(selStr) from \(totalStr)")
+                                Text(selectedSummary(selectedCount: model.selectedIDs.count, total: total))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -95,7 +91,7 @@ struct ReviewOverview: View {
                                             .font(.caption2)
                                             .foregroundStyle(.tertiary)
                                     }
-                                    Text("\(model.selectedIDs.count)")
+                                    Text(model.selectedIDs.count, format: .number)
                                         .font(.title2.bold())
                                         .foregroundStyle(.primary)
                                     Text("Best quality & moments")
@@ -126,10 +122,10 @@ struct ReviewOverview: View {
                                                 .foregroundStyle(.tertiary)
                                         }
                                     }
-                                    Text("\(model.similarGroups.count)")
+                                    Text(model.similarGroups.count, format: .number)
                                         .font(.title2.bold())
                                         .foregroundStyle(.primary)
-                                    Text(model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen")
+                                    Text(similarGroupsSummary(for: model))
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                 }
@@ -158,7 +154,7 @@ struct ReviewOverview: View {
                                                 .foregroundStyle(.tertiary)
                                         }
                                     }
-                                    Text("\(model.removedAssetIDs.count)")
+                                    Text(model.removedAssetIDs.count, format: .number)
                                         .font(.title2.bold())
                                         .foregroundStyle(.primary)
                                     Text("Can add back anytime")
@@ -191,12 +187,17 @@ struct ReviewOverview: View {
                         ReviewGuideCard()
 
                         if unavailable > 0 {
-                            Text(unavailable == 1
-                                ? "1 photo was unavailable and could not be analyzed."
-                                : "\(unavailable) photos were unavailable and could not be analyzed.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal)
+                            if unavailable == 1 {
+                                Text("1 photo was unavailable and could not be analyzed.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
+                            } else {
+                                Text("\(unavailable) photos were unavailable and could not be analyzed.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal)
+                            }
                         }
 
                         // Action Queue
@@ -241,7 +242,7 @@ struct ReviewOverview: View {
                                     HStack {
                                         Label("Needs Review", systemImage: "eye.trianglebadge.exclamationmark")
                                         Spacer()
-                                        Text("\(model.needsReviewItems.count)")
+                                        Text(model.needsReviewItems.count, format: .number)
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
                                         Image(systemName: "chevron.right")
@@ -290,6 +291,17 @@ struct ReviewOverview: View {
                 Text("Your original photos will stay unchanged. The current analysis and selection will be removed.")
             }
         )
+    }
+
+    private func similarGroupsSummary(for model: ReviewModel) -> LocalizedStringResource {
+        model.similarGroups.isEmpty ? "No duplicates found" : "Best picks chosen"
+    }
+
+    private func selectedSummary(selectedCount: Int, total: Int) -> LocalizedStringResource {
+        if total == 1 {
+            return "\(selectedCount) selected from 1 photo"
+        }
+        return "\(selectedCount) selected from \(total) photos"
     }
 }
 

@@ -19,6 +19,10 @@ BUILD_TASKS=(
   "xcodebuild -project apps/photo-curator.xcodeproj -scheme photo-curator -configuration Debug -destination 'generic/platform=iOS Simulator' build"
 )
 
+PROOF_TASKS=(
+  "./scripts/proof/feat-030.sh"
+)
+
 TEST_TASKS=(
   # "xcodebuild test -project apps/photo-curator.xcodeproj -scheme photo-curator -destination 'generic/platform=iOS Simulator'" # SKIP explicit: no test target (xcodebuild -list shows single target photo-curator), no *Test*.swift; policy: AGENTS.md no-tests rule (DEC-032 keeps no test targets/frameworks; required evidence is reproducible automated proof + ./init.sh)
 )
@@ -89,6 +93,9 @@ run_parallel "lint" "${LINT_TASKS[@]}"
 
 echo "=== Build ==="
 run_parallel "build" "${BUILD_TASKS[@]}"
+
+echo "=== Proof ==="
+run_parallel "proof" "${PROOF_TASKS[@]}"
 
 echo "=== Test ==="
 if [ "${#TEST_TASKS[@]}" -eq 0 ]; then

@@ -16,8 +16,13 @@ struct SourceSelectionView: View {
     var body: some View {
         @Bindable var appModel = appModel
         VStack {
-            Text(appModel.selectedIDs.count == 1 ? "1 photo selected" : "\(appModel.selectedIDs.count) photos selected")
-                .font(.headline)
+            if appModel.selectedIDs.count == 1 {
+                Text("1 photo selected")
+                    .font(.headline)
+            } else {
+                Text("\(appModel.selectedIDs.count) photos selected")
+                    .font(.headline)
+            }
             if appModel.selectedIDs.count == 1 {
                 Text("Photos Curator works best with 50+ photos, but you can curate any amount.")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -52,7 +57,7 @@ struct SourceSelectionView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !appModel.filteredAssets.isEmpty {
-                    Button(allFilteredSelected ? "Deselect All" : "Select All") {
+                    Button(selectAllTitle) {
                         if allFilteredSelected {
                             appModel.deselectAllFiltered()
                         } else {
@@ -76,12 +81,15 @@ struct SourceSelectionView: View {
         return assets.allSatisfy { appModel.selectedIDs.contains($0.id) }
     }
 
-    private func selectionLabel(isSelected: Bool, isFavorite: Bool) -> String {
-        let state = isSelected ? "selected" : "not selected"
+    private var selectAllTitle: LocalizedStringResource {
+        allFilteredSelected ? "Deselect All" : "Select All"
+    }
+
+    private func selectionLabel(isSelected: Bool, isFavorite: Bool) -> LocalizedStringResource {
         if isFavorite {
-            return "Photo, favorite, \(state)"
+            return isSelected ? "Photo, favorite, selected" : "Photo, favorite, not selected"
         }
-        return "Photo, \(state)"
+        return isSelected ? "Photo, selected" : "Photo, not selected"
     }
 
     @ViewBuilder
@@ -167,8 +175,8 @@ struct SourceSelectionView: View {
                             .font(.subheadline.bold())
                             .foregroundStyle(Color.accentColor)
                         Text(
-                            "Photos Curator analyzes sharpness, expressions, and duplicate shots to find your "
-                                + "best moments."
+                            // swiftlint:disable:next line_length
+                            "Photos Curator analyzes sharpness, expressions, and duplicate shots to find your best moments."
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -181,8 +189,13 @@ struct SourceSelectionView: View {
                 }
             }
             if appModel.unavailableCount > 0 {
-                Text("\(appModel.unavailableCount) photos were unavailable and could not be analyzed.")
-                    .font(.footnote)
+                if appModel.unavailableCount == 1 {
+                    Text("1 photo was unavailable and could not be analyzed.")
+                        .font(.footnote)
+                } else {
+                    Text("\(appModel.unavailableCount) photos were unavailable and could not be analyzed.")
+                        .font(.footnote)
+                }
             }
         }
     }

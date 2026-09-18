@@ -23,11 +23,13 @@ struct PermissionEducationView: View {
                 Text("Choose photos for curation")
                     .font(.title3.bold())
                     .multilineTextAlignment(.center)
-                Text("Photos Curator needs access to the photos you choose so it can analyze them "
-                    + "and build your curated album. Photo analysis happens on this iPhone.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                Text(
+                    // swiftlint:disable:next line_length
+                    "Photos Curator needs access to the photos you choose so it can analyze them and build your curated album. Photo analysis happens on this iPhone."
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
             }
 
             VStack(alignment: .leading, spacing: 14) {

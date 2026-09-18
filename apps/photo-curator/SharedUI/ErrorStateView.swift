@@ -1,22 +1,23 @@
+import Foundation
 import SwiftUI
 
 /// One reusable S20 recoverable-error view: plain title, one line on what
 /// happened and whether progress is safe, primary recovery action, safe-exit
 /// secondary. Never shows raw errors, IDs, filenames, GPS, or face detail.
 struct ErrorStateView: View {
-    let title: String
-    let message: String
-    let primaryTitle: String
+    let title: LocalizedStringResource
+    let message: LocalizedStringResource
+    let primaryTitle: LocalizedStringResource
     let primary: () -> Void
-    let secondaryTitle: String?
+    let secondaryTitle: LocalizedStringResource?
     let secondary: (() -> Void)?
 
     init(
-        title: String,
-        message: String,
-        primaryTitle: String,
+        title: LocalizedStringResource,
+        message: LocalizedStringResource,
+        primaryTitle: LocalizedStringResource,
         primary: @escaping () -> Void,
-        secondaryTitle: String? = nil,
+        secondaryTitle: LocalizedStringResource? = nil,
         secondary: (() -> Void)? = nil
     ) {
         self.title = title
