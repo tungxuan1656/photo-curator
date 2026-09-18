@@ -485,3 +485,12 @@
 **Decisions**: DEC-047 bounded iOS 27 semantic jury; DEC-048 image-backed in-place integration and hard timeout; DEC-049 explicit Foundation Models SDK capability seam; engine version remains 3 and no persistence/schema migration is introduced.
 **Blockers**: none
 **Next**: open PR `tungxuan1656/feat-027-integration` → main (squash in a separate merge task).
+
+## 2026-09-18 — feat-027 post-merge closeout (PR #57 merged)
+
+**State**: done/merged
+**Done**: Post-merge documentation closeout only. PR #57 (`https://github.com/tungxuan1656/photo-curator/pull/57`) was merged into `main` at `2e57ecbfa65eb12fff51d0c6af96d9da69b5fd85`, confirmed on `origin/main`; `feature_index.json` remains `done` for feat-027. All feat-027 acceptance criteria are checked; no application code changed.
+**Evidence**: `scripts/proof/feat-027.sh` EXIT 0 — `STAGED-MATCH 26`, iOS 26 deterministic fallback, iOS 27 image-backed jury requests, strict schema, safe/failure/timeout/cancellation paths, same-cluster in-place preservation, and Golden-shaped cap all PASS; `RESULT PASS`. Retained `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict 0 violations, Simulator build SUCCEEDED, test SKIP per DEC-040; no tests, test target, or test framework. `git diff --check` PASS; manual QA remains removed and non-gating per DEC-040.
+**Decisions**: DEC-047 bounded iOS 27 semantic jury; DEC-048 image-backed in-place integration and hard timeout; DEC-049 explicit Foundation Models SDK capability seam. No contract or data-model change; engine version remains 3 with no persistence/schema migration.
+**Blockers**: none
+**Next**: feat-028 (Ranker decision gate), activated from the latest `origin/main` after this closeout.
