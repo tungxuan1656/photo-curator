@@ -68,6 +68,15 @@ struct PhotoInspectionCanvas: View {
                 controlsVisible = true
             }
         }
+        .onAppear {
+            controlsVisible = true
+        }
+        .onDisappear {
+            controlsVisible = true
+            magnificationStartScale = nil
+            dragStartOffset = nil
+            dragStartedZoomed = false
+        }
         .background(.black)
     }
 
@@ -85,15 +94,23 @@ struct PhotoInspectionCanvas: View {
             .contentShape(Rectangle())
             .simultaneousGesture(magnificationGesture(viewportSize: viewportSize, renderedImageSize: renderedImageSize))
             .simultaneousGesture(dragGesture(viewportSize: viewportSize, renderedImageSize: renderedImageSize))
-            .onTapGesture {
-                controlsVisible.toggle()
-            }
-            .onTapGesture(count: 2) {
-                animate {
-                    inspectionState.toggleDoubleTap(
-                        viewportSize: viewportSize,
-                        renderedImageSize: renderedImageSize
-                    )
+            .gesture(tapGesture(viewportSize: viewportSize, renderedImageSize: renderedImageSize))
+    }
+
+    private func tapGesture(viewportSize: CGSize, renderedImageSize: CGSize) -> some Gesture {
+        TapGesture(count: 2)
+            .exclusively(before: TapGesture(count: 1))
+            .onEnded { result in
+                switch result {
+                case .first:
+                    animate {
+                        inspectionState.toggleDoubleTap(
+                            viewportSize: viewportSize,
+                            renderedImageSize: renderedImageSize
+                        )
+                    }
+                case .second:
+                    controlsVisible.toggle()
                 }
             }
     }
@@ -177,34 +194,39 @@ struct PhotoInspectionCanvas: View {
         viewportSize: CGSize,
         renderedImageSize: CGSize
     ) -> some View {
-        Image(decorative: image, scale: 1, orientation: .up)
-            .resizable()
-            .scaledToFit()
-            .frame(width: viewportSize.width, height: viewportSize.height)
-            .scaleEffect(inspectionState.scale)
-            .offset(inspectionState.offset)
-            .clipped()
-            .accessibilityLabel("Photo \(position) of \(total)")
-            .accessibilityValue(
-                isSelected
-                    ? "In album, \(zoomValue)"
-                    : "Removed, \(zoomValue)"
-            )
-            .accessibilityHint("Double tap to inspect. Swipe left or right at Fit to change photos.")
-            .accessibilityAction(named: "Zoom in") {
-                animate {
-                    inspectionState.applyMagnification(
-                        PhotoInspectionState.doubleTapScale / max(inspectionState.scale, 1),
-                        from: inspectionState.scale,
-                        viewportSize: viewportSize,
-                        renderedImageSize: renderedImageSize
-                    )
-                }
+        Image(
+            image,
+            scale: 1,
+            orientation: .up,
+            label: Text("Photo \(position) of \(total)")
+        )
+        .resizable()
+        .scaledToFit()
+        .frame(width: viewportSize.width, height: viewportSize.height)
+        .scaleEffect(inspectionState.scale)
+        .offset(inspectionState.offset)
+        .clipped()
+        .accessibilityLabel("Photo \(position) of \(total)")
+        .accessibilityValue(
+            isSelected
+                ? "In album, \(zoomValue)"
+                : "Removed, \(zoomValue)"
+        )
+        .accessibilityHint("Double tap to inspect. Swipe left or right at Fit to change photos.")
+        .accessibilityAction(named: "Zoom in") {
+            animate {
+                inspectionState.applyMagnification(
+                    PhotoInspectionState.doubleTapScale / max(inspectionState.scale, 1),
+                    from: inspectionState.scale,
+                    viewportSize: viewportSize,
+                    renderedImageSize: renderedImageSize
+                )
             }
-            .accessibilityAction(named: "Fit") {
-                animate { inspectionState.reset() }
-            }
-            .transition(reduceMotion ? .identity : .opacity)
+        }
+        .accessibilityAction(named: "Fit") {
+            animate { inspectionState.reset() }
+        }
+        .transition(reduceMotion ? .identity : .opacity)
     }
 
     private var loadingSurface: some View {

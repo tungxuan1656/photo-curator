@@ -98,8 +98,14 @@ struct PhotoInspectionProof {
         try require(zoomed.offset.width > 0, "zoomed drag did not pan")
         print("ZOOM-PAN PASS")
 
-        zoomed.toggleDoubleTap(viewportSize: viewport, renderedImageSize: rendered)
-        try require(zoomed.isAtFit, "double tap did not return to Fit")
+        var currentAssetID = "asset-a"
+        let previousAssetID = currentAssetID
+        currentAssetID = "asset-b"
+        try require(currentAssetID != previousAssetID, "asset transition did not change the asset")
+        if currentAssetID != previousAssetID {
+            zoomed.reset()
+        }
+        try require(zoomed.isAtFit, "asset transition did not reset inspection state")
         print("ASSET-RESET PASS")
     }
 

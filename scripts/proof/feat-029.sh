@@ -66,6 +66,11 @@ require_source "$DETAIL_SOURCE" 'guard requested == currentAssetID else { return
 require_source "$DETAIL_SOURCE" '@State private var cgImage: CGImage?' "CURRENT-IMAGE-STATE"
 require_source "$DETAIL_SOURCE" '.task(id: "\(currentAssetID.rawValue)-\(retryToken)")' "TASK-IDENTITY"
 require_source "$DETAIL_SOURCE" '.onChange(of: currentAssetID)' "ASSET-CHANGE-HOOK"
+if ! rg -q -U '\.onChange\(of: currentAssetID\) \{\n\s+inspectionState\.reset\(\)' "$DETAIL_SOURCE"; then
+    echo "ASSET-CHANGE-RESET FAIL" >&2
+    exit 1
+fi
+echo "ASSET-CHANGE-RESET PASS"
 require_source "$DETAIL_SOURCE" '.onDisappear' "DISAPPEAR-HOOK"
 require_source "$DETAIL_SOURCE" '@Environment(\.dismiss) private var dismiss' "NAVIGATION-DISMISS"
 require_source "$DETAIL_SOURCE" 'back: { dismiss() }' "NAVIGATION-BACK-DISMISS"
