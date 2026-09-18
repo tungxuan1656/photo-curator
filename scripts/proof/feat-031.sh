@@ -26,3 +26,17 @@ xcrun swiftc \
     -o "$OUT_DIR/feat-031-response-proof"
 
 "$OUT_DIR/feat-031-response-proof"
+
+xcrun swiftc \
+    -O \
+    "$ROOT_DIR/apps/photo-curator/Configuration/QualityCurationPolicy.swift" \
+    "$ROOT_DIR/apps/photo-curator/Domain/Models/AssetIDs.swift" \
+    "$ROOT_DIR/apps/photo-curator/Domain/Selection/QualityCurationEvidence.swift" \
+    "$ROOT_DIR/apps/photo-curator/Services/Intelligence/ModelManifest.swift" \
+    "$ROOT_DIR/apps/photo-curator/Services/Intelligence/ModelInstallationService.swift" \
+    "$ROOT_DIR/apps/photo-curator/Services/Intelligence/QwenPairResponseValidator.swift" \
+    "$ROOT_DIR/apps/photo-curator/Services/Intelligence/QwenPairJudge.swift" \
+    "$ROOT_DIR/scripts/proof/feat-031-pair-judge-proof.swift" \
+    -o "$OUT_DIR/feat-031-pair-judge-proof"
+
+"$OUT_DIR/feat-031-pair-judge-proof"

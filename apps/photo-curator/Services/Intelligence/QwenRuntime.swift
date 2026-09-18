@@ -15,6 +15,15 @@ struct QwenLoadResult: Sendable {
     let elapsed: TimeInterval
 }
 
+struct QwenInferenceRequest: Sendable {
+    let firstImage: URL
+    let secondImage: URL
+    let prompt: String
+    let generation: Int
+    let maxPixels: Int
+    let maxTokens: Int
+}
+
 enum QwenRuntimeError: Error, Sendable {
     case notLoaded
     case responseTooLarge
@@ -55,15 +64,11 @@ actor QwenRuntime {
         cancelledGenerations.removeAll()
     }
 
-    func respond(
-        firstImage: URL,
-        secondImage: URL,
-        prompt: String,
-        generation: Int,
-        maxPixels: Int = QualityCurationPolicy.default.qwenImageMaxDimension
-            * QualityCurationPolicy.default.qwenImageMaxDimension,
-        maxTokens: Int = QualityCurationPolicy.default.maxGeneratedTokens
-    ) async throws -> QwenInferenceResult {
+    func respond(_ request: QwenInferenceRequest) async throws -> QwenInferenceResult {
+        let firstImage = request.firstImage
+        let secondImage = request.secondImage
+        let prompt = request.prompt
+        let generation = request.generation
         guard let container else { throw QwenRuntimeError.notLoaded }
         guard !cancelledGenerations.contains(generation) else {
             throw CancellationError()
@@ -75,13 +80,13 @@ actor QwenRuntime {
             additionalContext: ["enable_thinking": false]
         )
         var boundedInput = input
-        boundedInput.processing = .init(maxPixels: maxPixels)
+        boundedInput.processing = .init(maxPixels: request.maxPixels)
 
         let started = ContinuousClock.now
         let prepared = try await container.prepare(input: boundedInput)
         let stream = try await container.generate(
             input: prepared,
-            parameters: GenerateParameters(maxTokens: maxTokens, temperature: 0)
+            parameters: GenerateParameters(maxTokens: request.maxTokens, temperature: 0)
         )
         var response = ""
         for await event in stream {

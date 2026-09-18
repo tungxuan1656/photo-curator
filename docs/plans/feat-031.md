@@ -234,11 +234,12 @@ protocol QualityPairJudge: Sendable {
 }
 ```
 
-`QwenPairJudge` owns image loading and a single `QwenRuntime` actor.
+`QwenPairJudge` owns image loading and one injected runtime conforming to the Qwen inference protocol; production uses a single `QwenRuntime` actor.
 The actor owns all MLX tensors, model containers, KV state, and generation handles.
 Use existing `AssetID`, `SessionID`, and stable-ID facilities instead of new parallel identity systems.
 Do not add `@unchecked Sendable` merely to pass an image across actors.
 Keep decoding and image conversion inside the runtime boundary or use an explicitly owned immutable image lease.
+The first implementation remains an isolated seam. It does not wire `SelectionSessionCoordinator`, select assets, or persist raw model output.
 
 ### 5.4 Pair protocol and prompt
 
@@ -595,6 +596,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 - [ ] Implement the queue priorities and limits from §5.6.
 - [x] Implement the bounded strict JSON validator from §5.4, including duplicate-key, unknown-key, fence, enum, reason-count, duplicate-reason, and 4 KiB guards.
 - [ ] Apply the frozen prompt and strict JSON schema through `QwenPairJudge`.
+- [ ] Keep the first `QwenPairJudge` slice isolated from coordinator selection until its proof seam passes.
 - [ ] Keep candidates stable across language changes. UI locale never changes inference prompts.
 - [ ] Reserve queue budget for uncovered groups and reverse-order checks.
 - [ ] Reset conversation/KV state between independent pairs. Do not accumulate a 100-photo chat history.
