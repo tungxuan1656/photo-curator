@@ -768,3 +768,11 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./scripts/proof/feat-031.sh` — interrupted transfer, resume/hash, atomic activation, `REOPEN-DISCOVERY PASS`, removal, and response validation all PASS. `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 proofs, and policy test skip all PASS.
 **Blockers**: UI setup state, inference leases, offline MLX runtime load through the app-owned installation, resource admission, and real cancellation/teardown remain open.
 **Next**: Implement the generation-bound local Qwen pair judge after the quality grouping input contract is complete.
+
+## 2026-09-19 — feat-031 accepted model lifecycle design
+
+**State**: active (design recorded; implementation not started)
+**Done**: Recorded the approved lifecycle in `features/feat-031.md` and `docs/plans/feat-031.md` §5.7.1. The design uses explicit `Download Model`, non-blocking download while the app is open, partial-file resume on a later launch, shared Settings/startup state, and visible `qualityNative` fallback when Qwen is unavailable.
+**Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint, generic Simulator build, policy test skip); `git diff --check` PASS.
+**Blockers**: Awaiting user review of the written feature/plan record before implementation. Pixel grouping, model/resource admission, and runtime lifecycle evidence remain open.
+**Next**: Implement the accepted lifecycle after the written record is approved.

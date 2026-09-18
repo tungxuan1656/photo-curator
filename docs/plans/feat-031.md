@@ -386,7 +386,7 @@ notInstalled -> downloading -> verifying -> installed -> loading -> ready
 ```
 
 - Download on explicit model-setup action, not on every Analyze action.
-- Show artifact size, progress, pause/cancel, retry, remove, and the local-analysis explanation in en/vi.
+- Show artifact size, progress, cancel, retry, remove, and the local-analysis explanation in en/vi.
 - Resume compatible partial downloads using the pinned revision and expected length/hash.
 - If revision or server validators change, discard the partial artifact and restart that file.
 - Stage files separately. Verify all hashes before an atomic installation rename.
@@ -398,6 +398,25 @@ notInstalled -> downloading -> verifying -> installed -> loading -> ready
 - Analyze uses local-only model loading. A missing tokenizer file fails admission instead of triggering a hidden download.
 - Requests contain model artifact paths only. Never include photo names, IDs, prompts, thumbnails, or embeddings in URLs or request bodies.
 - Separate model-download time and iCloud-download time from inference time in UI and evidence.
+
+### 5.7.1 Accepted app lifecycle
+
+The accepted lifecycle uses `ModelInstallationModel` as the presentation owner
+around `ModelInstallationService`. The installer remains responsible for the
+pinned artifact, resumable staging, validation, and atomic activation.
+
+- On the first app startup, check the pinned revision once without network access.
+- When the model is missing, present one setup alert for that launch.
+- Start download only after the user selects `Download Model`.
+- Keep the download non-blocking while the app is open.
+- Preserve verified files and `.partial` staging for resume at a later launch.
+- Let `Later` dismiss the alert without starting a download or repeating the prompt during that launch.
+- Expose status, phase, progress, retry, and cancel in Settings.
+- Retain the existing remove action in Settings; wait for active inference leases and never delete photos or saved albums.
+- Snapshot model availability and identity when a curation run starts.
+- Never switch a running session from native fallback to Qwen after installation completes.
+- When Qwen is unavailable, execute `qualityNative` and expose `AI unavailable` in processing and result provenance.
+- Do not use system background transfer in this slice. App suspension or termination is handled by the existing partial-download resume path.
 
 ### 5.8 Persistence, versions, and replay
 
@@ -445,7 +464,7 @@ Do not create all proposed files as empty scaffolding. Create each with its owni
 | Pixel evidence | `Services/Photos/ImageLoaderService.swift`, `Services/Analysis/VisionAnalysisService.swift` | `Services/Intelligence/VisualEmbeddingService.swift`, `SubjectDetailVerifier.swift` |
 | Orchestration | `Services/Session/SelectionSessionCoordinator.swift`, `App/AppContainer.swift`, `App/AppModel.swift` | `Services/Session/QualityCurationRunner.swift` |
 | Storage/lifecycle | `Infrastructure/FileStore.swift`, `SessionCheckpointStore.swift`, `MemoryPressureObserver.swift` | None unless the existing store cannot isolate the execution envelope cleanly |
-| Presentation | `Features/Settings/SettingsView.swift`, `Features/Processing/ProcessingModel.swift`, `ProcessingView.swift`, `ProcessingStagePresentation.swift`, `Features/Review/ReviewModel.swift`, `SimilarGroups.swift`, `RemovedPhotos.swift`, `PhotoAnalysisDetail.swift`, `Domain/Selection/UncertaintyReview.swift`, `Localizable.xcstrings` | `Features/Settings/ModelInstallationModel.swift` |
+| Presentation | `App/AppModel.swift`, `App/PhotoCuratorApp.swift`, `App/RootView.swift`, `Features/Settings/SettingsView.swift`, `Features/Processing/ProcessingModel.swift`, `ProcessingView.swift`, `ProcessingStagePresentation.swift`, `Features/Review/ReviewModel.swift`, `SimilarGroups.swift`, `RemovedPhotos.swift`, `PhotoAnalysisDetail.swift`, `Domain/Selection/UncertaintyReview.swift`, `Localizable.xcstrings` | `Features/Settings/ModelInstallationModel.swift` |
 | Source summary | `Features/SourceSelection/SelectionSummaryView.swift` | None |
 | Build | `apps/photo-curator.xcodeproj/project.pbxproj`, its SwiftPM resolution file, `init.sh` | Isolated local runtime package only if Task 2 proves a simulator link boundary needs it |
 | Verification | `init.sh` | `./init.sh` output recorded in the feature handoff |
@@ -466,7 +485,7 @@ T1 contracts + corpus specification
   -> T6 bounded Qwen judgments
   -> T7 group-aware album selection
   -> T8 coordinator/storage integration
-  -> T9 localized setup/review presentation
+  -> T9 localized setup/review presentation and accepted model lifecycle
   -> T10 automated quality and lifecycle evidence
   -> T11 profile admission + rollout record
 ```
@@ -660,9 +679,11 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 
 **Files:** Settings model/presentation, source summary, processing presentation, review files and `Localizable.xcstrings` from §6.
 **Consumes:** Installation/admission state, stage progress, result provenance, reason/group references.
-**Produces:** en/vi setup, visible execution mode, actionable group explanations, unchanged shared review selection ownership.
+**Produces:** en/vi setup, startup model prompt, shared download state, visible execution mode and fallback, actionable group explanations, unchanged shared review selection ownership.
 
-- [ ] Add download, pause, retry, remove, and installed-size presentation in Settings.
+- [ ] Add model status, explicit Download Model, cancel, retry, remove, and installed-size presentation in Settings.
+- [ ] Check the pinned model once at startup and show one setup alert when it is missing.
+- [ ] Keep the explicit download non-blocking while the app is open and resume partial files after relaunch.
 - [ ] Show the selected quality mode and unavailable-model fallback before Start.
 - [ ] Distinguish model download, iCloud download, native analysis, group comparison, and final selection stages.
 - [ ] Keep progress monotonic and bounded to the existing publish rate.
@@ -715,7 +736,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 
 | Condition | Required behavior |
 |---|---|
-| Model not installed | Offer setup or native mode before Start |
+| Model not installed | Offer explicit setup at startup and before Start; allow `qualityNative` with visible `AI unavailable` disclosure |
 | Unsupported runtime/device | Explain native mode. Do not attempt repeated failing allocations |
 | Input exceeds 100 | Use disclosed native mode for the complete set |
 | Model download interrupted | Retain verified files and resumable staging only |
@@ -728,7 +749,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 | Qwen deadline expires | Finish with validated evidence plus qualityNative coverage audit |
 | Thermal/memory pressure | Stop further model work, drain safely, return/retain a recoverable state |
 | User cancels or discards | Acknowledge promptly, stop scheduling, reject late output and writes |
-| App backgrounds | Checkpoint native progress, stop Qwen scheduling, rebuild transient evidence on resume |
+| App backgrounds | Keep model download non-blocking only while the app is open; preserve partial files for later launch, and apply the existing Qwen checkpoint/resume rules |
 | Model revision disappears during resume | Explain mode change and restart selection, never mix revisions |
 | User restores two similar photos | Preserve the explicit review selection |
 | App reopens completed review offline | Load decisions/feedback without weights or network |
@@ -886,7 +907,7 @@ Acceptance traceability:
 |---|---|---|
 | A1 quality improvement | T1, T4–T7, T10 | Frozen corpus, B0/B1/B2/Q2/Q4 metrics |
 | A2 real Qwen integration | T2, T6, T11 | Pixel-sensitive inference, artifact/runtime manifests, profile decision |
-| A3 lifecycle and fallback | T3, T6, T8, T10 | Fault matrix, offline loading, cancellation/drain traces |
+| A3 lifecycle and fallback | T3, T6, T8, T9, T10 | Startup/setup state proof, fault matrix, offline loading, cancellation/drain traces |
 | A4 group retention | T4, T7 | All-member provenance and zero-pick audit |
 | A5 session/user ownership | T8, T9 | Partial/resume parity, stale-write rejection, persisted review edits |
 | A6 contracts and rollback | T1, T3, T8, T9, T11 | Owner updates, legacy decoding, mode/model rollback |
