@@ -265,7 +265,7 @@
       ],
       "gate": "Uncertain decisions have comprehensible reasons, a Needs review queue, and feedback capture; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
       "id": "feat-026",
-      "status": "todo",
+      "status": "done",
       "title": "Uncertainty review and feedback"
     },
     {

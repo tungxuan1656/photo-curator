@@ -16,6 +16,7 @@ enum AppRoute: Hashable, Sendable {
     case curatedGrid(sessionID: SessionID)
     case similarGroups(sessionID: SessionID)
     case removedPhotos(sessionID: SessionID)
+    case needsReview(sessionID: SessionID)
     case finalReview(sessionID: SessionID)
     case saving(sessionID: SessionID)
     case completion(sessionID: SessionID)

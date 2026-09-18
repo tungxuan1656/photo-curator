@@ -169,6 +169,24 @@ struct ReviewOverview: View {
                                 .controlSize(.large)
                             }
 
+                            if !model.needsReviewItems.isEmpty {
+                                Button {
+                                    if appModel.path.last != .needsReview(sessionID: sessionID) {
+                                        appModel.path.append(.needsReview(sessionID: sessionID))
+                                    }
+                                } label: {
+                                    HStack {
+                                        Label("Needs Review", systemImage: "eye.trianglebadge.exclamationmark")
+                                        Spacer()
+                                        Text("\(model.needsReviewItems.count)")
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                        Image(systemName: "chevron.right")
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.large)
+                            }
                             if !model.removedAssetIDs.isEmpty {
                                 Button {
                                     if appModel.path.last != .removedPhotos(sessionID: sessionID) {

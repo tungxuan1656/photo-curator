@@ -448,6 +448,24 @@ struct ReviewState: Sendable {          // UI state, never persisted
 
 Rules: user include/exclude is a hard session override (see [03 §14](../product-specs/selection-rules.md)); accept, restore, and undo wording and flow are owned by [02](../product-specs/ux-flows.md). Store raw feedback events in MVP; do not build preference profiles yet. No testing-only models; QA handling: [10](../ship-gates/manual-qa.md).
 
+Feat-026 uncertainty review (shipped behavior, DEC-042/DEC-044/DEC-046): the Needs
+Review queue (S22) derives deterministically at review entry from persisted
+`Decision` reasons/scores only (priority borderlineQuality >
+faceTradeoff > similarAlternatives > secondMomentView > coverageCut; band
+0.05 around the live `lowQualityThreshold`; cap 30 in priority/source
+order; `assetUnavailable`/eligibility/floor/duplicate-loser never queue).
+One `UncertaintyReviewState` owns queue derivation, resolution (queue ID ∩
+persisted `removedIDs`/`restoredIDs`/`swapWinner` edits), and the bounded
+aggregate snapshot (`UncertaintyFeedbackSnapshot` schemaVersion 1 — exact
+schema in DEC-044, strict seven-key read in DEC-046: unknown or missing top-level keys decode-throw so the row loads nil; counts only, no identifiers/pixels/faces/EXIF/free
+text). The snapshot persists per session to
+`uncertainty-feedback/<session>.json` via `SessionCheckpointStore`
+(save/load-nil-on-any-failure/delete-absent-is-success, DEC-043
+closed-session tombstone plus DEC-046 generation owner: deletes retire first, late hook writes and stale old-session writers pinned to a retired generation drop,
+live `beginReview` re-entry reopens with a fresh generation and installs a fresh hook), written on each feedback mutation
+through the ordered generation-pinned `PersistLatest` hook and deleted with the session.
+Deterministic decisions keep the existing S10/S12/S13 flow untouched.
+
 ---
 
 ## 12. Failures
@@ -518,11 +536,13 @@ Two independent counters. Bumping one never forces work owned by the other.
 
 Changing rank weights re-ranks stored analyses into new decisions with no Vision rerun. API-side triggers: [07](apple-frameworks.md). Tuning validation: [10](../ship-gates/manual-qa.md).
 
+Feat-026 frozen values (DEC-044/DEC-046): `analysisVersion` 4, `engineVersion` 3, `configVersion` 1 — no migration, no move. The `uncertainty-feedback` snapshot carries its own `schemaVersion` 1 (exact fields in DEC-044, strict read + writer generation owner in DEC-046) and does not persist `configVersion`.
+
 ---
 
 ## 15. Persistence shape
 
-Persist: session, result, decisions, stored shortlist and alternatives, analyses + cache, overrides, feedback, minimal validation metadata. Persistence is file-based Codable with no database for MVP (see [decision-log](decision-log.md) DEC-TBD-002). Cache-only: moments, clusters, thumbnails. Temp-only with immediate release: face boxes, precise location, feature prints. Never: pixel buffers, Vision objects, matrices, UI state.
+Persist: session, result, decisions, stored shortlist and alternatives, analyses + cache, overrides, feedback, `uncertainty-feedback/<session>.json` (bounded aggregate snapshot, schemaVersion 1 per DEC-044), minimal validation metadata. Persistence is file-based Codable with no database for MVP (see [decision-log](decision-log.md) DEC-TBD-002). Cache-only: moments, clusters, thumbnails. Temp-only with immediate release: face boxes, precise location, feature prints. Never: pixel buffers, Vision objects, matrices, UI state.
 
 Domain models stay persistence-agnostic: `Persistence → Domain → Engine → Domain → Persistence`. Start with one model type; add DTOs only if the store forces it. Folder layout is owned by [05](ios-architecture.md); suggested code grouping is Asset / Analysis / Grouping / Selection / Session / Feedback, flattened while small.
 

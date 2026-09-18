@@ -71,6 +71,19 @@ actor SessionCheckpointStore {
     private let files: FileStore
     private let directory: String
     private let resultsDirectory = "results"
+    /// Session generations (DEC-046): every `reopenSession` mints a newer
+    /// UInt64 owner; every feedback save captures the generation live at its
+    /// hook-install time. The actor applies a save only when its captured
+    /// generation still equals the session's current generation at apply
+    /// time. Delete paths bump the generation past every captured writer, so
+    /// an old-session PersistLatest/Task queued before cleanup and flushed
+    /// after a same-process reopen still drops instead of writing into the
+    /// new session. Tombstones (`closedSessions`) keep covering process-wide
+    /// close; generations cover same-process reopen. Live re-entry
+    /// (`beginReview`) mints the new owner via `reopenSession`.
+    private var closedSessions: Set<SessionID> = []
+    private var sessionGenerations: [SessionID: UInt64] = [:]
+    private var generationCounter: UInt64 = 0
 
     init(files: FileStore, directory: String = "checkpoints") {
         self.files = files
@@ -91,6 +104,10 @@ actor SessionCheckpointStore {
 
     private func saveStatePath(for sessionID: SessionID) -> String {
         "savestate/\(sessionID.rawValue.uuidString).json"
+    }
+
+    private func uncertaintyFeedbackPath(for sessionID: SessionID) -> String {
+        "uncertainty-feedback/\(sessionID.rawValue.uuidString).json"
     }
 
     func save(_ checkpoint: SessionCheckpoint) async throws {
@@ -133,8 +150,28 @@ actor SessionCheckpointStore {
         }
     }
 
+    /// Dropped (success, no write) once the session closes or its generation
+    /// moves on: late hook writes must not resurrect rows after cleanup, and
+    /// stale old-session writers must not enter a reopened session (DEC-046).
+    /// Ordinary save failure still throws, so the caller retries on the next
+    /// mutation (DEC-043).
     func saveFeedback(_ feedback: SelectionFeedback, for sessionID: SessionID) async throws {
+        try await saveFeedback(feedback, for: sessionID, generation: sessionGenerations[sessionID])
+    }
+
+    /// Generation-pinned write: applies only when `generation` still equals
+    /// the session's current generation at apply time (nil matches only an
+    /// unopened session that was never deleted — a tombstoned session drops).
+    func saveFeedback(_ feedback: SelectionFeedback, for sessionID: SessionID, generation: UInt64?) async throws {
+        guard !closedSessions.contains(sessionID), sessionGenerations[sessionID] == generation else { return }
         try await files.save(feedback, to: feedbackPath(for: sessionID))
+    }
+
+    /// Current owner for hook-install capture. Prefer the generation returned
+    /// by `reopenSession` (mint + read in one actor call, no reopen/read
+    /// race); this accessor covers read-only callers.
+    func feedbackGeneration(for sessionID: SessionID) -> UInt64? {
+        sessionGenerations[sessionID]
     }
 
     /// Missing or unreadable feedback means a fresh session: nil, never a throw.
@@ -142,7 +179,10 @@ actor SessionCheckpointStore {
         try? await files.load(SelectionFeedback.self, from: feedbackPath(for: sessionID))
     }
 
+    /// Deletes the row; tombstones the session first so late hook writes
+    /// drop instead of recreating it (DEC-043). Absent counts as success.
     func deleteFeedback(sessionID: SessionID) async throws {
+        retireSession(sessionID)
         do {
             try await files.remove(relativePath: feedbackPath(for: sessionID))
         } catch {
@@ -152,6 +192,72 @@ actor SessionCheckpointStore {
             }
             // Already absent; treat as success.
         }
+    }
+
+    /// Bounded review snapshot: aggregate reason counts only, never photo
+    /// identifiers, pixels, or face data (DEC-042). Missing/unreadable rows
+    /// (absent, corrupt, schema-version mismatch) mean a fresh session: nil,
+    /// never a throw — same rule as `loadFeedback`. Closed or
+    /// generation-retired sessions drop writes (DEC-043/DEC-046).
+    func saveUncertaintyFeedback(_ snapshot: UncertaintyFeedbackSnapshot, for sessionID: SessionID) async throws {
+        try await saveUncertaintyFeedback(snapshot, for: sessionID, generation: sessionGenerations[sessionID])
+    }
+
+    /// Generation-pinned write: same drop rule as the feedback pair above.
+    func saveUncertaintyFeedback(
+        _ snapshot: UncertaintyFeedbackSnapshot, for sessionID: SessionID, generation: UInt64?
+    ) async throws {
+        guard !closedSessions.contains(sessionID), sessionGenerations[sessionID] == generation else { return }
+        try await files.save(snapshot, to: uncertaintyFeedbackPath(for: sessionID))
+    }
+
+    func loadUncertaintyFeedback(sessionID: SessionID) async -> UncertaintyFeedbackSnapshot? {
+        guard let snapshot: UncertaintyFeedbackSnapshot = try? await files.load(
+            UncertaintyFeedbackSnapshot.self, from: uncertaintyFeedbackPath(for: sessionID)
+        ), snapshot.schemaVersion == UncertaintyFeedbackSnapshot.schemaVersion else {
+            return nil
+        }
+        return snapshot
+    }
+
+    func deleteUncertaintyFeedback(sessionID: SessionID) async throws {
+        retireSession(sessionID)
+        do {
+            try await files.remove(relativePath: uncertaintyFeedbackPath(for: sessionID))
+        } catch {
+            let nsError = error as NSError
+            guard nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileNoSuchFileError else {
+                throw error
+            }
+            // Already absent; treat as success.
+        }
+    }
+
+    /// Retires one session: tombstones it AND bumps the generation past every
+    /// captured writer, so stale old-session writes cannot enter a reopened
+    /// session (DEC-046). Called from every feedback-delete path.
+    private func retireSession(_ sessionID: SessionID) {
+        closedSessions.insert(sessionID)
+        generationCounter += 1
+        sessionGenerations[sessionID] = generationCounter
+    }
+
+    /// Tombstones one session so late feedback Tasks drop instead of
+    /// recreating rows. Called from every feedback-delete path.
+    func closeSession(_ sessionID: SessionID) {
+        retireSession(sessionID)
+    }
+
+    /// Live re-entry: clears the tombstone AND mints a new generation owner,
+    /// returned for hook-install capture in the same statement (no
+    /// reopen/read race with a concurrent delete). Never called from a
+    /// delete path (DEC-043).
+    @discardableResult
+    func reopenSession(_ sessionID: SessionID) -> UInt64? {
+        closedSessions.remove(sessionID)
+        generationCounter += 1
+        sessionGenerations[sessionID] = generationCounter
+        return sessionGenerations[sessionID]
     }
 
     func saveSaveState(_ state: SaveState) async throws {

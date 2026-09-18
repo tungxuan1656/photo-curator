@@ -43,7 +43,8 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
-
 # Deepwork local state (git-local, OpenCode-readable)
 .slim/deepwork/
 .agent-work/
+# Proof-harness build outputs (regenerable via scripts/proof/*.sh)
+scripts/proof/out/

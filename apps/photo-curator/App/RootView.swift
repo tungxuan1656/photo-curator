@@ -56,6 +56,12 @@ struct RootView: View {
                     } else {
                         ReviewLoadFailedView(sessionID: id)
                     }
+                case let .needsReview(id):
+                    if appModel.reviewModel?.sessionID == id {
+                        NeedsReview(sessionID: id)
+                    } else {
+                        ReviewLoadFailedView(sessionID: id)
+                    }
                 case let .finalReview(id):
                     if appModel.reviewModel?.sessionID == id {
                         FinalReview(sessionID: id)

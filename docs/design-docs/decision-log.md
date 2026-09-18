@@ -21,7 +21,7 @@ New entry fields: status, date, owner doc, affected docs, risk, trigger/reconsid
 
 Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status column governs. Promotion details: §3–§6.
 
-### 1a. Accepted (42 kept)
+### 1a. Accepted (47 kept)
 
 | ID | Decision | Owner doc |
 |---|---|---|
@@ -65,6 +65,11 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-039 | Feat-025 readiness record keeps docs/plans/feat-025.md, no app change | `features/feat-025.md` |
 | DEC-040 | Manual QA removed from feature gates; automated evidence only | `AGENTS.md`, `features/feat-template.md` |
 | DEC-041 | Roadmap manual-QA residue cleanup; automated-only gates hold | `docs/exec-plans/roadmap.md` |
+| DEC-042 | Feat-026 uncertainty-review and bounded-feedback contract | `features/feat-026.md` |
+| DEC-043 | Feat-026 review routing and cleanup-race contract | `features/feat-026.md` |
+| DEC-044 | Feat-026 uncertainty-feedback exact schema and version freeze | `features/feat-026.md` |
+| DEC-045 | Feat-026 review-model ownership and hook lifecycle | `features/feat-026.md` |
+| DEC-046 | Feat-026 feedback writer generation/ownership guard | `features/feat-026.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
 | DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
 | DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
@@ -389,6 +394,58 @@ Consequences: roadmap P4/P6/P8 and deferred rows carry automated-only gates; fea
 Reconsider when: a release, privacy, safety, or data-integrity risk requires a separately approved manual check, or automated evidence cannot represent a newly introduced behavior - then record a new evidence-backed DEC entry before adding any manual gate.
 
 ---
+
+# DEC-042 - Feat-026 uncertainty-review and bounded-feedback contract
+Status: Accepted - Date: 2026-09-17
+Owner: `features/feat-026.md` - Affected: `ReviewModel`, `NeedsReview`, `SessionCheckpointStore`, `AppModel+Save`, `AppRoute`/`RootView`/`ReviewOverview`, feat-027 admission
+Context: Feat-026 must expose uncertain feat-023 decisions as clear reviewable work and capture bounded feedback without changing picks, the on-device privacy promise, or any versioned contract. The shipped pipeline already emits stable reason codes plus optional scores per decision; the review layer already owns a shared model, persisted edit feedback, and recoverable routes.
+Decision: Derive the Needs Review queue deterministically from persisted `Decision` reasons/scores only (priority borderlineQuality > faceTradeoff > similarAlternatives > secondMomentView > coverageCut; band 0.05 around the live `lowQualityThreshold`, cap 30 in priority/source order; `assetUnavailable`/eligibility/floor/duplicate-loser decisions never queue). Persist one versioned aggregate snapshot per session (`schemaVersion` 1: session/engine/counts per fixed reason vocabulary, no identifiers/pixels/faces/EXIF/free text) through new `uncertainty-feedback/` rows with the existing ordered-hook and delete rules. Present after the contract is fixed via the `needsReview` route off S09 (existing surfaces handle the actions; deterministic flow untouched).
+Alternatives considered: score-only ranking without reason codes (rejected - opaque, no actionable copy); persisting per-photo uncertainty rows (rejected - grows the store with photo-linked data); feedback learning/taste profiles (rejected - post-MVP per DEC-020/DEC-021); rerunning the engine on review edits (rejected - violates the no-rerun review rule); a queue over live analysis reads (rejected - needs cluster/moment objects that are not persisted).
+Evidence: feat-026 proof binary (REAL shipped Domain + config + FileStore verbatim, 16/16 md5-match; harness main `a5a02938…`, binary `b92580f7…`) on hand-built plus REAL-engine fixtures — named U1–U9 38 PASS / 0 FAIL, double-run byte-identical (`2f7d63f3…`), partial/unavailable excluded, store round-trip + corrupt/version/absent recovery PASS; `./init.sh` PASS (format 0/65, `swiftlint --strict` 0 violations/65 files, Simulator build SUCCEEDED, SKIP [test] per policy).
+Consequences: uncertain decisions surface first with actionable reasons while deterministic picks, versions (`analysisVersion` 4, `engineVersion` 3), clusters/moments, and privacy/redaction rules hold; feat-027 inherits the admitted ambiguity vocabulary (borderlineQuality, faceTradeoff, similarAlternatives, secondMomentView, coverageCut) for its jury gate.
+Reconsider when: a named residual failure shows the band, cap, or vocabulary hides a consequential ambiguity, or feat-027 jury evidence requires an admitted case the vocabulary cannot express - then record a new evidence-backed entry before changing thresholds or reasons.
+
+# DEC-043 - Feat-026 review routing and cleanup-race contract
+Status: Accepted - Date: 2026-09-18
+Owner: `features/feat-026.md` - Affected: `NeedsReview`, `SessionCheckpointStore`, `AppModel+Save`, `scripts/proof/feat-026.sh`, feat-027 admission
+Context: Codex review found two runtime gaps behind the DEC-042 contract: (1) Needs Review action buttons toggled selection instead of routing to the Inspect/Similar/Compare surfaces, and (2) feedback writes from the unstructured `Task` in `AppModel+Save` could recreate `feedback/` + `uncertainty-feedback/` rows after discard/reset/finish deletes; proof claims also lacked a durable tracked harness, and the plan drifted from runtime/DEC-042 (band and snapshot schema wording).
+Decision: Route each Needs Review action without mutating selection (inspect/compare-moment open the queue-scoped S11 detail pager with S21 one tap deeper; similar routes to S12; add-back routes to S13; the standalone selection toggle stays separate). Tombstone sessions in `SessionCheckpointStore` on every feedback delete (`deleteFeedback`/`deleteUncertaintyFeedback` insert first), drop `saveFeedback`/`saveUncertaintyFeedback` writes for tombstoned sessions, reopen only on a live `beginReview` re-entry, and capture the hook's own model in `AppModel+Save` so a stale entry cannot write into a newer same-process review. Keep the durable proof at `scripts/proof/feat-026.sh` (REAL shipped sources verbatim, staged md5-match) covering normal/uncertain/unavailable/recovery/reason/action/persistence/deterministic-rerun/cleanup-race. Reconcile the plan to runtime: score band 0.05 around the live `lowQualityThreshold`, feedback `schemaVersion` 1 carries sessionID/engineVersion/queueSize/resolvedByReason/totalResolved/updatedAt only (no `analysisVersion`); `analysisVersion` 4, `engineVersion` 3, `configVersion` 1 unchanged.
+Alternatives considered: per-write generation counters on the hook (rejected - same guarantee with more moving parts than the store tombstone plus model capture); cancelling the unstructured Task at cleanup (rejected - the Task is fire-and-forget with no handle; the drop-at-store rule covers every late writer including actor-queued saves); routing actions through new review surfaces (rejected - S10/S11/S12/S13/S21 already own the surfaces; new routes would split the single selection source of truth).
+Evidence: `scripts/proof/feat-026.sh` (REAL shipped Domain + config + FileStore + store + SaveState verbatim, 18/18 md5-match) — U1–U12 57 PASS / 0 FAIL, deterministic payload + queue double-run identical, cleanup-race (late writes drop, double-delete idempotent, reopen re-enables, disk-failure retry preserved) PASS; `./init.sh` PASS (format, `swiftlint --strict`, Simulator build, SKIP [test] per policy).
+Reconsider when: a named residual failure shows a routed surface cannot resolve its action, a same-process session re-entry must keep prior tombstones, or feat-027 jury evidence requires a new action or persisted field - then record a new evidence-backed entry before changing routes, guards, or schema.
+
+---
+
+# DEC-044 - Feat-026 uncertainty-feedback exact schema and version freeze
+Status: Accepted - Date: 2026-09-18
+Owner: `features/feat-026.md` - Affected: `UncertaintyFeedbackSnapshot`, `SessionCheckpointStore`, `ReviewModel`, `docs/design-docs/data-model.md`, feat-027 admission
+Context: DEC-042 froze the bounded-feedback contract in prose ("session/engine/counts per fixed reason vocabulary") and the shipped `UncertaintyFeedbackSnapshot` carries exactly seven stored fields, but no entry pins the exact field list or states which versions do and do not move. Codex review flagged this schema/metadata drift risk: a future reader could re-add `analysisVersion` to the snapshot or persist `configVersion` inside it, breaking the counts-only and no-migration guarantees.
+Decision: Freeze the exact `uncertainty-feedback/<session>.json` schema at `schemaVersion` 1 with exactly these fields and no others: `schemaVersion`, `sessionID`, `engineVersion`, `queueSize`, `resolvedByReason`, `totalResolved`, `updatedAt` (aggregate counts only; no identifiers/pixels/faces/EXIF/free text, no `analysisVersion`). Keep `configVersion` 1 unchanged and NOT persisted in the snapshot. Keep `analysisVersion` 4, `engineVersion` 3, `configVersion` 1 unchanged with no migration: old/corrupt/version-mismatched snapshots load as nil (fresh), never throw.
+Alternatives considered: re-adding `analysisVersion` to the snapshot for traceability (rejected - duplicates the analysis-cache version gate, grows a counts-only row with per-run metadata, and contradicts the DEC-042 frozen schema); persisting `configVersion` inside the snapshot (rejected - the snapshot derives from a live-config threshold that is never stored, so a stored copy would drift from the value actually used); leaving the schema prose-only without a DEC entry (rejected - prose drifts, as the feat-026 plan band/schema drift showed; the freeze needs an append-only anchor).
+Evidence: `scripts/proof/feat-026.sh` U6 (snapshot counts + JSON no-leak scan + outsider-excluded) and U12 (plan/domain schema reconcile: no `analysisVersion` in the snapshot struct) plus U1 pinned versions (analysis 4 / engine 3 / config 1); `./init.sh` PASS (format, `swiftlint --strict`, Simulator build, SKIP [test] per policy).
+Reconsider when: feat-027 jury evidence or a named residual failure requires a new persisted uncertainty field or a version move - then record a new evidence-backed entry before changing the schema or bumping any version.
+
+---
+
+# DEC-045 - Feat-026 review-model ownership and hook lifecycle
+Status: Accepted - Date: 2026-09-18
+Owner: `features/feat-026.md` - Affected: `AppModel+Save`, `ReviewModel`, `SessionCheckpointStore`, `scripts/proof/feat-026.sh`, feat-027 admission
+Context: Codex review found `beginReview` never assigned the built ReviewModel (`reviewModel = model` missing), so `beginReview` returned true while RootView review destinations rendered `ReviewLoadFailedView` and `saveAlbum` guards failed; the installed hook also captured only `weak persist`, so feedback/checkpoint writes silently dropped once the local actor deallocated. The fix must restore a strong lifecycle-safe owner without a retain cycle and without breaking DEC-043 cleanup/tombstone behavior.
+Decision: Assign the model (`reviewModel = model`) before routing so the same model backs RootView destinations and save guards. Own the `PersistLatest` actor strongly from the installed hook closure (closure owned by the model, model owned by `reviewModel`), capture the model weakly to avoid a model -> hook -> model cycle, derive the uncertainty snapshot synchronously on the model before hopping to the persistence Task, and keep DEC-043 semantics (cleanup releases `reviewModel` first, then the store tombstone drops late writes; live re-entry reopens). Extend the proof to 21 staged files plus U13 (shipped hook source checks + live REAL ReviewModel hook/re-entry/same-model behavior).
+Alternatives considered: capturing the model strongly in the hook (rejected - model -> hook -> model retain cycle keeps review state alive after cleanup); keeping weak-only persist (rejected - the writes it was built to order silently never fire); per-write generation counters or Task cancellation (rejected - more moving parts than the owner + tombstone rule DEC-043 already provides).
+Evidence: `scripts/proof/feat-026.sh` (REAL shipped sources verbatim, STAGED-21-MD5-MATCH) — U13 shipped-hook source checks + live REAL ReviewModel hook/re-entry/same-model PASS; full suite 70 PASS / 0 FAIL; `./init.sh` PASS (format, `swiftlint --strict`, Simulator build, SKIP [test] per policy).
+Reconsider when: a named residual failure shows the hook lifecycle drops live writes, leaks review state after cleanup, or resurrects tombstoned rows - then record a new evidence-backed entry before changing ownership, capture, or guards.
+
+---
+
+# DEC-046 - Feat-026 feedback writer generation/ownership guard
+Status: Accepted - Date: 2026-09-18
+Owner: `features/feat-026.md` - Affected: `SessionCheckpointStore`, `AppModel+Save`, `UncertaintyFeedbackSnapshot`, `scripts/proof/feat-026.sh`, feat-027 admission
+Context: Codex review found two gaps behind DEC-043/DEC-045: (1) the seven-key uncertainty snapshot schema is not strict on read because synthesized Codable decoding ignores unknown top-level keys, so payloads carrying `configVersion` or arbitrary extra keys decode instead of returning nil per DEC-044; (2) the unstructured hook Task can retain the old `PersistLatest` actor and write an already-derived snapshot after cleanup and same-process reopen, so a stale old-session writer can enter the reopened session even though the tombstone cleared.
+Decision: Decode `UncertaintyFeedbackSnapshot` with a custom strict decoder that enumerates top-level keys through an open key type (a `StrictKeys`-keyed container hides unknown keys by design) and throws unless the key set equals exactly the DEC-044 seven; the store's nil-on-any-failure read keeps returning nil (fresh), never throwing. Guard writer lifecycle with a session generation owner: `reopenSession` mints and returns a new UInt64 generation in the same actor call, `beginReview` captures it into the installed `PersistLatest`, every feedback save pins that generation and applies only when it still equals the session's current generation at apply time, and every delete path retires the session (tombstone plus generation bump past every captured writer). Keep DEC-043 semantics (ordinary save failure still throws so the next mutation retries; deletes stay idempotent; live re-entry reopens and a fresh entry installs a fresh hook).
+Alternatives considered: leaving synthesized Codable plus an emitted-keys comparison (rejected - it proves what we write, not what we refuse to read); cancelling the unstructured Task at cleanup (rejected - fire-and-forget with no handle, and the actor-queued save is the real stale writer); awaiting/draining old writers before reopen (rejected - no handle to drain, and the generation pin covers every late writer including already-derived snapshots with no rendezvous).
+Evidence: `scripts/proof/feat-026.sh` (REAL shipped sources verbatim, STAGED-42-MD5-MATCH) — U6 strict rejected-input cases (`configVersion` + `debugNote` decode-throw) and U9 store-level extra-key rows load nil; U10 stale-generation interleaving (stale pinned writer drops after delete + reopen, fresh retry succeeds with identical totals); U14 live REAL shipped `AppModel` beginReview/hook/re-entry/save-guard plus scripted exporter failure/retry/interleaving; full suite 92 PASS / 0 FAIL; `./init.sh` PASS (format, `swiftlint --strict`, Simulator build, SKIP [test] per policy).
+Reconsider when: a named residual failure shows the strict read rejects a legitimate future schema version without a migration entry, or the generation guard drops a live write - then record a new evidence-backed entry before changing decoding, ownership, or guards.
 
 ## 3. Deferred TBDs (structured — no answers invented)
 
