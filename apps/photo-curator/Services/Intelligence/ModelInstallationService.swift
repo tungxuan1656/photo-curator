@@ -28,10 +28,16 @@ struct ModelInstallation: Sendable {
 
 struct ModelDownloadResponse: Sendable {
     let statusCode: Int
-    let bytes: AsyncThrowingStream<UInt8, Error>
 }
 
-typealias ModelDownloader = @Sendable (URLRequest) async throws -> ModelDownloadResponse
+struct ModelDownloadRequest: Sendable {
+    let request: URLRequest
+    let destinationURL: URL
+    let append: Bool
+    let progress: @Sendable (Int64) -> Void
+}
+
+typealias ModelDownloader = @Sendable (ModelDownloadRequest) async throws -> ModelDownloadResponse
 
 /// Downloads one frozen model revision without exposing network access to inference.
 actor ModelInstallationService {
@@ -45,6 +51,7 @@ actor ModelInstallationService {
     private var removalInProgress = false
     private var inferenceLeaseWaiters: [UUID: CheckedContinuation<Void, Error>] = [:]
     private var observers: [UUID: AsyncStream<ModelInstallationState>.Continuation] = [:]
+    private var activeDownloadProgressID: UUID?
 
     init(
         manifest: ModelManifest = .qwen35TwoBFourBit,
@@ -223,116 +230,88 @@ actor ModelInstallationService {
 
         let partialBytes = (try? partial.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
         let completedBeforeFile = stagedByteCount(in: directory) - partialBytes
-        let requestURL = try sourceURL(for: file)
-        var request = URLRequest(url: requestURL)
-        if partialBytes > 0 {
-            request.setValue("bytes=\(partialBytes)-", forHTTPHeaderField: "Range")
-        }
+        let request = try downloadRequest(for: file, partialBytes: partialBytes)
 
-        let response = try await downloader(request)
+        let progressID = UUID()
+        activeDownloadProgressID = progressID
+        defer {
+            if activeDownloadProgressID == progressID {
+                activeDownloadProgressID = nil
+            }
+        }
+        publish(
+            .downloading(
+                completedBytes: completedBeforeFile + partialBytes,
+                totalBytes: manifest.totalByteCount
+            )
+        )
+        let progress = downloadProgressHandler(
+            id: progressID,
+            completedBeforeFile: completedBeforeFile
+        )
+
+        let response = try await downloader(
+            ModelDownloadRequest(
+                request: request,
+                destinationURL: partial,
+                append: partialBytes > 0,
+                progress: progress
+            )
+        )
         guard (200 ... 299).contains(response.statusCode) else {
             throw ModelInstallationFailure.network
         }
-        if partialBytes > 0, response.statusCode != 206 {
-            try? FileManager.default.removeItem(at: partial)
-            return try await download(file, into: directory)
-        }
-
-        let handle = try openPartialFile(at: partial, append: partialBytes > 0)
-        let written = try await append(
-            response.bytes,
-            to: handle,
-            initialByteCount: partialBytes,
-            completedBeforeFile: completedBeforeFile
+        let written = (try? partial.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0
+        publish(
+            .downloading(
+                completedBytes: completedBeforeFile + written,
+                totalBytes: manifest.totalByteCount
+            )
         )
-        guard written == file.byteCount else {
-            try? FileManager.default.removeItem(at: partial)
-            throw ModelInstallationFailure.invalidResponse
-        }
+        try finalizeDownload(
+            file,
+            partial: partial,
+            destination: destination,
+            written: written,
+            in: directory
+        )
+    }
 
-        try? FileManager.default.removeItem(at: destination)
-        try FileManager.default.moveItem(at: partial, to: destination)
-        publish(.verifying(file.path))
+    private static let liveDownloader: ModelDownloader = { downloadRequest in
+        let delegate = ModelDownloadDelegate(
+            destinationURL: downloadRequest.destinationURL,
+            append: downloadRequest.append,
+            progress: downloadRequest.progress
+        )
+        let session = URLSession(
+            configuration: .ephemeral,
+            delegate: delegate,
+            delegateQueue: nil
+        )
+        let task = session.dataTask(with: downloadRequest.request)
+
         do {
-            try manifest.validate(file: file, at: directory)
-        } catch let error as ModelManifestError {
-            try? FileManager.default.removeItem(at: destination)
-            throw ModelInstallationFailure.invalidArtifact(String(describing: error))
+            let response = try await delegate.awaitCompletion(for: task)
+            session.finishTasksAndInvalidate()
+            return response
+        } catch {
+            session.invalidateAndCancel()
+            throw error
         }
     }
 
-    private func openPartialFile(at url: URL, append: Bool) throws -> FileHandle {
-        if append {
-            let handle = try FileHandle(forWritingTo: url)
-            try handle.seekToEnd()
-            return handle
-        }
-        FileManager.default.createFile(atPath: url.path, contents: nil)
-        return try FileHandle(forWritingTo: url)
-    }
-
-    private func append(
-        _ bytes: AsyncThrowingStream<UInt8, Error>,
-        to handle: FileHandle,
-        initialByteCount: Int64,
+    private func publishDownloadProgress(
+        id: UUID,
+        fileBytes: Int64,
         completedBeforeFile: Int64
-    ) async throws -> Int64 {
-        defer { try? handle.close() }
-        var written = initialByteCount
-        var buffer = Data()
-        buffer.reserveCapacity(64 * 1024)
-        for try await byte in bytes {
-            try Task.checkCancellation()
-            buffer.append(byte)
-            if buffer.count >= 64 * 1024 {
-                try handle.write(contentsOf: buffer)
-                written += Int64(buffer.count)
-                buffer.removeAll(keepingCapacity: true)
-                publish(
-                    .downloading(
-                        completedBytes: completedBeforeFile + written,
-                        totalBytes: manifest.totalByteCount
-                    )
-                )
-            }
-        }
-        if !buffer.isEmpty {
-            try handle.write(contentsOf: buffer)
-            written += Int64(buffer.count)
-        }
-        return written
-    }
-
-    private func sourceURL(for file: ModelArtifactFile) throws -> URL {
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "huggingface.co"
-        components.path = "/\(manifest.modelID)/resolve/\(manifest.revision)/\(file.path)"
-        components.queryItems = [URLQueryItem(name: "download", value: "true")]
-        guard let url = components.url else {
-            throw ModelInstallationFailure.invalidArtifact(file.path)
-        }
-        return url
-    }
-
-    private static let liveDownloader: ModelDownloader = { request in
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
-        guard let response = response as? HTTPURLResponse else {
-            throw ModelInstallationFailure.invalidResponse
-        }
-        let stream = AsyncThrowingStream<UInt8, Error> { continuation in
-            Task {
-                do {
-                    for try await byte in bytes {
-                        continuation.yield(byte)
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-        }
-        return ModelDownloadResponse(statusCode: response.statusCode, bytes: stream)
+    ) {
+        guard activeDownloadProgressID == id,
+              case let .downloading(currentBytes, totalBytes) = state,
+              fileBytes >= 0
+        else { return }
+        let completedBytes = min(completedBeforeFile + fileBytes, totalBytes)
+        guard completedBytes >= currentBytes else { return }
+        publish(.downloading(completedBytes: completedBytes, totalBytes: totalBytes))
     }
 
     private func checkDiskSpace() throws {
@@ -370,6 +349,64 @@ actor ModelInstallationService {
 }
 
 extension ModelInstallationService {
+    private func downloadRequest(for file: ModelArtifactFile, partialBytes: Int64) throws -> URLRequest {
+        var request = try URLRequest(url: sourceURL(for: file))
+        if partialBytes > 0 {
+            request.setValue("bytes=\(partialBytes)-", forHTTPHeaderField: "Range")
+        }
+        return request
+    }
+
+    private func downloadProgressHandler(
+        id: UUID,
+        completedBeforeFile: Int64
+    ) -> @Sendable (Int64) -> Void {
+        { [weak self] fileBytes in
+            Task { [weak self] in
+                await self?.publishDownloadProgress(
+                    id: id,
+                    fileBytes: fileBytes,
+                    completedBeforeFile: completedBeforeFile
+                )
+            }
+        }
+    }
+
+    private func sourceURL(for file: ModelArtifactFile) throws -> URL {
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "huggingface.co"
+        components.path = "/\(manifest.modelID)/resolve/\(manifest.revision)/\(file.path)"
+        components.queryItems = [URLQueryItem(name: "download", value: "true")]
+        guard let url = components.url else {
+            throw ModelInstallationFailure.invalidArtifact(file.path)
+        }
+        return url
+    }
+
+    private func finalizeDownload(
+        _ file: ModelArtifactFile,
+        partial: URL,
+        destination: URL,
+        written: Int64,
+        in directory: URL
+    ) throws {
+        guard written == file.byteCount else {
+            try? FileManager.default.removeItem(at: partial)
+            throw ModelInstallationFailure.invalidResponse
+        }
+
+        try? FileManager.default.removeItem(at: destination)
+        try FileManager.default.moveItem(at: partial, to: destination)
+        publish(.verifying(file.path))
+        do {
+            try manifest.validate(file: file, at: directory)
+        } catch let error as ModelManifestError {
+            try? FileManager.default.removeItem(at: destination)
+            throw ModelInstallationFailure.invalidArtifact(String(describing: error))
+        }
+    }
+
     func acquireInferenceLease(for installation: ModelInstallation) -> Bool {
         guard !removalInProgress,
               let verifiedInstallation,

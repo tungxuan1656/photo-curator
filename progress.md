@@ -808,3 +808,19 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./init.sh` PASS on 2026-09-19: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. Oracle code-only review marked the slice safe to hand off with no remaining code findings. `git diff --check` PASS.
 **Blockers**: No physical-device memory or thermal evidence, no fault-injected removal/unload/cancellation run, no pixel-derived grouping or subject-detail evidence, no independent image-quality comparison, and no admitted 2B/4B profile. Acceptance gates A1, A2, A4, A5, and A6 remain open.
 **Next**: Add the approved lifecycle/drain evidence through the existing verification path, then complete pixel-quality and Qwen profile admission without claiming Simulator evidence as hardware or quality evidence.
+
+## 2026-09-19 — feat-031 model download transport optimization
+
+**State**: active
+**Done**: Replaced the per-byte `URLSession.AsyncBytes` relay with `URLSessionDataDelegate` `Data` chunks. The installer now buffers writes in 256 KiB blocks, limits progress publication to about 4 Hz, and keeps Range resume, cancellation, staging, and SHA-256 validation unchanged.
+**Evidence**: `./init.sh` PASS with SwiftFormat, strict SwiftLint, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. `git diff --check` PASS. Inline 16 MiB benchmark reached 8.7 MB/s after the change versus 1.1 MB/s for the prior per-byte pipeline on the same host; this is host/network evidence only.
+**Blockers**: No physical-device throughput or thermal measurement. Pixel-derived grouping, independent image-quality comparison, and model admission remain open.
+**Next**: Measure the installer on a target iPhone, then continue the remaining feat-031 quality-admission gates.
+
+## 2026-09-19 — feat-031 direct-file download transport
+
+**State**: active
+**Done**: Replaced the chunk relay with `ModelDownloadDelegate` direct writes to the resumable partial file. The delegate buffers 256 KiB, handles `206` append and `200` restart responses, throttles progress callbacks, and preserves cancellation, staging, size, and SHA-256 validation.
+**Evidence**: `./init.sh` PASS with SwiftFormat, strict SwiftLint at 0 violations, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. `git diff --check` PASS. The previous 8.7 MB/s benchmark belongs to the chunked relay; the direct-file path still needs a fresh speed measurement.
+**Blockers**: No direct-file throughput benchmark, physical-device throughput or thermal measurement. Pixel-derived grouping, independent image-quality comparison, and model admission remain open.
+**Next**: Run the direct-file benchmark, then continue the remaining feat-031 quality-admission gates.

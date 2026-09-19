@@ -462,7 +462,7 @@ Do not create all proposed files as empty scaffolding. Create each with its owni
 | Grouping | `Domain/Selection/DuplicateResolver.swift`, `MomentBuilder.swift`, `VisualEmbeddingProvider.swift` | `Domain/Selection/QualityGroupBuilder.swift` |
 | Representative/album policy | `Domain/Scoring/QualityScorer.swift`, `Domain/Selection/SelectionEngine.swift`, `DiversitySelector.swift`, `FinalAlbumBuilder.swift` | `Domain/Selection/QualityAlbumSelector.swift` |
 | Runtime | `Services/ServiceProtocols.swift` | `Services/Intelligence/QwenRuntime.swift`, `QwenPairResponseValidator.swift`, `QwenPairJudge.swift`, `QualityComparisonScheduler.swift` |
-| Model delivery | None | `Services/Intelligence/ModelManifest.swift`, `ModelInstallationService.swift` |
+| Model delivery | None | `Services/Intelligence/ModelManifest.swift`, `ModelInstallationService.swift`, `ModelDownloadDelegate.swift` |
 | Pixel evidence | `Services/Photos/ImageLoaderService.swift`, `Services/Analysis/VisionAnalysisService.swift` | `Services/Intelligence/VisualEmbeddingService.swift`, `SubjectDetailVerifier.swift` |
 | Orchestration | `Services/Session/SelectionSessionCoordinator.swift`, `App/AppContainer.swift`, `App/AppModel.swift` | `Services/Session/QualityCurationRunner.swift` |
 | Storage/lifecycle | `Infrastructure/FileStore.swift`, `SessionCheckpointStore.swift`, `MemoryPressureObserver.swift` | None unless the existing store cannot isolate the execution envelope cleanly |
