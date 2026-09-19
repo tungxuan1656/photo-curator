@@ -784,3 +784,27 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` by DEC-040. Standalone lifecycle proof is not present, consistent with the repository no-proof-file rule.
 **Blockers**: Pixel-derived grouping, subject-detail verification, controlled image-sensitive Qwen comparisons, resource admission, arm64-device/runtime measurements, full lifecycle state proof, and complete resume model-identity evidence remain open.
 **Next**: Add lifecycle/resume evidence through the existing approved proof path, then complete the quality-admission gates before closing feat-031.
+
+## 2026-09-19 — feat-031 persisted resume identity
+
+**State**: active
+**Done**: Persisted `modelAvailableAtStart` in `QualityCheckpointIdentity` and restored it when rebuilding a resumed `SelectionRequest`. New loading, background, analysis, completion, and partial-result checkpoints now carry the same availability snapshot; native and legacy quality identities remain decodable.
+**Evidence**: `./init.sh` PASS with SwiftFormat, strict SwiftLint, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` by DEC-040.
+**Blockers**: Pixel-derived grouping, subject-detail verification, controlled image-sensitive Qwen comparisons, resource admission, arm64-device/runtime measurements, and full lifecycle state proof remain open.
+**Next**: Add the approved lifecycle state evidence through the repository's existing verification path, then complete quality admission.
+
+## 2026-09-19 — feat-031 deterministic selector and resume correction
+
+**State**: active — Phase 2 deterministic selector slice reviewed GO.
+**Done**: Quality-mode sizing now follows usable coverage-group count rather than the native percentage. The selector repairs usable zero-pick groups unless a selected duplicate representative covers them, records accountable group outcomes, resolves retake preference cycles by native stable rank, and updates duplicate representatives after a comparison swap. Resume now restores the checkpoint's frozen requested mode instead of synthesizing `qualityQwen2B`; quality provenance uses config version 2.
+**Evidence**: Oracle re-review returned GO with no actionable findings. `./init.sh` PASS on 2026-09-19: SwiftFormat PASS, strict SwiftLint PASS with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`, and policy test `SKIP` under DEC-040. `git diff --check` PASS.
+**Boundaries**: This establishes deterministic source-level selector and checkpoint behavior only. It does not establish image-quality improvement, actual Qwen image sensitivity, physical-device performance, model/resource admission, or full cancellation-drain evidence.
+**Next**: Advance to the next Phase 2 gate: resource admission and lifecycle/failure-state evidence, while keeping pixel-quality and hardware claims explicitly open.
+
+## 2026-09-19 — feat-031 resource admission and lifecycle safety
+
+**State**: active — resource/lifecycle slice safe to hand off; feature gates remain open.
+**Done**: Added actor-owned inference lease waiting for model removal, cancellation-safe deletion checks, lease admission exclusion during removal, and lease retention when Qwen unload is not confirmed. Added fail-closed iOS available-memory admission against the 2B soft ceiling plus reserve. Scheduler cancellation now exits the request loop, and native fallback discards applied Qwen evidence while preserving non-applied comparison counts.
+**Evidence**: `./init.sh` PASS on 2026-09-19: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. Oracle code-only review marked the slice safe to hand off with no remaining code findings. `git diff --check` PASS.
+**Blockers**: No physical-device memory or thermal evidence, no fault-injected removal/unload/cancellation run, no pixel-derived grouping or subject-detail evidence, no independent image-quality comparison, and no admitted 2B/4B profile. Acceptance gates A1, A2, A4, A5, and A6 remain open.
+**Next**: Add the approved lifecycle/drain evidence through the existing verification path, then complete pixel-quality and Qwen profile admission without claiming Simulator evidence as hardware or quality evidence.

@@ -219,7 +219,7 @@ struct SettingsView: View {
             "The download was cancelled."
         case .diskSpace:
             "There is not enough storage to install the model."
-        case .invalidResponse, .io:
+        case .invalidResponse, .inferenceLeaseActive, .io:
             "The model could not be saved. Try again."
         case .invalidArtifact:
             "The downloaded model did not pass verification. Try again."

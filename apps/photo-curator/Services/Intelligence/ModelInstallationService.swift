@@ -5,6 +5,7 @@ enum ModelInstallationFailure: Error, Equatable, Sendable {
     case diskSpace
     case invalidResponse
     case invalidArtifact(String)
+    case inferenceLeaseActive
     case io
     case network
 }
@@ -40,6 +41,9 @@ actor ModelInstallationService {
     private var state: ModelInstallationState = .notInstalled
     private var verifiedInstallation: ModelInstallation?
     private var installationTask: Task<ModelInstallation, Error>?
+    private var inferenceLeaseCount = 0
+    private var removalInProgress = false
+    private var inferenceLeaseWaiters: [UUID: CheckedContinuation<Void, Error>] = [:]
     private var observers: [UUID: AsyncStream<ModelInstallationState>.Continuation] = [:]
 
     init(
@@ -92,6 +96,9 @@ actor ModelInstallationService {
         if let installationTask {
             return try await installationTask.value
         }
+        guard !removalInProgress else {
+            throw ModelInstallationFailure.io
+        }
 
         let task = Task { [self] in
             do {
@@ -119,9 +126,19 @@ actor ModelInstallationService {
         installationTask?.cancel()
     }
 
-    func remove() throws {
+    func remove() async throws {
         guard installationTask == nil else {
             throw ModelInstallationFailure.io
+        }
+        guard !removalInProgress else {
+            throw ModelInstallationFailure.inferenceLeaseActive
+        }
+        removalInProgress = true
+        defer { removalInProgress = false }
+        try await waitForInferenceLeases()
+        try Task.checkCancellation()
+        guard inferenceLeaseCount == 0 else {
+            throw ModelInstallationFailure.inferenceLeaseActive
         }
         let directory = revisionDirectory
         if FileManager.default.fileExists(atPath: directory.path) {
@@ -349,5 +366,49 @@ actor ModelInstallationService {
 
     private func removeObserver(_ id: UUID) {
         observers.removeValue(forKey: id)
+    }
+}
+
+extension ModelInstallationService {
+    func acquireInferenceLease(for installation: ModelInstallation) -> Bool {
+        guard !removalInProgress,
+              let verifiedInstallation,
+              verifiedInstallation.directory == installation.directory,
+              verifiedInstallation.revision == installation.revision,
+              verifiedInstallation.manifestDigest == installation.manifestDigest
+        else { return false }
+        inferenceLeaseCount += 1
+        return true
+    }
+
+    func releaseInferenceLease() {
+        inferenceLeaseCount = max(0, inferenceLeaseCount - 1)
+        guard inferenceLeaseCount == 0 else { return }
+        let waiters = inferenceLeaseWaiters.values
+        inferenceLeaseWaiters.removeAll()
+        for waiter in waiters {
+            waiter.resume(returning: ())
+        }
+    }
+
+    private func waitForInferenceLeases() async throws {
+        guard inferenceLeaseCount > 0 else { return }
+        let waiterID = UUID()
+        try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                if inferenceLeaseCount == 0 || Task.isCancelled {
+                    continuation.resume(throwing: CancellationError())
+                } else {
+                    inferenceLeaseWaiters[waiterID] = continuation
+                }
+            }
+        }, onCancel: { [weak self] in
+            Task { await self?.cancelInferenceLeaseWaiter(waiterID) }
+        })
+    }
+
+    private func cancelInferenceLeaseWaiter(_ waiterID: UUID) {
+        guard let waiter = inferenceLeaseWaiters.removeValue(forKey: waiterID) else { return }
+        waiter.resume(throwing: CancellationError())
     }
 }

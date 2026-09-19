@@ -118,7 +118,7 @@ final class ModelInstallationModel {
             do {
                 try await service.remove()
             } catch {
-                // Removal is disabled while an installation task is active.
+                // Removal remains available again after a failed delete.
             }
             self?.removalTask = nil
         }

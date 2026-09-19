@@ -152,7 +152,10 @@ final class ProcessingModel {
             sessionID: request.sessionID,
             completed: completed,
             stage: stage,
-            qualityIdentity: QualityCheckpointIdentity.expected(for: request.qualityMode)
+            qualityIdentity: QualityCheckpointIdentity.expected(
+                for: request.qualityMode,
+                modelAvailableAtStart: request.qualityModelAvailableAtStart
+            )
         )
         task?.cancel()
     }

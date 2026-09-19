@@ -31,7 +31,10 @@ struct QualityComparisonScheduler: Sendable {
     let judge: any QualityPairJudging
     let policy: QualityCurationPolicy
 
-    func run(_ requests: [QualityPairRequest]) async -> QualityComparisonRun {
+    func run(
+        _ requests: [QualityPairRequest],
+        admissionFailure: @Sendable @escaping () -> QualityDegradationReason? = { nil }
+    ) async -> QualityComparisonRun {
         guard policy.validationErrors().isEmpty else {
             return QualityComparisonRun(
                 comparisons: [],
@@ -53,10 +56,15 @@ struct QualityComparisonScheduler: Sendable {
         var degradationReason: QualityDegradationReason?
         let started = ContinuousClock.now
 
-        for (index, request) in plannedRequests.enumerated() {
+        requestLoop: for (index, request) in plannedRequests.enumerated() {
             guard !Task.isCancelled else {
                 counts.skipped += plannedRequests.count - index
                 degradationReason = .cancellation
+                break
+            }
+            if let failure = admissionFailure() {
+                counts.skipped += plannedRequests.count - index
+                degradationReason = failure
                 break
             }
             guard elapsed(since: started) < policy.qwenWallBudget else {
@@ -79,6 +87,7 @@ struct QualityComparisonScheduler: Sendable {
             case .cancelled:
                 counts.skipped += plannedRequests.count - index - 1
                 degradationReason = degradationReason ?? .cancellation
+                break requestLoop
             }
         }
 

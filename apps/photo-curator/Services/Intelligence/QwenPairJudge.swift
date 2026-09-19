@@ -49,6 +49,7 @@ actor QwenPairJudge {
     private let policy: QualityCurationPolicy
     private var installation: ModelInstallation?
     private var lifecycle: QwenPairJudgeLifecycle = .unloaded
+    private var comparisonWaiters: [CheckedContinuation<Void, Never>] = []
 
     init(
         imageLoader: any PhotoImageLoader,
@@ -94,9 +95,10 @@ actor QwenPairJudge {
     }
 
     func unload() async throws {
-        guard lifecycle == .loaded || lifecycle == .unloaded else {
+        guard lifecycle == .loaded || lifecycle == .unloaded || lifecycle == .comparing else {
             throw QwenPairJudgeError.busy
         }
+        await waitForComparisonToFinish()
         guard lifecycle == .loaded else { return }
         lifecycle = .unloading
         installation = nil
@@ -117,7 +119,12 @@ actor QwenPairJudge {
         }
 
         lifecycle = .comparing
-        defer { lifecycle = .loaded }
+        defer {
+            lifecycle = .loaded
+            let waiters = comparisonWaiters
+            comparisonWaiters.removeAll()
+            waiters.forEach { $0.resume() }
+        }
 
         try Task.checkCancellation()
         let lease = try await ImageLease.make(
@@ -153,6 +160,13 @@ actor QwenPairJudge {
             preference: response.preference,
             reasons: response.reasons
         )
+    }
+
+    private func waitForComparisonToFinish() async {
+        guard lifecycle == .comparing else { return }
+        await withCheckedContinuation { continuation in
+            comparisonWaiters.append(continuation)
+        }
     }
 }
 

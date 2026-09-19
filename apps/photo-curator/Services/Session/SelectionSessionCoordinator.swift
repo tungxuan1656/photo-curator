@@ -234,7 +234,10 @@ actor SelectionSessionCoordinator {
         generation: Int
     ) async throws -> BatchResult {
         let hasCheckpoint = (try? await checkpointStore.load(sessionID: request.sessionID)) != nil
-        let qualityIdentity = QualityCheckpointIdentity.expected(for: request.qualityMode)
+        let qualityIdentity = QualityCheckpointIdentity.expected(
+            for: request.qualityMode,
+            modelAvailableAtStart: request.qualityModelAvailableAtStart
+        )
         // Structured delivery: pipeline progress fans into a per-run stream and
         // a single consumer forwards it. The consumer is awaited before every
         // return/throw, so no unstructured delivery task outlives this run to
@@ -453,7 +456,10 @@ extension SelectionSessionCoordinator {
             sourceAssetIDs: request.sourceAssetIDs,
             configVersion: request.config.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
-            qualityIdentity: QualityCheckpointIdentity.expected(for: request.qualityMode),
+            qualityIdentity: QualityCheckpointIdentity.expected(
+                for: request.qualityMode,
+                modelAvailableAtStart: request.qualityModelAvailableAtStart
+            ),
             updatedAt: Date()
         )
         try await checkpointStore.save(done)

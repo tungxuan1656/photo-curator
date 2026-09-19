@@ -417,6 +417,8 @@ pinned artifact, resumable staging, validation, and atomic activation.
 - Never switch a running session from native fallback to Qwen after installation completes.
 - When Qwen is unavailable, execute `qualityNative` and expose `AI unavailable` in processing and result provenance.
 - Do not use system background transfer in this slice. App suspension or termination is handled by the existing partial-download resume path.
+- Persist `modelAvailableAtStart` as an optional field on `QualityCheckpointIdentity`; native and legacy identities remain nil-compatible.
+- Restore that field when rebuilding a resumed `SelectionRequest`; legacy quality checkpoints without it use current installer state and re-evaluate their identity.
 
 ### 5.8 Persistence, versions, and replay
 
@@ -651,7 +653,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Evidence:** Screenshot-shaped missing-canopy/two-person cases, duplicate-heavy input, all-unique input, all-unusable input, and contradictory user restores.
 **Checkpoint:** Review group traces and failure metrics before coordinator/UI integration.
 
-**Current partial:** `QualityAlbumSelector` is a separate quality-path entry point. It scores all analyzed candidates, uses a content-sized target without the native 30-photo minimum, applies pair preferences only within existing retake groups, rejects unusable pair winners, and persists group audits plus execution metadata. Pixel-derived grouping, coverage repair, cyclic preference handling, user feedback, and photo-quality comparison evidence remain open.
+**Current partial:** `QualityAlbumSelector` is a separate quality-path entry point. It scores all analyzed candidates, sizes the target from usable coverage groups, applies pair preferences only inside existing retake groups, resolves cycles by native stable rank, repairs usable zero-pick groups when no selected duplicate covers them, and persists group audits plus execution metadata. Pixel-derived grouping, subject-detail verification, user feedback, and photo-quality comparison evidence remain open.
 
 ### Task 8 — Integrate normal, partial, resume, and persistence paths
 
@@ -673,7 +675,7 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Evidence:** Normal/partial equivalence on the same available set, kill/resume boundaries, revision removal, stale completion, and failed result writes.
 **Stop condition:** A resumed run cannot silently combine model revisions or persist native fallback as Qwen success.
 
-**Current partial:** `QualityCurationRunner` is wired through both normal and Continue Without Them coordinator entry points. It checks for a verified installed 2B revision, loads and unloads the pair judge, records compact provenance including the pinned manifest fingerprint, and degrades to `qualityNative` when the model is unavailable or unsupported. Checkpoints now carry the requested mode plus model/runtime identity; identity mismatches invalidate prior completion while native checkpoints remain backward-compatible. Resource admission, unconditional production-runtime drain evidence, and full resume/revision-failure evidence remain open.
+**Current partial:** `QualityCurationRunner` is wired through both normal and Continue Without Them coordinator entry points. It checks for a verified installed 2B revision, loads and unloads the pair judge, records compact provenance including the pinned manifest fingerprint, and degrades to `qualityNative` when the model is unavailable or unsupported. Checkpoints now carry the requested mode, model/runtime identity, and run-start availability; identity mismatches invalidate prior completion while native checkpoints remain backward-compatible, and relaunch restores the frozen requested mode. Resource admission, unconditional production-runtime drain evidence, and full resume/revision-failure evidence remain open.
 
 ### Task 9 — Add localized model setup and truthful review explanations
 
@@ -699,8 +701,9 @@ unload(): wait for active lease -> release container/tensors -> clear permitted 
 **Implementation evidence (2026-09-19):** `ModelInstallationModel` owns shared startup,
 Settings, alert, retry, cancel, removal, and progress state. `SelectionRequest` carries
 the model-availability snapshot through normal and partial selection into
-`QualityCurationRunner`. `./init.sh` passes; lifecycle state and resume identity proof
-remain open.
+`QualityCurationRunner`. `QualityCheckpointIdentity` persists that snapshot for
+relaunch resume while keeping native and legacy identities compatible. `./init.sh`
+passes; lifecycle state proof remains open.
 
 ### Task 10 — Establish end-to-end quality and failure evidence
 

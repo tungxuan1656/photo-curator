@@ -87,6 +87,7 @@ final class AppModel {
             qualityRunner: QualityCurationRunner(
                 modelInstallation: container.modelInstallation,
                 judge: container.qwenJudge,
+                memoryPressure: container.memoryPressure,
                 policy: .default
             )
         )
@@ -367,7 +368,10 @@ extension AppModel {
             sourceAssetIDs: request.sourceAssetIDs,
             configVersion: request.config.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
-            qualityIdentity: QualityCheckpointIdentity.expected(for: request.qualityMode),
+            qualityIdentity: QualityCheckpointIdentity.expected(
+                for: request.qualityMode,
+                modelAvailableAtStart: request.qualityModelAvailableAtStart
+            ),
             updatedAt: Date()
         )
         Task {
@@ -584,20 +588,19 @@ extension AppModel {
                     return
                 }
                 confirmedSourceIDs = checkpoint.sourceAssetIDs
+                let modelAvailable = checkpoint.qualityIdentity?.modelAvailableAtStart ?? modelInstallation.isInstalled
+                let requestedMode = checkpoint.qualityIdentity?.requestedMode ?? .native
                 let request = SelectionRequest(
                     sessionID: snapshot.sessionID,
                     sourceAssetIDs: checkpoint.sourceAssetIDs,
                     config: .default,
-                    qualityMode: AppConfiguration.default.quality.mode(
-                        for: .qualityQwen2B,
-                        sourceCount: checkpoint.sourceAssetIDs.count
-                    ),
-                    qualityModelAvailableAtStart: modelInstallation.isInstalled
+                    qualityMode: requestedMode,
+                    qualityModelAvailableAtStart: modelAvailable
                 )
                 processing.start(
                     request: request,
                     sourceAssets: ordered,
-                    modelAvailable: modelInstallation.isInstalled
+                    modelAvailable: modelAvailable
                 )
                 path.append(.processing(sessionID: snapshot.sessionID))
             } catch {
@@ -730,7 +733,10 @@ extension AppModel {
                 sourceAssetIDs: confirmedSourceIDs,
                 configVersion: AppConfiguration.default.configVersion,
                 analysisVersion: PhotoAnalysis.currentVersion,
-                qualityIdentity: QualityCheckpointIdentity.expected(for: processing.requestedQualityMode),
+                qualityIdentity: QualityCheckpointIdentity.expected(
+                    for: processing.requestedQualityMode,
+                    modelAvailableAtStart: processing.modelAvailableAtStart
+                ),
                 updatedAt: Date()
             )
             try await container.checkpointStore.save(done)

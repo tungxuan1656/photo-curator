@@ -1,6 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ of %2$@"
+          }
+        }
+      }
+    },
     "%@, %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -676,6 +686,105 @@
         }
       }
     },
+    "AI Model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI Model"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mô hình AI"
+          }
+        }
+      }
+    },
+    "AI model not ready" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI model not ready"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mô hình AI chưa sẵn sàng"
+          }
+        }
+      }
+    },
+    "AI model used for quality comparisons" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI model used for quality comparisons"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã dùng mô hình AI để so sánh chất lượng"
+          }
+        }
+      }
+    },
+    "AI unavailable - native analysis was used" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI unavailable - native analysis was used"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI không khả dụng - đã dùng phân tích trên thiết bị"
+          }
+        }
+      }
+    },
+    "AI unavailable - using on-device native analysis" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI unavailable - using on-device native analysis"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI không khả dụng - đang dùng phân tích trên thiết bị"
+          }
+        }
+      }
+    },
+    "AI unavailable. Native analysis was used." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI unavailable. Native analysis was used."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI không khả dụng. Đã dùng phân tích trên thiết bị."
+          }
+        }
+      }
+    },
+    "AI unavailable. Using on-device native analysis." : {
+
+    },
     "Album name" : {
       "localizations" : {
         "en" : {
@@ -1152,6 +1261,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Không thể lưu album"
+          }
+        }
+      }
+    },
+    "Cancel Download" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cancel Download"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hủy tải xuống"
           }
         }
       }
@@ -1973,6 +2098,118 @@
         }
       }
     },
+    "Download AI model?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download AI model?"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tải mô hình AI?"
+          }
+        }
+      }
+    },
+    "Download failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download failed"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tải xuống thất bại"
+          }
+        }
+      }
+    },
+    "Download Model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download Model"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tải mô hình"
+          }
+        }
+      }
+    },
+    "Download paused" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download paused"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã tạm dừng tải xuống"
+          }
+        }
+      }
+    },
+    "Download Qwen3.5-2B for on-device AI curation. The download runs while you use the app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download Qwen3.5-2B for on-device AI curation. The download runs while you use the app."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tải Qwen3.5-2B để sắp xếp ảnh bằng AI trên thiết bị. Bạn vẫn có thể dùng ứng dụng trong lúc tải."
+          }
+        }
+      }
+    },
+    "Download the pinned model for local AI curation." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Download the pinned model for local AI curation."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tải mô hình đã ghim để sắp xếp ảnh bằng AI trên thiết bị."
+          }
+        }
+      }
+    },
+    "Downloading" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Downloading"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang tải xuống"
+          }
+        }
+      }
+    },
     "Duplicate & Burst Pruning" : {
       "localizations" : {
         "en" : {
@@ -2646,6 +2883,22 @@
         }
       }
     },
+    "Keep Model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep Model"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giữ mô hình"
+          }
+        }
+      }
+    },
     "Keep Results" : {
       "localizations" : {
         "en" : {
@@ -2706,6 +2959,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ngôn ngữ"
+          }
+        }
+      }
+    },
+    "Later" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Later"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Để sau"
           }
         }
       }
@@ -2934,6 +3203,22 @@
         }
       }
     },
+    "Model download size" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Model download size"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dung lượng tải mô hình"
+          }
+        }
+      }
+    },
     "Month" : {
       "localizations" : {
         "en" : {
@@ -3122,6 +3407,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chưa phân loại"
+          }
+        }
+      }
+    },
+    "Not downloaded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not downloaded"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chưa tải xuống"
           }
         }
       }
@@ -4199,6 +4500,38 @@
         }
       }
     },
+    "Qwen is available for small-set curation." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Qwen is available for small-set curation."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen sẵn sàng để sắp xếp các bộ ảnh nhỏ."
+          }
+        }
+      }
+    },
+    "Qwen3.5-2B (4-bit)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Qwen3.5-2B (4-bit)"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qwen3.5-2B (4-bit)"
+          }
+        }
+      }
+    },
     "Range" : {
       "localizations" : {
         "en" : {
@@ -4211,6 +4544,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phạm vi"
+          }
+        }
+      }
+    },
+    "Ready for AI analysis" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ready for AI analysis"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sẵn sàng phân tích bằng AI"
           }
         }
       }
@@ -4343,6 +4692,22 @@
         }
       }
     },
+    "Remove Model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Model"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xóa mô hình"
+          }
+        }
+      }
+    },
     "Remove photo from album" : {
       "localizations" : {
         "en" : {
@@ -4355,6 +4720,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bỏ ảnh khỏi album"
+          }
+        }
+      }
+    },
+    "Remove the AI model?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove the AI model?"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xóa mô hình AI?"
           }
         }
       }
@@ -4548,6 +4929,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Thử lại"
+          }
+        }
+      }
+    },
+    "Retry Download" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Retry Download"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thử tải lại"
           }
         }
       }
@@ -5544,6 +5941,54 @@
         }
       }
     },
+    "The download continues without blocking the app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The download continues without blocking the app."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tải xuống tiếp tục mà không chặn ứng dụng."
+          }
+        }
+      }
+    },
+    "The download was cancelled." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The download was cancelled."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã hủy tải xuống."
+          }
+        }
+      }
+    },
+    "The downloaded model did not pass verification. Try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The downloaded model did not pass verification. Try again."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mô hình đã tải không vượt qua bước xác minh. Hãy thử lại."
+          }
+        }
+      }
+    },
     "The edited version was preferred" : {
       "localizations" : {
         "en" : {
@@ -5556,6 +6001,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phiên bản đã chỉnh sửa được ưu tiên"
+          }
+        }
+      }
+    },
+    "The model can be downloaded again later. Your photos and saved albums stay unchanged." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The model can be downloaded again later. Your photos and saved albums stay unchanged."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bạn có thể tải lại mô hình sau. Ảnh và album đã lưu không thay đổi."
+          }
+        }
+      }
+    },
+    "The model could not be downloaded. Check your connection and try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The model could not be downloaded. Check your connection and try again."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể tải mô hình. Hãy kiểm tra kết nối rồi thử lại."
+          }
+        }
+      }
+    },
+    "The model could not be saved. Try again." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The model could not be saved. Try again."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể lưu mô hình. Hãy thử lại."
+          }
+        }
+      }
+    },
+    "The model is downloading in Settings. Starting now will not switch this run later." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The model is downloading in Settings. Starting now will not switch this run later."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mô hình đang tải trong Cài đặt. Nếu bắt đầu lúc này, lần chạy sẽ không tự chuyển đổi sau đó."
           }
         }
       }
@@ -5620,6 +6129,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ảnh quá tối để được tuyển chọn"
+          }
+        }
+      }
+    },
+    "The verified partial download will resume when you retry." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The verified partial download will resume when you retry."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phần tải xuống đã xác minh sẽ tiếp tục khi bạn thử lại."
+          }
+        }
+      }
+    },
+    "There is not enough storage to install the model." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "There is not enough storage to install the model."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không đủ dung lượng để cài đặt mô hình."
           }
         }
       }
@@ -5736,6 +6277,22 @@
         }
       }
     },
+    "This run uses native analysis until Qwen is available." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This run uses native analysis until Qwen is available."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lần chạy này dùng phân tích trên thiết bị cho đến khi Qwen sẵn sàng."
+          }
+        }
+      }
+    },
     "Tiếng Việt" : {
       "localizations" : {
         "en" : {
@@ -5828,6 +6385,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lần tuyển chọn chưa hoàn tất"
+          }
+        }
+      }
+    },
+    "Verifying" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Verifying"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang xác minh"
+          }
+        }
+      }
+    },
+    "Verifying model files." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Verifying model files."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang xác minh các tệp mô hình."
           }
         }
       }
@@ -6165,366 +6754,6 @@
             "state" : "translated",
             "value" : "Đã phóng to"
           }
-        }
-      }
-    },
-    "AI Model" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "AI Model" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Mô hình AI" }
-        }
-      }
-    },
-    "AI model not ready" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "AI model not ready" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Mô hình AI chưa sẵn sàng" }
-        }
-      }
-    },
-    "AI model used for quality comparisons" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "AI model used for quality comparisons" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Đã dùng mô hình AI để so sánh chất lượng" }
-        }
-      }
-    },
-    "AI unavailable - native analysis was used" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "AI unavailable - native analysis was used" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "AI không khả dụng - đã dùng phân tích trên thiết bị" }
-        }
-      }
-    },
-    "AI unavailable - using on-device native analysis" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "AI unavailable - using on-device native analysis" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "AI không khả dụng - đang dùng phân tích trên thiết bị" }
-        }
-      }
-    },
-    "AI unavailable. Native analysis was used." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "AI unavailable. Native analysis was used." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "AI không khả dụng. Đã dùng phân tích trên thiết bị." }
-        }
-      }
-    },
-    "Cancel Download" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Cancel Download" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Hủy tải xuống" }
-        }
-      }
-    },
-    "Download AI model?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Download AI model?" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Tải mô hình AI?" }
-        }
-      }
-    },
-    "Download Model" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Download Model" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Tải mô hình" }
-        }
-      }
-    },
-    "Download Qwen3.5-2B for on-device AI curation. The download runs while you use the app." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Download Qwen3.5-2B for on-device AI curation. The download runs while you use the app." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Tải Qwen3.5-2B để sắp xếp ảnh bằng AI trên thiết bị. Bạn vẫn có thể dùng ứng dụng trong lúc tải." }
-        }
-      }
-    },
-    "Download failed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Download failed" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Tải xuống thất bại" }
-        }
-      }
-    },
-    "Download paused" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Download paused" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Đã tạm dừng tải xuống" }
-        }
-      }
-    },
-    "Download the pinned model for local AI curation." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Download the pinned model for local AI curation." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Tải mô hình đã ghim để sắp xếp ảnh bằng AI trên thiết bị." }
-        }
-      }
-    },
-    "Downloading" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Downloading" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Đang tải xuống" }
-        }
-      }
-    },
-    "Keep Model" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Keep Model" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Giữ mô hình" }
-        }
-      }
-    },
-    "Later" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Later" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Để sau" }
-        }
-      }
-    },
-    "Model download size" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Model download size" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Dung lượng tải mô hình" }
-        }
-      }
-    },
-    "Not downloaded" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Not downloaded" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Chưa tải xuống" }
-        }
-      }
-    },
-    "Qwen is available for small-set curation." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Qwen is available for small-set curation." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Qwen sẵn sàng để sắp xếp các bộ ảnh nhỏ." }
-        }
-      }
-    },
-    "Qwen3.5-2B (4-bit)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Qwen3.5-2B (4-bit)" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Qwen3.5-2B (4-bit)" }
-        }
-      }
-    },
-    "Remove Model" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Remove Model" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Xóa mô hình" }
-        }
-      }
-    },
-    "Remove the AI model?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Remove the AI model?" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Xóa mô hình AI?" }
-        }
-      }
-    },
-    "Retry Download" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Retry Download" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Thử tải lại" }
-        }
-      }
-    },
-    "The download continues without blocking the app." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The download continues without blocking the app." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Tải xuống tiếp tục mà không chặn ứng dụng." }
-        }
-      }
-    },
-    "The download was cancelled." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The download was cancelled." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Đã hủy tải xuống." }
-        }
-      }
-    },
-    "The model could not be downloaded. Check your connection and try again." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The model could not be downloaded. Check your connection and try again." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Không thể tải mô hình. Hãy kiểm tra kết nối rồi thử lại." }
-        }
-      }
-    },
-    "The model could not be saved. Try again." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The model could not be saved. Try again." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Không thể lưu mô hình. Hãy thử lại." }
-        }
-      }
-    },
-    "The downloaded model did not pass verification. Try again." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The downloaded model did not pass verification. Try again." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Mô hình đã tải không vượt qua bước xác minh. Hãy thử lại." }
-        }
-      }
-    },
-    "There is not enough storage to install the model." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "There is not enough storage to install the model." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Không đủ dung lượng để cài đặt mô hình." }
-        }
-      }
-    },
-    "This run uses native analysis until Qwen is available." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "This run uses native analysis until Qwen is available." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Lần chạy này dùng phân tích trên thiết bị cho đến khi Qwen sẵn sàng." }
-        }
-      }
-    },
-    "The model is downloading in Settings. Starting now will not switch this run later." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The model is downloading in Settings. Starting now will not switch this run later." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Mô hình đang tải trong Cài đặt. Nếu bắt đầu lúc này, lần chạy sẽ không tự chuyển đổi sau đó." }
-        }
-      }
-    },
-    "The model can be downloaded again later. Your photos and saved albums stay unchanged." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The model can be downloaded again later. Your photos and saved albums stay unchanged." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Bạn có thể tải lại mô hình sau. Ảnh và album đã lưu không thay đổi." }
-        }
-      }
-    },
-    "The verified partial download will resume when you retry." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "The verified partial download will resume when you retry." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Phần tải xuống đã xác minh sẽ tiếp tục khi bạn thử lại." }
-        }
-      }
-    },
-    "Verifying" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Verifying" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Đang xác minh" }
-        }
-      }
-    },
-    "Verifying model files." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Verifying model files." }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Đang xác minh các tệp mô hình." }
-        }
-      }
-    },
-    "Ready for AI analysis" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : { "state" : "new", "value" : "Ready for AI analysis" }
-        },
-        "vi" : {
-          "stringUnit" : { "state" : "translated", "value" : "Sẵn sàng phân tích bằng AI" }
         }
       }
     }

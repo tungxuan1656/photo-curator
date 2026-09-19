@@ -7,23 +7,26 @@ struct QualityCheckpointIdentity: Codable, Equatable, Sendable {
     let modelRevision: String?
     let manifestDigest: String?
     let runtimeRevision: String?
+    let modelAvailableAtStart: Bool?
 
     init(
         requestedMode: QualityMode,
         modelID: String? = nil,
         modelRevision: String? = nil,
         manifestDigest: String? = nil,
-        runtimeRevision: String? = nil
+        runtimeRevision: String? = nil,
+        modelAvailableAtStart: Bool? = nil
     ) {
         self.requestedMode = requestedMode
         self.modelID = modelID
         self.modelRevision = modelRevision
         self.manifestDigest = manifestDigest
         self.runtimeRevision = runtimeRevision
+        self.modelAvailableAtStart = modelAvailableAtStart
     }
 
     /// Native checkpoints intentionally remain nil-compatible with pre-quality sessions.
-    nonisolated static func expected(for mode: QualityMode) -> Self? {
+    nonisolated static func expected(for mode: QualityMode, modelAvailableAtStart: Bool? = nil) -> Self? {
         guard mode != .native else { return nil }
         guard mode == .qualityQwen2B else {
             return Self(requestedMode: mode)
@@ -34,7 +37,8 @@ struct QualityCheckpointIdentity: Codable, Equatable, Sendable {
             modelID: manifest.modelID,
             modelRevision: manifest.revision,
             manifestDigest: manifest.manifestDigest,
-            runtimeRevision: manifest.runtimeRevision
+            runtimeRevision: manifest.runtimeRevision,
+            modelAvailableAtStart: modelAvailableAtStart
         )
     }
 }
