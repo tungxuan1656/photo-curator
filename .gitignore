@@ -38,6 +38,9 @@ Package.resolved
 .env.*
 !.env.example
 
+# Bundler local gems
+.bundle/
+
 # Fastlane
 fastlane/report.xml
 fastlane/Preview.html
