@@ -46,10 +46,13 @@ intents rather than PhotoKit, Vision, or model APIs directly.
 
 1. Define the workspace route and intent handoff from Home.
 2. Bind ReviewModel to durable workspace state and preserve resume ownership.
+   Implement the canonical [action transitions](../product-specs/review-rules.md#review-action-transitions), including explicit Mark Reviewed and persistence-failure recovery.
 3. Replace separate review assumptions with the shared grid, filters, group
    cards, compare route, and bounded Needs Review queue.
-4. Add explicit action dispatch for album membership, cleanup staging, and
-   suggestion acceptance; keep each mutation separate.
+4. Define the minimum [suggestion input contract](../design-docs/photo-intelligence.md#shared-review-input-contract)
+   and adapt existing native analysis/grouping outputs. Add preview and explicit
+   acceptance; keep dimension mutations separate. No feat-037 dependency or
+   automatic application of legacy selected/rejected output is allowed.
 5. Add loading, unavailable, empty, limited-access, interruption, and partial
    analysis states without fake scores or hidden choices.
 6. Verify navigation and relaunch restore through the existing coordinator.

@@ -45,6 +45,12 @@ mutation. Limited authorization is a hard stop, not a partial deletion mode.
 There is no automatic retry. An interruption reconciles authorization, exact ID
 resolution, and recorded outcomes, then asks for an explicit next action.
 
+Persist successful completion for the submitted mutation set before reporting
+`deleted`. If the callback or persistence result is lost, retain uncertainty.
+Re-fetching an absent asset is not proof of successful deletion. Follow the
+[operation recovery table](data-model.md#deletion-operation-state-machine);
+reconciliation never issues another mutation automatically.
+
 PhotoKit deletion can synchronize through iCloud and can place items in
 Recently Deleted. The app must not promise immediate recovered bytes or infer
 storage change from asset file-size estimates.

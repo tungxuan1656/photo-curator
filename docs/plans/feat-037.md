@@ -55,8 +55,10 @@ planned.
 
 ## Work steps
 
-1. Define suggestion identity, provenance, analysis/runtime versions, evidence
-   status, and abstention without adding user-choice fields.
+1. Extend the feat-034 [suggestion input contract](../design-docs/photo-intelligence.md#shared-review-input-contract)
+   with producer provenance, analysis/runtime versions, evidence status, and
+   abstention. Preserve consumer compatibility or explicitly migrate records;
+   do not introduce a second review-facing contract or user-choice fields.
 2. Adapt native fact production and bounded suggestion coordination with a
    deterministic unavailable/fallback path.
 3. Bind suggestions and uncertainty to Needs Review and compare surfaces with

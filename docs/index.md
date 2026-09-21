@@ -24,8 +24,8 @@ canonical; do not duplicate an owner's facts in another document.
 
 `selection-engine.md` and `curation-intelligence.md` remain historical/legacy
 references while the pivot is implemented. They are not active behavior owners.
-Archived `docs/plans/*` preserve prior implementation history and are not
-rewritten by the pivot.
+Older plans preserve prior implementation history. Current pivot plans are
+listed below.
 
 ## Current pivot execution records
 
@@ -41,7 +41,7 @@ historical implementation records; their links and contents are preserved.
 The planning baseline is iPhone 14+ and iOS 26+, with on-device processing and
 English/Vietnamese UI. The repository has no test targets, test files, test
 frameworks, or standalone proof harnesses. Behavior-changing work must run
-`./init.sh`; the parent owns that run for this documentation-only phase.
+`./init.sh` and record its result in the feature's verification evidence.
 
 ## Ownership rule
 

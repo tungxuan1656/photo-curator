@@ -7,7 +7,10 @@ This doc owns app topology, coordination, concurrency, and service boundaries.
 [data-model.md](data-model.md) owns persistence shape; [apple-frameworks.md](apple-frameworks.md)
 owns API calls; [review-rules.md](../product-specs/review-rules.md) owns behavior.
 
-## Shape
+## Target topology
+
+This diagram describes the intended architecture, not a list of implemented
+symbols. Execution status belongs to the feature tracker.
 
 ```text
 SwiftUI views → AppModel / WorkspaceModel
@@ -34,6 +37,19 @@ The old selection engine is a legacy adapter during migration, not the active
 behavior owner.
 
 ## Durable/runtime boundary
+
+### Implementation map
+
+| Existing seam | Target integration owner |
+|---|---|
+| `AppContainer`, `AppModel.startup`, `WorkspaceStore`, `LegacyWorkspaceImporter` | feat-033 supplies durable state and startup import; unavailable storage preserves the legacy flow |
+| `AppModel`, `ReviewModel`, `SelectionSessionCoordinator`, current checkpoint-backed routes | feat-034 binds shared review and resume to workspace state |
+| `PhotoKitAlbumExporter`, `AppModel+Save`, file-backed save state | feat-035 introduces durable album operations and save reconciliation |
+| No original-deletion service in the completed foundation | feat-036 introduces the separate confirmed-deletion boundary |
+| Legacy selection/analysis adapters | feat-037 integrates suggestions and retires active legacy routing |
+
+Target coordinator/model names describe responsibilities. Introduce or adapt
+concrete types within the owning feature; do not assume those names already exist.
 
 SwiftData stores only durable product state: review scopes, workspace state,
 independent user choices, and migration markers in feat-033. Album-save

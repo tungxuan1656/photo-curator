@@ -29,6 +29,33 @@ product development. IQA-PyTorch is noncommercial under PolyForm
 Noncommercial; an upstream code license must not be treated as a commercial
 weight or derivative license.
 
+## Shared review input contract
+
+feat-034 owns the minimum review-facing suggestion contract and an adapter over
+existing native analysis/grouping outputs. feat-037 extends producers and retires
+the legacy adapter; feat-034 does not depend on feat-037 to render or accept suggestions.
+
+Each immutable record contains:
+
+- Stable suggestion ID and scope ID.
+- Exact candidate asset IDs and source group identity, when available.
+- Analysis/grouping version and source revision used to produce the record.
+- Provenance: native provider or legacy-native adapter; model revision only when applicable.
+- Evidence status: available, insufficient, or unavailable; reason codes with localized display copy.
+- Optional explicit proposal: one choice dimension and its per-asset values, never deletion staging.
+
+Derive identity deterministically from source identity, revisions and the exact
+proposal. A changed proposal creates a new record. Missing provenance/version
+must remain unknown; it cannot be invented or presented as model-backed evidence.
+Records lacking a stable revision or complete proposal can be displayed as
+unavailable/insufficient but cannot enable Use Suggestion.
+
+feat-034 adapts existing native facts only; legacy selected/rejected output is
+not applied automatically as a new user choice. An empty native suggestion set
+is valid and uses the empty Needs Review state. Acceptance follows the preview
+and independent-mutation rules in [review-rules.md](../product-specs/review-rules.md#review-action-transitions).
+feat-037 must preserve this consumer contract or migrate its records explicitly.
+
 ## Evidence vocabulary
 
 `research-only` means a candidate can be investigated but is not shipped;

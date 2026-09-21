@@ -45,15 +45,16 @@ owned by feat-036; feat-033 must not create or migrate it.
 
 ## Work steps
 
-1. Define operation state, canonical exact-set digest, and per-ID outcome
-   transitions in the data model, including the feat-036 SwiftData schema
-   migration and rollback path.
+1. Implement the canonical [operation state machine and recovery table](../design-docs/data-model.md#deletion-operation-state-machine),
+   exact-set digest, and per-ID outcomes, including the feat-036 SwiftData
+   schema migration and rollback path.
 2. Add the service boundary and authorization/exact-set checks before any
    `PHPhotoLibrary.performChanges` call.
 3. Persist pending state before mutation and outcome updates during/after the
    PhotoKit transaction; make reconciliation explicit and idempotent.
 4. Add cleanup review, exact-set confirmation, limited-access block, and
-   truthful partial/failure outcome routes in en/vi.
+   truthful partial/failure/unresolved outcome routes in en/vi. Invalidate
+   pre-start confirmation when the set changes; an executing set is immutable.
 5. Wire interruption/relaunch reconciliation and ensure album save remains
    untouched and independently resumable.
 6. Review logs and errors for IDs, pixels, and false storage claims.

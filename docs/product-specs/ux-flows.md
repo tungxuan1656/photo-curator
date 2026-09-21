@@ -37,7 +37,6 @@ There is no separate cleanup workflow and no metrics dashboard.
 | Delete Confirmation | Exact count/set and disclosures | Authorization check | Limited access blocks start |
 | Deletion Outcome | Per-asset result | Reconciliation | Partial/failure outcome |
 | Settings / Access | Full, limited, denied guidance | Reading permission | Settings recovery |
-```
 
 Normal, loading, empty, and recoverable-error states are distinct. A missing
 analysis is shown as unavailable, not as a zero score. A single missing
@@ -53,6 +52,15 @@ new or revised groups appear in Needs Review.
 The workspace exposes album membership, cleanup disposition, review progress,
 and analysis availability separately. Suggestions show their advisory nature
 and offer an explicit choice; opening a suggestion never changes state.
+
+Detail/compare opening and Mark Reviewed follow the
+[action transition table](review-rules.md#review-action-transitions).
+Use Suggestion opens a preview showing exact photos, target dimension and
+proposed values. Confirmation applies only that proposal; cancellation preserves choices.
+Album and cleanup actions use distinct labels even when both act on two photos.
+
+If saving a choice fails, retain the last committed state, identify the failed
+action, and offer Retry. Do not show “choices are saved” on this path.
 
 ## Access and destructive flow
 
@@ -77,6 +85,10 @@ Motion are required.
 Recoverable errors preserve the workspace and choices. Retry is explicit and
 operation-specific; deletion has no automatic retry. Partial album or deletion
 outcomes remain visible until the user dismisses them.
+
+Dismissal does not erase unresolved operation records. Reconciliation shows
+unresolved/access-unknown outcomes separately from confirmed deletion. A changed
+pre-start set returns to exact-set review and requires fresh confirmation.
 
 ## Acceptance
 

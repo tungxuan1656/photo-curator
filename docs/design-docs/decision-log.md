@@ -753,3 +753,23 @@ This supersedes the active behavior implications of earlier auto-curation and
 no-deletion wording for the new pivot, while preserving those entries as
 history. It does not admit Qwen or any new model. Reconsider on a safety,
 privacy, license, runtime, or evidence-backed product change.
+
+## DEC-054 clarification — review actions and interruption
+
+**Status:** Accepted by the user · **Date:** 2026-09-21
+
+The approved clarification makes action effects explicit instead of deriving
+them from entry intent. Unstage returns to undecided; reviewed progress requires
+Mark Reviewed. Pair actions name their dimension, and suggestion acceptance
+previews its exact proposal without staging deletion. See the canonical
+[action transitions](../product-specs/review-rules.md#review-action-transitions).
+
+feat-034 owns the minimal native suggestion adapter/consumer contract;
+feat-037 extends it rather than blocking the earlier review feature. See
+[shared review input](photo-intelligence.md#shared-review-input-contract).
+
+Lost deletion completion remains uncertain; missing assets do not prove app
+deletion. Changed pre-start sets require new confirmation. See the
+[operation state machine](data-model.md#deletion-operation-state-machine).
+These choices favor explicit user control and truthful outcomes over implicit
+undo history, automatic review completion, or inferred deletion success.

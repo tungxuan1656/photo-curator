@@ -42,6 +42,33 @@ reorder reviewed work; new or revised groups enter **Needs Review**.
 - Cleanup staging is exact-asset work. A suggestion, group, score, missing
   asset, or unavailable permission can never create a deletion operation.
 
+## Review action transitions
+
+These are target behavior contracts for shared review. Each action names its
+exact scope and asset set. Persist the change before reporting it as saved.
+On persistence failure, preserve the last committed choices and offer explicit retry.
+
+| Action | Preconditions and target | Writes | Leaves unchanged |
+|---|---|---|---|
+| Add to Album / Add Both to Album | Explicitly selected accessible scoped assets | Album membership → `included` | Cleanup, progress, facts |
+| Remove from Album | Explicitly selected scoped assets | Album membership → `excluded` | Cleanup, progress, facts |
+| Keep / Keep Both Photos | Explicitly selected scoped assets | Cleanup → `keep` | Album, progress, facts |
+| Stage for Deletion | Explicit user staging of selected scoped assets | Cleanup → `stagedForDeletion` | Album, progress, facts |
+| Unstage for Deletion | Selected items currently staged | Cleanup → `undecided` | Album, progress, facts |
+| Open photo / compare | Only the assets opened in the detail/compare surface | `unseen` → `inProgress` | Existing `inProgress`/`reviewed`, album, cleanup, facts |
+| Mark Reviewed | Explicit selected set | Progress → `reviewed` | Album, cleanup, facts |
+| Use Suggestion | Preview shows exact IDs and proposed changes; user confirms | Only the named choice dimension | All other dimensions and suggestion record |
+| Keep My Choice | Dismiss the proposal | No choice mutation | All dimensions |
+
+Grid visibility does not count as opening a photo. Choice actions never mark
+an item reviewed. Do not offer the ambiguous label “Keep Both”; name album or
+cleanup explicitly. Entry intent does not change an action's meaning.
+
+Suggestion acceptance cannot stage deletion. Staging always uses the separate
+explicit staging action. If the proposal or its target set changes during
+preview, require a new preview and confirmation. Changed analysis enters Needs
+Review without resetting the persisted progress of previously reviewed items.
+
 ## Deletion gate
 
 Original library deletion is allowed only when all conditions hold:
@@ -65,6 +92,20 @@ PhotoKit and iCloud behavior, including Recently Deleted, must be disclosed
 truthfully. The app must not claim that deletion immediately freed a byte
 count: iCloud synchronization, storage optimization, and Recently Deleted
 retention affect the result.
+
+### Confirmation and interruption
+
+Before operation start, any change to the confirmed asset set invalidates
+confirmation. Show the new exact set and require confirmation again. Once an
+operation starts, its exact set is immutable; later staging belongs to a future operation.
+
+Only a successful PhotoKit completion persisted for that operation establishes
+`deleted`. A missing asset alone never proves that the app deleted it, even
+with full access. If execution or completion persistence is interrupted, keep
+the outcome unresolved and never retry automatically.
+
+The operation transitions and recovery table are owned by
+[data-model.md](../design-docs/data-model.md#deletion-operation-state-machine).
 
 ## User-visible outcome rules
 

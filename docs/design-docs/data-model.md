@@ -49,9 +49,46 @@ and candidate IDs. It cannot encode a deletion result.
 `AlbumSaveOperation` stores scope ID, exact album-member IDs, digest, status,
 per-ID outcomes, and timestamps. `PhotoDeletionOperation` stores scope ID,
 exact staged IDs, exact-set digest, confirmation time, authorization snapshot,
-status, and per-ID outcomes (`pending`, `deleted`, `accessUnknown`, `failed`).
+status, and per-ID outcomes (`pending`, `deleted`, `accessUnknown`, `failed`,
+`unresolved`).
 A digest is computed from canonical sorted asset IDs plus the operation/schema
 version and is checked before mutation.
+
+## Deletion operation state machine
+
+This is the target feat-036 schema contract, not an entity implemented by feat-033.
+
+| Operation status | Meaning and allowed transition |
+|---|---|
+| `prepared` | Exact set, digest, confirmation and authorization snapshot persisted; → `executing` after fresh preflight, or `cancelled` before dispatch |
+| `executing` | Persisted before dispatch; → `completed`, `partial`, `failed`, or `needsReconciliation` |
+| `needsReconciliation` | Dispatch/result persistence uncertain; explicit read-only reconciliation → a resolved outcome or stays here |
+| `completed` | Every member has durably recorded `deleted` evidence; terminal |
+| `partial` | All outcomes resolved, with both `deleted` and `failed` members; terminal |
+| `failed` | All outcomes resolved as failed; terminal |
+| `cancelled` | No mutation dispatched; terminal |
+
+`pending` is pre-dispatch. `deleted` requires persisted successful PhotoKit
+completion for the recorded mutation set. `failed` requires a known failure
+or a preflight failure before dispatch. `accessUnknown` means current access
+prevents resolution. `unresolved` means execution or its result is uncertain.
+Neither `accessUnknown` nor `unresolved` is a terminal success/failure outcome.
+
+| Recovery observation | Durable result / next action |
+|---|---|
+| Successful callback persisted | Mark only that submitted set `deleted`; never infer results for unsubmitted IDs |
+| Known failed callback persisted | Mark that submitted set `failed` |
+| Relaunch finds `prepared` | No automatic dispatch; repeat preflight and require fresh confirmation before an explicit start |
+| Relaunch finds `executing` without durable completion | `needsReconciliation`; pending submitted members become `unresolved` |
+| Access is limited/denied/restricted | Unresolved members become `accessUnknown`; preserve prior durable outcomes |
+| Full access restored, asset absent | Remain `unresolved`; absence is not successful-deletion evidence |
+| Full access restored, asset present | Remain `unresolved` without a recorded completion; offer an explicit new review |
+
+Reconciliation performs reads and records evidence; it never dispatches deletion.
+A user may start a new operation only for a freshly resolved, reviewed and
+confirmed set. Do not rewrite the old uncertain operation as successful.
+Retain uncertain operations even if the user dismisses their outcome screen.
+Known successful outcomes survive later authorization loss.
 
 ## Migration
 
