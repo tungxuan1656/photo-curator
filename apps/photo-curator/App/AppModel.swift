@@ -119,7 +119,16 @@ final class AppModel {
     }
 
     func startup() async {
-        await container.workspaceImporter.importIfNeeded()
+        switch container.workspaceAvailability {
+        case .available:
+            if let workspaceImporter = container.workspaceImporter {
+                _ = await workspaceImporter.importIfNeeded()
+            }
+        case .unavailable:
+            logger.error(
+                "Durable workspace unavailable; legacy selection, analysis, review, and resume flow will continue."
+            )
+        }
         await modelInstallation.startupCheck()
         await refreshAuthorization()
         await refreshResumeSnapshot()

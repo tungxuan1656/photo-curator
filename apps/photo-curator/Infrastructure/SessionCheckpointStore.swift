@@ -295,37 +295,120 @@ actor SessionCheckpointStore {
         let hasSaveState: Bool
     }
 
-    /// Decodable legacy records exposed narrowly for the one-way workspace
-    /// importer. Missing or corrupt siblings are tolerated and never removed.
-    struct LegacySessionArtifacts: Sendable {
-        let sessionID: SessionID
-        let checkpoint: SessionCheckpoint?
-        let result: SelectionResult?
-        let feedback: SelectionFeedback?
+    enum LegacyArtifactKind: String, Sendable {
+        case checkpoint
+        case result
+        case feedback
     }
 
+    enum LegacyArtifactState: Sendable {
+        case decoded
+        case unreadable
+
+        var isUnreadable: Bool {
+            if case .unreadable = self {
+                return true
+            }
+            return false
+        }
+    }
+
+    /// A present legacy artifact is represented even when decoding fails.
+    /// Missing siblings remain nil; no legacy file is changed here.
+    struct LegacyArtifact: Sendable {
+        let sessionID: SessionID
+        let kind: LegacyArtifactKind
+        let state: LegacyArtifactState
+    }
+
+    struct LegacySessionArtifacts: Sendable {
+        let sessionID: SessionID
+        let checkpoint: LegacyArtifact?
+        let result: LegacyArtifact?
+        let feedback: LegacyArtifact?
+        let decodedCheckpoint: SessionCheckpoint?
+        let decodedResult: SelectionResult?
+        let decodedFeedback: SelectionFeedback?
+
+        var unreadableArtifactCount: Int {
+            [checkpoint?.state.isUnreadable, result?.state.isUnreadable, feedback?.state.isUnreadable]
+                .compactMap { $0 }
+                .filter { $0 }
+                .count
+        }
+    }
+
+    /// Discovers every UUID-named JSON artifact in the legacy checkpoint,
+    /// result, and feedback directories. A present decode failure is retained
+    /// as `.unreadable` so migration cannot skip it.
     func legacySessionArtifacts() async -> [LegacySessionArtifacts] {
         let checkpointIDs = await files.listJSONFiles(under: directory)
         let resultIDs = await files.listJSONFiles(under: resultsDirectory)
         let feedbackIDs = await files.listJSONFiles(under: "feedback")
-        let rawIDs = Set(checkpointIDs + resultIDs + feedbackIDs)
+        let checkpointSet = Set(checkpointIDs)
+        let resultSet = Set(resultIDs)
+        let feedbackSet = Set(feedbackIDs)
+        let rawIDs = checkpointSet.union(resultSet).union(feedbackSet)
 
         var artifacts: [LegacySessionArtifacts] = []
         for rawID in rawIDs {
             guard let uuid = UUID(uuidString: rawID) else { continue }
             let sessionID = SessionID(rawValue: uuid)
-            let checkpoint = try? await files.load(SessionCheckpoint.self, from: path(for: sessionID))
-            let result = try? await files.load(SelectionResult.self, from: resultPath(for: sessionID))
-            let feedback = try? await files.load(SelectionFeedback.self, from: feedbackPath(for: sessionID))
-            guard checkpoint != nil || result != nil || feedback != nil else { continue }
+            let checkpoint = checkpointSet.contains(rawID)
+                ? await decodeLegacyArtifact(
+                    SessionCheckpoint.self,
+                    kind: .checkpoint,
+                    sessionID: sessionID,
+                    relativePath: path(for: sessionID)
+                )
+                : nil
+            let result = resultSet.contains(rawID)
+                ? await decodeLegacyArtifact(
+                    SelectionResult.self,
+                    kind: .result,
+                    sessionID: sessionID,
+                    relativePath: resultPath(for: sessionID)
+                )
+                : nil
+            let feedback = feedbackSet.contains(rawID)
+                ? await decodeLegacyArtifact(
+                    SelectionFeedback.self,
+                    kind: .feedback,
+                    sessionID: sessionID,
+                    relativePath: feedbackPath(for: sessionID)
+                )
+                : nil
             artifacts.append(LegacySessionArtifacts(
                 sessionID: sessionID,
-                checkpoint: checkpoint,
-                result: result,
-                feedback: feedback
+                checkpoint: checkpoint?.record,
+                result: result?.record,
+                feedback: feedback?.record,
+                decodedCheckpoint: checkpoint?.value,
+                decodedResult: result?.value,
+                decodedFeedback: feedback?.value
             ))
         }
         return artifacts.sorted { $0.sessionID.rawValue.uuidString < $1.sessionID.rawValue.uuidString }
+    }
+
+    private func decodeLegacyArtifact<Value: Codable>(
+        _ type: Value.Type,
+        kind: LegacyArtifactKind,
+        sessionID: SessionID,
+        relativePath: String
+    ) async -> (record: LegacyArtifact, value: Value?) {
+        do {
+            let value = try await files.load(type, from: relativePath)
+            return (
+                LegacyArtifact(sessionID: sessionID, kind: kind, state: .decoded),
+                value
+            )
+        } catch {
+            return (
+                LegacyArtifact(sessionID: sessionID, kind: kind, state: .unreadable),
+                nil
+            )
+        }
     }
 
     func latestCheckpoint() async -> ResumableSession? {

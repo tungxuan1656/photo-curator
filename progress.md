@@ -895,3 +895,34 @@ workspace `ModelContainer` open failure uses `preconditionFailure`.
 **Next**: Add general `WorkspaceStore` scope create/list/load APIs and
 independent per-dimension update APIs, then remediate both Gate 2 blockers,
 run Gate 2 re-review, and run the parent-owned `./init.sh`.
+
+## 2026-09-21 — feat-033 activation
+
+**State**: active — user approved the existing feat-033 design; feat-034 remains
+todo.
+**Done**: Activated the existing partial implementation with no new
+implementation result yet.
+**Evidence**: Established baseline `./init.sh` PASS remains the prior feat-033
+evidence; no new verification was run.
+**Scope**: Three accepted remediation lanes — general `WorkspaceStore` scope
+create/list/load plus independent per-dimension updates; explicit decode status
+that blocks the migration marker and records recoverable artifact failure; and
+a non-crashing workspace-unavailable composition state that preserves legacy
+flow/files and skips migration.
+**Next**: Implement those three lanes, then run Gate 2 re-review and the
+parent-owned `./init.sh`.
+
+## 2026-09-21 — feat-033 completed
+
+**State**: done — Gate 2 final attempt 3 GO; feat-034 remains `todo`.
+**Done**: Closed feat-033 documentation/tracker state after the accepted
+implementation: safe present-artifact status and migration-marker gating;
+unavailable-workspace fallback preserving legacy flow; general scope/item APIs
+with independent dimension updates; stable log categories; atomic scope
+timestamp updates. No UI routes or feat-035/036 operation schemas were added.
+**Evidence**: Latest source fixer `./init.sh` PASS (format, strict lint,
+generic Simulator build; tests skipped under DEC-040); `git diff --check` PASS;
+Oracle Gate 2 final attempt 3 GO after attempt 1/2 blockers were remediated.
+**Blockers**: none.
+**Next**: Obtain user approval before activating feat-034, as required by
+`AGENTS.md`; feat-034 remains dependent on completed feat-033.

@@ -24,6 +24,11 @@ enum ReviewProgress: String, Codable, Sendable {
     case reviewed
 }
 
+enum WorkspaceAvailability: Sendable {
+    case available
+    case unavailable
+}
+
 /// The durable intent and asset set for one review workspace.
 @Model
 final class ReviewScope {

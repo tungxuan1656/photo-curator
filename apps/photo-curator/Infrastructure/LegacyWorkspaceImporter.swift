@@ -1,6 +1,18 @@
 import Foundation
 import OSLog
 
+enum LegacyMigrationFailure: Sendable {
+    case unreadableArtifacts(count: Int)
+    case persistenceFailure
+}
+
+enum LegacyMigrationResult: Sendable {
+    case alreadyCommitted
+    case committed(sessionCount: Int)
+    case blocked(LegacyMigrationFailure)
+    case failed(LegacyMigrationFailure)
+}
+
 /// Imports the old file-backed selection state into the durable workspace.
 /// The source files are intentionally retained; the SwiftData marker is the
 /// only completion signal and is written after every discovered session lands.
@@ -16,10 +28,18 @@ actor LegacyWorkspaceImporter {
         self.workspaceStore = workspaceStore
     }
 
-    func importIfNeeded() async {
-        guard !(await workspaceStore.hasCompletedMigration()) else { return }
+    func importIfNeeded() async -> LegacyMigrationResult {
+        guard !(await workspaceStore.hasCompletedMigration()) else { return .alreadyCommitted }
 
         let artifacts = await checkpointStore.legacySessionArtifacts()
+        let unreadableCount = artifacts.reduce(0) { $0 + $1.unreadableArtifactCount }
+        guard unreadableCount == 0 else {
+            logger.error(
+                "Legacy workspace migration blocked: \(unreadableCount, privacy: .public) present artifacts are unreadable; legacy files retained for repair and retry."
+            )
+            return .blocked(.unreadableArtifacts(count: unreadableCount))
+        }
+
         do {
             for artifact in artifacts {
                 let sourceIDs = sourceAssetIDs(from: artifact)
@@ -31,26 +51,33 @@ actor LegacyWorkspaceImporter {
                 )
             }
             try await workspaceStore.markMigrationCommitted()
+            return .committed(sessionCount: artifacts.count)
         } catch {
             // Startup remains usable. A later launch retries from the retained
             // legacy files because no completion marker was committed.
-            logger.error("Legacy workspace migration did not commit: \(error.localizedDescription, privacy: .public)")
+            logger.error(
+                """
+                Legacy workspace migration did not commit; legacy files retained for retry.
+                Failure category: migration_persistence_failure.
+                """
+            )
+            return .failed(.persistenceFailure)
         }
     }
 
     private func sourceAssetIDs(
         from artifacts: SessionCheckpointStore.LegacySessionArtifacts
     ) -> [AssetID] {
-        let checkpointIDs = artifacts.checkpoint?.sourceAssetIDs ?? []
+        let checkpointIDs = artifacts.decodedCheckpoint?.sourceAssetIDs ?? []
         var assetIDs = checkpointIDs
         var seenIDs = Set(checkpointIDs)
         var additionalIDs = Set<AssetID>()
-        if let result = artifacts.result {
+        if let result = artifacts.decodedResult {
             additionalIDs.formUnion(result.selectedAssetIDs)
             additionalIDs.formUnion(result.rejectedAssetIDs)
             additionalIDs.formUnion(result.decisions.map(\.assetID))
         }
-        if let feedback = artifacts.feedback {
+        if let feedback = artifacts.decodedFeedback {
             additionalIDs.formUnion(feedback.removedIDs)
             additionalIDs.formUnion(feedback.restoredIDs)
         }
@@ -64,7 +91,7 @@ actor LegacyWorkspaceImporter {
         from artifacts: SessionCheckpointStore.LegacySessionArtifacts
     ) -> [AssetID: AlbumMembership] {
         var memberships: [AssetID: AlbumMembership] = [:]
-        if let result = artifacts.result {
+        if let result = artifacts.decodedResult {
             for assetID in result.rejectedAssetIDs {
                 memberships[assetID] = .excluded
             }
@@ -72,7 +99,7 @@ actor LegacyWorkspaceImporter {
                 memberships[assetID] = .included
             }
         }
-        if let feedback = artifacts.feedback {
+        if let feedback = artifacts.decodedFeedback {
             for assetID in feedback.removedIDs {
                 memberships[assetID] = .excluded
             }

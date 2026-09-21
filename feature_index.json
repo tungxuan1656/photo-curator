@@ -334,9 +334,9 @@
       "depends_on": [
         "feat-032"
       ],
-      "gate": "BLOCKED at Gate 2 attempt 1: present unreadable legacy artifacts must block marker commit, and workspace ModelContainer open failure must be recoverable; then ./init.sh",
+      "gate": "Gate 2 attempt 3 GO: durable scope/item APIs, isolated dimensions, safe legacy migration and unavailable-workspace fallback, stable diagnostics, atomic scope timestamps; ./init.sh PASS",
       "id": "feat-033",
-      "status": "blocked",
+      "status": "done",
       "title": "Durable workspace + migration"
     },
     {

@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `blocked` — Gate 2 attempt 1 BLOCKED on 2026-09-21; source implementation is partial and this docs-only session performed no remediation.
+- Status: `done` — Gate 2 final attempt 3 GO; historical attempts 1 and 2 and their remediations remain recorded below.
 - Depends on: `feat-032`.
 
 ## Goal and acceptance
@@ -29,10 +29,9 @@ record is [docs/plans/feat-033.md](../docs/plans/feat-033.md). Define concrete
 entities and rollback before coding; do not introduce a generic repository
 abstraction.
 
-The source implementation is partial within the dependency and plan scope.
-Existing review routes and file/cache ownership remain unchanged; startup
-performs the additive import before the existing resume probe. Gate 2 remains
-blocked by the findings below.
+The implementation is complete within the dependency and plan scope. Existing
+review routes and file/cache ownership remain unchanged; startup performs the
+additive import before the existing resume probe. No current blockers remain.
 
 ## Activation handoff
 
@@ -47,22 +46,21 @@ feat-035 and feat-036 with their own SwiftData migrations.
   independent cleanup, album, and progress dimensions.
 - `WorkspaceStore.swift` owns one concrete actor-backed `ModelContainer` and
   value snapshots; it does not define a generic repository or operation state.
-- Remaining acceptance work, separate from the Gate 2 safety blockers below:
-  `WorkspaceStore.swift` must offer general scope create/list/load APIs and
-  independent per-dimension update APIs. No current review route must consume
-  them yet.
-- `LegacyWorkspaceImporter.swift` maps legacy result/feedback records
-  additively and attempts to commit a durable marker after discovery. Gate 2
-  found that unreadable present artifacts can be skipped by the current
-  discovery path.
-- `SessionCheckpointStore.swift` exposes narrow read-only legacy artifact
-  discovery for the importer, but its current decode result does not preserve
-  per-present-artifact failure status.
+- `WorkspaceStore.swift` offers general scope create/list/load APIs and
+  independent per-dimension update APIs. Cleanup, album, progress, and analysis
+  dimensions remain isolated; scope timestamps update atomically with item
+  creation or mutation.
+- `LegacyWorkspaceImporter.swift` records explicit status for present legacy
+  artifacts, blocks the migration marker on unreadable artifacts, records a
+  recoverable failure, and retains legacy files until a safe marker commit.
+- Workspace initialization has a non-crashing unavailable-workspace fallback
+  that preserves the legacy flow/files and skips migration. Diagnostics use
+  stable non-sensitive log categories.
 - `AppContainer`, `PhotoCuratorApp`, and `AppModel.startup()` wire one store and
-  startup import without changing routes or existing file/cache use. The current
-  container-open failure is fatal; Gate 2 requires the non-crashing replacement.
+  startup import without changing routes or existing file/cache use. No UI
+  routes were added, and feat-035/036 operation schemas remain out of scope.
 
-## Gate 2 attempt 1 — BLOCKED
+## Gate 2 attempts — historical evidence
 
 ### Changed source paths
 
@@ -89,13 +87,31 @@ The partial implementation changed these exact source paths:
    non-crashing workspace-unavailable composition state that preserves the
    legacy flow/files and skips migration.
 
-No source remediation was performed in this docs-only stop.
+Attempt 1 was a prior docs-only stop; its source remediation was not performed
+in that session. The findings were subsequently remediated before final
+closure.
+
+### Attempt 2 — BLOCKED
+
+Attempt 2 additionally identified raw error logging that needed stable,
+non-sensitive categories and required `ReviewScope.updatedAt` to be updated in
+the same transaction as workspace-item creation or dimension mutation. Both
+findings were remediated before final closure.
+
+### Final attempt 3 — GO
+
+Oracle Gate 2 final attempt 3 returned GO after the attempt 1 and attempt 2
+findings were remediated. The accepted result includes safe artifact
+status/marker gating, unavailable-workspace legacy fallback, general scope/item
+APIs with dimension isolation, stable log categories, and atomic scope
+timestamp updates.
 
 ## Verification
 
-- Initial implementation verification (partial evidence before Gate 2):
+- Historical initial implementation verification (partial evidence before Gate 2):
   `swiftformat .` passed; `swiftlint lint --strict` passed with 0 violations;
   `./init.sh` passed with a generic Simulator build and tests skipped under the
   repository no-test policy; `git diff --check` passed.
-- Gate 2 attempt 1 is BLOCKED by the two findings above. No final `./init.sh`
-  result is claimed after this docs-only update.
+- Final source-fixer evidence: `./init.sh` passed with format, strict lint,
+  generic Simulator build, and tests skipped under DEC-040; `git diff --check`
+  passed. Oracle Gate 2 final attempt 3 returned GO. No current blockers.
