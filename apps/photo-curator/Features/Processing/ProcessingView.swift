@@ -37,6 +37,8 @@ struct ProcessingView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    analysisDisclosure
+
                     VStack(spacing: 12) {
                         if progress.totalUnits > 0 {
                             ProgressView(value: progress.overallFraction)
@@ -116,6 +118,8 @@ struct ProcessingView: View {
                         }
                     }
 
+                    analysisDisclosure
+
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Quality, smiles & sharpness evaluated", systemImage: "sparkles")
                             .font(.subheadline)
@@ -180,6 +184,24 @@ struct ProcessingView: View {
                 Text("Your original photos will stay unchanged. The current analysis and selection will be removed.")
             }
         )
+    }
+
+    @ViewBuilder
+    private var analysisDisclosure: some View {
+        if appModel.processing.shouldShowNativeFallbackNotice {
+            Label(
+                "AI unavailable - using on-device native analysis",
+                systemImage: "info.circle"
+            )
+            .font(.subheadline)
+            .foregroundStyle(.orange)
+            .multilineTextAlignment(.center)
+            .accessibilityLabel("AI unavailable. Using on-device native analysis.")
+        } else if appModel.processing.usedAIModel == true {
+            Label("AI model used for quality comparisons", systemImage: "sparkles")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
     }
 }
 

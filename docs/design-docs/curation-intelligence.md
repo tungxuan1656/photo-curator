@@ -556,6 +556,16 @@ Curation Intelligence V2 inherits the existing privacy posture.
 
 If an iOS 27 path can invoke any non-local model, it needs a separate explicit privacy/product decision before use. The core path stays on-device.
 
+### 15.1 Feat-031 local VLM tier
+
+Feat-031 adds a separate iOS 26+ local VLM tier for small sets. Qwen receives
+two oriented image inputs and a fixed comparison prompt; it never receives
+asset IDs, filenames, GPS, prior decisions, or identity labels. The runtime
+returns bounded structured evidence, not a final album decision. Native
+quality floors, coverage, duplicate invariants, user overrides, and fallback
+remain authoritative. This tier does not replace the optional iOS 27 jury for
+the legacy path.
+
 ---
 
 ## 16. Implementation order

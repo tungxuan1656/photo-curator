@@ -1,6 +1,6 @@
 # AGENTS.md
 
-photos-curator is an iPhone app that turns a large photo set (100–2,000) into a smaller quality-adaptive curated album (size adapts to usable-quality moment count; ~10% with 30–40..120–150 clamps are default starts per 03). Flow is Select→Analyze→Review→Save to an Apple Photos album; processing is on-device only and never deletes originals.
+photos-curator is an on-device iPhone app built around one shared cleanup/album workspace for large photo sets. Originals are never deleted automatically. Deletion eligibility follows [docs/index.md](docs/index.md) → review rules: full Photos read-write access and exact-set user confirmation.
 
 Detected stack: `Swift 5 / SwiftUI, PhotoKit, Vision, Core ML — Xcode project apps/photo-curator.xcodeproj (scheme photo-curator); SwiftLint + SwiftFormat; fastlane present but stale (ignore)`
 
@@ -33,7 +33,7 @@ If baseline verification fails, record the failure. Fix it only when the current
 - Record scope, acceptance, evidence, and handoff in the feature file.
 - Record a feature result in `progress.md` only when the result, blocker, handoff, or next action materially changes. Do not copy feature scope there.
 - Update `init.sh` when verification commands or workspace modules change.
-- Do not create automated tests for this project: no test targets, no `*Test*.swift` files, no test frameworks or test-only architecture. Every behavior-changing feature MUST provide reproducible automated evidence (Simulator-based proof permitted) and `./init.sh` MUST pass (it reports `SKIP [test]` by policy). Manual QA is not required and is never an acceptance criterion, blocker, or release gate (DEC-040).
+- Do not create automated tests or proof harnesses for this project: no test targets, no `*Test*.swift` files, no test frameworks, no test-only architecture, and no standalone proof files. Every behavior-changing feature MUST run `./init.sh` and record its result as the automated verification evidence. Manual QA is not required and is never an acceptance criterion, blocker, or release gate (DEC-040).
 
 ## Plans
 

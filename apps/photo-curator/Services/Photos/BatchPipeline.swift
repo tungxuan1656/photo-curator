@@ -34,6 +34,7 @@ struct BatchResult: Sendable {
     }
 }
 
+// swiftlint:disable type_body_length
 /// Bounded batch analysis with checkpoint/resume.
 ///
 /// Lanes: `performance.maxConcurrentImageRequests` (2). Batches:
@@ -67,9 +68,11 @@ final class BatchPipeline: Sendable {
         self.pressure = pressure
     }
 
+    // swiftlint:disable:next function_body_length
     func run(
         assets: [PhotoAsset],
         sessionID: SessionID,
+        qualityIdentity: QualityCheckpointIdentity? = nil,
         progress: @Sendable @escaping (BatchProgress) -> Void
     ) async throws -> BatchResult {
         let total = assets.count
@@ -82,24 +85,41 @@ final class BatchPipeline: Sendable {
             // Resume-first WITHOUT dropping work: checkpoint IDs reload from cache.
             // Cache hit → FULL analyses (kept). Checkpoint ID with no cache row →
             // prior unavailable (preserved, never re-fetched). Only the remainder queues.
-            let queue = await restore(assets: assets, sessionID: sessionID, state: &state)
+            let queue = await restore(
+                assets: assets,
+                sessionID: sessionID,
+                qualityIdentity: qualityIdentity,
+                state: &state
+            )
             emitProgress(state: &state, progress: progress)
             // Post-restore check THROUGH the catch path: a cache-only cancelled
             // run checkpoints first, then throws — never returns BatchResult.
             try Task.checkCancellation()
-            try await throwIfMemoryCritical(sessionID: sessionID, state: &state)
+            try await throwIfMemoryCritical(
+                sessionID: sessionID,
+                qualityIdentity: qualityIdentity,
+                state: &state
+            )
             // Pressure-aware stride: batch size re-read at every boundary so a
             // warning arriving mid-run shrinks the next batch (32→16).
             var cursor = 0
             while cursor < queue.count {
                 try Task.checkCancellation()
-                try await throwIfMemoryCritical(sessionID: sessionID, state: &state)
+                try await throwIfMemoryCritical(
+                    sessionID: sessionID,
+                    qualityIdentity: qualityIdentity,
+                    state: &state
+                )
                 applyPressurePolicy()
                 let batchSize = effectiveBatchSize()
                 let batch = Array(queue[cursor ..< min(cursor + batchSize, queue.count)])
                 cursor += batch.count
                 try await drain(batch, state: &state, progress: progress)
-                await checkpointIfDue(sessionID: sessionID, state: &state)
+                await checkpointIfDue(
+                    sessionID: sessionID,
+                    qualityIdentity: qualityIdentity,
+                    state: &state
+                )
             }
             // Late-cancel check THROUGH the catch path: cancel after the final
             // batch still checkpoints first, then throws — never success.
@@ -107,7 +127,11 @@ final class BatchPipeline: Sendable {
             // Spec'd final update: force-fires so completed == total is always
             // delivered; every other emission respects the 4 Hz gate.
             emitProgress(state: &state, progress: progress, force: true)
-            await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
+            await saveCheckpoint(
+                sessionID: sessionID,
+                qualityIdentity: qualityIdentity,
+                completed: state.completedIDs
+            )
             // Cancel during the final save routes through the catch path too.
             try Task.checkCancellation()
             return BatchResult(
@@ -118,7 +142,11 @@ final class BatchPipeline: Sendable {
         } catch {
             // Cancel-after-checkpoint: completed work is checkpointed before the
             // throw so resume keeps it. Cancellation maps exactly to .cancelled.
-            await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
+            await saveCheckpoint(
+                sessionID: sessionID,
+                qualityIdentity: qualityIdentity,
+                completed: state.completedIDs
+            )
             emitProgress(state: &state, progress: progress)
             if error is CancellationError {
                 throw SelectionError.cancelled
@@ -130,12 +158,18 @@ final class BatchPipeline: Sendable {
     func resume(
         assets: [PhotoAsset],
         sessionID: SessionID,
+        qualityIdentity: QualityCheckpointIdentity? = nil,
         progress: @Sendable @escaping (BatchProgress) -> Void
     ) async throws -> BatchResult {
         // Resume = run with checkpoint reload: run() restores FULL analyses from
         // cache for checkpoint IDs and preserves prior unavailableIDs, so resume
         // never drops completed work and never re-fetches it.
-        try await run(assets: assets, sessionID: sessionID, progress: progress)
+        try await run(
+            assets: assets,
+            sessionID: sessionID,
+            qualityIdentity: qualityIdentity,
+            progress: progress
+        )
     }
 
     // MARK: - Run loop helpers
@@ -179,8 +213,13 @@ final class BatchPipeline: Sendable {
         state.lastProgressDate = now
     }
 
-    private func restore(assets: [PhotoAsset], sessionID: SessionID, state: inout RunState) async -> [PhotoAsset] {
-        let done = await completedIDs(for: sessionID)
+    private func restore(
+        assets: [PhotoAsset],
+        sessionID: SessionID,
+        qualityIdentity: QualityCheckpointIdentity?,
+        state: inout RunState
+    ) async -> [PhotoAsset] {
+        let done = await completedIDs(for: sessionID, qualityIdentity: qualityIdentity)
         var queue: [PhotoAsset] = []
         var cacheHits: [PhotoAsset] = []
         for asset in assets {
@@ -288,11 +327,19 @@ final class BatchPipeline: Sendable {
     }
 
     /// Checkpoint at batch edges: every 25 assets or 10 s, whichever first.
-    private func checkpointIfDue(sessionID: SessionID, state: inout RunState) async {
+    private func checkpointIfDue(
+        sessionID: SessionID,
+        qualityIdentity: QualityCheckpointIdentity?,
+        state: inout RunState
+    ) async {
         let dueCount = state.completedSinceCheckpoint >= config.performance.checkpointEveryAssets
         let dueTime = Date().timeIntervalSince(state.lastCheckpoint) >= config.performance.checkpointEverySeconds
         guard dueCount || dueTime else { return }
-        await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
+        await saveCheckpoint(
+            sessionID: sessionID,
+            qualityIdentity: qualityIdentity,
+            completed: state.completedIDs
+        )
         state.completedSinceCheckpoint = 0
         state.lastCheckpoint = Date()
     }
@@ -328,10 +375,18 @@ final class BatchPipeline: Sendable {
 
     /// Critical policy: checkpoint completed work, then throw `.memoryCritical`
     /// so the run pauses resumably instead of running until an OS kill.
-    private func throwIfMemoryCritical(sessionID: SessionID, state: inout RunState) async throws {
+    private func throwIfMemoryCritical(
+        sessionID: SessionID,
+        qualityIdentity: QualityCheckpointIdentity?,
+        state: inout RunState
+    ) async throws {
         guard pressure?.level == .critical else { return }
         (imageLoader as? ImageLoaderService)?.stopPreheat()
-        await saveCheckpoint(sessionID: sessionID, completed: state.completedIDs)
+        await saveCheckpoint(
+            sessionID: sessionID,
+            qualityIdentity: qualityIdentity,
+            completed: state.completedIDs
+        )
         state.completedSinceCheckpoint = 0
         state.lastCheckpoint = Date()
         throw SelectionError.memoryCritical
@@ -376,7 +431,10 @@ final class BatchPipeline: Sendable {
         }
     }
 
-    private func completedIDs(for sessionID: SessionID) async -> Set<AssetID> {
+    private func completedIDs(
+        for sessionID: SessionID,
+        qualityIdentity: QualityCheckpointIdentity?
+    ) async -> Set<AssetID> {
         guard let checkpoint = try? await checkpoints.load(sessionID: sessionID) else {
             return []
         }
@@ -386,16 +444,24 @@ final class BatchPipeline: Sendable {
         guard checkpoint.analysisVersion == PhotoAnalysis.currentVersion else {
             return []
         }
+        guard checkpoint.qualityIdentity == qualityIdentity else {
+            return []
+        }
         return Set(checkpoint.completedAssetIDs)
     }
 
-    private func saveCheckpoint(sessionID: SessionID, completed: [AssetID]) async {
+    private func saveCheckpoint(
+        sessionID: SessionID,
+        qualityIdentity: QualityCheckpointIdentity?,
+        completed: [AssetID]
+    ) async {
         let stub = SessionCheckpoint(
             sessionID: sessionID,
             stage: "analysis",
             completedAssetIDs: completed,
             configVersion: config.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
+            qualityIdentity: qualityIdentity,
             updatedAt: Date()
         )
         try? await checkpoints.save(stub) // best-effort; cache rows remain truth for redo
@@ -406,3 +472,5 @@ final class BatchPipeline: Sendable {
         case unavailable(AssetID)
     }
 }
+
+// swiftlint:enable type_body_length

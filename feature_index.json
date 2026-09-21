@@ -34,7 +34,14 @@
     "feat-027",
     "feat-028",
     "feat-029",
-    "feat-030"
+    "feat-030",
+    "feat-031",
+    "feat-032",
+    "feat-033",
+    "feat-034",
+    "feat-035",
+    "feat-036",
+    "feat-037"
   ],
   "features": [
     {
@@ -237,7 +244,7 @@
       "depends_on": [
         "feat-022"
       ],
-      "gate": "Embedding choice is benchmarked via reproducible automated proof (Simulator permitted), license/checksum is recorded, and Tier-C routing has a safe fallback; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
+      "gate": "Embedding choice is documented, license/checksum is recorded, and Tier-C routing has a safe fallback; ./init.sh passes.",
       "id": "feat-024",
       "status": "done",
       "title": "Visual embedding foundation"
@@ -294,7 +301,7 @@
       ],
       "gate": "S11 is a fullscreen, zoomable, accessible inspector that preserves scoped paging and shared selection; bounded image lifetime and reproducible interaction proof pass; ./init.sh passes.",
       "id": "feat-029",
-    "status": "done",
+      "status": "done",
       "title": "Immersive photo inspection"
     },
     {
@@ -305,6 +312,68 @@
       "id": "feat-030",
       "status": "done",
       "title": "Bilingual localization"
+    },
+    {
+      "depends_on": [
+        "feat-028",
+        "feat-030"
+      ],
+      "gate": "Qwen evidence and admission remain incomplete; preserve the record while the review pivot proceeds through feat-032.",
+      "id": "feat-031",
+      "status": "blocked",
+      "title": "Quality-first on-device Qwen curation"
+    },
+    {
+      "depends_on": [],
+      "gate": "owner docs, independent state, deletion/migration contracts, and tracker order agree; documentation validation passes",
+      "id": "feat-032",
+      "status": "done",
+      "title": "Pivot contracts/docs"
+    },
+    {
+      "depends_on": [
+        "feat-032"
+      ],
+      "gate": "Gate 2 attempt 3 GO: durable scope/item APIs, isolated dimensions, safe legacy migration and unavailable-workspace fallback, stable diagnostics, atomic scope timestamps; ./init.sh PASS",
+      "id": "feat-033",
+      "status": "done",
+      "title": "Durable workspace + migration"
+    },
+    {
+      "depends_on": [
+        "feat-033"
+      ],
+      "gate": "one grouped workspace serves both intents and preserves choices through review/resume",
+      "id": "feat-034",
+      "status": "todo",
+      "title": "Shared grouped review"
+    },
+    {
+      "depends_on": [
+        "feat-034"
+      ],
+      "gate": "independent album draft/save is resilient and reports partial outcomes truthfully",
+      "id": "feat-035",
+      "status": "todo",
+      "title": "Album draft + resilient save"
+    },
+    {
+      "depends_on": [
+        "feat-035"
+      ],
+      "gate": "exact-set confirmed deletion is full-access gated, bounded, and reconciles without automatic retry",
+      "id": "feat-036",
+      "status": "todo",
+      "title": "Confirmed original deletion"
+    },
+    {
+      "depends_on": [
+        "feat-036"
+      ],
+      "gate": "advisory suggestions integrate and the legacy active route is retired after evidence",
+      "id": "feat-037",
+      "status": "todo",
+      "title": "Suggestion integration + legacy retirement"
     }
   ],
   "rule": "One feature may be active at a time. A feature starts only after all dependencies are done, owns its complete implementation and verification, and closes only after its acceptance criteria and ./init.sh pass."

@@ -18,9 +18,14 @@ struct PhotoCuratorApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(appModel)
-                .environment(\.locale, appModel.appLanguage.locale)
+            appRoot
         }
+    }
+
+    private var appRoot: some View {
+        RootView()
+            .environment(appModel)
+            .environment(appModel.modelInstallation)
+            .environment(\.locale, appModel.appLanguage.locale)
     }
 }

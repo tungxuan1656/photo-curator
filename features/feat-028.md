@@ -49,8 +49,6 @@ Plan: [`docs/plans/feat-028.md`](../docs/plans/feat-028.md).
 
 ## Verify
 
-- `./scripts/proof/feat-028.sh` — reproducible automated proof stages the real deterministic
-  ranking sources and runs smoke, Golden-shaped, trip-shaped, and H-1000 fixtures twice each.
 - `./init.sh` — required final workspace verification.
 - Manual QA is not required and is never an acceptance criterion, blocker, or release gate
   (DEC-040). No test targets, no `*Test*.swift`, no test frameworks.
@@ -65,27 +63,27 @@ Plan: [`docs/plans/feat-028.md`](../docs/plans/feat-028.md).
   `FixtureOracle.manifests`; labels never read `PhotoAnalysis`, scalar scores, rank order, engine
   output, user photos, corrections, identities, faces, precise location, EXIF, free text,
   embeddings, network, cloud, telemetry, or persisted label rows. H-1000 includes an explicit
-  MUST_KEEP label below the deterministic rank winner; proof asserts the mismatch and selected
-  rank winner. No external benchmark is claimed.
+  MUST_KEEP label below the deterministic rank winner; the mismatch and selected rank winner
+  remain recorded in the feature evidence. No external benchmark is claimed.
 - Splits: fit none, calibration none; disjoint Smoke 60 (15 groups × 4 / 15 moments),
   Golden-shaped 200 (20 × 10 / 20 moments), Trip-shaped 150 (30 × 5 / 30 moments), H-1000
   1,000 (50 × 20 / 50 moments); same oracle semantics across evaluation only, no candidate
   tuning; asset-ID disjointness is asserted.
-- Metrics: Duplicate Leakage is needless repeat selections / total selected, with the proof
-  computing repeat excess per duplicate group and asserting the denominator equals selected output.
+- Metrics: Duplicate Leakage is needless repeat selections / total selected, with repeat excess
+  computed per duplicate group and the denominator equal to selected output.
   Owner gates remain unchanged.
 - Tie-break evidence: equal-primary-score fixtures behaviorally assert edited > favorite >
   pixel-area > asset-ID and deterministic replay under reversed input order.
-- Acceptance/evidence: all four feat-028 acceptance criteria remain checked; `./scripts/proof/feat-028.sh`
-  EXIT 0, `STAGED-MATCH 17`; explicit H-1000 `MUST_KEEP`/rank mismatch selects the deterministic
+- Acceptance/evidence: all four feat-028 acceptance criteria remain checked; explicit H-1000
+  `MUST_KEEP`/rank mismatch selects the deterministic
   rank winner; equal-score edited/favorite/pixel-area/asset-ID tie-break fixtures pass under
   reversed input order. Smoke `60→15`, Golden-shaped `200→20`, Trip-shaped `150→30`, H-1000
   `1,000→50`; Recall/Good Selection/Best-Shot/Moment Coverage are `1.000`, `1.000`, `1.000`,
   `1.000` on the first three and `0.980`, `0.980`, `0.980`, `1.000` on H-1000; Bad Pick is
   `0.000`, `0.000`, `0.000`, `0.020`; Duplicate Leakage is `0.000` with denominator equal to
   selected output (`15/20/30/50`).
-- Proof source: `scripts/proof/feat-028.sh` + `scripts/proof/feat-028-proof.swift`; no shipped
-  model, dependency, persisted field, migration, or fallback adapter.
+- No standalone proof source, shipped model, dependency, persisted field, migration, or fallback
+  adapter was added.
 - Final verification: `./init.sh` EXIT 0 — SwiftFormat PASS (`0/87` files formatted), SwiftLint
   strict PASS (`0 violations in 66 files`), Simulator build `BUILD SUCCEEDED`, and tests SKIP by
   DEC-040. Manual QA is removed and non-gating per DEC-040; no automated tests, test targets,

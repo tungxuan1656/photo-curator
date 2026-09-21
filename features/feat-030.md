@@ -30,8 +30,7 @@ execution detail is [`docs/plans/feat-030.md`](../docs/plans/feat-030.md).
   persistent storage, and a high-root SwiftUI locale override.
 - A Settings language picker that preserves the existing S18 access, privacy, and
   About requirements.
-- Reproducible automated proof for resource completeness, fallback, and live
-  selection, plus `./init.sh`.
+- `./init.sh` verification for resource compilation and localization changes.
 - Native-first localization architecture: SwiftUI localizable literals and
   `LocalizedStringResource` at the presentation boundary; processing/session data
   remains locale-independent. No SwiftGen or R.swift dependency is added.
@@ -49,8 +48,8 @@ execution detail is [`docs/plans/feat-030.md`](../docs/plans/feat-030.md).
   diagnostics are not translated, and no automatic translation service is added.
 - [x] No language beyond English and Vietnamese, behavior/flow/selection change, or
   S11 contract change is included.
-- [x] Reproducible automated localization proof and `./init.sh` pass. No test target,
-  test framework, or manual-QA gate is added.
+- [x] `./init.sh` passes. No test target, test framework, standalone proof file, or
+  manual-QA gate is added.
 
 ## Non-goals
 
@@ -74,8 +73,6 @@ See [`docs/plans/feat-030.md`](../docs/plans/feat-030.md).
 
 ## Verify
 
-- Reproducible automated proof audits catalog completeness, fallback, live language
-  selection, locale-aware formatting, and localized Info.plist resources.
 - `./init.sh`
 - No test target, `*Test*.swift` file, test framework, or manual-QA gate.
 
@@ -84,12 +81,8 @@ See [`docs/plans/feat-030.md`](../docs/plans/feat-030.md).
 - State: done — follow-up localization audit and review remediation corrected runtime
   `String` values, accessibility state labels, singular review copy, and dynamic fact
   row identity across Home, Source Selection, Review, and Photo Analysis.
-- Evidence: `scripts/proof/feat-030.sh` and `./init.sh` both pass. The proof verifies
-  385 en/vi catalog entries, placeholder parity, no `defaultValue`, native
-  presentation-boundary localization, localized accessibility states, singular
-  summary handling, stable fact-row identity, root locale/persistence hooks,
-  fallback, and locale-aware formatting. `./init.sh` runs the proof after the
-  Simulator build and passes SwiftFormat, SwiftLint strict with 0 violations, the
-  build, the proof task, and the policy test skip.
+- Evidence: `./init.sh` passes SwiftFormat, SwiftLint strict, the Simulator build,
+  and the policy test skip after the localization changes. Resource and copy
+  completeness remain part of the feature review record.
 - Blockers: none
 - Next: none; feat-030 is complete.

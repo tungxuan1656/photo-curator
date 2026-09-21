@@ -1,68 +1,49 @@
-# Product Docs Index (start here)
+# Product Docs Index
 
-Start at `AGENTS.md`. Then read one owner doc below. Then code.
+Start at `AGENTS.md`, then read the owner doc for the task. These routes are
+canonical; do not duplicate an owner's facts in another document.
 
-## Task routes (task → read this one doc)
+## Task routes
 
-| If you need to | Read first |
-|---|---|
-| Change what the app is or what ships | [product.md](product-specs/product.md) |
-| Change screens, copy, or review steps | [ux-flows.md](product-specs/ux-flows.md) |
-| Change what gets picked and why | [selection-rules.md](product-specs/selection-rules.md) |
-| Change pipeline order or stage rules | [selection-engine.md](design-docs/selection-engine.md) |
-| Change app structure, jobs, or threads | [ios-architecture.md](design-docs/ios-architecture.md) |
-| Change saved data, IDs, or cache shape | [data-model.md](design-docs/data-model.md) |
-| Change PhotoKit or Vision calls | [apple-frameworks.md](design-docs/apple-frameworks.md) |
-| Change Curation Intelligence architecture | [curation-intelligence.md](design-docs/curation-intelligence.md) |
-| Choose/change concrete AI APIs, models, or inference routing | [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) |
-| Change speed, limits, or size targets | [performance.md](ship-gates/performance.md) |
-| Change privacy, access, or what is kept | [privacy.md](ship-gates/privacy.md) |
-| Add or change an event log | [analytics.md](ship-gates/analytics.md) |
-| Change build order or what is later | [roadmap.md](exec-plans/roadmap.md) |
-| Ask why a past choice was made | [decision-log.md](design-docs/decision-log.md) |
-
-Rule: read the owner doc only. Links inside point to other docs. Do not copy text between docs.
-
-## Numeric refs (history)
-
-Older docs use bare numbers 01–13. Use filenames for new refs; the table below is a reading aid only.
-
-| N | File |
-|---|---|
-| 01 | `product-specs/product.md` |
-| 02 | `product-specs/ux-flows.md` |
-| 03 | `product-specs/selection-rules.md` |
-| 04 | `design-docs/selection-engine.md` |
-| 05 | `design-docs/ios-architecture.md` |
-| 06 | `design-docs/data-model.md` |
-| 07 | `design-docs/apple-frameworks.md` |
-| 08 | `ship-gates/performance.md` |
-| 09 | `ship-gates/privacy.md` |
-| 10 | `ship-gates/manual-qa.md` |
-| 11 | `ship-gates/analytics.md` |
-| 12 | `exec-plans/roadmap.md` |
-| 13 | `design-docs/decision-log.md` |
-
-## Ownership (doc → owns → read when)
-
-| Doc | Owns | Read when |
+| Task | Read first | Owner |
 |---|---|---|
-| [product.md](product-specs/product.md) | Vision, scope, ship gates | You change goals or scope |
-| [ux-flows.md](product-specs/ux-flows.md) | Screens, copy, review acts | You change what the user sees |
-| [selection-rules.md](product-specs/selection-rules.md) | Pick rules, ranks, reason codes | You change picks |
-| [selection-engine.md](design-docs/selection-engine.md) | Pipeline steps, config, reruns | You change how picks run |
-| [ios-architecture.md](design-docs/ios-architecture.md) | App shape, jobs, logs | You change code shape |
-| [data-model.md](design-docs/data-model.md) | Saved shapes, cache keys | You change saved fields |
-| [apple-frameworks.md](design-docs/apple-frameworks.md) | PhotoKit, Vision use | You touch photos APIs |
-| [curation-intelligence.md](design-docs/curation-intelligence.md) | Stable Curation Intelligence capability architecture and gates | You change intelligence architecture |
-| [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) | Current APIs/models, routing, fallback, benchmark status | You implement or replace an AI/native intelligence tool |
-| [performance.md](ship-gates/performance.md) | Limits, time goals | You change speed or size |
-| [privacy.md](ship-gates/privacy.md) | Privacy, keep rules | You touch data or access |
-| [manual-qa.md](ship-gates/manual-qa.md) (archival reference, non-gating) | Historical hand-QA handbook, not a gate | Never required; validation is automated evidence + `./init.sh` |
-| [analytics.md](ship-gates/analytics.md) | Event names only | You log events |
-| [roadmap.md](exec-plans/roadmap.md) | Build order | You plan next work |
-| [decision-log.md](design-docs/decision-log.md) | Past reasons, open items | You need why or what is open |
+| Product purpose, scope, platform | [product.md](product-specs/product.md) | Product |
+| Screen flow and visible states | [ux-flows.md](product-specs/ux-flows.md) | UX |
+| User choices, cleanup, deletion safety | [review-rules.md](product-specs/review-rules.md) | Review rules |
+| English/Vietnamese strings | [ui-copy.md](product-specs/ui-copy.md) | UI copy |
+| Legacy pick rules (historical route only) | [selection-rules.md](product-specs/selection-rules.md) | Legacy reference; not active behavior owner |
+| App topology, coordination, services | [ios-architecture.md](design-docs/ios-architecture.md) | iOS architecture |
+| Durable workspace and cache shapes | [data-model.md](design-docs/data-model.md) | Data model |
+| Photo intelligence facts and suggestions | [photo-intelligence.md](design-docs/photo-intelligence.md) | Photo intelligence |
+| Concrete runtime/model candidates | [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) | Runtime stack |
+| PhotoKit, Vision, deletion API facts | [apple-frameworks.md](design-docs/apple-frameworks.md) | Apple frameworks |
+| Privacy and access | [privacy.md](ship-gates/privacy.md) | Privacy |
+| Performance budgets | [performance.md](ship-gates/performance.md) | Performance |
+| Build order | [roadmap.md](exec-plans/roadmap.md) | Roadmap |
+| Why a decision was made | [decision-log.md](design-docs/decision-log.md) | Decision history |
 
-## Open decisions
+`selection-engine.md` and `curation-intelligence.md` remain historical/legacy
+references while the pivot is implemented. They are not active behavior owners.
+Older plans preserve prior implementation history. Current pivot plans are
+listed below.
 
-Open items live in [decision-log.md](design-docs/decision-log.md). Read it before you change a past choice.
+## Current pivot execution records
+
+The current actionable plan records are [feat-032](plans/feat-032.md),
+[feat-033](plans/feat-033.md), [feat-034](plans/feat-034.md),
+[feat-035](plans/feat-035.md), [feat-036](plans/feat-036.md), and
+[feat-037](plans/feat-037.md), in the order owned by
+[roadmap.md](exec-plans/roadmap.md). Older `docs/plans/*` records remain
+historical implementation records; their links and contents are preserved.
+
+## Platform and validation invariants
+
+The planning baseline is iPhone 14+ and iOS 26+, with on-device processing and
+English/Vietnamese UI. The repository has no test targets, test files, test
+frameworks, or standalone proof harnesses. Behavior-changing work must run
+`./init.sh` and record its result in the feature's verification evidence.
+
+## Ownership rule
+
+Read the owner doc only; follow links when needed. If two docs appear to state
+the same current fact, move the fact to the owner named above and link to it.

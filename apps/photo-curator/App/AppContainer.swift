@@ -1,13 +1,26 @@
 import Foundation
+import OSLog
+import SwiftData
 
 /// Plain dependency holder, not a framework. Holds no feature state.
 /// `SessionCheckpointStore` joined in feat-002; real DI in feat-002.
 struct AppContainer: Sendable {
+    private struct WorkspaceSetup {
+        let modelContainer: ModelContainer?
+        let store: WorkspaceStore?
+        let importer: LegacyWorkspaceImporter?
+        let availability: WorkspaceAvailability
+    }
+
     let photoLibrary: any PhotoLibraryService
     let imageLoader: any PhotoImageLoader
     let analyzer: any ImageAnalysisService
     let analysisCache: any AnalysisCache
     let checkpointStore: SessionCheckpointStore
+    let workspaceModelContainer: ModelContainer?
+    let workspaceStore: WorkspaceStore?
+    let workspaceImporter: LegacyWorkspaceImporter?
+    let workspaceAvailability: WorkspaceAvailability
     let selectionEngine: SelectionEngine
     /// Tier-C visual-embedding provider (feat-024, DEC-035): native derived
     /// by default, injected into `SelectionSessionCoordinator` for both
@@ -18,6 +31,46 @@ struct AppContainer: Sendable {
     let exporter: any AlbumExportService
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
+    let modelInstallation: ModelInstallationService
+    let qwenJudge: QwenPairJudge?
+
+    init(
+        photoLibrary: any PhotoLibraryService,
+        imageLoader: any PhotoImageLoader,
+        analyzer: any ImageAnalysisService,
+        analysisCache: any AnalysisCache,
+        checkpointStore: SessionCheckpointStore,
+        workspaceModelContainer: ModelContainer?,
+        workspaceStore: WorkspaceStore?,
+        workspaceImporter: LegacyWorkspaceImporter?,
+        workspaceAvailability: WorkspaceAvailability,
+        selectionEngine: SelectionEngine,
+        tierCProvider: any VisualEmbeddingProvider,
+        semanticJuryProvider: any SemanticJuryProvider,
+        exporter: any AlbumExportService,
+        analytics: any AnalyticsService,
+        memoryPressure: MemoryPressureObserver,
+        modelInstallation: ModelInstallationService,
+        qwenJudge: QwenPairJudge? = nil
+    ) {
+        self.photoLibrary = photoLibrary
+        self.imageLoader = imageLoader
+        self.analyzer = analyzer
+        self.analysisCache = analysisCache
+        self.checkpointStore = checkpointStore
+        self.workspaceModelContainer = workspaceModelContainer
+        self.workspaceStore = workspaceStore
+        self.workspaceImporter = workspaceImporter
+        self.workspaceAvailability = workspaceAvailability
+        self.selectionEngine = selectionEngine
+        self.tierCProvider = tierCProvider
+        self.semanticJuryProvider = semanticJuryProvider
+        self.exporter = exporter
+        self.analytics = analytics
+        self.memoryPressure = memoryPressure
+        self.modelInstallation = modelInstallation
+        self.qwenJudge = qwenJudge
+    }
 
     /// G1 wiring: real permission service + file-backed cache/checkpoint + real
     /// analysis pipeline (feat-006 flips the analyzer switch); analytics stays
@@ -30,22 +83,66 @@ struct AppContainer: Sendable {
             preconditionFailure("AppContainer.live() needs a writable app directory.")
         }
         let root = base.appendingPathComponent("photo-curator", isDirectory: true)
+        try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let files = FileStore(rootDirectory: root)
+        let checkpointStore = SessionCheckpointStore(files: files)
+        let workspace = makeWorkspaceSetup(root: root, checkpointStore: checkpointStore)
+        let imageLoader = ImageLoaderService()
         return Self(
             photoLibrary: PhotoLibraryPermissionService(),
-            imageLoader: ImageLoaderService(),
+            imageLoader: imageLoader,
             analyzer: VisionAnalysisService(),
             analysisCache: FileAnalysisCache(
                 files: files,
                 analysisVersion: AppConfiguration.default.analysis.analysisVersion
             ),
-            checkpointStore: SessionCheckpointStore(files: files),
+            checkpointStore: checkpointStore,
+            workspaceModelContainer: workspace.modelContainer,
+            workspaceStore: workspace.store,
+            workspaceImporter: workspace.importer,
+            workspaceAvailability: workspace.availability,
             selectionEngine: SelectionEngine(),
             tierCProvider: NativeDerivedEmbeddingProvider(),
             semanticJuryProvider: FoundationModelsSemanticJuryProvider(),
             exporter: PhotoKitAlbumExporter(),
             analytics: NoopAnalytics(),
-            memoryPressure: MemoryPressureObserver()
+            memoryPressure: MemoryPressureObserver(),
+            modelInstallation: ModelInstallationService(
+                rootDirectory: root.appendingPathComponent("models", isDirectory: true)
+            ),
+            qwenJudge: QwenPairJudge(imageLoader: imageLoader)
         )
+    }
+
+    private static func makeWorkspaceSetup(
+        root: URL,
+        checkpointStore: SessionCheckpointStore
+    ) -> WorkspaceSetup {
+        let workspaceURL = root.appendingPathComponent("workspace.store")
+        do {
+            let modelContainer = try ModelContainer(
+                for: ReviewScope.self,
+                WorkspaceItem.self,
+                WorkspaceMigrationMarker.self,
+                configurations: ModelConfiguration(url: workspaceURL)
+            )
+            let store = WorkspaceStore(modelContainer: modelContainer)
+            return WorkspaceSetup(
+                modelContainer: modelContainer,
+                store: store,
+                importer: LegacyWorkspaceImporter(checkpointStore: checkpointStore, workspaceStore: store),
+                availability: .available
+            )
+        } catch {
+            Logger(
+                subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "workspace"
+            ).error(
+                """
+                Durable workspace unavailable; preserving legacy file-backed flow and skipping migration.
+                Failure category: workspace_unavailable.
+                """
+            )
+            return WorkspaceSetup(modelContainer: nil, store: nil, importer: nil, availability: .unavailable)
+        }
     }
 }
