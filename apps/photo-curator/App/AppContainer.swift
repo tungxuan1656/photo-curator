@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// Plain dependency holder, not a framework. Holds no feature state.
 /// `SessionCheckpointStore` joined in feat-002; real DI in feat-002.
@@ -8,6 +9,9 @@ struct AppContainer: Sendable {
     let analyzer: any ImageAnalysisService
     let analysisCache: any AnalysisCache
     let checkpointStore: SessionCheckpointStore
+    let workspaceModelContainer: ModelContainer
+    let workspaceStore: WorkspaceStore
+    let workspaceImporter: LegacyWorkspaceImporter
     let selectionEngine: SelectionEngine
     /// Tier-C visual-embedding provider (feat-024, DEC-035): native derived
     /// by default, injected into `SelectionSessionCoordinator` for both
@@ -27,6 +31,9 @@ struct AppContainer: Sendable {
         analyzer: any ImageAnalysisService,
         analysisCache: any AnalysisCache,
         checkpointStore: SessionCheckpointStore,
+        workspaceModelContainer: ModelContainer,
+        workspaceStore: WorkspaceStore,
+        workspaceImporter: LegacyWorkspaceImporter,
         selectionEngine: SelectionEngine,
         tierCProvider: any VisualEmbeddingProvider,
         semanticJuryProvider: any SemanticJuryProvider,
@@ -41,6 +48,9 @@ struct AppContainer: Sendable {
         self.analyzer = analyzer
         self.analysisCache = analysisCache
         self.checkpointStore = checkpointStore
+        self.workspaceModelContainer = workspaceModelContainer
+        self.workspaceStore = workspaceStore
+        self.workspaceImporter = workspaceImporter
         self.selectionEngine = selectionEngine
         self.tierCProvider = tierCProvider
         self.semanticJuryProvider = semanticJuryProvider
@@ -62,7 +72,22 @@ struct AppContainer: Sendable {
             preconditionFailure("AppContainer.live() needs a writable app directory.")
         }
         let root = base.appendingPathComponent("photo-curator", isDirectory: true)
+        try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let files = FileStore(rootDirectory: root)
+        let workspaceURL = root.appendingPathComponent("workspace.store")
+        let workspaceModelContainer: ModelContainer
+        do {
+            workspaceModelContainer = try ModelContainer(
+                for: ReviewScope.self,
+                WorkspaceItem.self,
+                WorkspaceMigrationMarker.self,
+                configurations: ModelConfiguration(url: workspaceURL)
+            )
+        } catch {
+            preconditionFailure("Unable to open the durable workspace store: \(error)")
+        }
+        let workspaceStore = WorkspaceStore(modelContainer: workspaceModelContainer)
+        let checkpointStore = SessionCheckpointStore(files: files)
         let imageLoader = ImageLoaderService()
         return Self(
             photoLibrary: PhotoLibraryPermissionService(),
@@ -72,7 +97,13 @@ struct AppContainer: Sendable {
                 files: files,
                 analysisVersion: AppConfiguration.default.analysis.analysisVersion
             ),
-            checkpointStore: SessionCheckpointStore(files: files),
+            checkpointStore: checkpointStore,
+            workspaceModelContainer: workspaceModelContainer,
+            workspaceStore: workspaceStore,
+            workspaceImporter: LegacyWorkspaceImporter(
+                checkpointStore: checkpointStore,
+                workspaceStore: workspaceStore
+            ),
             selectionEngine: SelectionEngine(),
             tierCProvider: NativeDerivedEmbeddingProvider(),
             semanticJuryProvider: FoundationModelsSemanticJuryProvider(),

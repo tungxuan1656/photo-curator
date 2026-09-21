@@ -119,6 +119,7 @@ final class AppModel {
     }
 
     func startup() async {
+        await container.workspaceImporter.importIfNeeded()
         await modelInstallation.startupCheck()
         await refreshAuthorization()
         await refreshResumeSnapshot()

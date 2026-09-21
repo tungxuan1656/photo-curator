@@ -295,6 +295,39 @@ actor SessionCheckpointStore {
         let hasSaveState: Bool
     }
 
+    /// Decodable legacy records exposed narrowly for the one-way workspace
+    /// importer. Missing or corrupt siblings are tolerated and never removed.
+    struct LegacySessionArtifacts: Sendable {
+        let sessionID: SessionID
+        let checkpoint: SessionCheckpoint?
+        let result: SelectionResult?
+        let feedback: SelectionFeedback?
+    }
+
+    func legacySessionArtifacts() async -> [LegacySessionArtifacts] {
+        let checkpointIDs = await files.listJSONFiles(under: directory)
+        let resultIDs = await files.listJSONFiles(under: resultsDirectory)
+        let feedbackIDs = await files.listJSONFiles(under: "feedback")
+        let rawIDs = Set(checkpointIDs + resultIDs + feedbackIDs)
+
+        var artifacts: [LegacySessionArtifacts] = []
+        for rawID in rawIDs {
+            guard let uuid = UUID(uuidString: rawID) else { continue }
+            let sessionID = SessionID(rawValue: uuid)
+            let checkpoint = try? await files.load(SessionCheckpoint.self, from: path(for: sessionID))
+            let result = try? await files.load(SelectionResult.self, from: resultPath(for: sessionID))
+            let feedback = try? await files.load(SelectionFeedback.self, from: feedbackPath(for: sessionID))
+            guard checkpoint != nil || result != nil || feedback != nil else { continue }
+            artifacts.append(LegacySessionArtifacts(
+                sessionID: sessionID,
+                checkpoint: checkpoint,
+                result: result,
+                feedback: feedback
+            ))
+        }
+        return artifacts.sorted { $0.sessionID.rawValue.uuidString < $1.sessionID.rawValue.uuidString }
+    }
+
     func latestCheckpoint() async -> ResumableSession? {
         let ids = await files.listJSONFiles(under: directory)
         var best: (SessionCheckpoint, Date)?

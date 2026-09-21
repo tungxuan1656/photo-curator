@@ -824,3 +824,74 @@ Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
 **Evidence**: `./init.sh` PASS with SwiftFormat, strict SwiftLint at 0 violations, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. `git diff --check` PASS. The previous 8.7 MB/s benchmark belongs to the chunked relay; the direct-file path still needs a fresh speed measurement.
 **Blockers**: No direct-file throughput benchmark, physical-device throughput or thermal measurement. Pixel-derived grouping, independent image-quality comparison, and model admission remain open.
 **Next**: Run the direct-file benchmark, then continue the remaining feat-031 quality-admission gates.
+
+## 2026-09-21 — feat-031 pivot handoff
+
+**State**: blocked
+**Done**: Preserved feat-031's incomplete acceptance and evidence while pausing the Qwen quality-mode lane for the assisted review pivot.
+**Evidence**: Prior baseline `./init.sh` PASS on 2026-09-21 before these edits; no current post-edit init result is claimed.
+**Blockers**: Qwen image-sensitive admission, device/resource evidence, and remaining lifecycle/review gates are incomplete; do not claim production quality improvement.
+**Next**: feat-032 contracts/docs/tracker.
+
+## 2026-09-21 — feat-032 contracts/docs/tracker
+
+**State**: active
+**Done**: Replaced the owned product, UX, architecture, data, intelligence, runtime, Apple-framework, privacy, performance, and roadmap source docs; added review-rules, ui-copy, and photo-intelligence; added the ordered feat-032–037 records and moved feat-031 to blocked.
+**Evidence**: Prior baseline `./init.sh` PASS on 2026-09-21 before these edits; assigned documentation checks are pending and no current post-edit init result is claimed.
+**Blockers**: Parent-owned `./init.sh` verification remains pending.
+**Next**: Run parent verification, then hand off feat-033 only after feat-032 acceptance.
+
+## 2026-09-21 — feat-032 completion
+
+**State**: done
+**Done**: Closed the Phase 1 pivot contracts/docs/tracker feature after DEC-054 remediation and Gate 1 Oracle re-review GO. Acceptance is complete; feat-031 remains blocked with incomplete Qwen evidence preserved.
+**Evidence**: Fresh `./init.sh` PASS on 2026-09-21 after final DEC-054 remediation; `git diff --check` PASS; feature-index JSON/status validation PASS. No source or runtime behavior changed.
+**Blockers**: none for feat-032.
+**Next**: Activate feat-033 as the sole active feature.
+
+## 2026-09-21 — feat-033 activation
+
+**State**: active
+**Done**: Activated the durable workspace and idempotent legacy migration feature after feat-032 closure; dependency and single-active-feature rules hold.
+**Evidence**: feat-032 Gate 1 Oracle re-review GO; fresh parent `./init.sh` evidence recorded above; feature-index JSON has exactly one active feature.
+**Blockers**: none recorded; implementation verification belongs to feat-033.
+**Next**: Implement and verify `ReviewScope`/workspace-item state, migration marker/store infrastructure, and the legacy importer under the linked feat-033 plan.
+
+## 2026-09-21 — feat-033 completion
+
+**State**: done
+**Done**: Added the concrete SwiftData workspace models/store and one-way legacy importer. Startup creates one durable container, imports legacy selected/restored and rejected/removed state into album membership while leaving cleanup undecided and progress unseen, and commits an idempotent marker only after successful persistence. Existing checkpoint/cache ownership and review routes remain unchanged; legacy files are retained.
+**Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint with 0 violations, generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040); `git diff --check` PASS.
+**Blockers**: none for feat-033.
+**Next**: Activate feat-034 only after user approval; feat-035/036 remain owners of future album-save/deletion operation schemas.
+
+## 2026-09-21 — feat-033 docs-only stop
+
+**State**: blocked — Gate 2 attempt 1 remains BLOCKED; this is the requested
+docs-only stopping point.
+**Done**: Reconciled the partial feat-033 handoff, tracker status, current
+pivot-plan routes, and product safety summary. No code remediation was
+performed.
+**Evidence**: Prior initial feat-033 format/lint/`./init.sh` and
+`git diff --check` results remain partial evidence only. No final `./init.sh`
+result is claimed after this docs-only update.
+**Blockers**: Present but unreadable checkpoint/result/feedback artifacts can be
+silently skipped before the global migration marker is committed; workspace
+`ModelContainer` open failure uses `preconditionFailure`. Changed source paths
+and required remediations are recorded in `features/feat-033.md`.
+**Next**: Remediate those two exact Gate 2 findings in the listed source paths,
+then run Gate 2 re-review and the parent-owned `./init.sh`.
+
+## 2026-09-21 — feat-033 remaining acceptance handoff
+
+**State**: blocked — Gate 2 attempt 1 remains BLOCKED.
+**Done**: Clarified the remaining feat-033 acceptance work separately from the
+two Gate 2 safety blockers; no source remediation was performed.
+**Evidence**: `features/feat-033.md` records the exact partial source paths,
+prior verification, and current plan handoff. No final `./init.sh` is claimed.
+**Blockers**: The two Gate 2 safety blockers remain: unreadable present
+checkpoint/result/feedback artifacts can be skipped before marker commit, and
+workspace `ModelContainer` open failure uses `preconditionFailure`.
+**Next**: Add general `WorkspaceStore` scope create/list/load APIs and
+independent per-dimension update APIs, then remediate both Gate 2 blockers,
+run Gate 2 re-review, and run the parent-owned `./init.sh`.

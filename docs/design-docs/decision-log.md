@@ -75,8 +75,8 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 | DEC-051 | Feat-028 independent oracle and recall gate remediation | `features/feat-028.md`, `docs/plans/feat-028.md` |
 | DEC-052 | Feat-028 proof contract completion | `features/feat-028.md`, `docs/plans/feat-028.md` |
 | DEC-TBD-001 | Min iOS 26 | 07 |
-| DEC-TBD-002 | File-based Codable persistence, no database for MVP | 05, 06 |
-| DEC-TBD-005 | Export to new Photos album, non-destructive, collision-safe | 02, 07 |
+| DEC-TBD-002 | File-based Codable persistence for the superseded MVP scope; workspace portion superseded by DEC-054 | 05, 06 |
+| DEC-TBD-005 | Export to new Photos album remains accepted; no-original-deletion portion superseded by DEC-054 | 02, 07 |
 | OPEN-P06 | Screenshots deprioritized, not forced | 03 |
 | OPEN-P07 | Live Photo stills eligible | 03 |
 | OPEN-P08 | Edited version soft bonus only | 03 |
@@ -94,8 +94,10 @@ Note: `TBD`/`OPEN` prefixes are historical IDs kept append-only; the Status colu
 
 Promoted to Accepted (values owned in linked docs, not duplicated here):
 DEC-TBD-001 (min iOS 26 → 07), DEC-TBD-002 (file-based Codable persistence,
-no database for MVP → 05, 06), DEC-TBD-005 (new Photos album export,
-non-destructive, collision-safe → 02, 07). See §3.
+with its workspace persistence portion superseded by DEC-054 → 05, 06),
+DEC-TBD-005 (new Photos album export remains accepted; its no-original-deletion
+portion is superseded by DEC-054 → 02, 07). See §3 and DEC-054 for replacement
+owner links.
 
 ### 1c. Open product questions (from 01 §57 — no answers yet)
 
@@ -525,12 +527,18 @@ Vision/SwiftUI/PhotoKit APIs and store distribution evidence in original docs.
 Rationale: avoids API gaps from targeting lower; values/APIs owned in 07.
 Risk: lost users on older OS. Reconsider when: device-matrix data says otherwise.
 
-**DEC-TBD-002 — File-based Codable persistence, no database for MVP (Accepted).**
-Owner: 05, 06. Decision: simplest persistence that fits MVP volume +
-lifecycle; no SwiftData/Core Data/tiny DB for MVP. Rationale: evidence-backed
-from original docs — over-build risk outweighs benefit at MVP scale; shapes
-owned in 06. Risk: migration later if volume forces it. Reconsider when:
-persistence need outgrows files.
+**DEC-TBD-002 — File-based Codable persistence, no database for MVP
+(Superseded by DEC-054 for the pivot workspace).**
+Owner: 05, 06. Historical decision: simplest persistence that fit the former
+MVP volume and lifecycle; no SwiftData/Core Data/tiny DB for that scope.
+DEC-054 replaces its workspace portion with SwiftData `ReviewScope`,
+workspace-item state, and migration marker/store infrastructure. Replacement
+owners: [`data-model.md`](data-model.md),
+[`ios-architecture.md`](ios-architecture.md), and
+[`docs/plans/feat-033.md`](../plans/feat-033.md). Its file/cache treatment of
+analyses, thumbnails, checkpoints, and model artifacts remains current.
+Risk and history are preserved; do not reinterpret this entry as prohibiting
+the explicitly migrated feat-035/036 operation entities.
 
 **DEC-TBD-003 — Analytics provider (Deferred).**
 Owner: 11. Options: none → Apple metrics → light custom → third-party. Must satisfy 09 + DEC-018.
@@ -540,12 +548,17 @@ Risk: privacy breach. Trigger: first metrics need.
 Owner: 01. Options: paid / unlock / sub / freemium / free-cap. Must not warp MVP arch.
 Risk: paywall rework. Trigger: pre-launch.
 
-**DEC-TBD-005 — Export to new Photos album, non-destructive, collision-safe (Accepted).**
-Owner: 02, 07. Decision: save the approved result as a new Photos album;
-never modify/delete originals; handle name collisions safely. Rationale:
-evidence-backed from original docs — matches MVP save flow and DEC-005/026
-trust posture; mechanics owned in 02, 07. Risk: permission surprise.
-Reconsider when: save-flow build proves otherwise.
+**DEC-TBD-005 — Export to new Photos album, non-destructive, collision-safe
+(Accepted in part; no-original-deletion portion superseded by DEC-054).**
+Owner: 02, 07. The accepted album-save portion remains: save the approved
+result as a new collision-safe Photos album without modifying originals;
+mechanics are owned by [`apple-frameworks.md`](apple-frameworks.md),
+[`ux-flows.md`](../product-specs/ux-flows.md), and feat-035. DEC-054
+supersedes only the former no-original-deletion portion by admitting a
+separate, user-confirmed cleanup deletion lane governed by
+[`review-rules.md`](../product-specs/review-rules.md),
+[`apple-frameworks.md`](apple-frameworks.md), and
+[`docs/plans/feat-036.md`](../plans/feat-036.md). Risk: permission surprise.
 
 **DEC-TBD-006 — Advanced ML (Superseded by DEC-029).**
 Owner: 03, 04, 07. Original options: custom quality/aesthetic model, embeddings, expression analysis.
@@ -697,3 +710,46 @@ simple → few deps → ship speed → cheap extensibility → no speculative in
 Native iOS + SwiftUI + PhotoKit + Vision + on-device + batch/cache + moment/similarity +
 explicit rules + manual QA + minimal infra. Avoid: cloud core, backends, heavy architecture,
 early personalization, big dep graphs, test targets, deletion, opaque top-N.
+
+---
+
+# DEC-054 — Assisted review and cleanup pivot
+
+**Status:** Accepted · **Date:** 2026-09-21
+**Owner:** [`product.md`](../product-specs/product.md), [`review-rules.md`](../product-specs/review-rules.md), [`data-model.md`](data-model.md), [`ios-architecture.md`](ios-architecture.md)
+**Affected:** `ux-flows.md`, `ui-copy.md`, `photo-intelligence.md`, `apple-frameworks.md`, `privacy.md`, `performance.md`, `roadmap.md`, feat-031–037
+
+The product is now assisted photo review/classification/grouping. Cleanup and
+album are entry intents into one shared workspace. Cleanup disposition, album
+membership, review progress, and immutable analysis facts/suggestions are
+independent; suggestions never mutate choices. Original deletion is a separate
+explicit operation requiring an exact reviewed set, full Photos read-write
+access, confirmation, persisted digest, and per-ID outcomes. Limited access may
+review/stage but cannot begin deletion. Album save is separate and never clears
+cleanup state.
+
+The file-only persistence constraint in DEC-TBD-002 is superseded for the
+durable workspace: SwiftData owns `ReviewScope`, workspace-item state, and the
+migration marker/store; files/cache remain the home for analyses, thumbnails,
+checkpoints, and model artifacts. Album-save operation state is owned by
+feat-035 and deletion operation state by feat-036, each through its own
+explicit SwiftData schema migration. Replacement owners are
+[`data-model.md`](data-model.md), [`ios-architecture.md`](ios-architecture.md),
+[`review-rules.md`](../product-specs/review-rules.md), and the linked
+feature plans.
+
+The no-original-deletion portion of DEC-TBD-005 is superseded: the accepted
+replacement permits only the separately gated, user-confirmed deletion flow in
+[`review-rules.md`](../product-specs/review-rules.md) and
+[`apple-frameworks.md`](apple-frameworks.md). DEC-TBD-005's new,
+non-destructive album-save portion remains accepted and is owned by
+[`apple-frameworks.md`](apple-frameworks.md) and feat-035.
+
+Legacy selected/restored imports as album included; rejected/removed imports as
+album excluded; cleanup is undecided and progress unseen. The legacy source
+remains until a migration commit marker.
+
+This supersedes the active behavior implications of earlier auto-curation and
+no-deletion wording for the new pivot, while preserving those entries as
+history. It does not admit Qwen or any new model. Reconsider on a safety,
+privacy, license, runtime, or evidence-backed product change.

@@ -1,127 +1,52 @@
-# Roadmap (phases owner)
+# Roadmap
 
-**Responsibility:** This file owns build order only: phases P0–P8, exit gates, MVP boundary, and deferred work.
+**Status:** Phase 1 pivot roadmap · 2026-09-21
 
-**Not owned here:** product goals ([01](../product-specs/product.md)), selection policy ([03](../product-specs/selection-rules.md)), pipeline design ([04](../design-docs/selection-engine.md)), perf budgets ([08](../ship-gates/performance.md)), QA method (archival, non-gating) ([10](../ship-gates/manual-qa.md)), metrics ([11](../ship-gates/analytics.md)). Where those topics appear below, this file states the phase; the linked file states the rule. Validation is reproducible automated evidence (Simulator permitted) + `./init.sh` only (DEC-040).
+This doc owns build order. Product scope is in [product.md](../product-specs/product.md);
+execution records are in `feature_index.json` and `features/feat-<id>.md`.
+`docs/plans/feat-032.md` through `docs/plans/feat-037.md` are the current
+actionable pivot plans. Other `docs/plans/*` files are older historical records
+and remain unchanged.
 
-Related docs:
-
-- `product.md` — what the product must do and MVP scope
-- `selection-rules.md` — what counts as a good pick
-- `selection-engine.md` — pipeline order
-- `performance.md` — perf targets and budgets
-- `manual-qa.md` — historical hand-QA handbook (archival, non-gating; never an acceptance, blocker, or release gate per DEC-040)
-- `analytics.md` — event names
-- `curation-intelligence.md` — post-MVP intelligence architecture and model gates
-- `curation-runtime-stack.md` — current concrete APIs/models, routing, and benchmark status
-
-Execution work does not live here. Tracked work lives in `feature_index.json` and `docs/plans/feat-<id>.md` per `AGENTS.md`.
-
----
-
-## 1. Build order (read first)
-
-Build a small complete pipeline first, then make it good.
+## Pivot sequence
 
 ```text
-P0 foundation → P1 analysis → P2 engine → P3 MVP
-  → P4 quality → P5 reliability → P6 beta
-  → P7 personalization → P8 future
+feat-031 blocked/preserved
+  → feat-032 contracts/docs/tracker
+  → feat-033 durable workspace + migration
+  → feat-034 shared grouped review
+  → feat-035 album draft + resilient save
+  → feat-036 confirmed original deletion
+  → feat-037 suggestion integration + legacy retirement
 ```
 
-Rules:
+Only one feature is active. A dependent feature becomes active only after its
+predecessor's acceptance and required verification pass. Every behavior change
+uses reproducible automated evidence plus `./init.sh`; this project adds no test
+targets, test files, test frameworks, or standalone proof harnesses.
 
-- Selection quality comes before polish. A pretty app with bad picks is a failure.
-- Prefer the cheapest layer that solves the measured failure: deterministic/native first when sufficient, then measured Core ML/semantic intelligence. See [03](../product-specs/selection-rules.md) and [curation-runtime-stack.md](../design-docs/curation-runtime-stack.md).
-- Stay on-device. No backend until a real need forces it.
-- Keep engine settings in one place so weights and thresholds are easy to change.
+## Plan records
 
----
+Current actionable pivot plans are [feat-032](../plans/feat-032.md),
+[feat-033](../plans/feat-033.md), [feat-034](../plans/feat-034.md),
+[feat-035](../plans/feat-035.md), [feat-036](../plans/feat-036.md), and
+[feat-037](../plans/feat-037.md). Other `docs/plans/*` files are older
+historical records; links are preserved and those plans are not current work.
 
-## 2. Phases
+## Phase gates
 
-| Phase | Goal | Core question | Done when |
-|---|---|---|---|
-| P0 — Foundation | Runnable app shell, permission flow, basic screens | Can we build on it? | App runs on a real iPhone; photo permission works; photo model exists |
-| P1 — Analysis prototype | Read real photos with PhotoKit + Vision | Can we read 1,000 photos? | 100–2,000 real assets analyzed without memory failure; each asset has signals for [03](../product-specs/selection-rules.md) |
-| P2 — Engine prototype | First full pipeline: exclude → moments → duplicates → score → shortlist → album | Can we curate? | 1,000 photos → sensible album with no help; clearly better than random or every-Nth-photo |
-| P3 — Functional MVP | Normal user completes Select → Analyze → Review → Save | Can a normal user use it? | New user completes full flow alone: pick, process, review, fix mistakes, save. Scope: [01](../product-specs/product.md) |
-| P4 — Quality hardening | Fix worst real failure modes; add measured intelligence only where it improves picks | Is the result actually good? | Most albums need small fixes, not rebuilds. Method: reproducible automated evidence (Simulator permitted) + `./init.sh` (DEC-040); [10](../ship-gates/manual-qa.md) (archival, non-gating) optional context only, never a gate; post-MVP intelligence architecture: [curation-intelligence.md](../design-docs/curation-intelligence.md) |
-| P5 — Reliability | Handle large libraries, interruptions, memory | Can it handle real libraries? | Targets in [08](../ship-gates/performance.md) pass; no crashes, lost state, or stuck progress |
-| P6 — Beta | Real users outside the team | Do users trust it? | Curation completes; corrections are small; saved albums confirmed by reproducible automated evidence (Simulator permitted) + `./init.sh` (DEC-040); [11](../ship-gates/analytics.md) only as a secondary signal if analytics is decided; [10](../ship-gates/manual-qa.md) (archival, non-gating) never a gate |
-| P7 — Personalization | Learn per-user taste from corrections | Can it learn this user? | Repeat corrections fall over sessions; bad photos never beat sharp ones on taste alone |
-| P8 — Future intelligence | Semantic judging, story-aware albums, learned ranking | Can it reason about ambiguous curation choices without weakening the core? | Only after P0–P6 pass and the relevant quality/license/performance gates in [curation-intelligence.md](../design-docs/curation-intelligence.md) pass |
-
-Feat-031 is the staged P4 quality-mode implementation. It does not change the
-large-set native route, and it cannot graduate a Qwen profile without actual
-image-sensitive, quality, privacy, license, lifecycle, and resource evidence.
-
-Do not skip phases. If P2 output still looks random, stay in P2. Do not cover it with UI polish.
-
----
-
-## 3. Decision gates
-
-Stop and check before doing more work.
-
-| Gate | After | Question | If no, do this first |
-|---|---|---|---|
-| G1 — On-device works | P1 | Can the phone handle the load? | Tune image size, batching, Vision load per [08](../ship-gates/performance.md). Do not add a backend |
-| G2 — Albums useful | P2 | Is output better than random? | Fix moments, duplicates, scoring, diversity per [03](../product-specs/selection-rules.md). Do not polish UI |
-| G3 — Corrections small | P6 | Do users rebuild every album? | Build a failure inventory; fix with the cheapest adequate layer and add measured intelligence when it demonstrably improves the failing decision |
-| G4 — Taste needed | P6 | Do users show steady personal taste? | Only then add P7. Generic engine must be good first |
-| G5 — Backend needed | Any | Does a need force a server? | Needs: sync, accounts, sharing, server-only feature. "Maybe later" is not enough |
-
----
-
-## 4. MVP boundary
-
-MVP contains only this. Anything else needs a written reason.
-
-```text
-Photo permission + input pick + on-device analysis
-  + moments + duplicate handling + quality ranking
-  + diverse album + progress + review (remove / restore)
-  + save + basic failure recovery
-```
-
-MVP success: a user gives a large messy set and keeps the small album with only small fixes. If that fails, keep fixing the engine. Do not add scope.
-
-Post-MVP, ask three questions before adding a feature:
-
-1. Does it make picks better?
-2. Does it save the user real effort?
-3. Does real use show users need it?
-
-If none is yes, keep it deferred.
-
----
-
-## 5. Deferred and non-goals
-
-Not in MVP. Detailed execution, if ever approved, moves to `feature_index.json` + `docs/plans/feat-<id>.md`.
-
-| Item | Status |
+| Feature | Exit gate |
 |---|---|
-| Backend server, user accounts, cloud sync | Deferred |
-| Shared or joint albums | Deferred |
-| macOS / web app | Deferred |
-| Custom model training | Deferred until automated Golden-shaped/trip-shaped evidence justifies a learned ranker; gate defined in [curation-intelligence.md](../design-docs/curation-intelligence.md) |
-| Server image work, search | Deferred |
-| Subscriptions, paywall | Deferred until money plan is set |
-| Social feed, photo editor, auto-delete of rejects, full library manager | Out of scope |
-| Android app | Out of scope |
-| Test targets, `*Test*.swift`, test-only code | Not allowed per repo policy; validation is reproducible automated evidence (Simulator permitted) + `./init.sh` (DEC-040); [10](../ship-gates/manual-qa.md) (archival, non-gating) never a gate |
+| 032 | Owner docs agree on shared workspace, independent state, access/deletion, migration, copy, and tracker order |
+| 033 | SwiftData workspace round-trips; file/cache boundary and idempotent legacy marker are proven |
+| 034 | Both intents use one grouped review surface and preserve user choices through resume/re-analysis |
+| 035 | Album draft/save is independent, resumable, and truthful on partial outcomes |
+| 036 | Exact-set, full-access, explicit-confirmation deletion is bounded and reconciles without automatic retry |
+| 037 | Suggestions are advisory, admitted runtime evidence is complete, and legacy active ownership is retired |
 
-Do not build deferred items to "save time later." Timing matters more than the idea.
+## Deferred
 
----
-
-## 6. Where execution lives
-
-This doc stays thin and stable. It never holds task lists, file changes, or dates.
-
-- Current status and execution order: `feature_index.json`
-- Feature scope, ownership, acceptance, and evidence: `features/feat-<id>.md`
-- Bounded work (1–3 files, <200 lines): plan inside `features/feat-<id>.md`
-- Large work (4+ files, migration, phases, rollback): `docs/plans/feat-<id>.md`, linked from the feature file
+Cloud inference, accounts, sync, social features, editing, video, identity
+recognition, automatic deletion, and unverified models remain out of scope.
+Model candidates stay research-only until license, privacy, runtime, quality,
+and iPhone performance evidence is recorded in the owner docs.

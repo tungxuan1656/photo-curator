@@ -1,6 +1,6 @@
 # AGENTS.md
 
-photos-curator is an iPhone app that turns a large photo set (100–2,000) into a smaller quality-adaptive curated album (size adapts to usable-quality moment count; ~10% with 30–40..120–150 clamps are default starts per 03). Flow is Select→Analyze→Review→Save to an Apple Photos album; processing is on-device only and never deletes originals.
+photos-curator is an on-device iPhone app built around one shared cleanup/album workspace for large photo sets. Originals are never deleted automatically. Deletion eligibility follows [docs/index.md](docs/index.md) → review rules: full Photos read-write access and exact-set user confirmation.
 
 Detected stack: `Swift 5 / SwiftUI, PhotoKit, Vision, Core ML — Xcode project apps/photo-curator.xcodeproj (scheme photo-curator); SwiftLint + SwiftFormat; fastlane present but stale (ignore)`
 

@@ -2,9 +2,10 @@
 
 ## Status
 
-- Status: `active` — implementation approved by the user on 2026-09-18.
+- Status: `blocked` — pivot paused this feature on 2026-09-21; incomplete acceptance and evidence are preserved below.
 - Depends on: `feat-028`, `feat-030` (both done).
 - Branch: `feat/feat-031-qwen-curation`.
+- Pivot handoff (2026-09-21): Do not claim Qwen admission, image-quality improvement, or feature completion. The shared product now prioritizes assisted review, independent cleanup/album state, and durable workspace contracts. The ordered pivot lane is recorded in [roadmap.md](../docs/exec-plans/roadmap.md); feat-032 is its preserved contract predecessor, not a current activation claim.
 
 ## Goal
 
