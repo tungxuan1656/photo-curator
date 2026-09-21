@@ -231,6 +231,16 @@ User intent:
 
 Long-term personalization is out of scope; future weights may adjust ranking but must not bypass duplicate suppression.
 
+### 14.1 Quality-mode grouping
+
+Quality mode keeps coverage groups separate from retake groups. A coverage
+group represents distinct visible content, not a person or inferred relation.
+Grouping precedes irreversible pruning, and each zero-pick group records an
+unavailable-only, unusable-only, user-excluded, covered, or repaired outcome.
+Qwen pair preferences are advisory evidence inside compatible groups only;
+invalid, uncertain, reversed-order disagreement, timeout, and missing output
+fall back to native stable ordering.
+
 ## 15. Tie-breaks (deterministic)
 
 When candidates are effectively tied, decide in this order: explicit user selection; stronger quality tier; higher quality score; intentional-edit preference; favorite preference; higher usable resolution; stable asset-identifier order. Identical inputs plus identical configuration produce identical output. Timestamp randomness is forbidden as a decider.

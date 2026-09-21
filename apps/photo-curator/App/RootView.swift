@@ -4,6 +4,7 @@ import SwiftUI
 /// on appear and on return from Settings.
 struct RootView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(ModelInstallationModel.self) private var modelInstallation
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -76,8 +77,21 @@ struct RootView: View {
             }
         }
         .task {
-            await appModel.refreshAuthorization()
-            await appModel.refreshResumeSnapshot()
+            await appModel.startup()
+        }
+        .alert(
+            "Download AI model?",
+            isPresented: Binding(
+                get: { modelInstallation.isSetupPromptPresented },
+                set: { modelInstallation.isSetupPromptPresented = $0 }
+            )
+        ) {
+            Button("Download Model") { modelInstallation.download() }
+            Button("Later", role: .cancel) { modelInstallation.dismissSetupPrompt() }
+        } message: {
+            Text(
+                "Download Qwen3.5-2B for on-device AI curation. The download runs while you use the app."
+            )
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {

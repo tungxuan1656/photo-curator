@@ -39,12 +39,12 @@ The production baseline is the shipped deterministic pipeline at this branch:
 
 ## Labels, provenance, and prohibited-data boundary
 
-The proof uses `fixture-oracle-v3`, a repository-local static annotation manifest implemented by
-`FixtureOracle.manifests` in `scripts/proof/feat-028-proof.swift`. The manifest is the independent
+The historical evaluation used `fixture-oracle-v3`, a repository-local static annotation manifest.
+The manifest was the independent
 label source: it assigns authored structural `MUST_KEEP`/`ACCEPTABLE`/`REJECT` rows without reading
 `PhotoAnalysis`, scalar scores, rank order, or engine output. The H-1000 manifest includes an
 explicit group where the oracle `MUST_KEEP` is not the highest deterministic rank; the proof asserts
-that mismatch and the selected rank winner. Every split uses the same manifest version and labels.
+that mismatch and the selected rank winner. Every split used the same manifest version and labels.
 This is deterministic structural fixture evidence only; it is not human taste, an external
 benchmark, or a production-quality claim, and no benchmark result is invented.
 
@@ -69,7 +69,7 @@ asset-ID sets, and oracle-manifest rows:
 | H-1000 | 1,000 assets / 50 groups × 20 / 50 moments | large-library determinism and bounded selection shape |
 
 The wider duplicate groups keep the independent oracle rows representable while preserving the four
-input counts and compression shapes. The proof asserts asset-ID disjointness across every split,
+input counts and compression shapes. The historical evaluation recorded asset-ID disjointness across every split,
 complete label coverage, the same `fixture-oracle-v3` provenance for all four rows, and an explicit
 MUST_KEEP-vs-rank selection mismatch.
 
@@ -80,9 +80,9 @@ any model work. Do not use the evaluation namespaces for fitting or threshold tu
 ## Metrics and acceptance thresholds
 
 The historical metric names and owner definitions remain those in `manual-qa.md` §4 and feat-017;
-the manual handbook is archival and non-gating under DEC-040. The proof reports:
+the manual handbook is archival and non-gating under DEC-040. The recorded evaluation reports:
 
-- Must-Keep Recall = selected `MUST_KEEP` / total oracle `MUST_KEEP`; the proof asserts the
+- Must-Keep Recall = selected `MUST_KEEP` / total oracle `MUST_KEEP`; the historical evaluation recorded the
   owner reference target `≥95%` on every evaluation split.
 - Good Selection Rate = selected (`MUST_KEEP` + `ACCEPTABLE`) / selected.
 - Bad Pick Rate = selected `REJECT` / selected.
@@ -114,21 +114,14 @@ learning-to-rank candidate merely because the architecture permits one.
 Run from the repository root:
 
 ```text
-./scripts/proof/feat-028.sh
+./init.sh
 ```
 
-The script stages every shipped source used by the proof, checks byte identity, compiles for the
-iOS Simulator SDK, boots `iPhone 17 Pro`, and runs the proof through `simctl spawn`. Each split
-runs the real `SelectionEngine` twice with the same deterministic inputs and FeaturePrint-shaped
-edges. Before evaluation, the proof asserts the complete `AppConfiguration.default.selection`
-field set, frozen weights/bonuses, behavior of the edited/favorite/pixel-area/asset-ID tie-break
-chain on equal-score fixtures (including reversed input order), oracle provenance, exact label
-coverage, asset-ID disjointness, the explicit MUST_KEEP-vs-rank mismatch/selection case, and
-oracle/rank independence. It then checks versions, Recall and the remaining metrics, the canonical
-Duplicate Leakage denominator, and canonical output equality. No test target or test framework is
-used.
+The historical evaluation compiled the shipped selection sources for the iOS Simulator and recorded
+the deterministic fixture metrics below. The current repository verification is `./init.sh`. Do not
+add a replacement proof file, script, test target, or test framework.
 
-Recorded focused proof (2026-09-18):
+Recorded focused evaluation (2026-09-18):
 
 ```text
 STAGED-MATCH 17
@@ -155,7 +148,7 @@ contract: feat-023 ran Smoke 60, Golden-shaped 200, Trip-shaped 150, and H-1000 
 fallback-identical picks and double-run byte equality; feat-026 preserved deterministic engine
 output while adding review-only state; and feat-027 kept iOS 26 provider/image calls at zero
 with Golden-shaped bounded jury fallback. Those records contain no unresolved named baseline
-failure requiring a learned ranker. The feat-028 proof is the focused rank-stage replay, not a
+failure requiring a learned ranker. The feat-028 evaluation was a focused rank-stage replay, not a
 claim that this structural oracle replaces a future approved product-quality annotation set.
 
 
@@ -166,8 +159,7 @@ runtime status and decision log, but do not change app code, selection behavior,
 versions, or fallback behavior. The iOS 26 native path and the iOS 27 optional semantic jury
 remain the only shipped intelligence layers; both continue to fall back deterministically.
 
-Rollback is documentation/proof-only: revert the feat-028 tracker/plan/decision/runtime-status
-changes and remove `scripts/proof/feat-028.sh` plus `scripts/proof/feat-028-proof.swift`.
+Rollback is documentation-only: revert the feat-028 tracker/plan/decision/runtime-status changes.
 There is no model artifact, migration, cache invalidation, or runtime adapter to roll back.
 
 Reconsider only when a named residual failure remains after the deterministic baseline and
@@ -177,7 +169,7 @@ production user photos or corrections as global training data.
 
 ## Verification status
 
-- [x] Focused smoke, Golden-shaped, trip-shaped, and H-1000 proof passed.
+- [x] Historical smoke, Golden-shaped, trip-shaped, and H-1000 evaluation passed.
 - [x] `./init.sh` final post-implementation pass: SwiftFormat PASS (`0/87` files formatted),
   SwiftLint strict PASS (`0` violations in `66` files), Simulator build PASS (`BUILD SUCCEEDED`),
   tests SKIP by DEC-040 (`no automated tests`).

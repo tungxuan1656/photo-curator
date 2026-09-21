@@ -363,6 +363,13 @@ struct StoredAlternative: Codable, Sendable {
 
 Review-surface order, shortlist sizing, and accept semantics: [02](../product-specs/ux-flows.md). Album sizing targets: [03 §14](../product-specs/selection-rules.md). Debug extras (`candidateRank`, `clusterRank`, raw score maps) stay dev-only and out of prod persistence.
 
+Quality-mode results add an optional execution envelope to the result record.
+The envelope stores requested and executed mode, engine/config/grouping/prompt
+versions, admitted model/runtime revisions, aggregate comparison counts, and a
+closed degradation reason. It stores no images, prompts, raw model output,
+pair judgments, asset IDs, or embeddings. Legacy native results decode without
+the envelope and retain engine version 3.
+
 ---
 
 ## 10. Session, progress, config storage

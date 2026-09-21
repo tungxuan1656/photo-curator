@@ -57,7 +57,10 @@ Photos Curator app: PhotoKit + Vision + Core ML + Selection Engine + local cache
 Optional metrics endpoint (no photo data)
 ```
 
-There is no app-server path for pixels or face data. The pipeline has no network need. Selection runs offline once assets are local.
+There is no app-server path for pixels or face data. Selection runs offline
+once Photos assets and an optional local model are installed. Model setup is
+the only app-owned network operation: it fetches allowlisted model artifacts
+from the pinned source, verifies hashes, and never sends photo data.
 
 What never leaves the device:
 
@@ -73,7 +76,9 @@ PHAsset.localIdentifier and filenames
 
 Apple iCloud retrieval is an exception. iOS may fetch an asset from iCloud. That is Apple behavior. It is not a Photos Curator upload. The app keeps no cloud copy.
 
-ML contract: Vision, bundled Core ML models, and local checks are allowed. Remote scoring, remote face calls, and remote vector stores are blocked. A remote AI plan needs a new review first.
+ML contract: Vision, bundled Core ML models, and verified local MLX model files
+are allowed. Remote scoring, remote face calls, remote vector stores, and
+model-hosted photo inference are blocked. A remote AI plan needs a new review.
 
 Model training: user photos do not train models. This covers images, crops, faces, and embeddings. Local taste settings stay local.
 
@@ -229,7 +234,10 @@ App networking never carries items in §2. The build should show this by design.
 
 Crash reports carry no photo data. No thumbs in snaps. No paths. No IDs. No face notes. See §4.
 
-Third-party SDKs: add as few as possible. Before each add, note why it is needed, what it sends, what domains it hits, if it has a privacy manifest, and if Apple code can do the job. Store answers with the release notes.
+Third-party SDKs: add as few as possible. MLX Swift LM is allowed only for
+local model execution; it receives local image tensors and model files, not a
+network photo request. Record its revision, license, privacy manifest, and
+artifact source before admission.
 
 Ads: none in MVP. Tracking: none in MVP. Accounts: none in MVP. Backend for photos: none in MVP. A light backend for flags or anonymous counts is allowed only if it stays apart from image data.
 

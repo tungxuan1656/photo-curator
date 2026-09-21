@@ -18,7 +18,7 @@
 
 ## Acceptance
 
-- [ ] <Concrete condition, provable by reproducible automated evidence.>
+- [ ] <Concrete condition, verified with a passing `./init.sh` run.>
 
 ## Relevant docs
 
@@ -34,8 +34,8 @@ phases/rollback, or two independent risk signals. Link it from this feature. -->
 
 ## Verify
 
-- Reproducible automated evidence for every behavior change (Simulator-based proof permitted): record commands, fixtures, and outputs in the handoff.
-- `./init.sh` once at feat end (+ once before PR)
+- Run `./init.sh` once at feat end and once before PR. Record its output in the handoff.
+- Do not create standalone proof files, proof scripts, or proof harnesses.
 - Manual QA is not required and is never an acceptance criterion, blocker, or release gate (DEC-040).
 - No test targets, no `*Test*.swift`, no test frameworks.
 

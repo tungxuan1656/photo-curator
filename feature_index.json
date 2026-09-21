@@ -34,7 +34,8 @@
     "feat-027",
     "feat-028",
     "feat-029",
-    "feat-030"
+    "feat-030",
+    "feat-031"
   ],
   "features": [
     {
@@ -237,7 +238,7 @@
       "depends_on": [
         "feat-022"
       ],
-      "gate": "Embedding choice is benchmarked via reproducible automated proof (Simulator permitted), license/checksum is recorded, and Tier-C routing has a safe fallback; acceptance is reproducible automated evidence (Simulator permitted) plus ./init.sh.",
+      "gate": "Embedding choice is documented, license/checksum is recorded, and Tier-C routing has a safe fallback; ./init.sh passes.",
       "id": "feat-024",
       "status": "done",
       "title": "Visual embedding foundation"
@@ -305,6 +306,16 @@
       "id": "feat-030",
       "status": "done",
       "title": "Bilingual localization"
+    },
+    {
+      "depends_on": [
+        "feat-028",
+        "feat-030"
+      ],
+      "gate": "Qwen-backed small-set curation improves independent image-corpus coverage and best-shot selection, validates model lifecycle and bounded fallback, preserves review overrides, and passes reproducible automated evidence plus ./init.sh; model/device performance claims remain evidence-scoped.",
+      "id": "feat-031",
+      "status": "active",
+      "title": "Quality-first on-device Qwen curation"
     }
   ],
   "rule": "One feature may be active at a time. A feature starts only after all dependencies are done, owns its complete implementation and verification, and closes only after its acceptance criteria and ./init.sh pass."

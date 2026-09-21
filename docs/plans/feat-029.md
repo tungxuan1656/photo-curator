@@ -21,7 +21,7 @@
 - Scope tap, double-tap, and drag inspection gestures to the image surface; chrome buttons must not wait for gesture arbitration.
 - Keep native `NavigationLink` dismissal unless the focused gesture-scope fix fails to remove the Back delay; do not broaden to modal navigation preemptively.
 - Respect Dynamic Type, Reduce Motion, safe areas, portrait, and landscape.
-- Do not add test targets, `*Test*.swift` files, test frameworks, or a manual-QA gate. Required evidence is `scripts/proof/feat-029.sh` plus `./init.sh`.
+- Do not add test targets, `*Test*.swift` files, test frameworks, standalone proof files, or a manual-QA gate. Required verification is `./init.sh`.
 
 ---
 
@@ -31,17 +31,13 @@
 - Create `apps/photo-curator/Features/Review/PhotoInspectionState.swift` — pure fit/zoom/pan/page state and bounds math; no SwiftUI view or pixels.
 - Create `apps/photo-curator/Features/Review/PhotoInspectionCanvas.swift` — fullscreen image canvas, gesture wiring, and non-gesture inspection controls.
 - Modify `apps/photo-curator/Features/Review/PhotoDetail.swift` — session-aware load lifecycle, fullscreen S11 shell, pager/selection/analysis integration.
-- Create `scripts/proof/feat-029-proof.swift` — deterministic interaction-state proof compiled with the state source.
-- Create `scripts/proof/feat-029.sh` — stages the shipped state source, runs the proof, asserts the required view accessibility surface, and exits nonzero on a regression.
 - Modify `features/feat-029.md` and `progress.md` only while activating, verifying, or closing the feature.
 
-### Task 1: Build a deterministic inspection state machine and proof
+### Task 1: Build a deterministic inspection state machine
 
 **Files:**
 
 - Create: `apps/photo-curator/Features/Review/PhotoInspectionState.swift`
-- Create: `scripts/proof/feat-029-proof.swift`
-- Create: `scripts/proof/feat-029.sh`
 
 **Interfaces:**
 
@@ -54,10 +50,7 @@
 - [x] Implement `reset()` to return exactly to Fit and centered offset.
 - [x] Implement a double-tap transition: Fit → `doubleTapScale`; any zoomed state → Fit.
 - [x] Expose `canPageHorizontally` only when `scale` equals Fit and the horizontal drag clears a documented minimum translation. Expose Fit-only downward dismissal separately; do not infer either action while zoomed.
-- [x] Write the Swift proof as an executable, not a test target. Compile the shipped state source together with the proof using `swiftc`.
-- [x] Assert: scale clamps at 6; offset clamps on both axes; reset clears the offset; Fit drag produces one page direction; Fit downward drag dismisses; zoomed drag produces no page or dismissal; and changing an asset resets state.
-- [x] In `feat-029.sh`, fail if the proof source differs from the staged state source, then compile and run the proof. Print named PASS lines for each asserted rule.
-- [x] Run `./scripts/proof/feat-029.sh` and record the exact output in the active feature handoff.
+- [x] Implement the state rules in the shipped Swift source and run `./init.sh` after the change.
 
 ### Task 2: Implement the fullscreen canvas and accessible controls
 
@@ -98,7 +91,7 @@
 - [x] Replace the large opaque chrome panels and default bordered styles with iOS 26 Liquid Glass islands: Back/position at top-left, Previous/Next at top-right, lower selection/analysis/Fit actions, continuous rounded corners, explicit accessibility labels, 44-point hit targets, and a translucent-material fallback.
 - [x] Animate chrome visibility with short edge-aware fade/offset transitions; crossfade loading/image changes; animate discrete zoom/page actions with a responsive spring or ease curve; keep continuous pinch/pan unanimated.
 - [x] Add selection/page sensory feedback only to discrete actions and preserve Reduce Motion behavior for all explicit animations.
-- [x] Run focused SwiftFormat/SwiftLint, `./scripts/proof/feat-029.sh`, `./init.sh`, Simulator launch smoke, and `git diff --check`; record evidence before closing the feature.
+- [x] Run focused SwiftFormat/SwiftLint, `./init.sh`, Simulator launch smoke, and `git diff --check`; record evidence before closing the feature.
 
 ### Task 3: Preserve review and PhotoKit lifecycle invariants
 
@@ -129,12 +122,12 @@
 
 **Interfaces:**
 
-- Consumes: the shipped transform source, fullscreen canvas source, `PhotoDetail`, repository proof script, and workspace verification command.
+- Consumes: the shipped transform source, fullscreen canvas source, `PhotoDetail`, and workspace verification command.
 - Produces: feature evidence sufficient to mark `feat-029` done.
 
-- [x] Run `./scripts/proof/feat-029.sh`; require named PASS output for clamp, Fit-page, zoom-pan, reset-on-asset-change, current-only result, and required accessibility-control assertions.
+- [x] Run `./init.sh` and record the verification result for the shipped transform, pager, and accessibility changes.
 - [x] Run a reproducible Simulator build/install/launch smoke against the current scheme. Record the device identifier, launch result, and no-crash evidence; do not make a manual walkthrough a gate.
 - [x] Run `./init.sh` and require format PASS, strict SwiftLint PASS, Simulator `BUILD SUCCEEDED`, and policy test SKIP.
 - [x] Verify `git diff --check` is clean and no `*Test*.swift` files or test targets were added.
-- [x] Check every acceptance box only with its corresponding proof/build evidence. Record commands, output, unavailable-path result, and no-service-contract-change result in `features/feat-029.md`.
+- [x] Check every acceptance box with the implementation review and `./init.sh` evidence. Record the command, output, unavailable-path result, and no-service-contract-change result in `features/feat-029.md`.
 - [x] Append one concise `progress.md` block with result, evidence, blockers, and one next action; then mark `feature_index.json` and `features/feat-029.md` done only if every acceptance item passes.

@@ -25,7 +25,7 @@ MUST invariants (only use of MUST in this doc):
 
 ## 1. What QA covers
 
-Two test areas. Either may be explored by hand on a real iPhone or via Simulator; hand exploration is optional and never acceptance evidence. No automated test suite for MVP (no test targets, no `*Test*.swift`, no test frameworks per repo policy). Required acceptance evidence is reproducible automated proof (Simulator permitted) plus `./init.sh`.
+Two test areas. Either may be explored by hand on a real iPhone or via Simulator; hand exploration is optional and never acceptance evidence. No automated test suite exists for MVP (no test targets, no `*Test*.swift`, no test frameworks per repo policy). Required repository verification is `./init.sh`.
 
 | Area | Question | Where rules live |
 |---|---|---|
@@ -68,7 +68,7 @@ Notes:
 
 - A is the default smoke set. G is the most important qualitative check when hand exploration is used.
 - H checks system behavior, not taste. Do not hand-score all 5,000 photos.
-- Physical-iPhone runs are optional exploratory follow-up only, never acceptance blockers: Simulator-based automated proof is permitted acceptance evidence (DEC-032). Where a physical device is available, the daily device plus an older device may be used for extra memory and heat signal.
+- Physical-iPhone runs are optional exploratory follow-up only, never acceptance blockers. Where a physical device is available, the daily device plus an older device may be used for extra memory and heat signal.
 - Selection policy terms (moment, cluster, representative, keeper) follow 03. Stored field names follow 06.
 
 ---

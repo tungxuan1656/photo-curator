@@ -275,6 +275,12 @@ CGImage + orientation -> feature print + face rects + face quality (+ optional l
 
 Post-MVP intelligence must be staged rather than all-models-all-assets. Universal, contextual, candidate, difficult-case, semantic-jury, and verification tiers are defined in [curation-intelligence.md](curation-intelligence.md); current routing and selected tools live in [curation-runtime-stack.md](curation-runtime-stack.md).
 
+Quality-mode image inputs follow the same service boundary. `PhotoKit` resolves
+an asset to an oriented bounded `CGImage`; the Qwen adapter consumes that image
+inside the runtime boundary and releases it after the pair completes. The
+domain and persistence layers never receive MLX tensors, model containers,
+image URLs, or PhotoKit objects.
+
 Rules:
 
 - Store derived values (counts, quality summaries, version, timestamp) per 06. Face boxes and feature-print blobs stay in bounded temp working memory only and are released after use; retention and redaction: [09](../ship-gates/privacy.md). Never store source images or face crops.

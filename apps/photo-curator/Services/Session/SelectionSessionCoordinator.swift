@@ -8,6 +8,22 @@ struct SelectionRequest: Sendable {
     let sessionID: SessionID
     let sourceAssetIDs: [AssetID]
     let config: AppConfiguration
+    let qualityMode: QualityMode
+    let qualityModelAvailableAtStart: Bool
+
+    init(
+        sessionID: SessionID,
+        sourceAssetIDs: [AssetID],
+        config: AppConfiguration,
+        qualityMode: QualityMode = .native,
+        qualityModelAvailableAtStart: Bool = false
+    ) {
+        self.sessionID = sessionID
+        self.sourceAssetIDs = sourceAssetIDs
+        self.config = config
+        self.qualityMode = qualityMode
+        self.qualityModelAvailableAtStart = qualityModelAvailableAtStart
+    }
 }
 
 /// Canonical stored stages — data-model.md §10 raw values reused verbatim.
@@ -65,6 +81,7 @@ enum UserFacingErrorCode: Equatable, Sendable {
     case photosAccessNeeded
 }
 
+// swiftlint:disable:next type_body_length
 actor SelectionSessionCoordinator {
     private let imageLoader: any PhotoImageLoader
     private let analyzer: any ImageAnalysisService
@@ -75,6 +92,7 @@ actor SelectionSessionCoordinator {
     private let tierCProvider: any VisualEmbeddingProvider
     private let semanticJuryProvider: any SemanticJuryProvider
     private let semanticJuryAvailability: @Sendable () -> Bool
+    private let qualityRunner: QualityCurationRunner?
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "selection"
     )
@@ -101,7 +119,8 @@ actor SelectionSessionCoordinator {
         pressure: MemoryPressureObserver? = nil,
         tierCProvider: any VisualEmbeddingProvider = NativeDerivedEmbeddingProvider(),
         semanticJuryProvider: any SemanticJuryProvider = NoopSemanticJuryProvider(),
-        semanticJuryAvailability: @escaping @Sendable () -> Bool = { SemanticJuryPolicy.isAvailableOnProductOS() }
+        semanticJuryAvailability: @escaping @Sendable () -> Bool = { SemanticJuryPolicy.isAvailableOnProductOS() },
+        qualityRunner: QualityCurationRunner? = nil
     ) {
         self.imageLoader = imageLoader
         self.analyzer = analyzer
@@ -111,6 +130,7 @@ actor SelectionSessionCoordinator {
         self.tierCProvider = tierCProvider
         self.semanticJuryAvailability = semanticJuryAvailability
         self.semanticJuryProvider = semanticJuryProvider
+        self.qualityRunner = qualityRunner
         pipeline = BatchPipeline(
             imageLoader: imageLoader,
             analyzer: analyzer,
@@ -187,7 +207,12 @@ actor SelectionSessionCoordinator {
     }
 
     /// Background path: write a safe checkpoint now, stop starting new work.
-    func checkpointNow(sessionID: SessionID, completed: [AssetID], stage: ProcessingStage) async {
+    func checkpointNow(
+        sessionID: SessionID,
+        completed: [AssetID],
+        stage: ProcessingStage,
+        qualityIdentity: QualityCheckpointIdentity? = nil
+    ) async {
         let stub = SessionCheckpoint(
             sessionID: sessionID,
             stage: stage.rawValue,
@@ -195,6 +220,7 @@ actor SelectionSessionCoordinator {
             sourceAssetIDs: [],
             configVersion: AppConfiguration.default.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
+            qualityIdentity: qualityIdentity,
             updatedAt: Date()
         )
         try? await checkpointStore.save(stub)
@@ -208,6 +234,10 @@ actor SelectionSessionCoordinator {
         generation: Int
     ) async throws -> BatchResult {
         let hasCheckpoint = (try? await checkpointStore.load(sessionID: request.sessionID)) != nil
+        let qualityIdentity = QualityCheckpointIdentity.expected(
+            for: request.qualityMode,
+            modelAvailableAtStart: request.qualityModelAvailableAtStart
+        )
         // Structured delivery: pipeline progress fans into a per-run stream and
         // a single consumer forwards it. The consumer is awaited before every
         // return/throw, so no unstructured delivery task outlives this run to
@@ -222,14 +252,22 @@ actor SelectionSessionCoordinator {
         }
         do {
             if hasCheckpoint {
-                let output = try await pipeline.resume(assets: assets, sessionID: request.sessionID) {
+                let output = try await pipeline.resume(
+                    assets: assets,
+                    sessionID: request.sessionID,
+                    qualityIdentity: qualityIdentity
+                ) {
                     source.yield($0)
                 }
                 source.finish()
                 await consumer.value
                 return output
             }
-            let output = try await pipeline.run(assets: assets, sessionID: request.sessionID) {
+            let output = try await pipeline.run(
+                assets: assets,
+                sessionID: request.sessionID,
+                qualityIdentity: qualityIdentity
+            ) {
                 source.yield($0)
             }
             source.finish()
@@ -250,10 +288,25 @@ actor SelectionSessionCoordinator {
         assets: [PhotoAsset],
         analyses: [AssetID: PhotoAnalysis],
         configuration: SelectionConfiguration,
-        laneCount: Int
+        laneCount: Int,
+        qualityMode: QualityMode = .native,
+        qualityModelAvailableAtStart: Bool = false,
+        sessionID: SessionID = SessionID(rawValue: UUID())
     ) async throws -> SelectionResult {
         let candidates = engine.duplicateCandidates(for: assets, configuration: configuration)
         let edges = try await rebuildSimilarityEdges(for: assets, candidates: candidates, laneCount: laneCount)
+        if qualityMode.isQualityMode, let qualityRunner {
+            return try await qualityRunner.run(
+                sessionID: sessionID,
+                sourceAssets: assets,
+                analyses: analyses,
+                similarityEdges: edges,
+                configuration: configuration,
+                requestedMode: qualityMode,
+                modelAvailableAtStart: qualityModelAvailableAtStart,
+                generation: runGeneration
+            )
+        }
         let tierC = tierCEdges(
             forShortlistOf: assets, analyses: analyses, configuration: configuration, similarityEdges: edges
         )
@@ -274,6 +327,18 @@ actor SelectionSessionCoordinator {
     ) async throws -> SelectionResult {
         let candidates = engine.duplicateCandidates(for: assets, configuration: request.config.selection)
         let edges = try batchResult.similarityEdges(for: candidates)
+        if request.qualityMode.isQualityMode, let qualityRunner {
+            return try await qualityRunner.run(
+                sessionID: request.sessionID,
+                sourceAssets: assets,
+                analyses: batchResult.analyses,
+                similarityEdges: edges,
+                configuration: request.config.selection,
+                requestedMode: request.qualityMode,
+                modelAvailableAtStart: request.qualityModelAvailableAtStart,
+                generation: runGeneration
+            )
+        }
         let tierC = tierCEdges(
             forShortlistOf: assets, analyses: batchResult.analyses,
             configuration: request.config.selection, similarityEdges: edges
@@ -391,6 +456,10 @@ extension SelectionSessionCoordinator {
             sourceAssetIDs: request.sourceAssetIDs,
             configVersion: request.config.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
+            qualityIdentity: QualityCheckpointIdentity.expected(
+                for: request.qualityMode,
+                modelAvailableAtStart: request.qualityModelAvailableAtStart
+            ),
             updatedAt: Date()
         )
         try await checkpointStore.save(done)

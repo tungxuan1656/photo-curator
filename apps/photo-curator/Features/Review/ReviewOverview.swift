@@ -71,6 +71,24 @@ struct ReviewOverview: View {
                             .padding(.top, 8)
                         }
 
+                        if let metadata = model.result.qualityEvidence?.metadata, metadata.requestedMode.requiresModel {
+                            Label(
+                                metadata.executedMode.requiresModel
+                                    ? "AI model used for quality comparisons"
+                                    : "AI unavailable - native analysis was used",
+                                systemImage: metadata.executedMode.requiresModel ? "sparkles" : "info.circle"
+                            )
+                            .font(.footnote)
+                            .foregroundStyle(metadata.executedMode.requiresModel ? Color.gray : Color.orange)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                            .accessibilityLabel(
+                                metadata.executedMode.requiresModel
+                                    ? "AI model used for quality comparisons"
+                                    : "AI unavailable. Native analysis was used."
+                            )
+                        }
+
                         // Bento Stats Grid
                         LazyVGrid(
                             columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],

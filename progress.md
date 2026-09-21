@@ -12,6 +12,22 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-18 — feat-031 phase 2
+
+**State**: active
+**Done**: Added the quality-path scheduler, selector, runner, coordinator wiring, optional runtime Qwen judge dependency, quality provenance on `SelectionResult`, automatic small-set quality-mode request selection, and runtime-downloaded model fallback. The quality route remains separate from the legacy selector and bypasses the Foundation Models jury.
+**Evidence**: `bash scripts/proof/feat-031.sh` PASS with installer, response validator, pair judge, scheduler serial/cap, deadline, cancellation, stale-request, selector target, and usable-winner checks. `./init.sh` PASS with SwiftFormat, strict SwiftLint, generic Simulator `BUILD SUCCEEDED`, feat-030 proof, feat-031 proof, and `SKIP [test]` by DEC-040. `git diff --check` PASS.
+**Blockers**: Actual pixel-derived grouping, subject-detail verification, image-sensitive Qwen quality comparison, arm64-device/runtime measurements, resource admission, setup/review UI, and complete resume/model-revision persistence evidence remain open. Weights are intentionally not bundled; verified model files are downloaded at runtime under Application Support.
+**Next**: Complete the pixel-evidence and model-admission gates before claiming quality improvement or closing feat-031.
+
+## 2026-09-19 — feat-031 provenance and resume safety
+
+**State**: active
+**Done**: Added deterministic pinned-manifest fingerprints and immutable quality checkpoint identity. Mode, model revision, runtime revision, and manifest identity now flow through loading shells, background checkpoints, batch checkpoints, normal completion, partial completion, and resume filtering. Installed model provenance records the same fingerprint; old native checkpoints remain compatible.
+**Evidence**: `bash scripts/proof/feat-031.sh` PASS, including `QUALITY-CHECKPOINT-IDENTITY PASS`. `swiftlint lint --strict` PASS with 0 violations. `./init.sh` PASS: SwiftFormat, strict lint, generic Simulator `BUILD SUCCEEDED`, feat-030 proof, feat-031 proof, and `SKIP [test]` by DEC-040. `git diff --check` PASS.
+**Blockers**: Pixel-derived grouping, subject-detail verification, real image-sensitive Qwen comparisons, arm64-device/runtime measurements, resource admission, setup/review UI, and full production cancellation-drain evidence remain open. Weights remain runtime-only and are not bundled.
+**Next**: Implement the pixel-evidence and model-admission gates before claiming quality improvement or closing feat-031.
+
 ## 2026-09-11 — feat-003
 
 **State**: done
@@ -674,3 +690,137 @@ singular-summary, and stable-identity contracts; `git diff --check` PASS.
   PASS. No test target, test framework, or `*Test*.swift` file added.
 **Blockers**: none
 **Next**: none — feat-030 is complete.
+
+## 2026-09-18 — feat-031 Qwen planning
+
+**State**: todo — plan only; implementation awaits approval.
+**Done**: Created `feat/feat-031-qwen-curation` from `main` at `54389e5`.
+Registered feat-031 and wrote `docs/plans/feat-031.md` with 11 ordered tasks,
+Qwen2B/4B admission, pre-pruning grouping, model lifecycle, coverage audit,
+session integration, automated quality metrics, and rollback.
+**Evidence**: Fresh `./init.sh` EXIT 0 — format PASS, strict lint PASS,
+Simulator build `BUILD SUCCEEDED`, localization proof PASS, policy test SKIP.
+Feature/dependency JSON validation and 16 local links/anchors PASS;
+`git diff --check` PASS. Only documentation and tracker files changed.
+No model download, dependency installation, application implementation, or inference benchmark occurred.
+**Blockers**: none for planning; model/runtime and image-corpus admission remain explicit implementation tasks.
+**Next**: Review the plan and obtain user approval before activating feat-031.
+
+## 2026-09-18 — feat-031 implementation started
+
+**State**: active — implementation approved.
+**Done**: Committed the planning artifacts as `600f413` (`docs(feat-031): add Qwen curation implementation plan`).
+Activated feat-031 and retained the branch `feat/feat-031-qwen-curation`.
+**Next**: Complete Task 1, then pin MLX Swift LM and verify actual Qwen image inference before wiring the selector.
+
+## 2026-09-18 — feat-031 MLX runtime slice
+
+**State**: active — Task 2 partial; Task 3 next.
+**Done**: Pinned MLX Swift LM, Swift Hugging Face, and Swift Transformers revisions; added the Qwen3.5-2B artifact manifest with immutable revision, file sizes, and SHA-256 metadata; added local-only `QwenRuntime` loading, tokenizer adaptation, bounded generation, cancellation checks, and unload; updated `init.sh` for the Xcode MLX plugin-validation requirement.
+**Evidence**: `./init.sh` EXIT 0 — SwiftFormat PASS, SwiftLint strict PASS with 0 violations, generic Simulator `BUILD SUCCEEDED`, feat-030 proof PASS, and policy test `SKIP`; `git diff --check` PASS. Runtime/package code has not yet loaded downloaded weights or run image-sensitive inference.
+**Blockers**: Task 2 real-image inference, cancellation/teardown trace, and device build remain open; model weights are intentionally outside git and no installer exists yet.
+**Next**: Commit this verified runtime slice, then implement revision-pinned, resumable, hash-verified model installation.
+
+## 2026-09-18 — feat-031 model installer slice
+
+**State**: active — Task 3 partial; AppContainer/runtime admission still open.
+**Done**: Added `ModelInstallationService` with revision-derived artifact URLs, resumable bounded byte streaming, per-file staging and manifest verification, atomic revision activation, cancellation/state streams, backup exclusion, and removal. Added deterministic `feat-031` proof coverage using the shipped manifest/installer sources with an injected interrupted transport; no model weights or network are used by repository verification.
+**Evidence**: `./scripts/proof/feat-031.sh` EXIT 0 — interrupted failure, resume via `Range`, hash/size verification, state stream, atomic activation, and removal PASS. `./init.sh` EXIT 0 — format, strict lint, Simulator build, feat-030 proof, feat-031 proof, and policy test skip PASS.
+**Blockers**: AppContainer/UI wiring, live inference leases/resource admission, offline local Qwen load, cancellation/teardown trace, and real image-sensitive inference remain open.
+**Next**: Commit the installer slice, then wire installation state into AppContainer and run the real 2B model feasibility gate.
+
+## 2026-09-18 — feat-031 AppContainer wiring
+
+**State**: active (Task 3 partial)
+**Done**: Committed the verified installer as `7d9e3ce` (`feat(feat-031): add verified model installer`). Wired `ModelInstallationService` into `AppContainer.live()` under the application-support model root and updated the real-source feat-026 proof to inject the same dependency while excluding only the MLX runtime adapter from its standalone compiler boundary.
+**Evidence**: `./scripts/proof/feat-026.sh` — `99 PASS / 0 FAIL`; `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 installer proof, and policy test skip all PASS.
+**Blockers**: Real downloaded local model load, image-sensitive inference, cancellation/teardown trace, resource admission, and UI availability state remain open.
+**Next**: Run the 2B model feasibility gate with actual local weights before implementing the quality selector.
+
+## 2026-09-18 — feat-031 artifact and runtime feasibility gate
+
+**State**: active (Task 2 partial, Task 3 partial)
+**Done**: Downloaded the pinned `mlx-community/Qwen3.5-2B-4bit` revision outside the repository. Corrected eight stale non-shard SHA-256 values plus the truncated model-shard digest in `ModelManifest` and `docs/evidence/feat-031-models.json`; every manifest file now matches its downloaded byte count and digest. A temporary Swift executable linked the shipped `QwenRuntime` against the pinned MLX checkouts and passed local manifest validation, model load, two-image generation in both orders, and unload on macOS/Metal.
+**Evidence**: Runtime output: `MANIFEST-VALID PASS`, `LOCAL-LOAD PASS` (1.75 s / 1.41 s), image generation (8.56 s / 5.46 s), and `UNLOAD PASS`. The model descriptions changed with the swapped app-icon pixels, but both responses were fenced free-form arrays, not the required strict JSON object; this is runtime feasibility evidence, not production admission. `./init.sh` still needs to be rerun after the metadata correction.
+**Blockers**: Strict response adapter, controlled corpus comparison, arm64-device build, cancellation/teardown trace, allocator/footprint record, offline network-disabled proof, and resource admission remain open.
+**Next**: Implement strict bounded Qwen response validation and a reproducible inference proof, then rerun `./init.sh`.
+
+## 2026-09-18 — feat-031 bounded Qwen response contract
+
+**State**: active (Task 2 partial, Task 3 partial)
+**Done**: Added `QwenPairResponseValidator` for the frozen three-key response shape and bounded `QwenRuntime` generation at 4 KiB before appending chunks. The validator rejects fenced output, arrays, unknown/missing/duplicate keys, invalid enums, duplicate reasons, and more than three reasons. Added the cases to the existing no-test-target feat-031 proof.
+**Evidence**: `./scripts/proof/feat-031.sh` — installer cases and `RESPONSE-VALIDATION PASS`; `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 proof, and policy test skip all PASS.
+**Blockers**: The temporary real-model run still returns fenced free-form arrays; `QwenPairJudge` must route those responses through the validator and degrade to native evidence instead of admitting them.
+**Next**: Implement the single-runtime `QwenPairJudge` and its generation-bound image lease after visual grouping contracts are ready.
+
+## 2026-09-18 — feat-031 non-destructive quality grouping seam
+
+**State**: active (Task 4 partial)
+**Done**: Added `QualityGroupBuilder` and `QualityGroupSet`. The builder filters to analyzed assets, preserves stable candidate order, reuses existing coherent FeaturePrint duplicate clusters, and builds chronological coverage groups without choosing or dropping representatives.
+**Evidence**: `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 installer/response proofs, and policy test skip all PASS.
+**Blockers**: No pixel encoder, controlled grouping corpus, Qwen judge integration, or quality-path selector consumes this seam yet.
+**Next**: Add the quality runner/selector contract only after pixel-derived grouping evidence and the admitted Qwen response path are available.
+
+## 2026-09-18 — feat-031 verified model availability discovery
+
+**State**: active (Task 3 partial)
+**Done**: Added `ModelInstallationService.installedModel()`, which locally revalidates the active revision after relaunch and publishes `.installed` without invoking the downloader. Removal clears the verified installation reference.
+**Evidence**: `./scripts/proof/feat-031.sh` — interrupted transfer, resume/hash, atomic activation, `REOPEN-DISCOVERY PASS`, removal, and response validation all PASS. `./init.sh` — format, strict lint, Simulator build, feat-030 proof, feat-031 proofs, and policy test skip all PASS.
+**Blockers**: UI setup state, inference leases, offline MLX runtime load through the app-owned installation, resource admission, and real cancellation/teardown remain open.
+**Next**: Implement the generation-bound local Qwen pair judge after the quality grouping input contract is complete.
+
+## 2026-09-19 — feat-031 accepted model lifecycle design
+
+**State**: active (design recorded; implementation not started)
+**Done**: Recorded the approved lifecycle in `features/feat-031.md` and `docs/plans/feat-031.md` §5.7.1. The design uses explicit `Download Model`, non-blocking download while the app is open, partial-file resume on a later launch, shared Settings/startup state, and visible `qualityNative` fallback when Qwen is unavailable.
+**Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint, generic Simulator build, policy test skip); `git diff --check` PASS.
+**Blockers**: Awaiting user review of the written feature/plan record before implementation. Pixel grouping, model/resource admission, and runtime lifecycle evidence remain open.
+**Next**: Implement the accepted lifecycle after the written record is approved.
+
+## 2026-09-19 — feat-031 lifecycle implementation and snapshot enforcement
+
+**State**: active
+**Done**: Wired `ModelInstallationModel` through startup, Settings, download alert, processing disclosure, review provenance, and en/vi localization. Added the model-availability snapshot to `SelectionRequest` so normal, in-memory retry/resume, and partial-result paths cannot enable Qwen after a native-fallback run starts. Fixed the Settings SwiftLint brace violation.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` by DEC-040. Standalone lifecycle proof is not present, consistent with the repository no-proof-file rule.
+**Blockers**: Pixel-derived grouping, subject-detail verification, controlled image-sensitive Qwen comparisons, resource admission, arm64-device/runtime measurements, full lifecycle state proof, and complete resume model-identity evidence remain open.
+**Next**: Add lifecycle/resume evidence through the existing approved proof path, then complete the quality-admission gates before closing feat-031.
+
+## 2026-09-19 — feat-031 persisted resume identity
+
+**State**: active
+**Done**: Persisted `modelAvailableAtStart` in `QualityCheckpointIdentity` and restored it when rebuilding a resumed `SelectionRequest`. New loading, background, analysis, completion, and partial-result checkpoints now carry the same availability snapshot; native and legacy quality identities remain decodable.
+**Evidence**: `./init.sh` PASS with SwiftFormat, strict SwiftLint, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` by DEC-040.
+**Blockers**: Pixel-derived grouping, subject-detail verification, controlled image-sensitive Qwen comparisons, resource admission, arm64-device/runtime measurements, and full lifecycle state proof remain open.
+**Next**: Add the approved lifecycle state evidence through the repository's existing verification path, then complete quality admission.
+
+## 2026-09-19 — feat-031 deterministic selector and resume correction
+
+**State**: active — Phase 2 deterministic selector slice reviewed GO.
+**Done**: Quality-mode sizing now follows usable coverage-group count rather than the native percentage. The selector repairs usable zero-pick groups unless a selected duplicate representative covers them, records accountable group outcomes, resolves retake preference cycles by native stable rank, and updates duplicate representatives after a comparison swap. Resume now restores the checkpoint's frozen requested mode instead of synthesizing `qualityQwen2B`; quality provenance uses config version 2.
+**Evidence**: Oracle re-review returned GO with no actionable findings. `./init.sh` PASS on 2026-09-19: SwiftFormat PASS, strict SwiftLint PASS with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`, and policy test `SKIP` under DEC-040. `git diff --check` PASS.
+**Boundaries**: This establishes deterministic source-level selector and checkpoint behavior only. It does not establish image-quality improvement, actual Qwen image sensitivity, physical-device performance, model/resource admission, or full cancellation-drain evidence.
+**Next**: Advance to the next Phase 2 gate: resource admission and lifecycle/failure-state evidence, while keeping pixel-quality and hardware claims explicitly open.
+
+## 2026-09-19 — feat-031 resource admission and lifecycle safety
+
+**State**: active — resource/lifecycle slice safe to hand off; feature gates remain open.
+**Done**: Added actor-owned inference lease waiting for model removal, cancellation-safe deletion checks, lease admission exclusion during removal, and lease retention when Qwen unload is not confirmed. Added fail-closed iOS available-memory admission against the 2B soft ceiling plus reserve. Scheduler cancellation now exits the request loop, and native fallback discards applied Qwen evidence while preserving non-applied comparison counts.
+**Evidence**: `./init.sh` PASS on 2026-09-19: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. Oracle code-only review marked the slice safe to hand off with no remaining code findings. `git diff --check` PASS.
+**Blockers**: No physical-device memory or thermal evidence, no fault-injected removal/unload/cancellation run, no pixel-derived grouping or subject-detail evidence, no independent image-quality comparison, and no admitted 2B/4B profile. Acceptance gates A1, A2, A4, A5, and A6 remain open.
+**Next**: Add the approved lifecycle/drain evidence through the existing verification path, then complete pixel-quality and Qwen profile admission without claiming Simulator evidence as hardware or quality evidence.
+
+## 2026-09-19 — feat-031 model download transport optimization
+
+**State**: active
+**Done**: Replaced the per-byte `URLSession.AsyncBytes` relay with `URLSessionDataDelegate` `Data` chunks. The installer now buffers writes in 256 KiB blocks, limits progress publication to about 4 Hz, and keeps Range resume, cancellation, staging, and SHA-256 validation unchanged.
+**Evidence**: `./init.sh` PASS with SwiftFormat, strict SwiftLint, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. `git diff --check` PASS. Inline 16 MiB benchmark reached 8.7 MB/s after the change versus 1.1 MB/s for the prior per-byte pipeline on the same host; this is host/network evidence only.
+**Blockers**: No physical-device throughput or thermal measurement. Pixel-derived grouping, independent image-quality comparison, and model admission remain open.
+**Next**: Measure the installer on a target iPhone, then continue the remaining feat-031 quality-admission gates.
+
+## 2026-09-19 — feat-031 direct-file download transport
+
+**State**: active
+**Done**: Replaced the chunk relay with `ModelDownloadDelegate` direct writes to the resumable partial file. The delegate buffers 256 KiB, handles `206` append and `200` restart responses, throttles progress callbacks, and preserves cancellation, staging, size, and SHA-256 validation.
+**Evidence**: `./init.sh` PASS with SwiftFormat, strict SwiftLint at 0 violations, generic Simulator `BUILD SUCCEEDED`, and `SKIP [test]` under DEC-040. `git diff --check` PASS. The previous 8.7 MB/s benchmark belongs to the chunked relay; the direct-file path still needs a fresh speed measurement.
+**Blockers**: No direct-file throughput benchmark, physical-device throughput or thermal measurement. Pixel-derived grouping, independent image-quality comparison, and model admission remain open.
+**Next**: Run the direct-file benchmark, then continue the remaining feat-031 quality-admission gates.
