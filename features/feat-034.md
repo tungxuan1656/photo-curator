@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: `active`.
-- Depends on: `feat-033`.
+- Status: `done`.
+- Depends on: `feat-033` (`done`).
 
 ## Goal and acceptance
 
