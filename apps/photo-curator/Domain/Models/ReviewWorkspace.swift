@@ -24,6 +24,23 @@ enum ReviewProgress: String, Codable, Sendable {
     case reviewed
 }
 
+/// One applied user choice for durable persistence. Scope names the exact
+/// asset set; dimension mutations stay independent per review-rules.
+struct ReviewWorkspaceChoice: Sendable {
+    let scopeID: UUID
+    let assetIDs: [AssetID]
+    let albumMembership: AlbumMembership?
+    let cleanupDisposition: CleanupDisposition?
+    let reviewProgress: ReviewProgress?
+}
+
+/// Last durable write failure for one choice action. Views render explicit
+/// retry and never claim saved state on this path.
+struct ReviewChoiceSaveError: Sendable, Equatable {
+    let scopeID: UUID
+    let assetIDs: [AssetID]
+}
+
 enum WorkspaceAvailability: Sendable {
     case available
     case unavailable

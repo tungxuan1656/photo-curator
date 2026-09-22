@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `todo`.
+- Status: `active`.
 - Depends on: `feat-033`.
 
 ## Goal and acceptance
@@ -25,6 +25,30 @@ Primary owners: [ux-flows.md](../docs/product-specs/ux-flows.md),
 interaction seams and state ownership before implementation. The actionable
 record is [docs/plans/feat-034.md](../docs/plans/feat-034.md).
 
-feat-033 is complete. Implementation awaits user approval; no feat-034 code is
-claimed here. Follow the accepted action transitions and suggestion input
-contract in the linked owner docs.
+feat-033 is complete and `feature_index.json` holds feat-034 `active` as the
+sole active feature. Baseline `./init.sh` PASS on `main` before branching
+(`tungxuan1656/feat-034-integration`).
+
+## Implementation and verification
+
+- Home routes both intents (`Clean Up Photos`, `Build an Album`) to one
+  workspace via `pendingReviewIntent` + `startCleanupReview`/`startAlbumReview`;
+  review entry routes to `.reviewWorkspace` (legacy overview/grid/group/Needs
+  routes retained behind the same model).
+- `beginReview` ensures one durable scope per session through
+  `WorkspaceStore.createScope`, seeds item rows from the result, restores
+  album selection from durable items (legacy feedback otherwise), and persists
+  each applied choice dimension-scoped via `persistWorkspaceChoice`; failure
+  keeps live state and surfaces explicit retry without claiming saved state.
+- `ReviewModel` owns canonical transitions (`addToAlbum`, `removeFromAlbum`,
+  `keepPhoto`, `stageForDeletion`, `unstageDeletion`, `markReviewed`,
+  `markOpened`) plus gated `applySuggestion`; `ReviewWorkspaceView` is the
+  shared shell (header/filter/grid/group/compare/Needs Review/action tray).
+- Suggestion contract (`ReviewSuggestion`, `NativeReviewSuggestionAdapter`)
+  adapts native facts only with exact-ID preview and per-dimension apply;
+  deletion staging is inexpressible; empty sets use Needs Review empty state.
+- Owner en/vi strings added (58 keys); all review literals resolve from the
+  catalog; state labels reuse album/cleanup/progress/suggestion owner names.
+- Verification: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
+  generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+  `git diff --check` PASS. No test targets, test files, or proof harness.

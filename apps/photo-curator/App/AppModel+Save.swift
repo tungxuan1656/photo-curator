@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 // MARK: - feat-010 review entry + feat-011 save intents
 
@@ -23,8 +24,8 @@ extension AppModel {
                 }
                 return true
             }
-            if path.last != .reviewOverview(sessionID: sessionID) {
-                path.append(.reviewOverview(sessionID: sessionID))
+            if path.last != .reviewWorkspace(sessionID: sessionID) {
+                path.append(.reviewWorkspace(sessionID: sessionID))
             }
             return true
         }
@@ -34,13 +35,21 @@ extension AppModel {
         else { return false }
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
         let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
+        let workspaceBinding = await ensureReviewScope(
+            for: sessionID, confirmedSource: confirmedSourceIDs, result: result
+        )
         let model = ReviewModel(
             sessionID: sessionID,
             result: result,
             sourceByID: live,
             analysisCache: container.analysisCache,
             feedback: feedback,
-            lowQualityThreshold: AppConfiguration.default.selection.lowQualityThreshold
+            lowQualityThreshold: AppConfiguration.default.selection.lowQualityThreshold,
+            scopeID: workspaceBinding?.scopeID,
+            workspaceItems: workspaceBinding?.items,
+            onWorkspaceChoice: { [weak self] choice in
+                Task { await self?.persistWorkspaceChoice(choice) }
+            }
         )
         // Persisted unavailable bucket: frozen checkpoint source count minus
         // decided IDs, plus `assetUnavailable` decisions (full-result path).
@@ -80,8 +89,8 @@ extension AppModel {
             }
             return true
         }
-        if path.last != .reviewOverview(sessionID: sessionID) {
-            path.append(.reviewOverview(sessionID: sessionID))
+        if path.last != .reviewWorkspace(sessionID: sessionID) {
+            path.append(.reviewWorkspace(sessionID: sessionID))
         }
         return true
     }
@@ -202,6 +211,76 @@ extension AppModel {
             return false
         }
         return state.sessionID == sessionID && !state.remainingIDs.isEmpty
+    }
+
+    /// feat-034 review entry helper: ensures one durable scope per session and
+    /// seeds item rows from the legacy selection feedback. Nil when workspace
+    /// storage is unavailable, preserving the legacy file-backed flow.
+    private func ensureReviewScope(
+        for sessionID: SessionID,
+        confirmedSource: [AssetID],
+        result: SelectionResult
+    ) async -> (scopeID: UUID, items: [AssetID: WorkspaceItemSnapshot])? {
+        guard let workspaceStore = container.workspaceStore else { return nil }
+        let scopeID = sessionID.rawValue
+        let sourceIDs = confirmedSource.isEmpty
+            ? (result.selectedAssetIDs + result.rejectedAssetIDs)
+            : confirmedSource
+        do {
+            _ = try await workspaceStore.createScope(
+                id: scopeID,
+                intent: pendingReviewIntent,
+                sourceAssetIDs: sourceIDs
+            )
+            let items = try await workspaceStore.listItems(scopeID: scopeID)
+            var byID = Dictionary(uniqueKeysWithValues: items.map { ($0.assetID, $0) })
+            let seededMembership = Dictionary(
+                uniqueKeysWithValues: result.selectedAssetIDs.map { ($0, AlbumMembership.included) }
+            ).merging(
+                Dictionary(uniqueKeysWithValues: result.rejectedAssetIDs.map { ($0, AlbumMembership.excluded) }),
+                uniquingKeysWith: { _, next in next }
+            )
+            for assetID in sourceIDs where byID[assetID] == nil {
+                let created = try await workspaceStore.createItem(
+                    scopeID: scopeID,
+                    assetID: assetID,
+                    albumMembership: seededMembership[assetID] ?? .unset
+                )
+                byID[assetID] = created
+            }
+            return (scopeID, byID)
+        } catch {
+            logger.error("Review workspace unavailable; continuing with legacy review state.")
+            return nil
+        }
+    }
+
+    /// Persists one applied dimension-scoped choice. On failure the live
+    /// review state stays and the model surfaces explicit retry.
+    private func persistWorkspaceChoice(_ choice: ReviewWorkspaceChoice) async {
+        guard let workspaceStore = container.workspaceStore else { return }
+        do {
+            for assetID in choice.assetIDs {
+                if let membership = choice.albumMembership {
+                    _ = try await workspaceStore.updateAlbumMembership(
+                        membership, scopeID: choice.scopeID, assetID: assetID
+                    )
+                }
+                if let disposition = choice.cleanupDisposition {
+                    _ = try await workspaceStore.updateCleanupDisposition(
+                        disposition, scopeID: choice.scopeID, assetID: assetID
+                    )
+                }
+                if let progress = choice.reviewProgress {
+                    _ = try await workspaceStore.updateReviewProgress(
+                        progress, scopeID: choice.scopeID, assetID: assetID
+                    )
+                }
+            }
+            reviewModel?.clearSaveError()
+        } catch {
+            reviewModel?.reportSaveError(ReviewChoiceSaveError(scopeID: choice.scopeID, assetIDs: choice.assetIDs))
+        }
     }
 
     private static func runSave(

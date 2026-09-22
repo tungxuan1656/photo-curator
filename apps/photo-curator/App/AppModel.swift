@@ -45,6 +45,9 @@ final class AppModel {
     var unavailableCount = 0
     var confirmedSourceIDs: [AssetID] = []
     var activeSessionID: SessionID?
+    /// feat-034: Home intent handoff. Selects the entry only; review actions
+    /// keep the same meaning for both intents.
+    var pendingReviewIntent: ReviewIntent = .album
     /// Most recent session, retained across completion so late cleanup (discard)
     /// still finds its data. Cleared only when that session's data is deleted.
     var lastSessionID: SessionID?
@@ -60,7 +63,7 @@ final class AppModel {
     let processing: ProcessingModel
     private var isRequesting = false
     private var sourceGeneration = 0
-    private let logger = Logger(
+    let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "session"
     )
 
@@ -196,6 +199,20 @@ final class AppModel {
     func showSourceSelection() {
         guard path.last != .sourceSelection else { return }
         path.append(.sourceSelection)
+    }
+
+    /// feat-034: both Home intents route to one workspace. The intent selects
+    /// the handoff only; review actions keep the same meaning either way.
+    func startCleanupReview() {
+        pendingReviewIntent = .cleanup
+        showSourceSelection()
+    }
+
+    /// feat-034: both Home intents route to one workspace. The intent selects
+    /// the handoff only; review actions keep the same meaning either way.
+    func startAlbumReview() {
+        pendingReviewIntent = .album
+        showSourceSelection()
     }
 
     func toggleSelection(_ id: AssetID) {

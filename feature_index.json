@@ -345,7 +345,7 @@
       ],
       "gate": "one grouped workspace serves both intents and preserves choices through review/resume",
       "id": "feat-034",
-      "status": "todo",
+      "status": "active",
       "title": "Shared grouped review"
     },
     {

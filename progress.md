@@ -926,3 +926,20 @@ Oracle Gate 2 final attempt 3 GO after attempt 1/2 blockers were remediated.
 **Blockers**: none.
 **Next**: Obtain user approval before activating feat-034, as required by
 `AGENTS.md`; feat-034 remains dependent on completed feat-033.
+
+## 2026-09-21 — feat-034 shared grouped review
+
+**State**: active
+**Done**: Built the shared photo-first workspace for both intents: Home dual
+entry with intent handoff, `.reviewWorkspace` route, durable scope/item
+binding at review entry with dimension-scoped persistence and explicit retry,
+canonical action transitions, native-only advisory suggestion contract with
+preview/apply, shared grid/filter/group/compare/Needs Review shell, and owner
+en/vi catalog coverage.
+**Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
+generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+`git diff --check` PASS. No test targets, test files, or proof harness.
+**Blockers**: none for feat-034 scope; album-save/deletion operations remain
+with feat-035/036.
+**Next**: Review acceptance, then close feat-034 and hand off feat-035 after
+approval.
