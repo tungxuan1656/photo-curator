@@ -980,3 +980,16 @@ generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
 `git diff --check` PASS. No test targets, test files, or proof harness.
 **Blockers**: none.
 **Next**: Re-request review on PR #66.
+
+## 2026-09-22 — feat-034 closed (done)
+
+**State**: done
+**Done**: Acceptance holds: one grouped workspace serves both intents;
+filters, group cards, compare, Needs Review, and tray preserve independent
+dimensions; choices survive resume/navigation; suggestions stay advisory;
+suggestion contract plus native adapter owned without feat-037; en/vi and
+recoverable states match owner docs. `./init.sh` PASS, `git diff --check`
+PASS, no test targets/files (DEC-040).
+**Blockers**: none.
+**Next**: Merge PR #66 (`tungxuan1656/feat-034-integration` → `main`);
+feat-035 stays `todo` until the user opens it.
