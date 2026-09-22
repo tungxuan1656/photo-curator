@@ -962,3 +962,21 @@ generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
 with feat-035/036.
 **Next**: Review acceptance, then close feat-034 and hand off feat-035 after
 approval.
+
+## 2026-09-22 — feat-034 self-review follow-up (PR #66)
+
+**State**: active
+**Done**: Fixed all 9 PR #66 findings plus 7 nits: tray no longer
+bulk-applies album/cleanup over displayIDs (`Continue to Save` routes to
+finalReview, `Mark All Reviewed` is the one progress action); staged
+`Back to All Photos` resets the filter; retry re-issues the full failed
+payload with superset-ID clear; preview drops already-matching rows and
+staleness recomputes from live facts; legacy deltas apply to existing rows;
+progress defaults to unseen; cancelled request IDs evict on settle; named
+version constants; selection state is `private(set)`; reuse path refreshes
+per-session intent; 4 new strings catalogued en/vi.
+**Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
+generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+`git diff --check` PASS. No test targets, test files, or proof harness.
+**Blockers**: none.
+**Next**: Re-request review on PR #66.

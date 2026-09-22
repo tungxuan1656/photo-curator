@@ -13,11 +13,6 @@ struct SimilarGroup: Hashable, Sendable {
     }
 }
 
-/// Session-local review state over the persisted chronological result.
-/// Single source of truth shared by S09–S14. `displayIDs` covers every live
-/// result ID in engine chronology (selected union rejected); S10 keeps its
-/// dim-don't-shift layout via `curatedDisplayIDs` (engine-selected plus
-/// currently selected). Edits mutate only this model plus a `SelectionFeedback`
 /// snapshot persisted by the owner; the engine never reruns.
 @MainActor @Observable
 // swiftlint:disable:next type_body_length - session review state owns selection/progress/cleanup/suggestion overlays in one model per feat-034 plan.
@@ -28,9 +23,9 @@ final class ReviewModel {
     /// Durable workspace scope bound at review entry (feat-034). Nil on the
     /// legacy file-backed path when workspace storage is unavailable.
     let scopeID: UUID?
-    var selectedIDs: Set<AssetID>
+    private(set) var selectedIDs: Set<AssetID>
     let displayIDs: [AssetID]
-    var lastRemovedID: AssetID?
+    private(set) var lastRemovedID: AssetID?
     var albumName = "Curated Photos"
     /// Persisted unavailable bucket (survives relaunch where the in-memory
     /// progress counter resets). Assigned by the owner at review entry from
@@ -54,20 +49,18 @@ final class ReviewModel {
     @ObservationIgnored private var unavailableAnalysisIDs: Set<AssetID> = []
     @ObservationIgnored private var analysisFlights: [AssetID: Task<PhotoAnalysis?, Never>] = [:]
     /// Session-local progress overlay mirroring durable `reviewProgress`.
-    /// Seeded from `workspaceItems` at init; `markOpened`/`markReviewed`
-    /// update it so unseen-gating survives without a store round-trip.
-    /// Internal: the action-transition extension in `ReviewModelActions.swift`
-    /// owns all writes.
-    @ObservationIgnored var progressByID: [AssetID: ReviewProgress] = [:]
+    /// Seeded from `workspaceItems` at init. Same-extension writes only:
+    /// the action-transition extension in `ReviewModelActions.swift` is the
+    /// only writer; reads stay here.
+    @ObservationIgnored private(set) var progressByID: [AssetID: ReviewProgress] = [:]
     /// Session-local cleanup overlay seeded from durable items at
-    /// `beginReview`; `stageForDeletion`/`unstageDeletion`/`keepPhoto`
-    /// update it so the staged filter can read without a store round-trip.
-    /// Internal: the action-transition extension owns all writes.
-    @ObservationIgnored var stagedCleanupByID: [AssetID: CleanupDisposition] = [:]
-    var removedEditIDs: Set<AssetID>
-    var restoredEditIDs: Set<AssetID>
+    /// `beginReview`. Same-extension writes only: the action-transition
+    /// extension in `ReviewModelActions.swift` is the only writer.
+    @ObservationIgnored private(set) var stagedCleanupByID: [AssetID: CleanupDisposition] = [:]
+    private(set) var removedEditIDs: Set<AssetID>
+    private(set) var restoredEditIDs: Set<AssetID>
     var favoriteEditIDs: Set<AssetID>
-    var swapWinnerByGroup: [ClusterID: AssetID]
+    private(set) var swapWinnerByGroup: [ClusterID: AssetID]
     @ObservationIgnored private var onFeedbackChanged: ((SelectionFeedback) -> Void)?
     /// Durable write hook installed by the owner alongside `onFeedbackChanged`.
     /// Receives one applied choice (dimension-scoped) per user action so the
@@ -173,15 +166,34 @@ final class ReviewModel {
 
     /// review-rules: only assets opened in the detail/compare surface count.
     /// Returns the session-local durable progress (defaults to `unseen`).
+    /// Unknown IDs are never treated as reviewed: callers gating on progress
+    /// must see them as work remaining, not work done.
     func progress(for id: AssetID) -> ReviewProgress {
-        guard displayIDs.contains(id) else { return .reviewed }
+        guard displayIDs.contains(id) else { return .unseen }
         return progressByID[id] ?? .unseen
     }
 
+    /// Session-local overlay writes. Same-module writes only through the
+    /// action-transition extension in `ReviewModelActions.swift`; views
+    /// never mutate these directly.
     func setProgress(_ progress: ReviewProgress, for ids: [AssetID]) {
         for id in ids {
             progressByID[id] = progress
         }
+    }
+
+    func setCleanup(_ disposition: CleanupDisposition, for ids: [AssetID]) {
+        for id in ids {
+            stagedCleanupByID[id] = disposition
+        }
+    }
+
+    func setSelected(_ ids: Set<AssetID>) {
+        selectedIDs = ids
+    }
+
+    func setLastRemovedID(_ id: AssetID?) {
+        lastRemovedID = id
     }
 
     /// IDs currently staged for deletion in the session-local overlay
@@ -200,14 +212,14 @@ final class ReviewModel {
     }
 
     /// review-rules: a proposal that changed since preview needs a new
-    /// preview. Recomputed from the live suggestion source revision
-    /// (`NativeReviewSuggestionAdapter` revision) instead of a sticky
-    /// boolean flag.
+    /// preview. Recomputed from live engine facts (analysis/engine/group
+    /// winners), so regroups and re-analysis invalidate open previews.
     func isSuggestionStale(_ suggestion: ReviewSuggestion) -> Bool {
-        suggestion.scopeID != scopeID
-            || suggestion.sourceRevision != NativeReviewSuggestionAdapter.revision(
-                result: result, scopeID: suggestion.scopeID
-            )
+        guard suggestion.scopeID == scopeID else { return true }
+        let live = NativeReviewSuggestionAdapter.revision(
+            facts: NativeReviewSuggestionAdapter.facts(result: result, groups: similarGroups)
+        )
+        return suggestion.sourceRevision != live
     }
 
     /// Reads compact saved analysis only when a visible review surface needs it.
@@ -442,7 +454,7 @@ final class ReviewModel {
     }
 }
 
-// MARK: - feat-034 durable workspace dispatch
+// MARK: - feat-034 workspace dispatch (dimension-scoped durable writes)
 
 extension ReviewModel {
     func notifyWorkspaceChoice(

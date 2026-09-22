@@ -8,7 +8,7 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) && !selectedIDs.contains($0) }
         guard !targets.isEmpty else { return }
-        selectedIDs.formUnion(targets)
+        setSelected(selectedIDs.union(targets))
         for id in targets {
             trackInsertion(id)
         }
@@ -20,12 +20,12 @@ extension ReviewModel {
     func removeFromAlbum(_ ids: [AssetID]) {
         let targets = ids.filter { selectedIDs.contains($0) }
         guard !targets.isEmpty else { return }
+        setSelected(selectedIDs.subtracting(targets))
         for id in targets {
-            selectedIDs.remove(id)
             trackRemoval(id)
         }
         if let lastRemovedID, targets.contains(lastRemovedID) {
-            self.lastRemovedID = nil
+            setLastRemovedID(nil)
         }
         persist()
         notifyAlbumChanges(Dictionary(uniqueKeysWithValues: targets.map { ($0, AlbumMembership.excluded) }))
@@ -56,9 +56,7 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) }
         guard !targets.isEmpty else { return }
-        for id in targets {
-            stagedCleanupByID[id] = .stagedForDeletion
-        }
+        setCleanup(.stagedForDeletion, for: targets)
         persist()
         notifyWorkspaceChoice(assetIDs: targets, cleanupDisposition: .stagedForDeletion)
     }
@@ -68,9 +66,7 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) }
         guard !targets.isEmpty else { return }
-        for id in targets {
-            stagedCleanupByID[id] = .undecided
-        }
+        setCleanup(.undecided, for: targets)
         persist()
         notifyWorkspaceChoice(assetIDs: targets, cleanupDisposition: .undecided)
     }
@@ -80,30 +76,25 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) }
         guard !targets.isEmpty else { return }
-        for id in targets {
-            stagedCleanupByID[id] = .keep
-        }
+        setCleanup(.keep, for: targets)
         persist()
         notifyWorkspaceChoice(assetIDs: targets, cleanupDisposition: .keep)
     }
 
     /// review-rules: explicit retry re-issues the exact failed dimension
-    /// values; Done dismisses without claiming saved state. Never a
-    /// silent no-op: retry returns false when the scope/session no longer
-    /// owns the failed choice.
+    /// values for the full failed set; Done dismisses without claiming
+    /// saved state. Never a silent no-op: retry returns false when the
+    /// scope/session no longer owns the failed choice.
     var canRetrySaveError: Bool {
         guard let saveError, saveError.scopeID == scopeID else { return false }
-        return saveError.assetIDs.contains { displayIDs.contains($0) }
+        return !saveError.assetIDs.isEmpty
     }
 
     @discardableResult
     func retrySaveError() -> Bool {
-        guard let saveError, saveError.scopeID == scopeID else { return false }
-        let display = Set(displayIDs)
-        let targets = saveError.assetIDs.filter { display.contains($0) }
-        guard !targets.isEmpty else { return false }
+        guard let saveError, saveError.scopeID == scopeID, !saveError.assetIDs.isEmpty else { return false }
         notifyWorkspaceChoice(
-            assetIDs: targets,
+            assetIDs: saveError.assetIDs,
             albumMembership: saveError.albumMembership,
             cleanupDisposition: saveError.cleanupDisposition,
             reviewProgress: saveError.reviewProgress

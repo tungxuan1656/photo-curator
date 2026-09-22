@@ -7684,6 +7684,54 @@
           }
         }
       }
+    },
+    "Back to All Photos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Back to All Photos"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Về tất cả ảnh"
+          }
+        }
+      }
+    },
+    "Mark All Reviewed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mark All Reviewed"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đánh dấu đã xem lại tất cả"
+          }
+        }
+      }
+    },
+    "Remove all from staged" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove all from staged"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bỏ tất cả khỏi danh sách"
+          }
+        }
+      }
     }
   },
   "version" : "1.2"

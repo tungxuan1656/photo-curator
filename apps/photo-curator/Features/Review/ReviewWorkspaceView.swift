@@ -64,7 +64,7 @@ struct ReviewWorkspaceView: View {
                 case .albumDraft:
                     ReviewAlbumDraftSection(sessionID: sessionID, model: model)
                 case .staged:
-                    ReviewStagedSection(sessionID: sessionID, model: model)
+                    ReviewStagedSection(sessionID: sessionID, model: model, filter: $filter)
                 }
                 ReviewActionTray(sessionID: sessionID, model: model)
             }
@@ -227,7 +227,7 @@ private struct ReviewAlbumDraftSection: View {
 private struct ReviewStagedSection: View {
     let sessionID: SessionID
     let model: ReviewModel
-    @Environment(AppModel.self) private var appModel
+    @Binding var filter: ReviewWorkspaceFilter
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -262,8 +262,8 @@ private struct ReviewStagedSection: View {
                 .font(.subheadline)
                 .padding(.horizontal)
             }
-            Button("Done") {
-                appModel.path.removeLast()
+            Button("Back to All Photos") {
+                filter = .all
             }
             .padding(.horizontal)
         }
@@ -436,35 +436,21 @@ private struct SuggestionPreviewSheet: View {
 private struct ReviewActionTray: View {
     let sessionID: SessionID
     let model: ReviewModel
+    @Environment(AppModel.self) private var appModel
 
     var body: some View {
         VStack(spacing: 10) {
-            Button("Review & Save") {
-                model.markReviewed(model.displayIDs)
+            Button("Continue to Save") {
+                if appModel.path.last != .finalReview(sessionID: sessionID) {
+                    appModel.path.append(.finalReview(sessionID: sessionID))
+                }
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            HStack(spacing: 10) {
-                Button("Add to Album") {
-                    model.addToAlbum(model.displayIDs)
-                }
-                .buttonStyle(.bordered)
-                Button("Remove from Album") {
-                    model.removeFromAlbum(model.displayIDs)
-                }
-                .buttonStyle(.bordered)
+            Button("Mark All Reviewed") {
+                model.markReviewed(model.displayIDs)
             }
-            HStack(spacing: 10) {
-                Button("Keep") {
-                    model.keepPhoto(model.displayIDs)
-                }
-                .buttonStyle(.bordered)
-                Button("Mark Reviewed") {
-                    model.markReviewed(model.displayIDs)
-                }
-                .buttonStyle(.bordered)
-            }
-            .accessibilityElement(children: .contain)
+            .buttonStyle(.bordered)
         }
         .padding(.horizontal)
     }

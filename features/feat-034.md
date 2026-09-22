@@ -53,9 +53,9 @@ sole active feature. Baseline `./init.sh` PASS on `main` before branching
   generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
   `git diff --check` PASS. No test targets, test files, or proof harness.
 
-## Review fix wave (16-reviewer findings, 2026-09-22)
+## Review fix wave (PR #66 findings, 2026-09-22)
 
-Fixed true-positives (per-user scope: feat-034 plus touched feat-027/031 code,
+Fixed review findings (per-user scope: feat-034 plus touched feat-027/031 code,
 false-positives #1/#10/#11/#12/#23 intentionally untouched):
 
 - Progress (#2+#3): removed workspace `onAppear` mass `markOpened`; detail
@@ -96,6 +96,35 @@ false-positives #1/#10/#11/#12/#23 intentionally untouched):
   `AI unavailable - using…` key for label + VoiceOver; settings byte-progress
   uses `/` instead of English `of`; `CFBundleDisplayName` en fixed to
   `Photos Curator`.
+- Verification: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
+  generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+  `git diff --check` PASS. No test targets, test files, or proof harness.
+
+## Review follow-up (self-review of PR #66, 2026-09-22)
+
+- Tray: `ReviewActionTray` no longer bulk-applies album/cleanup over
+  `displayIDs` and no longer duplicates progress writes. `Continue to Save`
+  routes to `.finalReview`; `Mark All Reviewed` keeps the one explicit
+  progress action. Per-photo add/remove/keep/stage stay on cells, detail,
+  and group surfaces via the review-rules transitions.
+- Staged: filter-local `Back to All Photos` resets the filter instead of
+  popping the workspace route.
+- Retry: `persistWorkspaceChoice` clears on superset-ID + exact-dimension
+  match; `retrySaveError` re-issues the full failed payload so deferred
+  IDs can no longer wedge the error card.
+- Suggestion: `previewRows(currentAlbum:)` drops already-matching rows;
+  `isSuggestionStale` recomputes from live facts (analysis/engine/group
+  winners) so regroups and re-analysis invalidate open previews.
+- Feedback: `ensureReviewScope` also applies legacy remove/restore deltas
+  to existing durable rows (included↔excluded only, per migration rule).
+- Progress: `progress(for:)` returns `.unseen` for unknown IDs.
+- Cancel: `QwenRuntime` evicts settled `cancelledRequestIDs`; version
+  sentinels are named constants (`QwenPairJudge.promptVersion`,
+  grouping versions).
+- Encapsulation: selection/edit/swap state is `private(set)`; overlay
+  writes stay in the action-transition extension.
+- l10n: catalogued `Continue to Save`, `Mark All Reviewed`,
+  `Back to All Photos`, `Remove all from staged` (en/vi).
 - Verification: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
   generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
   `git diff --check` PASS. No test targets, test files, or proof harness.

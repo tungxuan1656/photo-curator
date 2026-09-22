@@ -63,9 +63,14 @@ actor QwenRuntime {
 
     /// Per-request cancellation: only the named pair request is poisoned.
     /// A single 12s timeout must not cancel the run generation's remaining
-    /// comparisons.
+    /// comparisons. Entries are evicted once the named request settles so
+    /// the set stays bounded to in-flight requests.
     func cancel(requestID: UUID) {
         cancelledRequestIDs.insert(requestID)
+    }
+
+    private func evictCancelledRequest(_ requestID: UUID) {
+        cancelledRequestIDs.remove(requestID)
     }
 
     func unload() {
@@ -79,6 +84,7 @@ actor QwenRuntime {
         let secondImage = request.secondImage
         let prompt = request.prompt
         let generation = request.generation
+        defer { evictCancelledRequest(request.requestID) }
         guard let container else { throw QwenRuntimeError.notLoaded }
         guard !cancelledGenerations.contains(generation),
               !cancelledRequestIDs.contains(request.requestID)

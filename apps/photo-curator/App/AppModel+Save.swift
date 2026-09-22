@@ -24,6 +24,9 @@ extension AppModel {
                 }
                 return true
             }
+            // A Home intent switch before re-entry refreshes the per-session
+            // label; the header reads this map, not the stale global.
+            reviewIntentForSession[sessionID] = pendingReviewIntent
             if path.last != .reviewWorkspace(sessionID: sessionID) {
                 path.append(.reviewWorkspace(sessionID: sessionID))
             }
@@ -264,6 +267,26 @@ extension AppModel {
                 )
                 byID[assetID] = created
             }
+            // Legacy feedback can also post-date existing durable rows (a
+            // pre-workspace edit persisted after the scope was created).
+            // Apply remove/restore deltas to existing rows so resume never
+            // drops them; existing rows already carry the durable truth for
+            // everything else. One-way migration rule: only removed/restored
+            // map to excluded/included; nothing else is inferred.
+            for assetID in legacyRemoved where sourceIDs.contains(assetID) {
+                if byID[assetID]?.albumMembership == .included {
+                    byID[assetID] = try await workspaceStore.updateAlbumMembership(
+                        .excluded, scopeID: scopeID, assetID: assetID
+                    )
+                }
+            }
+            for assetID in legacyRestored where sourceIDs.contains(assetID) {
+                if byID[assetID]?.albumMembership == .excluded {
+                    byID[assetID] = try await workspaceStore.updateAlbumMembership(
+                        .included, scopeID: scopeID, assetID: assetID
+                    )
+                }
+            }
             return (scopeID, byID)
         } catch {
             logger.error("Review workspace unavailable; continuing with legacy review state.")
@@ -273,9 +296,11 @@ extension AppModel {
 
     /// Persists one applied dimension-scoped choice. On failure the live
     /// review state stays and the model surfaces explicit retry with the
-    /// exact failed dimension values. Success only clears a save error that
-    /// belongs to this same scope and session; a superseded session never
-    /// clears the live model's error.
+    /// exact failed dimension values. Success clears a pending save error
+    /// only when this write replays that error's exact payload (same scope,
+    /// IDs, and dimensions); a superseded session never clears the live
+    /// model's error. Retry always re-issues the full failed set so the
+    /// exact-match clear can fire.
     private func persistWorkspaceChoice(_ choice: ReviewWorkspaceChoice) async {
         guard let workspaceStore = container.workspaceStore else { return }
         do {
@@ -300,7 +325,7 @@ extension AppModel {
                   model.scopeID == choice.scopeID,
                   let pending = model.saveError,
                   pending.scopeID == choice.scopeID,
-                  Set(pending.assetIDs) == Set(choice.assetIDs),
+                  Set(choice.assetIDs).isSuperset(of: pending.assetIDs),
                   pending.albumMembership == choice.albumMembership,
                   pending.cleanupDisposition == choice.cleanupDisposition,
                   pending.reviewProgress == choice.reviewProgress

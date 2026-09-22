@@ -75,12 +75,14 @@ struct ReviewSuggestion: Sendable, Identifiable {
 
     /// Exact IDs plus one dimension and its per-asset values against the
     /// live model state, using owner copy keys so both languages resolve
-    /// from the catalog. The caller supplies the current choice per ID so
+    /// from the catalog. The caller supplies the current choice per ID and
+    /// rows whose proposal already matches live state are dropped, so
     /// no-op proposals never render as phantom changes.
     func previewRows(currentAlbum: (AssetID) -> AlbumMembership) -> [ReviewSuggestionPreviewRow] {
         switch proposal {
         case let .albumMembership(values):
-            return values.map { assetID, membership in
+            return values.compactMap { assetID, membership in
+                guard currentAlbum(assetID) != membership else { return nil }
                 let newValue: LocalizedStringResource = switch membership {
                 case .unset: ReviewSuggestionCopy.albumUnset
                 case .included: ReviewSuggestionCopy.albumIncluded
@@ -112,19 +114,42 @@ struct ReviewSuggestion: Sendable, Identifiable {
             return []
         }
     }
-
-    /// Legacy preview without live state (kept for source-compat). Prefer
-    /// `previewRows(currentAlbum:)` so no-op proposals never show as changes.
-    var previewRows: [ReviewSuggestionPreviewRow] {
-        previewRows { _ in .unset }
-    }
 }
 
 /// Adapter over existing native facts only. Legacy selected/rejected output is
 /// never applied as a new user choice; an empty native set is valid.
 enum NativeReviewSuggestionAdapter: Sendable {
+    /// Live staleness input: the engine fact set behind the current
+    /// proposals. The model recomputes the revision from these same facts
+    /// at preview time; any drift (regroup, re-analysis) marks the preview
+    /// stale so the user previews the new proposal instead.
+    struct Facts: Sendable {
+        let analysisVersion: Int
+        let engineVersion: Int
+        let winnerByGroup: [ClusterID: AssetID]
+    }
+
+    static func facts(result: SelectionResult, groups: [SimilarGroup]) -> Facts {
+        var winnerByGroup: [ClusterID: AssetID] = [:]
+        for group in groups {
+            winnerByGroup[group.id] = group.engineWinner
+        }
+        return Facts(
+            analysisVersion: PhotoAnalysis.currentVersion,
+            engineVersion: result.engineVersion,
+            winnerByGroup: winnerByGroup
+        )
+    }
+
     static func revision(result: SelectionResult, scopeID _: UUID) -> String {
         "native-a\(PhotoAnalysis.currentVersion)-e\(result.engineVersion)"
+    }
+
+    static func revision(facts: Facts) -> String {
+        let winners = facts.winnerByGroup.sorted { $0.key.rawValue.uuidString < $1.key.rawValue.uuidString }
+            .map { "\($0.key.rawValue.uuidString)=\($0.value.rawValue)" }
+            .joined(separator: ",")
+        return "native-a\(facts.analysisVersion)-e\(facts.engineVersion)-w\(winners)"
     }
 
     static func suggestions(
@@ -132,8 +157,8 @@ enum NativeReviewSuggestionAdapter: Sendable {
         result: SelectionResult,
         groups: [SimilarGroup]
     ) -> [ReviewSuggestion] {
-        let analysisVersion = PhotoAnalysis.currentVersion
-        let revision = revision(result: result, scopeID: scopeID)
+        let facts = facts(result: result, groups: groups)
+        let revision = revision(facts: facts)
         var records: [ReviewSuggestion] = []
         for group in groups {
             let winner = group.engineWinner
@@ -149,8 +174,8 @@ enum NativeReviewSuggestionAdapter: Sendable {
                 scopeID: scopeID,
                 candidateIDs: group.memberIDs,
                 groupID: group.id,
-                analysisVersion: analysisVersion,
-                engineVersion: result.engineVersion,
+                analysisVersion: facts.analysisVersion,
+                engineVersion: facts.engineVersion,
                 sourceRevision: revision,
                 provenance: .native,
                 evidence: .available,

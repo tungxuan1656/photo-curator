@@ -31,6 +31,13 @@ struct QualityModelProvenance: Sendable {
 
 /// Selects from all analyzed quality candidates before any Qwen evidence is applied.
 struct QualityAlbumSelector: Sendable {
+    /// Grouping provenance: 0 when no retake groups fed the run, else the
+    /// current retake-grouping schema.
+    private static let emptyGroupingVersion = 0
+    private static let retakeGroupingVersion = 1
+    /// Prompt provenance: `none` when no comparison ran, else the judge
+    /// prompt named in `QwenPairJudge.promptVersion`.
+    private static let noPromptVersion = "none"
     private let scorer = QualityScorer()
     private let diversity = DiversitySelector()
     private let finalBuilder = FinalAlbumBuilder()
@@ -174,8 +181,9 @@ struct QualityAlbumSelector: Sendable {
             requestedMode: request.requestedMode,
             executedMode: request.executedMode,
             configVersion: request.configVersion,
-            groupingVersion: request.groups.retakeGroups.isEmpty ? 0 : 1,
-            promptVersion: request.comparisons.isEmpty ? "none" : "compare-v1",
+            groupingVersion: request.groups.retakeGroups.isEmpty
+                ? Self.emptyGroupingVersion : Self.retakeGroupingVersion,
+            promptVersion: request.comparisons.isEmpty ? Self.noPromptVersion : QwenPairJudge.promptVersion,
             modelID: request.model?.id,
             modelRevision: request.model?.revision,
             modelManifestDigest: request.model?.manifestDigest,
