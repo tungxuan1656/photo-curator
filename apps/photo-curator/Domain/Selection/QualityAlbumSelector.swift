@@ -19,6 +19,7 @@ struct QualityAlbumSelectionRequest: Sendable {
     let degradationReason: QualityDegradationReason?
     let configuration: SelectionConfiguration
     let qualityPolicy: QualityCurationPolicy
+    let configVersion: Int
 }
 
 struct QualityModelProvenance: Sendable {
@@ -46,6 +47,9 @@ struct QualityAlbumSelector: Sendable {
             request.groups.retakeGroups,
             selectedIDs: selection.ids
         )
+        // Model provenance only ever exists for an executed model run (the
+        // runner nils it on every native fallback), so pass it through and
+        // let unknown stay unknown downstream.
         let base = try finalBuilder.build(
             sourceAssets: request.sourceAssets,
             analyses: request.analyses,
@@ -169,7 +173,9 @@ struct QualityAlbumSelector: Sendable {
         let metadata = QualityExecutionMetadata(
             requestedMode: request.requestedMode,
             executedMode: request.executedMode,
-            configVersion: 2,
+            configVersion: request.configVersion,
+            groupingVersion: request.groups.retakeGroups.isEmpty ? 0 : 1,
+            promptVersion: request.comparisons.isEmpty ? "none" : "compare-v1",
             modelID: request.model?.id,
             modelRevision: request.model?.revision,
             modelManifestDigest: request.model?.manifestDigest,

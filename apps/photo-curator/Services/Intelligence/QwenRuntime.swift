@@ -16,6 +16,7 @@ struct QwenLoadResult: Sendable {
 }
 
 struct QwenInferenceRequest: Sendable {
+    let requestID: UUID
     let firstImage: URL
     let secondImage: URL
     let prompt: String
@@ -35,6 +36,7 @@ actor QwenRuntime {
     private let manifest: ModelManifest
     private var container: ModelContainer?
     private var cancelledGenerations: Set<Int> = []
+    private var cancelledRequestIDs: Set<UUID> = []
 
     init(manifest: ModelManifest = .qwen35TwoBFourBit) {
         self.manifest = manifest
@@ -59,9 +61,17 @@ actor QwenRuntime {
         cancelledGenerations.insert(generation)
     }
 
+    /// Per-request cancellation: only the named pair request is poisoned.
+    /// A single 12s timeout must not cancel the run generation's remaining
+    /// comparisons.
+    func cancel(requestID: UUID) {
+        cancelledRequestIDs.insert(requestID)
+    }
+
     func unload() {
         container = nil
         cancelledGenerations.removeAll()
+        cancelledRequestIDs.removeAll()
     }
 
     func respond(_ request: QwenInferenceRequest) async throws -> QwenInferenceResult {
@@ -70,7 +80,9 @@ actor QwenRuntime {
         let prompt = request.prompt
         let generation = request.generation
         guard let container else { throw QwenRuntimeError.notLoaded }
-        guard !cancelledGenerations.contains(generation) else {
+        guard !cancelledGenerations.contains(generation),
+              !cancelledRequestIDs.contains(request.requestID)
+        else {
             throw CancellationError()
         }
 
@@ -91,7 +103,9 @@ actor QwenRuntime {
         var response = ""
         for await event in stream {
             try Task.checkCancellation()
-            guard !cancelledGenerations.contains(generation) else {
+            guard !cancelledGenerations.contains(generation),
+                  !cancelledRequestIDs.contains(request.requestID)
+            else {
                 throw CancellationError()
             }
             if case let .chunk(text) = event {
@@ -101,7 +115,9 @@ actor QwenRuntime {
                 response += text
             }
         }
-        guard !cancelledGenerations.contains(generation) else {
+        guard !cancelledGenerations.contains(generation),
+              !cancelledRequestIDs.contains(request.requestID)
+        else {
             throw QwenRuntimeError.supersededGeneration
         }
         return QwenInferenceResult(

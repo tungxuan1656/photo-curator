@@ -48,16 +48,25 @@ struct PhotoDetail: View {
                         back: { dismiss() },
                         previous: {
                             guard index > 0 else { return }
-                            currentAssetID = order[index - 1]
+                            let previous = order[index - 1]
+                            currentAssetID = previous
+                            model.markOpened([previous])
                         },
                         next: {
                             guard index < order.count - 1 else { return }
-                            currentAssetID = order[index + 1]
+                            let next = order[index + 1]
+                            currentAssetID = next
+                            model.markOpened([next])
                         },
                         toggleSelection: { model.toggle(currentAssetID) },
                         showAnalysis: { showingAnalysis = true },
                         retry: retryCurrentAsset
                     )
+                    .onAppear {
+                        // review-rules: only assets opened in the detail
+                        // surface mark `unseen` → `inProgress`.
+                        model.markOpened([currentAssetID])
+                    }
                     .task(id: "\(currentAssetID.rawValue)-\(retryToken)") {
                         let requested = currentAssetID
                         inspectionState.reset()

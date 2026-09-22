@@ -46,8 +46,16 @@ final class AppModel {
     var confirmedSourceIDs: [AssetID] = []
     var activeSessionID: SessionID?
     /// feat-034: Home intent handoff. Selects the entry only; review actions
-    /// keep the same meaning for both intents.
+    /// keep the same meaning for both intents. The per-session map is the
+    /// reader: `pendingReviewIntent` is the write-only handoff captured at
+    /// review entry so a later session never inherits a stale label.
     var pendingReviewIntent: ReviewIntent = .album
+    var reviewIntentForSession: [SessionID: ReviewIntent] = [:]
+
+    func reviewIntent(for sessionID: SessionID) -> ReviewIntent {
+        reviewIntentForSession[sessionID] ?? pendingReviewIntent
+    }
+
     /// Most recent session, retained across completion so late cleanup (discard)
     /// still finds its data. Cleared only when that session's data is deleted.
     var lastSessionID: SessionID?
@@ -205,6 +213,7 @@ final class AppModel {
     /// the handoff only; review actions keep the same meaning either way.
     func startCleanupReview() {
         pendingReviewIntent = .cleanup
+        reviewIntentForSession.removeAll()
         showSourceSelection()
     }
 
@@ -212,6 +221,7 @@ final class AppModel {
     /// the handoff only; review actions keep the same meaning either way.
     func startAlbumReview() {
         pendingReviewIntent = .album
+        reviewIntentForSession.removeAll()
         showSourceSelection()
     }
 
@@ -413,9 +423,23 @@ extension AppModel {
     /// so cleanup never short-circuits. Returns true when all succeeded.
     /// Shared with the Save extension (`finishSave` deletes the completed
     /// session's data with the same ordering as discard).
+    /// Durable workspace rows join the same rule via `deleteScope`: absent
+    /// scopes already count as success, so no orphaned scope survives.
     func deleteSessionData(_ sessionID: SessionID?, context: String) async -> Bool {
         guard let sessionID else { return true }
         var cleaned = true
+        reviewIntentForSession.removeValue(forKey: sessionID)
+        if let workspaceStore = container.workspaceStore {
+            do {
+                try await workspaceStore.deleteScope(id: sessionID.rawValue)
+            } catch {
+                cleaned = false
+                logger
+                    .error(
+                        "\(context, privacy: .public) workspace cleanup failed: \(error.localizedDescription, privacy: .public)"
+                    )
+            }
+        }
         do {
             try await container.checkpointStore.delete(sessionID: sessionID)
         } catch {
@@ -544,6 +568,8 @@ extension AppModel {
             confirmingNewSession = true
             return
         }
+        pendingReviewIntent = .album
+        reviewIntentForSession.removeAll()
         showSourceSelection()
     }
 
@@ -560,6 +586,8 @@ extension AppModel {
         let sessionID = activeSessionID ?? lastSessionID ?? resumeSnapshot?.sessionID
         activeSessionID = nil
         resumeSnapshot = nil
+        pendingReviewIntent = .album
+        reviewIntentForSession.removeAll()
         if reviewModel?.sessionID == sessionID {
             reviewModel = nil
         }

@@ -52,3 +52,50 @@ sole active feature. Baseline `./init.sh` PASS on `main` before branching
 - Verification: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
   generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
   `git diff --check` PASS. No test targets, test files, or proof harness.
+
+## Review fix wave (16-reviewer findings, 2026-09-22)
+
+Fixed true-positives (per-user scope: feat-034 plus touched feat-027/031 code,
+false-positives #1/#10/#11/#12/#23 intentionally untouched):
+
+- Progress (#2+#3): removed workspace `onAppear` mass `markOpened`; detail
+  `onAppear` + pager open/close mark `unseen→inProgress` only via a
+  session-local overlay (`progressByID` seeded from durable items, updated by
+  `markOpened`/`markReviewed`); existing `inProgress`/`reviewed` never regress.
+- Staged filter (#4): `ReviewStagedSection` reads session-local
+  `stagedCleanupIDs` (seeded from durable `cleanupDisposition`, updated by
+  stage/unstage/keep) and renders staged grid + unstage-all instead of
+  write-only `Nothing staged`.
+- Retry payload (#5+#17) + scope (#14): `ReviewChoiceSaveError` carries exact
+  failed dimension values; Retry calls `retrySaveError()` (scope/session
+  guarded, same-choice match); success clears only the matching error; failure
+  reports the exact payload instead of dropping it.
+- Durable feedback (#6): `ensureReviewScope` takes legacy `SelectionFeedback`
+  and seeds missing durable item membership (removed→excluded,
+  restored→included) so resume never drops pre-workspace remove/restore.
+- Intent (#7): `pendingReviewIntent` reset on Home/Start-New paths;
+  `reviewIntentForSession` captured at review entry; header reads it
+  (`Clean Up Photos` vs `Review Photos`); `createScope` refreshes persisted
+  intent on re-entry.
+- Scope delete (#15): `WorkspaceStore.deleteScope` + `deleteSessionData` call
+  so discard/finish/reset leave no orphaned scope/item rows (idempotent).
+- Drag guard (#9): `SourceSelectionView.onDragStart` bounds-checks the stale
+  snapshot index before `filteredAssets[startIndex]`.
+- Suggestion (#16/#18/#19/#20): `ReviewSuggestionCopy` is
+  `LocalizedStringResource` so vi resolves from the catalog; `previewRows`
+  reads live model choices (no phantom `albumUnset` oldValue); `applySuggestion`
+  returns false on no-op `.unset`; staleness recomputed from live
+  `sourceRevision` via `isSuggestionStale` instead of a sticky flag.
+- Quality (#13): `QualityAlbumSelector` passes through real `configVersion`
+  (new request field from `AppConfiguration.default`), `groupingVersion`
+  0-when-empty, `promptVersion` `none`-when-no-comparisons.
+- Scheduler (#21): per-request `cancel(requestID:)` on `QualityPairJudging`/
+  `QwenPairJudge`/`QwenRuntime` (new `cancelledRequestIDs` + `requestID` on
+  `QwenInferenceRequest`); one 12s timeout no longer poisons the run generation.
+- l10n (#8/#22/#24): processing fallback uses the catalogued
+  `AI unavailable - using…` key for label + VoiceOver; settings byte-progress
+  uses `/` instead of English `of`; `CFBundleDisplayName` en fixed to
+  `Photos Curator`.
+- Verification: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
+  generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+  `git diff --check` PASS. No test targets, test files, or proof harness.

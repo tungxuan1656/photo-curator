@@ -127,7 +127,8 @@ struct QualityCurationRunner: Sendable {
                 comparisonCounts: comparisonCounts,
                 degradationReason: degradationReason,
                 configuration: configuration,
-                qualityPolicy: policy
+                qualityPolicy: policy,
+                configVersion: AppConfiguration.default.configVersion
             )
         )
         return selection.result

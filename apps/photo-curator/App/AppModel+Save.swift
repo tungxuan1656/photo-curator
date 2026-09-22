@@ -36,7 +36,7 @@ extension AppModel {
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
         let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
         let workspaceBinding = await ensureReviewScope(
-            for: sessionID, confirmedSource: confirmedSourceIDs, result: result
+            for: sessionID, confirmedSource: confirmedSourceIDs, result: result, feedback: feedback
         )
         let model = ReviewModel(
             sessionID: sessionID,
@@ -216,10 +216,14 @@ extension AppModel {
     /// feat-034 review entry helper: ensures one durable scope per session and
     /// seeds item rows from the legacy selection feedback. Nil when workspace
     /// storage is unavailable, preserving the legacy file-backed flow.
+    /// Legacy `SelectionFeedback` carries the durable remove/restore/favorite/
+    /// swap record: it seeds both the in-memory model restore and any missing
+    /// durable item membership so resume never drops pre-workspace edits.
     private func ensureReviewScope(
         for sessionID: SessionID,
         confirmedSource: [AssetID],
-        result: SelectionResult
+        result: SelectionResult,
+        feedback: SelectionFeedback?
     ) async -> (scopeID: UUID, items: [AssetID: WorkspaceItemSnapshot])? {
         guard let workspaceStore = container.workspaceStore else { return nil }
         let scopeID = sessionID.rawValue
@@ -232,6 +236,10 @@ extension AppModel {
                 intent: pendingReviewIntent,
                 sourceAssetIDs: sourceIDs
             )
+            // Capture the handoff per session so the header can read the
+            // persisted intent instead of a stale global. A new source
+            // selection always refreshes the label via `createScope`.
+            reviewIntentForSession[sessionID] = pendingReviewIntent
             let items = try await workspaceStore.listItems(scopeID: scopeID)
             var byID = Dictionary(uniqueKeysWithValues: items.map { ($0.assetID, $0) })
             let seededMembership = Dictionary(
@@ -240,11 +248,19 @@ extension AppModel {
                 Dictionary(uniqueKeysWithValues: result.rejectedAssetIDs.map { ($0, AlbumMembership.excluded) }),
                 uniquingKeysWith: { _, next in next }
             )
+            let legacyRemoved = feedback?.removedIDs ?? []
+            let legacyRestored = feedback?.restoredIDs ?? []
             for assetID in sourceIDs where byID[assetID] == nil {
+                var membership = seededMembership[assetID] ?? .unset
+                if legacyRemoved.contains(assetID) {
+                    membership = .excluded
+                } else if legacyRestored.contains(assetID) {
+                    membership = .included
+                }
                 let created = try await workspaceStore.createItem(
                     scopeID: scopeID,
                     assetID: assetID,
-                    albumMembership: seededMembership[assetID] ?? .unset
+                    albumMembership: membership
                 )
                 byID[assetID] = created
             }
@@ -256,7 +272,10 @@ extension AppModel {
     }
 
     /// Persists one applied dimension-scoped choice. On failure the live
-    /// review state stays and the model surfaces explicit retry.
+    /// review state stays and the model surfaces explicit retry with the
+    /// exact failed dimension values. Success only clears a save error that
+    /// belongs to this same scope and session; a superseded session never
+    /// clears the live model's error.
     private func persistWorkspaceChoice(_ choice: ReviewWorkspaceChoice) async {
         guard let workspaceStore = container.workspaceStore else { return }
         do {
@@ -277,9 +296,25 @@ extension AppModel {
                     )
                 }
             }
-            reviewModel?.clearSaveError()
+            guard let model = reviewModel,
+                  model.scopeID == choice.scopeID,
+                  let pending = model.saveError,
+                  pending.scopeID == choice.scopeID,
+                  Set(pending.assetIDs) == Set(choice.assetIDs),
+                  pending.albumMembership == choice.albumMembership,
+                  pending.cleanupDisposition == choice.cleanupDisposition,
+                  pending.reviewProgress == choice.reviewProgress
+            else { return }
+            model.clearSaveError()
         } catch {
-            reviewModel?.reportSaveError(ReviewChoiceSaveError(scopeID: choice.scopeID, assetIDs: choice.assetIDs))
+            guard let model = reviewModel, model.scopeID == choice.scopeID else { return }
+            model.reportSaveError(ReviewChoiceSaveError(
+                scopeID: choice.scopeID,
+                assetIDs: choice.assetIDs,
+                albumMembership: choice.albumMembership,
+                cleanupDisposition: choice.cleanupDisposition,
+                reviewProgress: choice.reviewProgress
+            ))
         }
     }
 

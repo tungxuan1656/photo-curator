@@ -1,5 +1,7 @@
 import SwiftUI
 
+// swiftlint:disable file_length - shared workspace shell owns header/filter/grid/group/compare/tray in one file per feat-034 plan; split in feat-035+.
+
 /// Shared photo-first workspace shell (feat-034 owner). One grouped review
 /// surface for both Clean Up Photos and Build an Album: a compact
 /// intent/progress/filter header, one grid, group cards, compare route, and a
@@ -25,17 +27,19 @@ struct ReviewWorkspaceView: View {
         }
         .navigationTitle("Review Photos")
         .sheet(item: $previewSuggestion) { suggestion in
-            SuggestionPreviewSheet(
-                suggestion: suggestion,
-                revisionMismatch: previewRevisionMismatch,
-                onUse: { appModel.reviewModel?.applySuggestion($0) ?? false },
-                onKeepMine: {}
-            )
+            if let model = appModel.reviewModel, model.sessionID == sessionID {
+                SuggestionPreviewSheet(
+                    suggestion: suggestion,
+                    revisionMismatch: previewRevisionMismatch,
+                    currentAlbum: { model.isSelected($0) ? .included : .excluded },
+                    onUse: { appModel.reviewModel?.applySuggestion($0) ?? false },
+                    onKeepMine: {}
+                )
+            }
         }
         .onAppear {
-            if let model = appModel.reviewModel, model.sessionID == sessionID {
-                model.markOpened(model.displayIDs)
-            }
+            // review-rules: grid visibility never marks progress.
+            // Only opening in the detail surface marks `unseen` → `inProgress`.
         }
     }
 
@@ -70,7 +74,7 @@ struct ReviewWorkspaceView: View {
 
     private func workspaceHeader(model: ReviewModel) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Review Photos")
+            Text(reviewIntentTitle(model: model))
                 .font(.title2.bold())
             Text("\(model.selectedAssetIDs.count) in album · \(model.resolvedUncertaintyCount()) reviewed")
                 .font(.footnote)
@@ -82,7 +86,16 @@ struct ReviewWorkspaceView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Review Photos")
+        .accessibilityLabel(reviewIntentTitle(model: model))
+    }
+
+    private func reviewIntentTitle(model: ReviewModel) -> LocalizedStringResource {
+        switch appModel.reviewIntent(for: model.sessionID) {
+        case .cleanup:
+            "Clean Up Photos"
+        case .album:
+            "Review Photos"
+        }
     }
 
     private var filterBar: some View {
@@ -103,10 +116,11 @@ struct ReviewWorkspaceView: View {
                 .foregroundStyle(.secondary)
             HStack(spacing: 10) {
                 Button("Retry") {
-                    model.clearSaveError()
+                    model.retrySaveError()
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
+                .disabled(!model.canRetrySaveError)
                 Button("Done") {
                     model.clearSaveError()
                 }
@@ -220,10 +234,34 @@ private struct ReviewStagedSection: View {
             Text("Review Staged Photos")
                 .font(.headline)
                 .padding(.horizontal)
-            Text("Nothing staged for deletion")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            let staged = model.stagedCleanupIDs
+            if staged.isEmpty {
+                Text("Nothing staged for deletion")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            } else {
+                Text("\(staged.count) staged for deletion. Originals stay until you confirm deletion.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3), spacing: 2) {
+                    ForEach(staged, id: \.self) { id in
+                        ReviewWorkspaceCell(
+                            assetID: id,
+                            sessionID: sessionID,
+                            pagerIDs: staged,
+                            model: model
+                        )
+                    }
+                }
                 .padding(.horizontal)
+                Button("Remove all from staged") {
+                    model.unstageDeletion(staged)
+                }
+                .font(.subheadline)
+                .padding(.horizontal)
+            }
             Button("Done") {
                 appModel.path.removeLast()
             }
@@ -323,7 +361,10 @@ private struct ReviewSuggestionSection: View {
             } else {
                 ForEach(suggestions.prefix(3)) { suggestion in
                     Button("Use Suggestion") {
-                        previewRevisionMismatch = false
+                        // review-rules: a changed proposal needs a new
+                        // preview. Recompute staleness from the live
+                        // source revision instead of blindly clearing.
+                        previewRevisionMismatch = model.isSuggestionStale(suggestion)
                         previewSuggestion = suggestion
                     }
                     .font(.subheadline)
@@ -337,6 +378,7 @@ private struct ReviewSuggestionSection: View {
 private struct SuggestionPreviewSheet: View {
     let suggestion: ReviewSuggestion
     let revisionMismatch: Bool
+    let currentAlbum: (AssetID) -> AlbumMembership
     let onUse: (ReviewSuggestion) -> Bool
     let onKeepMine: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -355,7 +397,7 @@ private struct SuggestionPreviewSheet: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                ForEach(suggestion.previewRows, id: \.id) { row in
+                ForEach(suggestion.previewRows(currentAlbum: currentAlbum), id: \.id) { row in
                     Text("\(row.dimension): \(row.oldValue) → \(row.newValue)")
                         .font(.caption)
                         .foregroundStyle(.secondary)

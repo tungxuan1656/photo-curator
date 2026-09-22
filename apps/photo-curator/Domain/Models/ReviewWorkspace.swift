@@ -35,10 +35,15 @@ struct ReviewWorkspaceChoice: Sendable {
 }
 
 /// Last durable write failure for one choice action. Views render explicit
-/// retry and never claim saved state on this path.
+/// retry and never claim saved state on this path. The payload carries the
+/// exact failed dimension values so retry re-issues the same write instead
+/// of dropping it.
 struct ReviewChoiceSaveError: Sendable, Equatable {
     let scopeID: UUID
     let assetIDs: [AssetID]
+    let albumMembership: AlbumMembership?
+    let cleanupDisposition: CleanupDisposition?
+    let reviewProgress: ReviewProgress?
 }
 
 enum WorkspaceAvailability: Sendable {

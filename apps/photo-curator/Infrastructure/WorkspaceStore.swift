@@ -56,6 +56,9 @@ actor WorkspaceStore {
         let orderedIDs = orderedAssetIDs(sourceAssetIDs.map(\.rawValue))
         let scopes = try context.fetch(FetchDescriptor<ReviewScope>())
         if let existing = scopes.first(where: { $0.id == id }) {
+            existing.intentRawValue = intent.rawValue
+            existing.updatedAt = now
+            try context.save()
             return makeScopeSnapshot(existing)
         }
         let scope = ReviewScope(
@@ -239,6 +242,38 @@ actor WorkspaceStore {
             context.insert(WorkspaceMigrationMarker(key: key, version: version, committedAt: now))
             try context.save()
         }
+    }
+
+    /// Deletes one durable scope and every item row bound to it.
+    /// Absent scopes/items already count as success (idempotent) so
+    /// discard/finish/reset never leave orphaned workspace rows.
+    func deleteScope(id scopeID: UUID) throws {
+        try context.transaction {
+            let scopes = try context.fetch(FetchDescriptor<ReviewScope>())
+            guard let scope = scopes.first(where: { $0.id == scopeID }) else { return }
+            let items = try context.fetch(FetchDescriptor<WorkspaceItem>())
+            for item in items where item.scopeID == scopeID {
+                context.delete(item)
+            }
+            context.delete(scope)
+            try context.save()
+        }
+    }
+
+    /// Updates the persisted entry intent (home handoff → session resume).
+    /// A recreated scope for an existing session keeps its item rows and
+    /// only refreshes the intent label.
+    func updateScopeIntent(_ intent: ReviewIntent, scopeID: UUID) throws -> ReviewScopeSnapshot {
+        var result: ReviewScopeSnapshot?
+        try context.transaction {
+            let scope = try requireScope(scopeID)
+            scope.intentRawValue = intent.rawValue
+            scope.updatedAt = Date()
+            try context.save()
+            result = makeScopeSnapshot(scope)
+        }
+        guard let result else { throw WorkspaceStoreError.invalidState }
+        return result
     }
 
     private func updateItem(

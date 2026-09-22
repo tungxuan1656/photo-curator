@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Minimum review-facing suggestion contract (feat-034 owner).
 /// Immutable advisory records derived from existing native analysis/grouping
@@ -25,30 +26,30 @@ enum ReviewSuggestionProposal: Sendable {
 /// Owner-copy keys for suggestion display. Views resolve them as
 /// `LocalizedStringResource` so en/vi come from the catalog.
 enum ReviewSuggestionCopy {
-    static let advisoryNote = "The app suggested this. You decide."
-    static let useSuggestion = "Use Suggestion"
-    static let keepMyChoice = "Keep My Choice"
-    static let previewTitle = "Review Suggested Changes"
-    static let applyTitle = "Apply These Changes"
-    static let changedNotice = "This suggestion changed. Review it again."
-    static let evidenceAvailable = "Suggestion available"
-    static let evidenceInsufficient = "Not enough information for a suggestion"
-    static let evidenceUnavailable = "Analysis unavailable"
-    static let albumDimension = "Album membership"
-    static let cleanupDimension = "Cleanup choice"
-    static let albumUnset = "Not chosen for album"
-    static let albumIncluded = "In album"
-    static let albumExcluded = "Excluded from album"
-    static let cleanupUndecided = "Undecided"
-    static let cleanupKeep = "Keep"
-    static let cleanupStaged = "Staged for deletion"
+    static let advisoryNote = LocalizedStringResource("The app suggested this. You decide.")
+    static let useSuggestion = LocalizedStringResource("Use Suggestion")
+    static let keepMyChoice = LocalizedStringResource("Keep My Choice")
+    static let previewTitle = LocalizedStringResource("Review Suggested Changes")
+    static let applyTitle = LocalizedStringResource("Apply These Changes")
+    static let changedNotice = LocalizedStringResource("This suggestion changed. Review it again.")
+    static let evidenceAvailable = LocalizedStringResource("Suggestion available")
+    static let evidenceInsufficient = LocalizedStringResource("Not enough information for a suggestion")
+    static let evidenceUnavailable = LocalizedStringResource("Analysis unavailable")
+    static let albumDimension = LocalizedStringResource("Album membership")
+    static let cleanupDimension = LocalizedStringResource("Cleanup choice")
+    static let albumUnset = LocalizedStringResource("Not chosen for album")
+    static let albumIncluded = LocalizedStringResource("In album")
+    static let albumExcluded = LocalizedStringResource("Excluded from album")
+    static let cleanupUndecided = LocalizedStringResource("Undecided")
+    static let cleanupKeep = LocalizedStringResource("Keep")
+    static let cleanupStaged = LocalizedStringResource("Staged for deletion")
 }
 
 struct ReviewSuggestionPreviewRow: Sendable, Identifiable {
     let id: String
-    let dimension: String
-    let oldValue: String
-    let newValue: String
+    let dimension: LocalizedStringResource
+    let oldValue: LocalizedStringResource
+    let newValue: LocalizedStringResource
 }
 
 struct ReviewSuggestion: Sendable, Identifiable {
@@ -72,13 +73,21 @@ struct ReviewSuggestion: Sendable, Identifiable {
         return true
     }
 
-    /// Exact IDs plus one dimension and its per-asset values, using owner
-    /// copy keys so both languages resolve from the catalog.
-    var previewRows: [ReviewSuggestionPreviewRow] {
+    /// Exact IDs plus one dimension and its per-asset values against the
+    /// live model state, using owner copy keys so both languages resolve
+    /// from the catalog. The caller supplies the current choice per ID so
+    /// no-op proposals never render as phantom changes.
+    func previewRows(currentAlbum: (AssetID) -> AlbumMembership) -> [ReviewSuggestionPreviewRow] {
         switch proposal {
         case let .albumMembership(values):
             return values.map { assetID, membership in
-                let newValue: String = switch membership {
+                let newValue: LocalizedStringResource = switch membership {
+                case .unset: ReviewSuggestionCopy.albumUnset
+                case .included: ReviewSuggestionCopy.albumIncluded
+                case .excluded: ReviewSuggestionCopy.albumExcluded
+                }
+                let current = currentAlbum(assetID)
+                let oldValue: LocalizedStringResource = switch current {
                 case .unset: ReviewSuggestionCopy.albumUnset
                 case .included: ReviewSuggestionCopy.albumIncluded
                 case .excluded: ReviewSuggestionCopy.albumExcluded
@@ -86,7 +95,7 @@ struct ReviewSuggestion: Sendable, Identifiable {
                 return ReviewSuggestionPreviewRow(
                     id: assetID.rawValue,
                     dimension: ReviewSuggestionCopy.albumDimension,
-                    oldValue: ReviewSuggestionCopy.albumUnset,
+                    oldValue: oldValue,
                     newValue: newValue
                 )
             }.sorted { $0.id < $1.id }
@@ -103,18 +112,28 @@ struct ReviewSuggestion: Sendable, Identifiable {
             return []
         }
     }
+
+    /// Legacy preview without live state (kept for source-compat). Prefer
+    /// `previewRows(currentAlbum:)` so no-op proposals never show as changes.
+    var previewRows: [ReviewSuggestionPreviewRow] {
+        previewRows { _ in .unset }
+    }
 }
 
 /// Adapter over existing native facts only. Legacy selected/rejected output is
 /// never applied as a new user choice; an empty native set is valid.
 enum NativeReviewSuggestionAdapter: Sendable {
+    static func revision(result: SelectionResult, scopeID _: UUID) -> String {
+        "native-a\(PhotoAnalysis.currentVersion)-e\(result.engineVersion)"
+    }
+
     static func suggestions(
         scopeID: UUID,
         result: SelectionResult,
         groups: [SimilarGroup]
     ) -> [ReviewSuggestion] {
         let analysisVersion = PhotoAnalysis.currentVersion
-        let revision = "native-a\(analysisVersion)-e\(result.engineVersion)"
+        let revision = revision(result: result, scopeID: scopeID)
         var records: [ReviewSuggestion] = []
         for group in groups {
             let winner = group.engineWinner

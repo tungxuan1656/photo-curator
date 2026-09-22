@@ -943,3 +943,22 @@ generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
 with feat-035/036.
 **Next**: Review acceptance, then close feat-034 and hand off feat-035 after
 approval.
+
+## 2026-09-22 — feat-034 review fix wave
+
+**State**: active
+**Done**: Fixed 19 true-positive reviewer findings (user scope: feat-034 plus
+touched feat-027/031 code; #1/#10/#11/#12/#23 left untouched as verified
+false-positives): progress unseen-gating via session overlay, detail-only
+markOpened, readable staged filter, replayable scoped retry payload, legacy
+feedback seeding, per-session intent + persisted refresh, scope delete,
+drag-start guard, localized live-state suggestion preview with no-op guard
+and revision recompute, truthful quality versions, per-request scheduler
+cancel, and l10n fixes (fallback key, byte-progress, bundle name).
+**Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations,
+generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+`git diff --check` PASS. No test targets, test files, or proof harness.
+**Blockers**: none for feat-034 scope; album-save/deletion operations remain
+with feat-035/036.
+**Next**: Review acceptance, then close feat-034 and hand off feat-035 after
+approval.

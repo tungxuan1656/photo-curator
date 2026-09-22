@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 protocol QwenInferenceRuntime: Sendable {
     func load(from directory: URL) async throws -> QwenLoadResult
     func cancel(generation: Int) async
+    func cancel(requestID: UUID) async
     func unload() async
     func respond(_ request: QwenInferenceRequest) async throws -> QwenInferenceResult
 }
@@ -110,6 +111,13 @@ actor QwenPairJudge {
         await runtime.cancel(generation: generation)
     }
 
+    /// Per-request cancellation for the bounded comparison lane: only the
+    /// named request is poisoned, so one timeout never cancels the whole
+    /// run generation.
+    func cancel(requestID: UUID) async {
+        await runtime.cancel(requestID: requestID)
+    }
+
     func judge(_ request: QualityPairRequest) async throws -> QualityPairJudgment {
         guard lifecycle == .loaded, installation != nil else {
             throw lifecycle == .unloaded ? QwenPairJudgeError.notLoaded : QwenPairJudgeError.busy
@@ -140,6 +148,7 @@ actor QwenPairJudge {
 
         let result = try await runtime.respond(
             QwenInferenceRequest(
+                requestID: request.requestID,
                 firstImage: lease.first,
                 secondImage: lease.second,
                 prompt: Self.prompt,
