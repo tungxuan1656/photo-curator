@@ -7,6 +7,11 @@ import SwiftUI
 /// this view only awaits the joined outcome. Progress copy names the album
 /// being saved; no determinate fraction is shown because PhotoKit `performChanges`
 /// reports success atomically per call (a fake percentage would be dishonest).
+/// Copy owners: `ui-copy.md` (save preparation/progress/partial/failed/
+/// interrupted/retry/access-check rows). Limited access reports the recovery
+/// path (Choose More Photos / Get Full Photos Access) per review-rules;
+/// denied/restricted routes to Settings. Retry is explicit and adds only
+/// missing IDs to the same album; save never clears workspace state.
 struct Saving: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
@@ -18,47 +23,47 @@ struct Saving: View {
                 case let .saved(state):
                     SavedRedirect(state: state, sessionID: sessionID)
                 case let .partial(state):
-                    ErrorStateView(
-                        title: "Album partially saved",
+                    savingOutcome(
+                        title: "Some photos weren't added to the album",
                         message: "\(state.addedIDs.count) of \(state.requestedIDs.count) photos were added.",
-                        primaryTitle: "Retry Remaining",
-                        primary: {
+                        primary: ("Retry Missing Photos", {
                             Task {
                                 self.outcome = nil
                                 self.outcome = await appModel.retryRemainingSave(for: sessionID)
                             }
-                        },
-                        secondaryTitle: "Finish Anyway",
-                        secondary: { appModel.path.append(.completion(sessionID: sessionID)) }
+                        }),
+                        secondary: ("Finish Anyway", { appModel.path.append(.completion(sessionID: sessionID)) })
                     )
                 case .permissionLost:
-                    ErrorStateView(
+                    savingOutcome(
                         title: "Can't Save Album",
-                        message: "Photos access changed before the album could be saved.",
-                        primaryTitle: "Open Settings",
-                        primary: { appModel.openSettingsURL() },
-                        secondaryTitle: "Back to Review",
-                        secondary: { appModel.path.removeLast() }
+                        message: limitedAccessCopy,
+                        primary: ("Get Full Photos Access to Save", { appModel.openSettingsURL() }),
+                        secondary: ("Back to Review", { appModel.path.removeLast() })
                     )
                 case .failed:
-                    ErrorStateView(
-                        title: "Couldn't Save Album",
-                        message: "Your selection is kept. Try again when ready.",
-                        primaryTitle: "Try Again",
-                        primary: {
+                    savingOutcome(
+                        title: "Couldn't save the album",
+                        message: "Album save was interrupted. Check the result before retrying.",
+                        primary: ("Try Again", {
                             Task {
                                 self.outcome = nil
                                 self.outcome = await appModel.saveAlbum(for: sessionID)
                             }
-                        },
-                        secondaryTitle: "Back to Review",
-                        secondary: { appModel.path.removeLast() }
+                        }),
+                        secondary: ("Back to Review", { appModel.path.removeLast() })
                     )
                 }
             } else {
                 VStack(spacing: 12) {
-                    Text("Saving your album").font(.title2.bold())
+                    Text("Saving album").font(.title2.bold())
+                    Text("Checking Photos access")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     ProgressView()
+                    Text("Saving an album does not change your cleanup choices.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
                 .padding()
                 .task {
@@ -68,6 +73,34 @@ struct Saving: View {
         }
         .navigationTitle("Saving")
         .navigationBarBackButtonHidden(true)
+    }
+
+    private var limitedAccessCopy: LocalizedStringResource {
+        "Photos access changed before the album could be saved."
+    }
+
+    private func savingOutcome(
+        title: LocalizedStringResource,
+        message: LocalizedStringResource,
+        primary: (LocalizedStringResource, () -> Void),
+        secondary: (LocalizedStringResource, () -> Void)
+    ) -> some View {
+        VStack(spacing: 12) {
+            ErrorStateView(
+                title: title,
+                message: message,
+                primaryTitle: primary.0,
+                primary: primary.1,
+                secondaryTitle: secondary.0,
+                secondary: secondary.1
+            )
+            if appModel.authorization == .limited {
+                Button("Choose More Photos") {
+                    appModel.presentPicker()
+                }
+                .font(.footnote)
+            }
+        }
     }
 }
 

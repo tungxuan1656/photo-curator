@@ -2,9 +2,12 @@ import SwiftUI
 
 /// S16 completion: what was saved, clean exit.
 ///
-/// Reads the persisted save state (album name + final count). `Done` clears
-/// the session claim and review state, returning Home with no unfinished
-/// session card. No `View in Photos`: no reliable deep link exists.
+/// Reads the durable operation display state (album name + final count).
+/// Partial completion stays truthful: remaining/missing counts name what
+/// still needs an explicit retry from S15, and cleanup state is untouched.
+/// `Done` clears the session claim and review state, returning Home with no
+/// unfinished session card. No `View in Photos`: no reliable deep link
+/// exists. Copy owners: `ui-copy.md` (album saved/save partial rows).
 struct Completion: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
@@ -23,9 +26,11 @@ struct Completion: View {
                         Text("\(added) photos saved to \"\(state.albumTitle)\".")
                     }
                     if !state.remainingIDs.isEmpty || !state.missingIDs.isEmpty {
-                        Text("Some photos could not be added. Your originals are unchanged.")
+                        Text("Some photos weren't added to the album")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
+                    Text("Saving an album does not change your cleanup choices.")
+                        .font(.footnote).foregroundStyle(.secondary)
                     Button("Done") { appModel.finishSave(for: sessionID) }
                         .buttonStyle(.borderedProminent)
                 }

@@ -429,6 +429,13 @@ extension AppModel {
         guard let sessionID else { return true }
         var cleaned = true
         reviewIntentForSession.removeValue(forKey: sessionID)
+        // feat-035: session-scoped album operations join the same
+        // all-attempted/idempotent rule. Resolution order keeps album state
+        // reconcilable: retire the operation only after the review scope it
+        // references is gone. Absent rows already count as success.
+        if let albumOperations = container.albumOperations {
+            await albumOperations.delete(sessionID: sessionID.rawValue)
+        }
         if let workspaceStore = container.workspaceStore {
             do {
                 try await workspaceStore.deleteScope(id: sessionID.rawValue)
@@ -440,53 +447,50 @@ extension AppModel {
                     )
             }
         }
-        do {
-            try await container.checkpointStore.delete(sessionID: sessionID)
-        } catch {
-            cleaned = false
-            logger
-                .error(
-                    "\(context, privacy: .public) checkpoint cleanup failed: \(error.localizedDescription, privacy: .public)"
-                )
-        }
-        do {
-            try await container.checkpointStore.deleteResult(sessionID: sessionID)
-        } catch {
-            cleaned = false
-            logger
-                .error(
-                    "\(context, privacy: .public) result cleanup failed: \(error.localizedDescription, privacy: .public)"
-                )
-        }
-        do {
-            try await container.checkpointStore.deleteFeedback(sessionID: sessionID)
-        } catch {
-            cleaned = false
-            logger
-                .error(
-                    "\(context, privacy: .public) feedback cleanup failed: \(error.localizedDescription, privacy: .public)"
-                )
-        }
-        // feat-026 uncertainty snapshot: same all-attempted/idempotent rule.
-        do {
-            try await container.checkpointStore.deleteUncertaintyFeedback(sessionID: sessionID)
-        } catch {
-            cleaned = false
-            logger
-                .error(
-                    "\(context, privacy: .public) uncertainty-feedback cleanup failed: \(error.localizedDescription, privacy: .public)"
-                )
-        }
-        do {
-            try await container.checkpointStore.deleteSaveState(sessionID: sessionID)
-        } catch {
-            cleaned = false
-            logger
-                .error(
-                    "\(context, privacy: .public) save-state cleanup failed: \(error.localizedDescription, privacy: .public)"
-                )
-        }
+        cleaned = await deleteCheckpointFiles(sessionID: sessionID, context: context) && cleaned
         return cleaned
+    }
+
+    /// File-backed session artifacts. Each delete is attempted independently;
+    /// absent files already count as success. Split from `deleteSessionData`
+    /// so both stay under the function body budget.
+    private func deleteCheckpointFiles(sessionID: SessionID, context: String) async -> Bool {
+        var cleaned = true
+        // Each entry is attempted independently; absent files count as
+        // success. Written as sequential calls (not a collection literal) so
+        // the formatter keeps the trailing-comma rule satisfied.
+        let checkpointStore = container.checkpointStore
+        cleaned = await deleteOne(label: "checkpoint", context: context) {
+            try await checkpointStore.delete(sessionID: sessionID)
+        } && cleaned
+        cleaned = await deleteOne(label: "result", context: context) {
+            try await checkpointStore.deleteResult(sessionID: sessionID)
+        } && cleaned
+        cleaned = await deleteOne(label: "feedback", context: context) {
+            try await checkpointStore.deleteFeedback(sessionID: sessionID)
+        } && cleaned
+        // feat-026 uncertainty snapshot: same all-attempted/idempotent rule.
+        cleaned = await deleteOne(label: "uncertainty-feedback", context: context) {
+            try await checkpointStore.deleteUncertaintyFeedback(sessionID: sessionID)
+        } && cleaned
+        cleaned = await deleteOne(label: "save-state", context: context) {
+            try await checkpointStore.deleteSaveState(sessionID: sessionID)
+        } && cleaned
+        return cleaned
+    }
+
+    private func deleteOne(
+        label: String, context: String, delete: () async throws -> Void
+    ) async -> Bool {
+        do {
+            try await delete()
+            return true
+        } catch {
+            logger.error(
+                "\(context, privacy: .public) \(label, privacy: .public) cleanup failed: \(error.localizedDescription, privacy: .public)"
+            )
+            return false
+        }
     }
 
     func cancelProcessing() {

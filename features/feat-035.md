@@ -2,8 +2,8 @@
 
 ## Status
 
-- Status: `todo`.
-- Depends on: `feat-034`.
+- Status: `done`.
+- Depends on: `feat-034` (done).
 
 ## Goal and acceptance
 
@@ -24,5 +24,45 @@ Primary owners: [review-rules.md](../docs/product-specs/review-rules.md),
 [data-model.md](../docs/design-docs/data-model.md). The actionable record is
 [docs/plans/feat-035.md](../docs/plans/feat-035.md).
 
-This shared PhotoKit/state feature remains implementation-gated by feat-034;
-no code is claimed here.
+## Implementation and verification
+
+- New `Domain/Models/AlbumSaveOperation.swift` (feat-035 owner): `AlbumSaveStatus`
+  (`prepared/executing/needsReconciliation/completed/partial/failed/cancelled`),
+  durable `@Model AlbumSaveOperation` (session/scope IDs, ordered draft IDs,
+  canonical SHA-256 digest over sorted IDs + schema v1, status, album identity,
+  per-ID added/missing outcomes, timestamps), plus value snapshot with
+  `remainingIDs`. No deletion state; no pixels/faces.
+- New `Infrastructure/AlbumSaveOperationStore.swift`: SwiftData load/upsert/
+  update/delete over the shared workspace container; absent rows are idempotent
+  success; save failure retries on next mutation, never claimed saved.
+- New `Services/Export/AlbumSaveService.swift`: independent save boundary and
+  only caller of album mutation APIs. Persists `prepared` digest before any
+  PhotoKit call; same digest + scope resumes the same album and adds only
+  remaining IDs; changed draft starts fresh; interruption/cancel marks
+  `needsReconciliation`; terminal mapping is saved/partial/failed truthfully
+  with explicit-only retry. Guards denied/restricted via the permission
+  service; limited stays valid with Choose More recovery in S15.
+- `App/AppContainer.swift`: explicit SwiftData schema migration — workspace
+  `ModelContainer` now opens with `AlbumSaveOperation` alongside the feat-033
+  models (additive; scope/item/marker rows reopen untouched). Rollback removes
+  the model from the list; unresolved operations fall back to the file
+  `SaveState` handoff and recoverable review. Wires `albumOperations` +
+  `albumSaveService`; nil when workspace storage is unavailable.
+- `App/AppModel+Save.swift`: `saveAlbum`/`retryRemainingSave` route through
+  the durable service with session claim-once flights intact; mirrors the
+  display state into the legacy file handoff for interruption safety;
+  `savedAlbum`/`hasInterruptedSave` prefer the operation with legacy fallback.
+  Save never clears workspace, draft, progress, or cleanup. New
+  `App/LegacySaveFlow.swift` holds the pre-035 file-backed resume/outcome plus
+  the moved `PersistLatest` hook (unavailable-workspace path only).
+- `App/AppModel.swift`: `deleteSessionData` retires the session operation row
+  alongside scope/item/file deletes; `deleteCheckpointFiles`/`deleteOne` split
+  keeps lint budgets with the same all-attempted/idempotent rule.
+- S14/S15/S16 (`FinalReview`/`Saving`/`Completion`): owner en/vi copy only —
+  save disclosure ("Saving an album does not change your cleanup choices."),
+  access-check line, truthful partial/interrupted/failed states, `Retry Missing
+  Photos`, `Get Full Photos Access to Save`, limited Choose More recovery.
+  Added 5 catalog entries en/vi; no untranslated fallback strings.
+- Verification: `./init.sh` PASS (SwiftFormat PASS, `swiftlint --strict` 0
+  violations, generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+  `git diff --check` PASS. No test targets, test files, or proof harness.
