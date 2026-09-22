@@ -196,7 +196,7 @@ struct ProcessingView: View {
             .font(.subheadline)
             .foregroundStyle(.orange)
             .multilineTextAlignment(.center)
-            .accessibilityLabel("AI unavailable. Using on-device native analysis.")
+            .accessibilityLabel("AI unavailable - using on-device native analysis")
         } else if appModel.processing.usedAIModel == true {
             Label("AI model used for quality comparisons", systemImage: "sparkles")
                 .font(.subheadline)

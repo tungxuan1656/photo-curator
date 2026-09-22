@@ -84,7 +84,7 @@ struct SettingsView: View {
                 if let fraction = modelInstallation.progressFraction {
                     ProgressView(value: fraction)
                     if let completed = modelInstallation.completedBytes, let total = modelInstallation.totalBytes {
-                        Text("\(byteString(completed)) of \(byteString(total))")
+                        Text("\(byteString(completed)) / \(byteString(total))")
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }

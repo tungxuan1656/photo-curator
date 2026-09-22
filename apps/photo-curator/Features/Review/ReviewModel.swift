@@ -13,18 +13,16 @@ struct SimilarGroup: Hashable, Sendable {
     }
 }
 
-/// Session-local review state over the persisted chronological result.
-///
-/// Single source of truth shared by S09–S14. `displayIDs` covers every live
-/// result ID in engine chronology (selected union rejected); S10 keeps its
-/// dim-don't-shift layout via `curatedDisplayIDs` (engine-selected plus
-/// currently selected). Edits mutate only this model plus a `SelectionFeedback`
 /// snapshot persisted by the owner; the engine never reruns.
 @MainActor @Observable
+// swiftlint:disable:next type_body_length - session review state owns selection/progress/cleanup/suggestion overlays in one model per feat-034 plan.
 final class ReviewModel {
     let sessionID: SessionID
     let result: SelectionResult
     let sourceByID: [AssetID: PhotoAsset]
+    /// Durable workspace scope bound at review entry (feat-034). Nil on the
+    /// legacy file-backed path when workspace storage is unavailable.
+    let scopeID: UUID?
     private(set) var selectedIDs: Set<AssetID>
     let displayIDs: [AssetID]
     private(set) var lastRemovedID: AssetID?
@@ -33,6 +31,9 @@ final class ReviewModel {
     /// progress counter resets). Assigned by the owner at review entry from
     /// `unavailableCount(result:frozenSourceCount:)`; defaults to hidden.
     var persistedUnavailableCount = 0
+    /// Last durable write failure for a choice action. Views render retry
+    /// from this without claiming saved state.
+    private(set) var saveError: ReviewChoiceSaveError?
     /// Needs Review queue (feat-026): one `UncertaintyReviewState` owns queue
     /// derivation, resolution, and snapshot (derived once at review entry;
     /// resolution recomputes from live edits per read).
@@ -47,11 +48,25 @@ final class ReviewModel {
     @ObservationIgnored private var analysisByID: [AssetID: PhotoAnalysis] = [:]
     @ObservationIgnored private var unavailableAnalysisIDs: Set<AssetID> = []
     @ObservationIgnored private var analysisFlights: [AssetID: Task<PhotoAnalysis?, Never>] = [:]
-    private var removedEditIDs: Set<AssetID>
-    private var restoredEditIDs: Set<AssetID>
-    private var favoriteEditIDs: Set<AssetID>
-    private var swapWinnerByGroup: [ClusterID: AssetID]
+    /// Session-local progress overlay mirroring durable `reviewProgress`.
+    /// Seeded from `workspaceItems` at init. Same-extension writes only:
+    /// the action-transition extension in `ReviewModelActions.swift` is the
+    /// only writer; reads stay here.
+    @ObservationIgnored private(set) var progressByID: [AssetID: ReviewProgress] = [:]
+    /// Session-local cleanup overlay seeded from durable items at
+    /// `beginReview`. Same-extension writes only: the action-transition
+    /// extension in `ReviewModelActions.swift` is the only writer.
+    @ObservationIgnored private(set) var stagedCleanupByID: [AssetID: CleanupDisposition] = [:]
+    private(set) var removedEditIDs: Set<AssetID>
+    private(set) var restoredEditIDs: Set<AssetID>
+    var favoriteEditIDs: Set<AssetID>
+    private(set) var swapWinnerByGroup: [ClusterID: AssetID]
     @ObservationIgnored private var onFeedbackChanged: ((SelectionFeedback) -> Void)?
+    /// Durable write hook installed by the owner alongside `onFeedbackChanged`.
+    /// Receives one applied choice (dimension-scoped) per user action so the
+    /// owner can persist through `WorkspaceStore` without the model touching
+    /// PhotoKit or SwiftData directly.
+    @ObservationIgnored private var onWorkspaceChoice: ((ReviewWorkspaceChoice) -> Void)?
 
     init(
         sessionID: SessionID,
@@ -60,11 +75,16 @@ final class ReviewModel {
         analysisCache: any AnalysisCache,
         feedback: SelectionFeedback? = nil,
         onFeedbackChanged: ((SelectionFeedback) -> Void)? = nil,
-        lowQualityThreshold: Double? = nil
+        lowQualityThreshold: Double? = nil,
+        scopeID: UUID? = nil,
+        workspaceItems: [AssetID: WorkspaceItemSnapshot]? = nil,
+        onWorkspaceChoice: ((ReviewWorkspaceChoice) -> Void)? = nil
     ) {
         self.sessionID = sessionID
         self.result = result
         self.sourceByID = sourceByID
+        self.scopeID = scopeID
+        self.onWorkspaceChoice = onWorkspaceChoice
         self.analysisCache = analysisCache
         decisionByID = Dictionary(uniqueKeysWithValues: result.decisions.map { ($0.assetID, $0) })
         self.onFeedbackChanged = onFeedbackChanged
@@ -75,23 +95,41 @@ final class ReviewModel {
         displayIDs = chrono.filter(live.contains)
         let liveSet = Set(displayIDs)
         let engineSelectedIDs = Set(result.selectedAssetIDs).intersection(liveSet)
-        engineSelected = engineSelectedIDs
-        let removed: Set<AssetID>
-        let restored: Set<AssetID>
-        if let feedback {
-            removed = feedback.removedIDs.intersection(liveSet)
-            restored = feedback.restoredIDs.intersection(liveSet)
-            favoriteEditIDs = feedback.favoriteIDs.intersection(liveSet)
-            swapWinnerByGroup = feedback.swapWinner.filter { liveSet.contains($0.value) }
-        } else {
-            removed = []
-            restored = []
+        if let workspaceItems {
+            engineSelected = Self.workspaceAlbumSelected(workspaceItems: workspaceItems, live: liveSet)
+            progressByID = Dictionary(
+                uniqueKeysWithValues: workspaceItems.values
+                    .filter { liveSet.contains($0.assetID) }
+                    .map { ($0.assetID, $0.reviewProgress) }
+            )
+            stagedCleanupByID = Dictionary(
+                uniqueKeysWithValues: workspaceItems.values
+                    .filter { liveSet.contains($0.assetID) }
+                    .map { ($0.assetID, $0.cleanupDisposition) }
+            )
+            removedEditIDs = []
+            restoredEditIDs = []
             favoriteEditIDs = []
             swapWinnerByGroup = [:]
+            selectedIDs = engineSelected.intersection(liveSet)
+        } else if let feedback {
+            engineSelected = engineSelectedIDs
+            removedEditIDs = feedback.removedIDs.intersection(liveSet)
+            restoredEditIDs = feedback.restoredIDs.intersection(liveSet)
+            favoriteEditIDs = feedback.favoriteIDs.intersection(liveSet)
+            swapWinnerByGroup = feedback.swapWinner.filter { liveSet.contains($0.value) }
+            selectedIDs = engineSelectedIDs
+                .subtracting(feedback.removedIDs.intersection(liveSet))
+                .union(feedback.restoredIDs.intersection(liveSet))
+                .intersection(liveSet)
+        } else {
+            engineSelected = engineSelectedIDs
+            removedEditIDs = []
+            restoredEditIDs = []
+            favoriteEditIDs = []
+            swapWinnerByGroup = [:]
+            selectedIDs = engineSelectedIDs.intersection(liveSet)
         }
-        removedEditIDs = removed
-        restoredEditIDs = restored
-        selectedIDs = engineSelectedIDs.subtracting(removed).union(restored).intersection(liveSet)
         reviewState = UncertaintyReviewState(
             decisions: result.decisions.filter { liveSet.contains($0.assetID) },
             lowQualityThreshold: threshold
@@ -116,6 +154,72 @@ final class ReviewModel {
 
     func setFeedbackHook(_ hook: ((SelectionFeedback) -> Void)?) {
         onFeedbackChanged = hook
+    }
+
+    func reportSaveError(_ error: ReviewChoiceSaveError) {
+        saveError = error
+    }
+
+    func clearSaveError() {
+        saveError = nil
+    }
+
+    /// review-rules: only assets opened in the detail/compare surface count.
+    /// Returns the session-local durable progress (defaults to `unseen`).
+    /// Unknown IDs are never treated as reviewed: callers gating on progress
+    /// must see them as work remaining, not work done.
+    func progress(for id: AssetID) -> ReviewProgress {
+        guard displayIDs.contains(id) else { return .unseen }
+        return progressByID[id] ?? .unseen
+    }
+
+    /// Session-local overlay writes. Same-module writes only through the
+    /// action-transition extension in `ReviewModelActions.swift`; views
+    /// never mutate these directly.
+    func setProgress(_ progress: ReviewProgress, for ids: [AssetID]) {
+        for id in ids {
+            progressByID[id] = progress
+        }
+    }
+
+    func setCleanup(_ disposition: CleanupDisposition, for ids: [AssetID]) {
+        for id in ids {
+            stagedCleanupByID[id] = disposition
+        }
+    }
+
+    func setSelected(_ ids: Set<AssetID>) {
+        selectedIDs = ids
+    }
+
+    func setLastRemovedID(_ id: AssetID?) {
+        lastRemovedID = id
+    }
+
+    /// IDs currently staged for deletion in the session-local overlay
+    /// (mirrors durable `cleanupDisposition` per `beginReview` seeding).
+    var stagedCleanupIDs: [AssetID] {
+        displayIDs.filter { stagedCleanupByID[$0] == .stagedForDeletion }
+    }
+
+    /// IDs marked keep in the session-local cleanup overlay.
+    var keptCleanupIDs: [AssetID] {
+        displayIDs.filter { stagedCleanupByID[$0] == .keep }
+    }
+
+    func cleanupDisposition(for id: AssetID) -> CleanupDisposition {
+        stagedCleanupByID[id] ?? .undecided
+    }
+
+    /// review-rules: a proposal that changed since preview needs a new
+    /// preview. Recomputed from live engine facts (analysis/engine/group
+    /// winners), so regroups and re-analysis invalidate open previews.
+    func isSuggestionStale(_ suggestion: ReviewSuggestion) -> Bool {
+        guard suggestion.scopeID == scopeID else { return true }
+        let live = NativeReviewSuggestionAdapter.revision(
+            facts: NativeReviewSuggestionAdapter.facts(result: result, groups: similarGroups)
+        )
+        return suggestion.sourceRevision != live
     }
 
     /// Reads compact saved analysis only when a visible review surface needs it.
@@ -221,6 +325,7 @@ final class ReviewModel {
         trackRemoval(id)
         lastRemovedID = id
         persist()
+        notifyWorkspaceChoice(assetIDs: [id], albumMembership: .excluded)
     }
 
     func restore(_ id: AssetID) {
@@ -232,6 +337,7 @@ final class ReviewModel {
             lastRemovedID = nil
         }
         persist()
+        notifyWorkspaceChoice(assetIDs: [id], albumMembership: .included)
     }
 
     func toggle(_ id: AssetID) {
@@ -279,6 +385,11 @@ final class ReviewModel {
             swapWinnerByGroup.removeValue(forKey: group.id)
         }
         persist()
+        var albumChanges: [AssetID: AlbumMembership] = [id: .included]
+        if id != prior, singlePrior {
+            albumChanges[prior] = .excluded
+        }
+        notifyAlbumChanges(albumChanges)
     }
 
     func feedbackSnapshot() -> SelectionFeedback {
@@ -312,14 +423,14 @@ final class ReviewModel {
         )
     }
 
-    private func trackRemoval(_ id: AssetID) {
+    func trackRemoval(_ id: AssetID) {
         restoredEditIDs.remove(id)
         if engineSelected.contains(id) {
             removedEditIDs.insert(id)
         }
     }
 
-    private func trackInsertion(_ id: AssetID) {
+    func trackInsertion(_ id: AssetID) {
         if engineSelected.contains(id) {
             removedEditIDs.remove(id)
         } else {
@@ -327,7 +438,7 @@ final class ReviewModel {
         }
     }
 
-    private func persist() {
+    func persist() {
         onFeedbackChanged?(feedbackSnapshot())
     }
 
@@ -340,5 +451,45 @@ final class ReviewModel {
             }
             return $0.rawValue < $1.rawValue
         }
+    }
+}
+
+// MARK: - feat-034 workspace dispatch (dimension-scoped durable writes)
+
+extension ReviewModel {
+    func notifyWorkspaceChoice(
+        assetIDs: [AssetID],
+        albumMembership: AlbumMembership? = nil,
+        cleanupDisposition: CleanupDisposition? = nil,
+        reviewProgress: ReviewProgress? = nil
+    ) {
+        guard let scopeID else { return }
+        onWorkspaceChoice?(ReviewWorkspaceChoice(
+            scopeID: scopeID,
+            assetIDs: assetIDs,
+            albumMembership: albumMembership,
+            cleanupDisposition: cleanupDisposition,
+            reviewProgress: reviewProgress
+        ))
+    }
+
+    func notifyAlbumChanges(_ changes: [AssetID: AlbumMembership]) {
+        guard let scopeID else { return }
+        for (assetID, membership) in changes {
+            onWorkspaceChoice?(ReviewWorkspaceChoice(
+                scopeID: scopeID,
+                assetIDs: [assetID],
+                albumMembership: membership,
+                cleanupDisposition: nil,
+                reviewProgress: nil
+            ))
+        }
+    }
+
+    static func workspaceAlbumSelected(
+        workspaceItems: [AssetID: WorkspaceItemSnapshot], live: Set<AssetID>
+    ) -> Set<AssetID> {
+        Set(workspaceItems.values.filter { live.contains($0.assetID) && $0.albumMembership == .included }
+            .map(\.assetID))
     }
 }

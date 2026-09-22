@@ -153,6 +153,12 @@ struct SourceSelectionView: View {
                         columnsCount: 3,
                         spacing: 2,
                         onDragStart: { startIndex in
+                            // The grid may reload mid-gesture
+                            // (photoLibraryDidChange → loadSource); a stale
+                            // snapshot index must never trap out of bounds.
+                            guard startIndex >= 0, startIndex < appModel.filteredAssets.count else {
+                                return (isSelecting: true, initialSelection: appModel.selectedIDs)
+                            }
                             let asset = appModel.filteredAssets[startIndex]
                             let isSelected = appModel.selectedIDs.contains(asset.id)
                             return (isSelecting: !isSelected, initialSelection: appModel.selectedIDs)

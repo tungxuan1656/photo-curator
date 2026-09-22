@@ -2,7 +2,7 @@ import Foundation
 
 protocol QualityPairJudging: Sendable {
     func judge(_ request: QualityPairRequest) async throws -> QualityPairJudgment
-    func cancel(generation: Int) async
+    func cancel(requestID: UUID) async
 }
 
 extension QwenPairJudge: QualityPairJudging {}
@@ -108,11 +108,14 @@ struct QualityComparisonScheduler: Sendable {
 
     private func compare(_ request: QualityPairRequest) async -> ComparisonOutcome {
         do {
+            // Per-request timeout cancels only the timed-out request. The
+            // run-scoped generation stays alive so one slow pair never
+            // poisons the remaining comparisons.
             let judgment = try await Self.withDeadline(
                 nanoseconds: Self.nanoseconds(policy.qwenRequestDeadline),
                 operation: { try await self.judge.judge(request) },
-                onTimeout: { Task { await self.judge.cancel(generation: request.generation) } },
-                onCancel: { Task { await self.judge.cancel(generation: request.generation) } }
+                onTimeout: { Task { await self.judge.cancel(requestID: request.requestID) } },
+                onCancel: { Task { await self.judge.cancel(requestID: request.requestID) } }
             )
             guard judgment.requestID == request.requestID,
                   judgment.generation == request.generation

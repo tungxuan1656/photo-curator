@@ -135,16 +135,29 @@ struct HomeView: View {
     private func startCurationCard(appModel: AppModel) -> some View {
         VStack(spacing: 10) {
             Button {
-                appModel.showSourceSelection()
+                appModel.startCleanupReview()
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                    Text("Curate Photos")
+                    Image(systemName: "trash")
+                    Text("Clean Up Photos")
                 }
                 .font(.headline)
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+
+            Button {
+                appModel.startAlbumReview()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                    Text("Build an Album")
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
             .controlSize(.large)
 
             Text("Select photos to begin · Originals remain unchanged")

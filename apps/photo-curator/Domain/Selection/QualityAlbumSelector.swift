@@ -19,6 +19,7 @@ struct QualityAlbumSelectionRequest: Sendable {
     let degradationReason: QualityDegradationReason?
     let configuration: SelectionConfiguration
     let qualityPolicy: QualityCurationPolicy
+    let configVersion: Int
 }
 
 struct QualityModelProvenance: Sendable {
@@ -30,6 +31,13 @@ struct QualityModelProvenance: Sendable {
 
 /// Selects from all analyzed quality candidates before any Qwen evidence is applied.
 struct QualityAlbumSelector: Sendable {
+    /// Grouping provenance: 0 when no retake groups fed the run, else the
+    /// current retake-grouping schema.
+    private static let emptyGroupingVersion = 0
+    private static let retakeGroupingVersion = 1
+    /// Prompt provenance: `none` when no comparison ran, else the judge
+    /// prompt named in `QwenPairJudge.promptVersion`.
+    private static let noPromptVersion = "none"
     private let scorer = QualityScorer()
     private let diversity = DiversitySelector()
     private let finalBuilder = FinalAlbumBuilder()
@@ -46,6 +54,9 @@ struct QualityAlbumSelector: Sendable {
             request.groups.retakeGroups,
             selectedIDs: selection.ids
         )
+        // Model provenance only ever exists for an executed model run (the
+        // runner nils it on every native fallback), so pass it through and
+        // let unknown stay unknown downstream.
         let base = try finalBuilder.build(
             sourceAssets: request.sourceAssets,
             analyses: request.analyses,
@@ -169,7 +180,10 @@ struct QualityAlbumSelector: Sendable {
         let metadata = QualityExecutionMetadata(
             requestedMode: request.requestedMode,
             executedMode: request.executedMode,
-            configVersion: 2,
+            configVersion: request.configVersion,
+            groupingVersion: request.groups.retakeGroups.isEmpty
+                ? Self.emptyGroupingVersion : Self.retakeGroupingVersion,
+            promptVersion: request.comparisons.isEmpty ? Self.noPromptVersion : QwenPairJudge.promptVersion,
             modelID: request.model?.id,
             modelRevision: request.model?.revision,
             modelManifestDigest: request.model?.manifestDigest,
