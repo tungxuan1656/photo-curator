@@ -12,6 +12,8 @@ struct AppContainer: Sendable {
         let availability: WorkspaceAvailability
         let albumOperations: AlbumSaveOperationStore?
         let albumSaveService: AlbumSaveService?
+        let photoLibrary: any PhotoLibraryService
+        let exporter: any AlbumExportService
     }
 
     let photoLibrary: any PhotoLibraryService
@@ -101,10 +103,8 @@ struct AppContainer: Sendable {
         let checkpointStore = SessionCheckpointStore(files: files)
         let workspace = makeWorkspaceSetup(root: root, checkpointStore: checkpointStore)
         let imageLoader = ImageLoaderService()
-        let photoLibrary = PhotoLibraryPermissionService()
-        let exporter = PhotoKitAlbumExporter()
         return Self(
-            photoLibrary: photoLibrary,
+            photoLibrary: workspace.photoLibrary,
             imageLoader: imageLoader,
             analyzer: VisionAnalysisService(),
             analysisCache: FileAnalysisCache(
@@ -119,7 +119,7 @@ struct AppContainer: Sendable {
             selectionEngine: SelectionEngine(),
             tierCProvider: NativeDerivedEmbeddingProvider(),
             semanticJuryProvider: FoundationModelsSemanticJuryProvider(),
-            exporter: exporter,
+            exporter: workspace.exporter,
             albumOperations: workspace.albumOperations,
             albumSaveService: workspace.albumSaveService,
             analytics: NoopAnalytics(),
@@ -151,6 +151,9 @@ struct AppContainer: Sendable {
                 configurations: ModelConfiguration(url: workspaceURL)
             )
             let store = WorkspaceStore(modelContainer: modelContainer)
+            // Shared with the container fields below: one save path, one
+            // permission service (both are stateless structs, so sharing is
+            // identity-clarity, not state-sharing).
             let photoLibrary = PhotoLibraryPermissionService()
             let exporter = PhotoKitAlbumExporter()
             let albumOperations = AlbumSaveOperationStore(modelContainer: modelContainer)
@@ -163,7 +166,9 @@ struct AppContainer: Sendable {
                 importer: LegacyWorkspaceImporter(checkpointStore: checkpointStore, workspaceStore: store),
                 availability: .available,
                 albumOperations: albumOperations,
-                albumSaveService: albumSaveService
+                albumSaveService: albumSaveService,
+                photoLibrary: photoLibrary,
+                exporter: exporter
             )
         } catch {
             Logger(
@@ -180,7 +185,9 @@ struct AppContainer: Sendable {
                 importer: nil,
                 availability: .unavailable,
                 albumOperations: nil,
-                albumSaveService: nil
+                albumSaveService: nil,
+                photoLibrary: PhotoLibraryPermissionService(),
+                exporter: PhotoKitAlbumExporter()
             )
         }
     }

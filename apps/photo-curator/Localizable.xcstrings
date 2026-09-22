@@ -5237,18 +5237,18 @@
         }
       }
     },
-    "Saving your album" : {
+    "Saving album" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Saving your album"
+            "value" : "Saving album"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Đang lưu album của bạn"
+            "value" : "Đang lưu album"
           }
         }
       }

@@ -16,6 +16,11 @@ struct Saving: View {
     let sessionID: SessionID
     @Environment(AppModel.self) private var appModel
     @State private var outcome: SaveOutcome?
+    /// Live authorization snapshot taken when S15 appears. `appModel
+    /// .authorization` is cached (refreshed on load/auth paths), so the
+    /// Choose More recovery gates on the live value instead — otherwise a
+    /// Settings change mid-flow shows or hides recovery incorrectly.
+    @State private var liveAuthorization: PhotoLibraryAuthorization?
     var body: some View {
         Group {
             if let outcome {
@@ -67,6 +72,7 @@ struct Saving: View {
                 }
                 .padding()
                 .task {
+                    liveAuthorization = await appModel.photoLibrary.authorizationStatus()
                     outcome = await appModel.saveAlbum(for: sessionID)
                 }
             }
@@ -94,7 +100,7 @@ struct Saving: View {
                 secondaryTitle: secondary.0,
                 secondary: secondary.1
             )
-            if appModel.authorization == .limited {
+            if (liveAuthorization ?? appModel.authorization) == .limited {
                 Button("Choose More Photos") {
                     appModel.presentPicker()
                 }

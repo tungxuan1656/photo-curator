@@ -102,8 +102,9 @@ extension AppModel {
     /// PhotoKit. First tap owns the flight; repeat taps join it. Returns the
     /// terminal outcome. The feat-035 `AlbumSaveService` owns the durable
     /// operation: the draft is the exact workspace membership read from the
-    /// live model and resolved against accessible scoped assets; save never
-    /// clears workspace, album draft, review progress, or cleanup state.
+    /// live model (`selectedAssetIDs`); inaccessible IDs surface as
+    /// `missingIDs` (`.partial`), never silently dropped. Save never clears
+    /// workspace, album draft, review progress, or cleanup state.
     func saveAlbum(for sessionID: SessionID) async -> SaveOutcome {
         if let flight = saveFlight, flight.session == sessionID {
             return await flight.task.value
@@ -202,6 +203,9 @@ extension AppModel {
             legacy: legacy,
             intent: .fresh(draftIDs: draft, albumName: name)
         )
+        // No operation, no legacy, no live model: nothing worth persisting.
+        // Writing the empty fallback would create a file that didn't exist.
+        guard !state.requestedIDs.isEmpty || legacy != nil else { return }
         try? await container.checkpointStore.saveSaveState(state)
     }
 

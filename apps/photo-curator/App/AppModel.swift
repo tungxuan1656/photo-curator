@@ -430,9 +430,11 @@ extension AppModel {
         var cleaned = true
         reviewIntentForSession.removeValue(forKey: sessionID)
         // feat-035: session-scoped album operations join the same
-        // all-attempted/idempotent rule. Resolution order keeps album state
-        // reconcilable: retire the operation only after the review scope it
-        // references is gone. Absent rows already count as success.
+        // all-attempted/idempotent rule. The operation row goes first so a
+        // crash between the two deletes leaves an orphan scope (benign:
+        // review re-enters, no false interrupt) rather than an orphan
+        // operation that would route to S15 retry against a gone scope.
+        // Absent rows already count as success.
         if let albumOperations = container.albumOperations {
             await albumOperations.delete(sessionID: sessionID.rawValue)
         }

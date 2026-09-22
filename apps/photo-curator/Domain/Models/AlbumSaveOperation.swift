@@ -3,7 +3,10 @@ import Foundation
 import SwiftData
 
 /// Album-save operation status. Terminal states never auto-retry;
-/// `needsReconciliation` waits for an explicit user retry.
+/// `needsReconciliation` waits for an explicit user retry. `completed`,
+/// `partial`, and `failed` are informational (reconciliation keys off
+/// `remainingIDs`); they exist so later tooling and feat-036's deletion
+/// work can distinguish outcomes without re-deriving them.
 enum AlbumSaveStatus: String, Codable, Sendable {
     case prepared
     case executing
@@ -11,7 +14,6 @@ enum AlbumSaveStatus: String, Codable, Sendable {
     case completed
     case partial
     case failed
-    case cancelled
 }
 
 /// Value snapshot crossing the store actor boundary.

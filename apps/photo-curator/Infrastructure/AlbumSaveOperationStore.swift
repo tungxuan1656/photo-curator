@@ -14,8 +14,9 @@ actor AlbumSaveOperationStore {
     /// Current operation for one session, if any. Undecodable rows surface
     /// as nil so callers fall back to the file `SaveState` handoff.
     func load(sessionID: UUID) -> AlbumSaveOperationSnapshot? {
-        guard let operation = try? context.fetch(FetchDescriptor<AlbumSaveOperation>())
-            .first(where: { $0.sessionID == sessionID })
+        guard let operation = try? context.fetch(FetchDescriptor<AlbumSaveOperation>(
+            predicate: #Predicate { $0.sessionID == sessionID }
+        )).first
         else { return nil }
         return operation.snapshot()
     }
@@ -24,8 +25,11 @@ actor AlbumSaveOperationStore {
     /// by `AlbumSaveService`; this store never invents them.
     func upsert(_ snapshot: AlbumSaveOperationSnapshot) {
         do {
-            let rows = try context.fetch(FetchDescriptor<AlbumSaveOperation>())
-            if let existing = rows.first(where: { $0.sessionID == snapshot.sessionID }) {
+            let sessionID = snapshot.sessionID
+            let rows = try context.fetch(FetchDescriptor<AlbumSaveOperation>(
+                predicate: #Predicate { $0.sessionID == sessionID }
+            ))
+            if let existing = rows.first {
                 apply(snapshot, to: existing)
             } else {
                 context.insert(AlbumSaveOperation(
@@ -54,8 +58,10 @@ actor AlbumSaveOperationStore {
     /// a no-op so late writes cannot recreate deleted operations.
     func update(sessionID: UUID, _ mutation: (AlbumSaveOperation) -> Void) {
         do {
-            let rows = try context.fetch(FetchDescriptor<AlbumSaveOperation>())
-            guard let existing = rows.first(where: { $0.sessionID == sessionID }) else { return }
+            let rows = try context.fetch(FetchDescriptor<AlbumSaveOperation>(
+                predicate: #Predicate { $0.sessionID == sessionID }
+            ))
+            guard let existing = rows.first else { return }
             mutation(existing)
             existing.updatedAt = Date()
             try context.save()
@@ -68,8 +74,10 @@ actor AlbumSaveOperationStore {
     /// discard/finish/reset never leave orphaned operation rows.
     func delete(sessionID: UUID) {
         do {
-            let rows = try context.fetch(FetchDescriptor<AlbumSaveOperation>())
-            guard let existing = rows.first(where: { $0.sessionID == sessionID }) else { return }
+            let rows = try context.fetch(FetchDescriptor<AlbumSaveOperation>(
+                predicate: #Predicate { $0.sessionID == sessionID }
+            ))
+            guard let existing = rows.first else { return }
             context.delete(existing)
             try context.save()
         } catch {
