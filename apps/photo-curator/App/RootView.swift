@@ -41,6 +41,8 @@ struct RootView: View {
                     }
                 case let .cleanupReview(id):
                     CleanupReviewView(sessionID: id)
+                case .deletionRecovery:
+                    DeletionRecoveryView()
                 case let .reviewOverview(id):
                     if appModel.reviewModel?.sessionID == id {
                         ReviewOverview(sessionID: id)
@@ -110,6 +112,23 @@ struct RootView: View {
                     await appModel.refreshAuthorization()
                     await appModel.resumeIfPaused()
                 }
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            if appModel.path.isEmpty, !appModel.deletionRecoveryOperations.isEmpty {
+                Button {
+                    appModel.path.append(.deletionRecovery)
+                } label: {
+                    Label(
+                        "Deletion needs your attention",
+                        systemImage: "exclamationmark.arrow.circlepath"
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                .padding(.horizontal)
+                .accessibilityHint("Review saved deletion outcomes; no deletion will restart automatically")
             }
         }
     }

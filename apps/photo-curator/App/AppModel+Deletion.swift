@@ -70,6 +70,14 @@ extension AppModel {
         await refreshDeletionRecovery()
     }
 
+    /// A prepared row is never resumed. Starting recovery mints a new
+    /// operation and requires the recovery UI to provide a fresh confirmation.
+    func startRecoveredDeletion(_ operation: PhotoDeletionOperationSnapshot) async {
+        guard operation.status == .prepared, operation.submittedIDs.isEmpty else { return }
+        let ids = operation.stagedIDs.map(AssetID.init(rawValue:))
+        await startDeletion(for: SessionID(rawValue: operation.scopeID), stagedIDs: ids)
+    }
+
     /// Read-only reconciliation. It never calls `start`, retries, or submits
     /// PhotoKit changes; unresolved outcomes remain explicitly unresolved.
     func checkDeletionOutcomes(operationID: UUID) async {
