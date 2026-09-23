@@ -3,6 +3,30 @@ import Foundation
 // MARK: - feat-036 original deletion user lane
 
 extension AppModel {
+    /// Loads interrupted deletion operations without dispatching PhotoKit work
+    /// or changing any durable operation state. The existing outcome card can
+    /// then offer its explicit, read-only Check Outcomes action.
+    func refreshDeletionRecovery() async {
+        guard let service = container.deletionService else {
+            deletionRecoveryOperations = []
+            return
+        }
+        do {
+            let operations = try await service.recoverableOperations()
+            deletionRecoveryOperations = operations
+            if deletionOperation == nil {
+                deletionOperation = operations.first
+            }
+            if let currentID = deletionOperation?.operationID {
+                if let refreshed = operations.first(where: { $0.operationID == currentID }) {
+                    deletionOperation = refreshed
+                }
+            }
+        } catch {
+            deletionError = .persistenceFailure
+        }
+    }
+
     func deletionDigest(for ids: [AssetID]) -> String {
         PhotoDeletionOperation.digest(for: ids.map(\.rawValue))
     }
@@ -43,6 +67,7 @@ extension AppModel {
         if result == nil {
             deletionError = .persistenceFailure
         }
+        await refreshDeletionRecovery()
     }
 
     /// Read-only reconciliation. It never calls `start`, retries, or submits
@@ -52,6 +77,7 @@ extension AppModel {
         deletionError = nil
         do {
             deletionOperation = try await service.reconcile(operationID: operationID)?.operation
+            await refreshDeletionRecovery()
         } catch let error as PhotoDeletionServiceError {
             deletionError = error
         } catch {

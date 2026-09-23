@@ -50,6 +50,7 @@ struct PhotoDeletionResult: Sendable {
 
 protocol PhotoDeletionServiceProtocol: Sendable {
     func start(_ request: PhotoDeletionRequest) async throws -> PhotoDeletionResult
+    func recoverableOperations() async throws -> [PhotoDeletionOperationSnapshot]
     func reconcile(operationID: UUID) async throws -> PhotoDeletionResult?
     func cancelPrepared(operationID: UUID) async throws -> PhotoDeletionResult?
     func operation(operationID: UUID) async throws -> PhotoDeletionResult?
@@ -209,8 +210,12 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
         case .executing:
             do {
                 try await operations.update(operationID: operationID) { row in
-                    let submittedPending = row.submittedIDs.filter { row.pendingIDs.contains($0) }
-                    Self.setOutcome(.unresolved, for: submittedPending, on: row)
+                    let resolvedIDs = Set(row.deletedIDs)
+                        .union(row.accessUnknownIDs)
+                        .union(row.failedIDs)
+                        .union(row.unresolvedIDs)
+                    let submittedUnresolved = row.submittedIDs.filter { !resolvedIDs.contains($0) }
+                    Self.setOutcome(.unresolved, for: submittedUnresolved, on: row)
                     row.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
                 }
             } catch {
@@ -252,6 +257,14 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
             }
         }
         return try await requiredResult(operationID: operationID)
+    }
+
+    func recoverableOperations() async throws -> [PhotoDeletionOperationSnapshot] {
+        do {
+            return try await operations.recoverableOperations()
+        } catch {
+            throw Self.mapStoreError(error)
+        }
     }
 
     func cancelPrepared(operationID: UUID) async throws -> PhotoDeletionResult? {

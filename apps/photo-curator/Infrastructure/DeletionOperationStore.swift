@@ -28,6 +28,21 @@ actor DeletionOperationStore {
         return rows.first?.snapshot()
     }
 
+    /// Returns only operations that need an explicit user-visible recovery
+    /// decision. This is a read-only query; it never changes operation state.
+    func recoverableOperations() throws -> [PhotoDeletionOperationSnapshot] {
+        try context.fetch(FetchDescriptor<PhotoDeletionOperation>())
+            .compactMap { operation in
+                switch PhotoDeletionStatus(rawValue: operation.statusRawValue) {
+                case .prepared, .executing, .needsReconciliation:
+                    operation.snapshot()
+                default:
+                    nil
+                }
+            }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
     /// Atomic insert-if-absent. The unique operation ID and the explicit
     /// conflict check make a second start unable to create another dispatch.
     func insertIfAbsent(_ snapshot: PhotoDeletionOperationSnapshot) throws {
@@ -91,7 +106,9 @@ actor DeletionOperationStore {
             throw DeletionOperationStoreError.transitionConflict
         }
 
-        operation.pendingIDs = []
+        // Keep pending membership until each submitted ID receives a durable
+        // outcome. `submittedIDs` plus this pending set lets relaunch recovery
+        // identify every submitted item even if the callback was interrupted.
         operation.submittedIDs = submittedIDs.sorted()
         operation.unresolvedIDs = unresolvedIDs.sorted()
         operation.statusRawValue = PhotoDeletionStatus.executing.rawValue
