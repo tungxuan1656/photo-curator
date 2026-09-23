@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Photos
 
 struct PhotoDeletionConfirmation: Sendable {
@@ -35,6 +36,8 @@ enum PhotoDeletionServiceError: Error, Sendable, Equatable {
     case invalidExactSet
     case invalidConfirmation
     case operationAlreadyExists
+    case operationMissing
+    case transitionConflict
     case invalidOperationState
     case persistenceFailure
 }
@@ -52,10 +55,13 @@ protocol PhotoDeletionServiceProtocol: Sendable {
     func operation(operationID: UUID) async throws -> PhotoDeletionResult?
 }
 
+// swiftlint:disable type_body_length
 /// The sole original-deletion PhotoKit boundary. Resolution is read-only and
 /// always precedes an atomic delete request. This actor deliberately has no
 /// retry or resume path: interrupted work is reconciled by reads only.
 actor PhotoDeletionService: PhotoDeletionServiceProtocol {
+    private nonisolated static let logger = Logger(subsystem: "photo-curator", category: "deletion")
+
     private let operations: DeletionOperationStore
     private let photoLibrary: any PhotoLibraryService
 
@@ -73,10 +79,6 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
         // can retain staging but can never create a deletion dispatch.
         guard case .authorized = await photoLibrary.authorizationStatus() else {
             throw PhotoDeletionServiceError.fullReadWriteAccessRequired
-        }
-
-        if try await operations.load(operationID: request.operationID) != nil {
-            throw PhotoDeletionServiceError.operationAlreadyExists
         }
 
         let now = Date()
@@ -100,9 +102,10 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
         )
 
         do {
-            try await operations.upsert(prepared)
+            try await operations.insertIfAbsent(prepared)
         } catch {
-            throw PhotoDeletionServiceError.persistenceFailure
+            Self.logCriticalWriteFailure()
+            throw Self.mapStoreError(error)
         }
 
         var executing = false
@@ -123,20 +126,23 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
                         operation.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
                     }
                 } catch {
-                    throw PhotoDeletionServiceError.persistenceFailure
+                    Self.logCriticalWriteFailure()
+                    throw Self.mapStoreError(error)
                 }
                 return try await requiredResult(operationID: request.operationID)
             }
 
             try Task.checkCancellation()
             do {
-                try await operations.update(operationID: request.operationID) { operation in
-                    Self.setOutcome(.unresolved, for: resolved.missingIDs, on: operation)
-                    operation.submittedIDs = resolved.foundIDs
-                    operation.statusRawValue = PhotoDeletionStatus.executing.rawValue
-                }
+                _ = try await operations.transitionPreparedToExecuting(
+                    operationID: request.operationID,
+                    expected: prepared,
+                    submittedIDs: resolved.foundIDs,
+                    unresolvedIDs: resolved.missingIDs
+                )
             } catch {
-                throw PhotoDeletionServiceError.persistenceFailure
+                Self.logCriticalWriteFailure()
+                throw Self.mapStoreError(error)
             }
             executing = true
 
@@ -151,11 +157,12 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
                         Self.setOutcome(.failed, for: operation.submittedIDs, on: operation)
                         operation.statusRawValue = Self.terminalStatus(for: operation).rawValue
                     }
-                    return try await requiredResult(operationID: request.operationID)
                 } catch {
                     await markUncertain(operationID: request.operationID, ids: orderedIDs)
-                    throw PhotoDeletionServiceError.persistenceFailure
+                    Self.logCriticalWriteFailure()
+                    throw Self.mapStoreError(error)
                 }
+                return try await requiredResult(operationID: request.operationID)
             }
 
             do {
@@ -165,14 +172,15 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
                 }
             } catch {
                 await markUncertain(operationID: request.operationID, ids: orderedIDs)
-                throw PhotoDeletionServiceError.persistenceFailure
+                Self.logCriticalWriteFailure()
+                throw Self.mapStoreError(error)
             }
             return try await requiredResult(operationID: request.operationID)
         } catch is CancellationError {
             if executing {
                 await markUncertain(operationID: request.operationID, ids: orderedIDs)
             } else {
-                await markCancelled(operationID: request.operationID)
+                await markCancelled(operationID: request.operationID, expected: prepared)
             }
             throw CancellationError()
         } catch let error as PhotoDeletionServiceError {
@@ -192,7 +200,9 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
     }
 
     func reconcile(operationID: UUID) async throws -> PhotoDeletionResult? {
-        guard var operation = try await load(operationID: operationID) else { return nil }
+        guard var operation = try await load(operationID: operationID) else {
+            throw PhotoDeletionServiceError.operationMissing
+        }
         switch PhotoDeletionStatus(rawValue: operation.statusRawValue) ?? .needsReconciliation {
         case .prepared, .completed, .partial, .failed, .cancelled:
             return PhotoDeletionResult(operation: operation)
@@ -204,9 +214,12 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
                     row.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
                 }
             } catch {
-                throw PhotoDeletionServiceError.persistenceFailure
+                Self.logCriticalWriteFailure()
+                throw Self.mapStoreError(error)
             }
-            guard let updated = try await load(operationID: operationID) else { return nil }
+            guard let updated = try await load(operationID: operationID) else {
+                throw PhotoDeletionServiceError.operationMissing
+            }
             operation = updated
         case .needsReconciliation:
             break
@@ -224,7 +237,8 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
                     row.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
                 }
             } catch {
-                throw PhotoDeletionServiceError.persistenceFailure
+                Self.logCriticalWriteFailure()
+                throw Self.mapStoreError(error)
             }
         case .limited, .denied, .restricted, .notDetermined:
             do {
@@ -233,27 +247,26 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
                     row.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
                 }
             } catch {
-                throw PhotoDeletionServiceError.persistenceFailure
+                Self.logCriticalWriteFailure()
+                throw Self.mapStoreError(error)
             }
         }
-        return try await self.operation(operationID: operationID)
+        return try await requiredResult(operationID: operationID)
     }
 
     func cancelPrepared(operationID: UUID) async throws -> PhotoDeletionResult? {
-        guard let operation = try await load(operationID: operationID) else { return nil }
-        guard PhotoDeletionStatus(rawValue: operation.statusRawValue) == .prepared,
-              operation.submittedIDs.isEmpty
-        else {
-            throw PhotoDeletionServiceError.invalidOperationState
+        guard let operation = try await load(operationID: operationID) else {
+            throw PhotoDeletionServiceError.operationMissing
         }
         do {
-            try await operations.update(operationID: operationID) { row in
-                row.statusRawValue = PhotoDeletionStatus.cancelled.rawValue
-            }
+            _ = try await operations.transitionPreparedToCancelled(
+                operationID: operationID, expected: operation
+            )
         } catch {
-            throw PhotoDeletionServiceError.persistenceFailure
+            Self.logCriticalWriteFailure()
+            throw Self.mapStoreError(error)
         }
-        return try await self.operation(operationID: operationID)
+        return try await requiredResult(operationID: operationID)
     }
 
     func operation(operationID: UUID) async throws -> PhotoDeletionResult? {
@@ -271,26 +284,53 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
 
     private func requiredResult(operationID: UUID) async throws -> PhotoDeletionResult {
         guard let result = try await operation(operationID: operationID) else {
-            throw PhotoDeletionServiceError.persistenceFailure
+            throw PhotoDeletionServiceError.operationMissing
         }
         return result
     }
 
-    private func markCancelled(operationID: UUID) async {
-        try? await operations.update(operationID: operationID) { operation in
-            guard PhotoDeletionStatus(rawValue: operation.statusRawValue) == .prepared,
-                  operation.submittedIDs.isEmpty
-            else { return }
-            operation.statusRawValue = PhotoDeletionStatus.cancelled.rawValue
+    private func markCancelled(
+        operationID: UUID,
+        expected: PhotoDeletionOperationSnapshot
+    ) async {
+        do {
+            _ = try await operations.transitionPreparedToCancelled(
+                operationID: operationID, expected: expected
+            )
+        } catch {
+            Self.logCriticalWriteFailure()
         }
     }
 
     private func markUncertain(operationID: UUID, ids: [String]) async {
-        try? await operations.update(operationID: operationID) { operation in
-            let submitted = operation.submittedIDs.isEmpty ? ids : operation.submittedIDs
-            Self.setOutcome(.unresolved, for: submitted, on: operation)
-            operation.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
+        do {
+            try await operations.update(operationID: operationID) { operation in
+                let submitted = operation.submittedIDs.isEmpty ? ids : operation.submittedIDs
+                Self.setOutcome(.unresolved, for: submitted, on: operation)
+                operation.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
+            }
+        } catch {
+            Self.logCriticalWriteFailure()
         }
+    }
+
+    private nonisolated static func mapStoreError(_ error: Error) -> PhotoDeletionServiceError {
+        switch error as? DeletionOperationStoreError {
+        case .operationAlreadyExists:
+            .operationAlreadyExists
+        case .operationMissing:
+            .operationMissing
+        case .transitionConflict, .immutableIdentityViolation:
+            .transitionConflict
+        case .persistenceFailure:
+            .persistenceFailure
+        case nil:
+            .persistenceFailure
+        }
+    }
+
+    private nonisolated static func logCriticalWriteFailure() {
+        logger.error("Deletion operation state could not be durably recorded. Failure category: safety_state.")
     }
 
     private nonisolated static func validate(
@@ -390,3 +430,5 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
         return .needsReconciliation
     }
 }
+
+// swiftlint:enable type_body_length

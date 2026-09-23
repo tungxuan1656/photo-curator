@@ -53,8 +53,10 @@ struct PhotoDeletionOperationSnapshot: Sendable, Equatable {
         PhotoDeletionStatus(rawValue: statusRawValue) ?? .needsReconciliation
     }
 
-    var authorizationSnapshot: PhotoDeletionAuthorizationSnapshot? {
-        PhotoDeletionAuthorizationSnapshot(rawValue: authorizationRawValue)
+    /// Malformed persisted authorization is treated as restricted. A decode
+    /// failure must never become evidence of full access.
+    var authorizationSnapshot: PhotoDeletionAuthorizationSnapshot {
+        PhotoDeletionAuthorizationSnapshot(rawValue: authorizationRawValue) ?? .restricted
     }
 
     func outcome(for id: String) -> PhotoDeletionOutcome? {
