@@ -1089,6 +1089,22 @@
         }
       }
     },
+    "Album save was interrupted. Check the result before retrying." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Album save was interrupted. Check the result before retrying."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quá trình lưu album bị gián đoạn. Hãy kiểm tra kết quả trước khi thử lại."
+          }
+        }
+      }
+    },
     "Back to Home" : {
       "localizations" : {
         "en" : {
@@ -1597,6 +1613,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nội dung"
+          }
+        }
+      }
+    },
+    "Couldn't save the album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't save the album"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể lưu album"
           }
         }
       }
@@ -5205,18 +5237,18 @@
         }
       }
     },
-    "Saving your album" : {
+    "Saving album" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Saving your album"
+            "value" : "Saving album"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Đang lưu album của bạn"
+            "value" : "Đang lưu album"
           }
         }
       }
@@ -7045,6 +7077,22 @@
         }
       }
     },
+    "Get Full Photos Access to Save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get Full Photos Access to Save"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cấp quyền truy cập đầy đủ để lưu"
+          }
+        }
+      }
+    },
     "Keep" : {
       "localizations" : {
         "en" : {
@@ -7397,6 +7445,22 @@
         }
       }
     },
+    "Retry Missing Photos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Retry Missing Photos"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thử lại với các ảnh chưa được thêm"
+          }
+        }
+      }
+    },
     "Review & Save" : {
       "localizations" : {
         "en" : {
@@ -7489,6 +7553,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lưu album không thay đổi các lựa chọn dọn dẹp của bạn."
+          }
+        }
+      }
+    },
+    "Some photos weren't added to the album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some photos weren't added to the album"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Một số ảnh chưa được thêm vào album"
           }
         }
       }

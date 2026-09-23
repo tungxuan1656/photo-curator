@@ -10,6 +10,10 @@ struct AppContainer: Sendable {
         let store: WorkspaceStore?
         let importer: LegacyWorkspaceImporter?
         let availability: WorkspaceAvailability
+        let albumOperations: AlbumSaveOperationStore?
+        let albumSaveService: AlbumSaveService?
+        let photoLibrary: any PhotoLibraryService
+        let exporter: any AlbumExportService
     }
 
     let photoLibrary: any PhotoLibraryService
@@ -29,6 +33,13 @@ struct AppContainer: Sendable {
     /// Optional iOS 27 semantic jury; router gates invocation and all fallbacks are deterministic.
     let semanticJuryProvider: any SemanticJuryProvider
     let exporter: any AlbumExportService
+    /// Durable album-save operation store (feat-035 owner). Shares the
+    /// workspace `ModelContainer`; nil when workspace storage is
+    /// unavailable (callers fall back to the file `SaveState` handoff).
+    let albumOperations: AlbumSaveOperationStore?
+    /// Independent album-save boundary (feat-035 owner). The only caller of
+    /// album mutation APIs; nil when workspace storage is unavailable.
+    let albumSaveService: AlbumSaveService?
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
     let modelInstallation: ModelInstallationService
@@ -48,6 +59,8 @@ struct AppContainer: Sendable {
         tierCProvider: any VisualEmbeddingProvider,
         semanticJuryProvider: any SemanticJuryProvider,
         exporter: any AlbumExportService,
+        albumOperations: AlbumSaveOperationStore? = nil,
+        albumSaveService: AlbumSaveService? = nil,
         analytics: any AnalyticsService,
         memoryPressure: MemoryPressureObserver,
         modelInstallation: ModelInstallationService,
@@ -66,6 +79,8 @@ struct AppContainer: Sendable {
         self.tierCProvider = tierCProvider
         self.semanticJuryProvider = semanticJuryProvider
         self.exporter = exporter
+        self.albumOperations = albumOperations
+        self.albumSaveService = albumSaveService
         self.analytics = analytics
         self.memoryPressure = memoryPressure
         self.modelInstallation = modelInstallation
@@ -89,7 +104,7 @@ struct AppContainer: Sendable {
         let workspace = makeWorkspaceSetup(root: root, checkpointStore: checkpointStore)
         let imageLoader = ImageLoaderService()
         return Self(
-            photoLibrary: PhotoLibraryPermissionService(),
+            photoLibrary: workspace.photoLibrary,
             imageLoader: imageLoader,
             analyzer: VisionAnalysisService(),
             analysisCache: FileAnalysisCache(
@@ -104,7 +119,9 @@ struct AppContainer: Sendable {
             selectionEngine: SelectionEngine(),
             tierCProvider: NativeDerivedEmbeddingProvider(),
             semanticJuryProvider: FoundationModelsSemanticJuryProvider(),
-            exporter: PhotoKitAlbumExporter(),
+            exporter: workspace.exporter,
+            albumOperations: workspace.albumOperations,
+            albumSaveService: workspace.albumSaveService,
             analytics: NoopAnalytics(),
             memoryPressure: MemoryPressureObserver(),
             modelInstallation: ModelInstallationService(
@@ -114,6 +131,12 @@ struct AppContainer: Sendable {
         )
     }
 
+    /// feat-035 explicit SwiftData schema migration: the workspace store
+    /// opens with `AlbumSaveOperation` alongside the feat-033 models. The
+    /// added model is additive: pre-existing scope/item/marker rows reopen
+    /// untouched. Rollback removes the model from this list; operation rows
+    /// stay on disk unread while scopes/items keep working and unresolved
+    /// saves fall back to the file `SaveState` handoff.
     private static func makeWorkspaceSetup(
         root: URL,
         checkpointStore: SessionCheckpointStore
@@ -124,14 +147,28 @@ struct AppContainer: Sendable {
                 for: ReviewScope.self,
                 WorkspaceItem.self,
                 WorkspaceMigrationMarker.self,
+                AlbumSaveOperation.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )
             let store = WorkspaceStore(modelContainer: modelContainer)
+            // Shared with the container fields below: one save path, one
+            // permission service (both are stateless structs, so sharing is
+            // identity-clarity, not state-sharing).
+            let photoLibrary = PhotoLibraryPermissionService()
+            let exporter = PhotoKitAlbumExporter()
+            let albumOperations = AlbumSaveOperationStore(modelContainer: modelContainer)
+            let albumSaveService = AlbumSaveService(
+                exporter: exporter, operations: albumOperations, photoLibrary: photoLibrary
+            )
             return WorkspaceSetup(
                 modelContainer: modelContainer,
                 store: store,
                 importer: LegacyWorkspaceImporter(checkpointStore: checkpointStore, workspaceStore: store),
-                availability: .available
+                availability: .available,
+                albumOperations: albumOperations,
+                albumSaveService: albumSaveService,
+                photoLibrary: photoLibrary,
+                exporter: exporter
             )
         } catch {
             Logger(
@@ -142,7 +179,16 @@ struct AppContainer: Sendable {
                 Failure category: workspace_unavailable.
                 """
             )
-            return WorkspaceSetup(modelContainer: nil, store: nil, importer: nil, availability: .unavailable)
+            return WorkspaceSetup(
+                modelContainer: nil,
+                store: nil,
+                importer: nil,
+                availability: .unavailable,
+                albumOperations: nil,
+                albumSaveService: nil,
+                photoLibrary: PhotoLibraryPermissionService(),
+                exporter: PhotoKitAlbumExporter()
+            )
         }
     }
 }

@@ -993,3 +993,20 @@ PASS, no test targets/files (DEC-040).
 **Blockers**: none.
 **Next**: Merge PR #66 (`tungxuan1656/feat-034-integration` → `main`);
 feat-035 stays `todo` until the user opens it.
+
+## 2026-09-22 — feat-035 album draft + resilient save
+
+**State**: done
+**Done**: Durable `AlbumSaveOperation` + explicit SwiftData schema migration
+(feat-035 owner; feat-033 untouched), independent `AlbumSaveService` (only
+album mutator; digest-gated resume, per-ID outcomes, explicit-only retry, no
+automatic retry, no deletion API), S14/S15/S16 + Home resume wiring with
+truthful partial/interrupted/limited-access states, owner en/vi copy (5 new
+entries), session cleanup retiring operation rows; workspace/cleanup/progress
+never cleared by save.
+**Evidence**: `./init.sh` PASS (SwiftFormat PASS, `swiftlint --strict` 0
+violations, generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
+`git diff --check` PASS. No test targets, test files, or proof harness.
+**Blockers**: none.
+**Next**: feat-036 (confirmed original deletion) after user approval; it owns
+its separate operation schema and must not share the album-save mutator.

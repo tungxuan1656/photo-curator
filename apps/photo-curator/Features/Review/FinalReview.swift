@@ -59,6 +59,9 @@ struct FinalReview: View {
                     Text("Your original photos will not be changed.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    Text("Saving an album does not change your cleanup choices.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     if model.albumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text("Name your album to save it.")
                             .font(.footnote).foregroundStyle(.secondary)

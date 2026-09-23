@@ -354,7 +354,7 @@
       ],
       "gate": "independent album draft/save is resilient and reports partial outcomes truthfully",
       "id": "feat-035",
-      "status": "todo",
+      "status": "done",
       "title": "Album draft + resilient save"
     },
     {
