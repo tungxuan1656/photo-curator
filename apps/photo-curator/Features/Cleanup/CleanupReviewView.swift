@@ -19,7 +19,7 @@ struct DeletionRecoveryView: View {
         }
         .navigationTitle("Deletion Recovery")
         .confirmationDialog(
-            "Confirm this exact set again?",
+            "Prepared deletion found",
             isPresented: Binding(
                 get: { preparedConfirmation != nil },
                 set: {
@@ -31,17 +31,17 @@ struct DeletionRecoveryView: View {
             titleVisibility: .visible
         ) {
             if let operation = preparedConfirmation {
-                Button("Start Deletion", role: .destructive) {
+                Button("Review Current Set") {
                     preparedConfirmation = nil
-                    Task { await appModel.startRecoveredDeletion(operation) }
+                    Task { await appModel.openPreparedDeletionReview(operation) }
                 }
             }
             Button("Cancel", role: .cancel) { preparedConfirmation = nil }
         } message: {
             if let operation = preparedConfirmation {
                 Text(
-                    "No deletion was dispatched for this prepared operation. A fresh confirmation is required for its "
-                        + "exact \(operation.stagedIDs.count)-photo set."
+                    "No deletion was dispatched. Review the current staged set; "
+                        + "a fresh exact-set confirmation is required."
                 )
             }
         }

@@ -70,12 +70,42 @@ extension AppModel {
         await refreshDeletionRecovery()
     }
 
-    /// A prepared row is never resumed. Starting recovery mints a new
-    /// operation and requires the recovery UI to provide a fresh confirmation.
-    func startRecoveredDeletion(_ operation: PhotoDeletionOperationSnapshot) async {
-        guard operation.status == .prepared, operation.submittedIDs.isEmpty else { return }
-        let ids = operation.stagedIDs.map(AssetID.init(rawValue:))
-        await startDeletion(for: SessionID(rawValue: operation.scopeID), stagedIDs: ids)
+    /// Prepared recovery never reuses its persisted IDs. Retire the prepared
+    /// row through the service's safe non-mutation API, restore the live
+    /// workspace, and let Cleanup Review obtain fresh confirmation.
+    func openPreparedDeletionReview(_ operation: PhotoDeletionOperationSnapshot) async {
+        guard operation.status == .prepared, operation.submittedIDs.isEmpty,
+              let service = container.deletionService
+        else { return }
+        do {
+            _ = try await service.cancelPrepared(operationID: operation.operationID)
+        } catch {
+            deletionError = .persistenceFailure
+            return
+        }
+        clearDeletionState()
+        await refreshDeletionRecovery()
+        let sessionID = SessionID(rawValue: operation.scopeID)
+        pendingReviewIntent = .cleanup
+        activeSessionID = sessionID
+        lastSessionID = sessionID
+        do {
+            let checkpoint = try await container.checkpointStore.load(sessionID: sessionID)
+            allAssets = try await container.photoLibrary.fetchAssets()
+            confirmedSourceIDs = checkpoint.sourceAssetIDs
+            guard await beginReview(for: sessionID) else {
+                deletionError = .invalidExactSet
+                return
+            }
+            if path.last == .reviewWorkspace(sessionID: sessionID) {
+                path.removeLast()
+            }
+            if path.last != .cleanupReview(sessionID: sessionID) {
+                path.append(.cleanupReview(sessionID: sessionID))
+            }
+        } catch {
+            deletionError = .persistenceFailure
+        }
     }
 
     /// Read-only reconciliation. It never calls `start`, retries, or submits
