@@ -379,7 +379,7 @@
       "depends_on": ["feat-037"],
       "gate": "Native-only execution, explainable analysis outcomes, consistent ranking/grouping, recoverable cache and atomic reactive review choices; ./init.sh passes",
       "id": "feat-038",
-      "status": "todo",
+      "status": "active",
       "title": "Native analysis + actionable review repair"
     }
   ],
