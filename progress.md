@@ -1087,3 +1087,19 @@ violations, generic Simulator `BUILD SUCCEEDED`, tests skipped by DEC-040);
 `git diff --check` PASS; Oracle final review MERGE-READY.
 **Blockers**: none
 **Next**: Open PR for feat-037.
+
+## 2026-09-23 — feat-038 audit and repair plan
+
+**State**: todo — planning requested; implementation not started.
+**Done**: Rechecked analysis-to-review flow and recorded 24 findings with source
+references, phased remedies, acceptance scenarios and rollback in
+`docs/plans/feat-038.md`. Additional findings cover ignored observable choice
+state, legacy reviewed counts, non-atomic bulk writes and stale retry semantics.
+**Corrections**: Partial native output is re-stamped by `finalizePartial` before
+persistence; withdraw the earlier production session-ID bug. Unset membership
+is intentional; incomplete suggestion coverage is the defect.
+**Evidence**: Static source/caller review against `90ae8bf`; no device replay,
+image-quality benchmark, or new build evidence. Existing String Catalog edits
+were preserved.
+**Next**: Review the proposed algorithm policy, then approve feat-038 activation
+and run baseline `./init.sh` before implementation.

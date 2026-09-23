@@ -32,7 +32,8 @@ listed below.
 The current actionable plan records are [feat-032](plans/feat-032.md),
 [feat-033](plans/feat-033.md), [feat-034](plans/feat-034.md),
 [feat-035](plans/feat-035.md), [feat-036](plans/feat-036.md), and
-[feat-037](plans/feat-037.md), in the order owned by
+[feat-037](plans/feat-037.md), followed by the audited repair
+[feat-038](plans/feat-038.md), in the order owned by
 [roadmap.md](exec-plans/roadmap.md). Older `docs/plans/*` records remain
 historical implementation records; their links and contents are preserved.
 

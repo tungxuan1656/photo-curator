@@ -374,6 +374,13 @@
       "id": "feat-037",
       "status": "done",
       "title": "Suggestion integration + legacy retirement"
+    },
+    {
+      "depends_on": ["feat-037"],
+      "gate": "Native-only execution, explainable analysis outcomes, consistent ranking/grouping, recoverable cache and atomic reactive review choices; ./init.sh passes",
+      "id": "feat-038",
+      "status": "todo",
+      "title": "Native analysis + actionable review repair"
     }
   ],
   "rule": "One feature may be active at a time. A feature starts only after all dependencies are done, owns its complete implementation and verification, and closes only after its acceptance criteria and ./init.sh pass."
