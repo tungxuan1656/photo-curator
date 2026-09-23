@@ -97,13 +97,6 @@ extension AppModel {
             deletionError = .persistenceFailure
             return
         }
-        do {
-            _ = try await service.cancelPrepared(operationID: operation.operationID)
-        } catch {
-            deletionError = .persistenceFailure
-            return
-        }
-        clearDeletionState()
         pendingReviewIntent = .cleanup
         activeSessionID = sessionID
         lastSessionID = sessionID
@@ -113,6 +106,13 @@ extension AppModel {
             deletionError = .invalidExactSet
             return
         }
+        do {
+            _ = try await service.cancelPrepared(operationID: operation.operationID)
+        } catch {
+            deletionError = .persistenceFailure
+            return
+        }
+        clearDeletionState()
         if path.last == .reviewWorkspace(sessionID: sessionID) {
             path.removeLast()
         }
