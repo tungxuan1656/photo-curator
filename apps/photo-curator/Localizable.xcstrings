@@ -7944,6 +7944,60 @@
         "en" : { "stringUnit" : { "state" : "new", "value" : "The app abstained rather than making a choice without enough evidence." } },
         "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ứng dụng không đưa ra lựa chọn vì chưa đủ bằng chứng." } }
       }
+    },
+    "Analysis v%lld · Engine v%lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Analysis v%1$lld · Engine v%2$lld" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phân tích v%lld · Công cụ v%lld" } }
+      }
+    },
+    "Analysis unavailable · Engine v%lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Analysis unavailable · Engine v%1$lld" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Không có phân tích · Công cụ v%lld" } }
+      }
+    },
+    "Photo, %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Photo, %1$@" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh, %1$@" } }
+      }
+    },
+    "Suggested change, %@: %@ to %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Suggested change, %1$@: %2$@ to %3$@" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thay đổi được đề xuất, %1$@: %2$@ thành %3$@" } }
+      }
+    },
+    "Suggestion state, %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Suggestion state, %1$@" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Trạng thái đề xuất, %1$@" } }
+      }
+    },
+    "This suggestion is advisory. You decide whether to use it." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "This suggestion is advisory. You decide whether to use it." } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đây chỉ là đề xuất. Bạn quyết định có sử dụng hay không." } }
+      }
+    },
+    "Photo" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Photo" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh" } }
+      }
+    },
+    "%@ · %@ · %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "%1$@ · %2$@ · %3$@" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ · %2$@ · %3$@" } }
+      }
+    },
+    "Album membership, %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Album membership, %1$@" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Trạng thái album, %1$@" } }
+      }
     }
   },
   "version" : "1.2"

@@ -68,9 +68,14 @@ struct ReviewSuggestion: Sendable, Identifiable {
     /// revision enable Use Suggestion. Anything else renders as
     /// unavailable/insufficient copy.
     var canUse: Bool {
-        guard evidence == .available, proposal != nil else { return false }
+        guard evidence == .available, let proposal else { return false }
         guard analysisVersion != nil else { return false }
-        return true
+        switch proposal {
+        case let .albumMembership(values):
+            return !values.isEmpty && values.values.allSatisfy { $0 != .unset }
+        case .cleanupKeep:
+            return true
+        }
     }
 
     /// Exact IDs plus one dimension and its per-asset values against the

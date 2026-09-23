@@ -142,6 +142,10 @@ private struct NeedsReviewCell: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .accessibilityLabel("Reason, \(reasonText(for: item.reason))")
+                Text(albumMembershipText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Album membership, \(albumMembershipText)")
                 Text(suggestionState)
                     .font(.caption2.bold())
                     .foregroundStyle(suggestionAvailable ? Color.secondary : Color.orange)
@@ -239,5 +243,13 @@ private struct NeedsReviewCell: View {
             return "Suggestion available — review the evidence"
         }
         return "No suggestion — not enough information"
+    }
+
+    private var albumMembershipText: LocalizedStringResource {
+        switch appModel.reviewModel?.albumMembership(for: item.assetID) ?? .unset {
+        case .unset: "Not chosen for album"
+        case .included: "In album"
+        case .excluded: "Excluded from album"
+        }
     }
 }

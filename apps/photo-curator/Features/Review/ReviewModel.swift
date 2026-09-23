@@ -57,6 +57,10 @@ final class ReviewModel {
     /// `beginReview`. Same-extension writes only: the action-transition
     /// extension in `ReviewModelActions.swift` is the only writer.
     @ObservationIgnored private(set) var stagedCleanupByID: [AssetID: CleanupDisposition] = [:]
+    /// Durable album membership, including `.unset`, is retained separately
+    /// from the selection overlay so callers can distinguish an undecided
+    /// workspace row from an explicit include/exclude choice.
+    @ObservationIgnored private(set) var albumMembershipByID: [AssetID: AlbumMembership] = [:]
     private(set) var removedEditIDs: Set<AssetID>
     private(set) var restoredEditIDs: Set<AssetID>
     var favoriteEditIDs: Set<AssetID>
@@ -97,6 +101,7 @@ final class ReviewModel {
         let engineSelectedIDs = Set(result.selectedAssetIDs).intersection(liveSet)
         if let workspaceItems {
             engineSelected = Self.workspaceAlbumSelected(workspaceItems: workspaceItems, live: liveSet)
+            albumMembershipByID = Self.workspaceAlbumMembership(workspaceItems: workspaceItems, live: liveSet)
             progressByID = Dictionary(
                 uniqueKeysWithValues: workspaceItems.values
                     .filter { liveSet.contains($0.assetID) }
@@ -463,6 +468,11 @@ extension ReviewModel {
         cleanupDisposition: CleanupDisposition? = nil,
         reviewProgress: ReviewProgress? = nil
     ) {
+        if let albumMembership {
+            for assetID in assetIDs where displayIDs.contains(assetID) {
+                albumMembershipByID[assetID] = albumMembership
+            }
+        }
         guard let scopeID else { return }
         onWorkspaceChoice?(ReviewWorkspaceChoice(
             scopeID: scopeID,
@@ -474,15 +484,8 @@ extension ReviewModel {
     }
 
     func notifyAlbumChanges(_ changes: [AssetID: AlbumMembership]) {
-        guard let scopeID else { return }
         for (assetID, membership) in changes {
-            onWorkspaceChoice?(ReviewWorkspaceChoice(
-                scopeID: scopeID,
-                assetIDs: [assetID],
-                albumMembership: membership,
-                cleanupDisposition: nil,
-                reviewProgress: nil
-            ))
+            notifyWorkspaceChoice(assetIDs: [assetID], albumMembership: membership)
         }
     }
 

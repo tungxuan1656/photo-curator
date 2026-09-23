@@ -19,7 +19,7 @@ struct SuggestionEvidenceSection: View {
                 LabeledContent("Status") { Text(evidenceText(for: suggestion)) }
                 LabeledContent("Source") { Text(provenanceText(for: suggestion)) }
                 LabeledContent("Versions") {
-                    Text("Analysis v\(suggestion.analysisVersion ?? 0) · Engine v\(suggestion.engineVersion)")
+                    Text(versionText(for: suggestion))
                 }
                 Text("This suggestion is advisory. You decide whether to use it.")
                     .font(.footnote)
@@ -52,6 +52,13 @@ struct SuggestionEvidenceSection: View {
         case .native: "Native analysis"
         case .legacyNativeAdapter: "Legacy native adapter"
         }
+    }
+
+    private func versionText(for suggestion: ReviewSuggestion) -> LocalizedStringResource {
+        guard let analysisVersion = suggestion.analysisVersion else {
+            return "Analysis unavailable · Engine v\(suggestion.engineVersion)"
+        }
+        return "Analysis v\(analysisVersion) · Engine v\(suggestion.engineVersion)"
     }
 }
 

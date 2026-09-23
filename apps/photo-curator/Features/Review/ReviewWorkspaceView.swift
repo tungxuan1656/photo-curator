@@ -326,7 +326,7 @@ private struct SimilarGroupPreviewCard: View {
                         .opacity(model.isSelected(id) ? 1 : 0.35)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(model.isSelected(id) ? "In album" : "Removed")
+                    .accessibilityLabel(albumMembershipLabel(model.albumMembership(for: id)))
                 }
             }
             .padding(.horizontal)
@@ -402,10 +402,11 @@ private struct SuggestionCard: View {
             }
             HStack(spacing: 12) {
                 Label(provenanceText, systemImage: "info.circle")
-                Text("Analysis v\(suggestion.analysisVersion ?? 0) · Engine v\(suggestion.engineVersion)")
+                Text(versionText)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            .accessibilityElement(children: .combine)
             Button("Review Suggestion", action: onReview)
                 .buttonStyle(.bordered)
                 .disabled(!suggestion.canUse)
@@ -432,7 +433,7 @@ private struct SuggestionCard: View {
     }
 
     private func state(for assetID: AssetID) -> LocalizedStringResource {
-        let album = model.isSelected(assetID) ? "In album" : "Excluded from album"
+        let album = albumMembershipLabel(model.albumMembership(for: assetID))
         let cleanup: LocalizedStringResource = switch model.cleanupDisposition(for: assetID) {
         case .undecided: "Undecided"
         case .keep: "Keep"
@@ -444,6 +445,13 @@ private struct SuggestionCard: View {
         case .reviewed: "Reviewed"
         }
         return "\(album) · \(cleanup) · \(progress)"
+    }
+
+    private var versionText: LocalizedStringResource {
+        guard let analysisVersion = suggestion.analysisVersion else {
+            return "Analysis unavailable · Engine v\(suggestion.engineVersion)"
+        }
+        return "Analysis v\(analysisVersion) · Engine v\(suggestion.engineVersion)"
     }
 }
 
@@ -458,7 +466,7 @@ private struct SuggestionPreviewSheet: View {
     private var rows: [ReviewSuggestionPreviewRow] {
         switch suggestion.proposal {
         case .albumMembership:
-            return suggestion.previewRows { model.isSelected($0) ? .included : .excluded }
+            return suggestion.previewRows { model.albumMembership(for: $0) }
         case let .cleanupKeep(ids):
             return ids.compactMap { assetID in
                 let disposition = model.cleanupDisposition(for: assetID)
@@ -493,10 +501,11 @@ private struct SuggestionPreviewSheet: View {
                         .foregroundStyle(.secondary)
                     HStack(spacing: 12) {
                         Label(provenanceText, systemImage: "info.circle")
-                        Text("Analysis v\(suggestion.analysisVersion ?? 0) · Engine v\(suggestion.engineVersion)")
+                        Text(versionText)
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .accessibilityElement(children: .combine)
                     Text(evidenceText)
                         .font(.subheadline.bold())
                         .foregroundStyle(suggestion.canUse ? Color.secondary : Color.orange)
@@ -568,6 +577,13 @@ private struct SuggestionPreviewSheet: View {
         case .unavailable: "Analysis unavailable"
         }
     }
+
+    private var versionText: LocalizedStringResource {
+        guard let analysisVersion = suggestion.analysisVersion else {
+            return "Analysis unavailable · Engine v\(suggestion.engineVersion)"
+        }
+        return "Analysis v\(analysisVersion) · Engine v\(suggestion.engineVersion)"
+    }
 }
 
 private struct SuggestionPreviewRowView: View {
@@ -586,6 +602,8 @@ private struct SuggestionPreviewRowView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Suggested change, \(row.dimension): \(row.oldValue) to \(row.newValue)")
     }
 }
 
@@ -608,7 +626,7 @@ private struct SuggestionCandidateState: View {
     }
 
     private var albumState: LocalizedStringResource {
-        model.isSelected(assetID) ? "In album" : "Excluded from album"
+        albumMembershipLabel(model.albumMembership(for: assetID))
     }
 
     private var cleanupState: LocalizedStringResource {
@@ -617,6 +635,14 @@ private struct SuggestionCandidateState: View {
         case .keep: "Keep"
         case .stagedForDeletion: "Staged for deletion"
         }
+    }
+}
+
+private func albumMembershipLabel(_ membership: AlbumMembership) -> LocalizedStringResource {
+    switch membership {
+    case .unset: "Not chosen for album"
+    case .included: "In album"
+    case .excluded: "Excluded from album"
     }
 }
 
@@ -677,7 +703,7 @@ private struct ReviewWorkspaceCell: View {
                 .buttonStyle(.plain)
                 SelectionToggle(isSelected: model.isSelected(assetID), onToggle: { model.toggle(assetID) })
             }
-            Text(model.isSelected(assetID) ? "In album" : "Removed")
+            Text(albumMembershipLabel(model.albumMembership(for: assetID)))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             if appModel.reviewIntent(for: sessionID) == .cleanup {
