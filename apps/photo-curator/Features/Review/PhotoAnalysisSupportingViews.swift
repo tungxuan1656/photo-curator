@@ -119,7 +119,7 @@ struct AnalysisFactSection: View {
 
 struct SelectionResultSection: View {
     let decision: Decision?
-    let isSelected: Bool
+    let albumMembership: AlbumMembership
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -158,11 +158,15 @@ struct SelectionResultSection: View {
     }
 
     private var currentState: LocalizedStringResource {
-        isSelected ? "Selected" : "Removed"
+        switch albumMembership {
+        case .unset: "Not chosen for album"
+        case .included: "In album"
+        case .excluded: "Excluded from album"
+        }
     }
 
     private var currentStateAccessibilityLabel: LocalizedStringResource {
-        isSelected ? "Current state, Selected" : "Current state, Removed"
+        "Current state, \(currentState)"
     }
 
     private func originalState(for decision: Decision) -> LocalizedStringResource {

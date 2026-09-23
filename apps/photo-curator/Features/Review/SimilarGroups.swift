@@ -77,7 +77,11 @@ private struct SimilarGroupCard: View {
         if let model = appModel.reviewModel, model.sessionID == sessionID {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Group \(index + 1) of \(total)").font(.headline)
-                let selected = group.selectedCount(in: model.selectedIDs)
+                let selected = group.memberIDs.reduce(into: 0) { count, id in
+                    if case .included = model.albumMembership(for: id) {
+                        count += 1
+                    }
+                }
                 let totalMember = group.memberIDs.count
                 Text("\(selected) selected from \(totalMember) similar photos")
                     .font(.subheadline)
@@ -85,6 +89,7 @@ private struct SimilarGroupCard: View {
                 LazyVGrid(columns: columns, spacing: 2) {
                     ForEach(group.memberIDs, id: \.self) { id in
                         VStack(spacing: 4) {
+                            let membership = model.albumMembership(for: id)
                             ZStack(alignment: .topTrailing) {
                                 NavigationLink {
                                     PhotoDetail(
@@ -95,10 +100,13 @@ private struct SimilarGroupCard: View {
                                 } label: {
                                     AsyncPhotoThumbnail(assetID: id, targetSizePixels: targetSizePixels)
                                         .clipped()
-                                        .opacity(model.isSelected(id) ? 1 : 0.35)
+                                        .opacity(isIncluded(membership) ? 1 : 0.35)
                                 }
                                 .buttonStyle(.plain)
-                                SelectionToggle(isSelected: model.isSelected(id), onToggle: { model.toggle(id) })
+                                SelectionToggle(
+                                    isSelected: isIncluded(membership),
+                                    onToggle: { model.toggle(id) }
+                                )
                             }
                             ReviewScoreBadge(assetID: id, model: model)
                             let current = model.currentWinner(of: group)
@@ -117,7 +125,7 @@ private struct SimilarGroupCard: View {
                                     model.selectWinner(id, in: group)
                                 }
                                 .font(.caption)
-                            } else if !model.isSelected(id) {
+                            } else if !isIncluded(membership) {
                                 Button("Keep Best Pick") {
                                     model.selectWinner(id, in: group)
                                 }
@@ -131,6 +139,17 @@ private struct SimilarGroupCard: View {
     }
 
     private func albumStateLabel(for id: AssetID, model: ReviewModel) -> LocalizedStringResource {
-        model.isSelected(id) ? "In album" : "Removed"
+        switch model.albumMembership(for: id) {
+        case .unset: "Not chosen for album"
+        case .included: "In album"
+        case .excluded: "Excluded from album"
+        }
+    }
+
+    private func isIncluded(_ membership: AlbumMembership) -> Bool {
+        if case .included = membership {
+            return true
+        }
+        return false
     }
 }

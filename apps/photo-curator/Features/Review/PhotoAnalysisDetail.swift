@@ -53,7 +53,7 @@ struct PhotoAnalysisDetail: View {
 
                         SelectionResultSection(
                             decision: model.decision(for: assetID),
-                            isSelected: model.isSelected(assetID)
+                            albumMembership: model.albumMembership(for: assetID)
                         )
                     }
                     .padding()

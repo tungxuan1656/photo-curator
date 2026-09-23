@@ -42,7 +42,7 @@ struct PhotoDetail: View {
                         loadFailed: loadFailed,
                         position: index + 1,
                         total: order.count,
-                        isSelected: model.isSelected(currentAssetID),
+                        albumMembership: model.albumMembership(for: currentAssetID),
                         canGoPrevious: index > 0,
                         canGoNext: index < order.count - 1,
                         back: { dismiss() },
