@@ -43,9 +43,27 @@ protocol ImageAnalysisService: Sendable {
 /// Actor-isolated store of recomputable derived analysis. Original photo bytes never enter.
 protocol AnalysisCache: Actor {
     func analysis(for id: AssetID) async -> PhotoAnalysis?
+    /// Revision-aware read. A cache hit is valid only when both the analysis
+    /// version and the current PhotoKit asset revision match.
+    func analysis(for id: AssetID, assetRevision: AssetModificationFingerprint) async -> PhotoAnalysis?
     func store(_ analysis: PhotoAnalysis) async
+    /// Revision-aware write for newly analyzed facts.
+    func store(_ analysis: PhotoAnalysis, assetRevision: AssetModificationFingerprint) async
     /// Reset Analysis: drops cached rows; originals untouched.
     func reset() async
+}
+
+extension AnalysisCache {
+    /// Compatibility defaults keep older cache implementations and callers
+    /// source-compatible. The file-backed implementation overrides these
+    /// overloads with actual revision validation.
+    func analysis(for id: AssetID, assetRevision _: AssetModificationFingerprint) async -> PhotoAnalysis? {
+        await analysis(for: id)
+    }
+
+    func store(_ analysis: PhotoAnalysis, assetRevision _: AssetModificationFingerprint) async {
+        await store(analysis)
+    }
 }
 
 /// Creates a new collision-safe album from existing assets. Never modifies or deletes originals.
@@ -135,7 +153,13 @@ actor NoopAnalysisCache: AnalysisCache {
         nil
     }
 
+    func analysis(for id: AssetID, assetRevision: AssetModificationFingerprint) async -> PhotoAnalysis? {
+        nil
+    }
+
     func store(_ analysis: PhotoAnalysis) async {}
+
+    func store(_ analysis: PhotoAnalysis, assetRevision: AssetModificationFingerprint) async {}
 
     func reset() async {}
 }

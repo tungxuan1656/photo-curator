@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-23 — feat-038 Phase 1
+
+**State**: active
+**Done**: Routed production curation through native analysis and removed live Qwen wiring. Added PhotoKit modification fingerprints, revision-aware cache records, and resume behavior that requeues missing/stale facts while preserving explicit unavailable outcomes.
+**Evidence**: `./init.sh` PASS (SwiftFormat, strict SwiftLint, Simulator build; tests skipped by DEC-040). `git diff --check` PASS.
+**Blockers**: A3–A5 and A7 remain in later phases.
+**Next**: Open Phase 1 PR; continue the linked plan in order.
+
 ## 2026-09-18 — feat-031 phase 2
 
 **State**: active

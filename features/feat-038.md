@@ -2,10 +2,9 @@
 
 ## Status
 
-- Status: `todo`; depends on `feat-037`.
-- User requested a re-audit and repair plan, not implementation in this session.
-- Native-only production direction is approved. Algorithm refinements in the
-  linked plan remain proposals until implementation approval.
+- Status: `active`; depends on `feat-037`.
+- Phase 1 implements native-only production routing and recoverable cache
+  evidence. Algorithm refinements in the linked plan remain proposals.
 
 ## Scope and ownership
 
@@ -39,7 +38,7 @@ Primary contracts: [review rules](../docs/product-specs/review-rules.md),
 
 ## Readiness and handoff
 
-The linked plan records confirmed findings, withdrawn claims, proposed remedies,
-ownership, phases, rollback and acceptance scenarios. Start with baseline
-`./init.sh` after activation. No code changes or new build evidence are claimed.
+Implemented native-only routing and revision-aware cache recovery. The batch
+pipeline records explicit unavailable outcomes and recomputes missing, stale, or
+corrupt cached facts. `./init.sh` passed on 2026-09-23. A3–A5 and A7 remain open.
 Preserve the user's existing String Catalog edits. No tests or proof harnesses.
