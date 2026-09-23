@@ -41,9 +41,9 @@ struct BatchResult: Sendable {
 /// `performance.analysisBatchSize` (32). Checkpoints: every
 /// `performance.checkpointEveryAssets` (25) or `performance.checkpointEverySeconds`
 /// (10 s), plus a cancel/exit checkpoint so resume never drops completed work.
-/// Version reuse is owned by `AnalysisCache` (stale rows read as miss); a stale
-/// checkpoint (analysisVersion mismatch) is ignored so a version bump re-queues
-/// instead of marking prior work unavailable.
+/// Version and asset-revision reuse is owned by `AnalysisCache` (stale rows read
+/// as miss); a stale checkpoint (analysisVersion mismatch) is ignored so a
+/// version bump re-queues instead of marking prior work unavailable.
 final class BatchPipeline: Sendable {
     private let imageLoader: any PhotoImageLoader
     private let analyzer: any ImageAnalysisService
@@ -83,8 +83,9 @@ final class BatchPipeline: Sendable {
         var state = RunState(total: total, progressInterval: progressInterval)
         do {
             // Resume-first WITHOUT dropping work: checkpoint IDs reload from cache.
-            // Cache hit → FULL analyses (kept). Checkpoint ID with no cache row →
-            // prior unavailable (preserved, never re-fetched). Only the remainder queues.
+            // Cache hit → FULL analyses (kept). A completed ID with a missing,
+            // stale, or corrupt row is requeued; only an explicitly recorded
+            // load/analyzer failure remains unavailable.
             let queue = await restore(
                 assets: assets,
                 sessionID: sessionID,
@@ -130,7 +131,8 @@ final class BatchPipeline: Sendable {
             await saveCheckpoint(
                 sessionID: sessionID,
                 qualityIdentity: qualityIdentity,
-                completed: state.completedIDs
+                completed: state.completedIDs,
+                unavailable: state.unavailable
             )
             // Cancel during the final save routes through the catch path too.
             try Task.checkCancellation()
@@ -145,7 +147,8 @@ final class BatchPipeline: Sendable {
             await saveCheckpoint(
                 sessionID: sessionID,
                 qualityIdentity: qualityIdentity,
-                completed: state.completedIDs
+                completed: state.completedIDs,
+                unavailable: state.unavailable
             )
             emitProgress(state: &state, progress: progress)
             if error is CancellationError {
@@ -219,19 +222,18 @@ final class BatchPipeline: Sendable {
         qualityIdentity: QualityCheckpointIdentity?,
         state: inout RunState
     ) async -> [PhotoAsset] {
-        let done = await completedIDs(for: sessionID, qualityIdentity: qualityIdentity)
+        let unavailableIDs = await checkpointUnavailableIDs(for: sessionID, qualityIdentity: qualityIdentity)
         var queue: [PhotoAsset] = []
         var cacheHits: [PhotoAsset] = []
         for asset in assets {
-            if done.contains(asset.id), let hit = await cache.analysis(for: asset.id) {
+            if let hit = await cache.analysis(for: asset.id, assetRevision: asset.modificationFingerprint) {
                 state.analyses[asset.id] = hit
                 cacheHits.append(asset)
-            } else if done.contains(asset.id), state.unavailableSet.insert(asset.id).inserted {
+            } else if unavailableIDs.contains(asset.id), state.unavailableSet.insert(asset.id).inserted {
                 state.unavailable.append(asset.id)
-            } else if let hit = await cache.analysis(for: asset.id) {
-                state.analyses[asset.id] = hit
-                cacheHits.append(asset)
             } else {
+                // This includes checkpoint-completed IDs. A checkpoint is a
+                // completion hint, not durable fact availability.
                 queue.append(asset)
             }
         }
@@ -311,9 +313,9 @@ final class BatchPipeline: Sendable {
 
     private func record(_ outcome: AssetOutcome, state: inout RunState) async {
         switch outcome {
-        case let .analyzed(output):
+        case let .analyzed(output, assetRevision):
             state.analyses[output.analysis.assetID] = output.analysis
-            await cache.store(output.analysis)
+            await cache.store(output.analysis, assetRevision: assetRevision)
             if let similarity = output.similarity {
                 state.similarities[output.analysis.assetID] = similarity
             }
@@ -338,7 +340,8 @@ final class BatchPipeline: Sendable {
         await saveCheckpoint(
             sessionID: sessionID,
             qualityIdentity: qualityIdentity,
-            completed: state.completedIDs
+            completed: state.completedIDs,
+            unavailable: state.unavailable
         )
         state.completedSinceCheckpoint = 0
         state.lastCheckpoint = Date()
@@ -385,7 +388,8 @@ final class BatchPipeline: Sendable {
         await saveCheckpoint(
             sessionID: sessionID,
             qualityIdentity: qualityIdentity,
-            completed: state.completedIDs
+            completed: state.completedIDs,
+            unavailable: state.unavailable
         )
         state.completedSinceCheckpoint = 0
         state.lastCheckpoint = Date()
@@ -420,7 +424,7 @@ final class BatchPipeline: Sendable {
             // Post-analysis cancel check: a cancel landing during Vision work
             // must not record as success — route through .cancelled.
             try Task.checkCancellation()
-            return .analyzed(output)
+            return .analyzed(output, asset.modificationFingerprint)
         } catch SelectionError.cancelled {
             throw SelectionError.cancelled
         } catch is CancellationError {
@@ -431,7 +435,7 @@ final class BatchPipeline: Sendable {
         }
     }
 
-    private func completedIDs(
+    private func checkpointUnavailableIDs(
         for sessionID: SessionID,
         qualityIdentity: QualityCheckpointIdentity?
     ) async -> Set<AssetID> {
@@ -447,18 +451,20 @@ final class BatchPipeline: Sendable {
         guard checkpoint.qualityIdentity == qualityIdentity else {
             return []
         }
-        return Set(checkpoint.completedAssetIDs)
+        return Set(checkpoint.unavailableAssetIDs)
     }
 
     private func saveCheckpoint(
         sessionID: SessionID,
         qualityIdentity: QualityCheckpointIdentity?,
-        completed: [AssetID]
+        completed: [AssetID],
+        unavailable: [AssetID]
     ) async {
         let stub = SessionCheckpoint(
             sessionID: sessionID,
             stage: "analysis",
             completedAssetIDs: completed,
+            unavailableAssetIDs: unavailable,
             configVersion: config.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
             qualityIdentity: qualityIdentity,
@@ -468,7 +474,7 @@ final class BatchPipeline: Sendable {
     }
 
     private enum AssetOutcome: Sendable {
-        case analyzed(ImageAnalysisOutput)
+        case analyzed(ImageAnalysisOutput, AssetModificationFingerprint)
         case unavailable(AssetID)
     }
 }
