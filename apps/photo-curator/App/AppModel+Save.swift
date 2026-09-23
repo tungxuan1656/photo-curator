@@ -7,12 +7,13 @@ extension AppModel {
     /// S09 entry: builds the session-owned ReviewModel from the persisted
     /// result plus frozen source metadata, then routes. Returns true on success.
     /// Reuses the existing model (preserving remove/restore edits) and never
-    /// pushes a duplicate overview when one is already on top. Reloads the
-    /// persisted `SelectionFeedback` so review edits survive relaunch; the
-    /// engine never reruns. Returns false when the result is missing,
-    /// mismatched, or empty; the review entry caller surfaces inline retry
-    /// feedback while the failed-route Try Again caller already shows the
-    /// recoverable state.
+    /// pushes a duplicate overview when one is already on top. Durable
+    /// workspace rows own review choices when available; the legacy
+    /// `SelectionFeedback` handoff remains only for the unavailable-workspace
+    /// fallback. The engine never reruns. Returns false when the result is
+    /// missing, mismatched, or empty; the review entry caller surfaces inline
+    /// retry feedback while the failed-route Try Again caller already shows
+    /// the recoverable state.
     func beginReview(for sessionID: SessionID) async -> Bool {
         if let existing = reviewModel, existing.sessionID == sessionID {
             // Interrupted-save reconciliation applies to the reuse path too:
@@ -37,10 +38,15 @@ extension AppModel {
               !result.selectedAssetIDs.isEmpty
         else { return false }
         let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
-        let feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
         let workspaceBinding = await ensureReviewScope(
-            for: sessionID, confirmedSource: confirmedSourceIDs, result: result, feedback: feedback
+            for: sessionID, confirmedSource: confirmedSourceIDs
         )
+        let feedback: SelectionFeedback?
+        if workspaceBinding == nil {
+            feedback = await container.checkpointStore.loadFeedback(sessionID: sessionID)
+        } else {
+            feedback = nil
+        }
         let model = ReviewModel(
             sessionID: sessionID,
             result: result,
@@ -61,26 +67,11 @@ extension AppModel {
         model.persistedUnavailableCount = ReviewModel.unavailableCount(
             result: result, frozenSourceCount: frozenCount?.sourceAssetIDs.count
         )
-        // Ordered writes: the latest snapshots always persist last, so rapid
-        // toggles cannot land out of order on disk. The bounded aggregate
-        // snapshot follows the full feedback write in one actor call.
-        // Closed-session guard (DEC-043) + generation owner (DEC-046): a live
-        // re-entry reopens the store tombstone AND mints a new generation,
-        // captured here in the same statement; the installed hook owns its
-        // PersistLatest actor strongly (closure owned by the model, model
-        // owned by reviewModel), so feedback writes fire while review is
-        // live. The model is captured weakly to avoid a retain cycle
-        // (model -> hook -> model); cleanup releases reviewModel first,
-        // then retire drops late writes AND stale old-session writers pinned
-        // to the previous generation — no cycle, no resurrection.
-        let generation = await container.checkpointStore.reopenSession(sessionID)
-        let persist = PersistLatest(store: container.checkpointStore, sessionID: sessionID, generation: generation)
-        model.setFeedbackHook { [weak model, persist] snapshot in
-            guard let model else { return }
-            let uncertainty = model.uncertaintySnapshot()
-            Task { [persist] in
-                await persist.save(snapshot, uncertainty: uncertainty)
-            }
+        // Legacy feedback persistence is retained only for the file-backed
+        // fallback. Available durable-workspace sessions do not reopen a
+        // legacy generation or install a SelectionFeedback hook.
+        if workspaceBinding == nil {
+            await installLegacyFeedbackPersistence(for: sessionID, model: model)
         }
         reviewModel = model
         // Interrupted-save reconciliation: never a duplicate album. A
@@ -96,6 +87,26 @@ extension AppModel {
             path.append(.reviewWorkspace(sessionID: sessionID))
         }
         return true
+    }
+
+    /// Installs the compatibility writer only when durable workspace entry
+    /// failed or is unavailable. Durable sessions never reopen a legacy
+    /// generation or persist `SelectionFeedback`.
+    private func installLegacyFeedbackPersistence(for sessionID: SessionID, model: ReviewModel) async {
+        // Ordered writes: the latest snapshots always persist last, so rapid
+        // toggles cannot land out of order on disk. The bounded aggregate
+        // snapshot follows the full feedback write in one actor call.
+        let generation = await container.checkpointStore.reopenSession(sessionID)
+        let persist = PersistLatest(
+            store: container.checkpointStore, sessionID: sessionID, generation: generation
+        )
+        model.setFeedbackHook { [weak model, persist] snapshot in
+            guard let model else { return }
+            let uncertainty = model.uncertaintySnapshot()
+            Task { [persist] in
+                await persist.save(snapshot, uncertainty: uncertainty)
+            }
+        }
     }
 
     /// S14 Save entry: atomically claims one save per session before touching
@@ -290,23 +301,23 @@ extension AppModel {
     }
 
     /// feat-034 review entry helper: ensures one durable scope per session and
-    /// seeds item rows from the legacy selection feedback. Nil when workspace
-    /// storage is unavailable, preserving the legacy file-backed flow.
-    /// Legacy `SelectionFeedback` carries the durable remove/restore/favorite/
-    /// swap record: it seeds both the in-memory model restore and any missing
-    /// durable item membership so resume never drops pre-workspace edits.
+    /// returns the workspace-owned item rows. Existing workspace rows are the
+    /// source of truth for review choices. New rows start `.unset`; engine
+    /// output and legacy feedback remain review facts/compatibility data, not
+    /// durable membership. Nil when workspace storage is unavailable,
+    /// preserving the legacy file-backed flow.
     private func ensureReviewScope(
         for sessionID: SessionID,
-        confirmedSource: [AssetID],
-        result: SelectionResult,
-        feedback: SelectionFeedback?
+        confirmedSource: [AssetID]
     ) async -> (scopeID: UUID, items: [AssetID: WorkspaceItemSnapshot])? {
         guard let workspaceStore = container.workspaceStore else { return nil }
         let scopeID = sessionID.rawValue
-        let sourceIDs = confirmedSource.isEmpty
-            ? (result.selectedAssetIDs + result.rejectedAssetIDs)
-            : confirmedSource
         do {
+            // A migrated or previously-entered scope owns its historical
+            // source set. A new scope uses only the frozen source handoff;
+            // SelectionResult is intentionally not a membership seed.
+            let existingScope = try await workspaceStore.loadScope(id: scopeID)
+            let sourceIDs = existingScope?.sourceAssetIDs ?? confirmedSource
             _ = try await workspaceStore.createScope(
                 id: scopeID,
                 intent: pendingReviewIntent,
@@ -318,47 +329,13 @@ extension AppModel {
             reviewIntentForSession[sessionID] = pendingReviewIntent
             let items = try await workspaceStore.listItems(scopeID: scopeID)
             var byID = Dictionary(uniqueKeysWithValues: items.map { ($0.assetID, $0) })
-            let seededMembership = Dictionary(
-                uniqueKeysWithValues: result.selectedAssetIDs.map { ($0, AlbumMembership.included) }
-            ).merging(
-                Dictionary(uniqueKeysWithValues: result.rejectedAssetIDs.map { ($0, AlbumMembership.excluded) }),
-                uniquingKeysWith: { _, next in next }
-            )
-            let legacyRemoved = feedback?.removedIDs ?? []
-            let legacyRestored = feedback?.restoredIDs ?? []
             for assetID in sourceIDs where byID[assetID] == nil {
-                var membership = seededMembership[assetID] ?? .unset
-                if legacyRemoved.contains(assetID) {
-                    membership = .excluded
-                } else if legacyRestored.contains(assetID) {
-                    membership = .included
-                }
                 let created = try await workspaceStore.createItem(
                     scopeID: scopeID,
                     assetID: assetID,
-                    albumMembership: membership
+                    albumMembership: .unset
                 )
                 byID[assetID] = created
-            }
-            // Legacy feedback can also post-date existing durable rows (a
-            // pre-workspace edit persisted after the scope was created).
-            // Apply remove/restore deltas to existing rows so resume never
-            // drops them; existing rows already carry the durable truth for
-            // everything else. One-way migration rule: only removed/restored
-            // map to excluded/included; nothing else is inferred.
-            for assetID in legacyRemoved where sourceIDs.contains(assetID) {
-                if byID[assetID]?.albumMembership == .included {
-                    byID[assetID] = try await workspaceStore.updateAlbumMembership(
-                        .excluded, scopeID: scopeID, assetID: assetID
-                    )
-                }
-            }
-            for assetID in legacyRestored where sourceIDs.contains(assetID) {
-                if byID[assetID]?.albumMembership == .excluded {
-                    byID[assetID] = try await workspaceStore.updateAlbumMembership(
-                        .included, scopeID: scopeID, assetID: assetID
-                    )
-                }
             }
             return (scopeID, byID)
         } catch {
