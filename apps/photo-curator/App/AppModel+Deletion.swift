@@ -77,6 +77,26 @@ extension AppModel {
         guard operation.status == .prepared, operation.submittedIDs.isEmpty,
               let service = container.deletionService
         else { return }
+        let sessionID = SessionID(rawValue: operation.scopeID)
+        let checkpoint: SessionCheckpoint
+        let assets: [PhotoAsset]
+        do {
+            checkpoint = try await container.checkpointStore.load(sessionID: sessionID)
+            assets = try await container.photoLibrary.fetchAssets()
+            let liveIDs = Set(assets.map(\.id))
+            guard !checkpoint.sourceAssetIDs.isEmpty,
+                  !Set(checkpoint.sourceAssetIDs).isDisjoint(with: liveIDs),
+                  let result = await loadResult(for: sessionID),
+                  result.sessionID == sessionID,
+                  !result.selectedAssetIDs.isEmpty
+            else {
+                deletionError = .invalidExactSet
+                return
+            }
+        } catch {
+            deletionError = .persistenceFailure
+            return
+        }
         do {
             _ = try await service.cancelPrepared(operationID: operation.operationID)
         } catch {
@@ -84,28 +104,22 @@ extension AppModel {
             return
         }
         clearDeletionState()
-        await refreshDeletionRecovery()
-        let sessionID = SessionID(rawValue: operation.scopeID)
         pendingReviewIntent = .cleanup
         activeSessionID = sessionID
         lastSessionID = sessionID
-        do {
-            let checkpoint = try await container.checkpointStore.load(sessionID: sessionID)
-            allAssets = try await container.photoLibrary.fetchAssets()
-            confirmedSourceIDs = checkpoint.sourceAssetIDs
-            guard await beginReview(for: sessionID) else {
-                deletionError = .invalidExactSet
-                return
-            }
-            if path.last == .reviewWorkspace(sessionID: sessionID) {
-                path.removeLast()
-            }
-            if path.last != .cleanupReview(sessionID: sessionID) {
-                path.append(.cleanupReview(sessionID: sessionID))
-            }
-        } catch {
-            deletionError = .persistenceFailure
+        allAssets = assets
+        confirmedSourceIDs = checkpoint.sourceAssetIDs
+        guard await beginReview(for: sessionID) else {
+            deletionError = .invalidExactSet
+            return
         }
+        if path.last == .reviewWorkspace(sessionID: sessionID) {
+            path.removeLast()
+        }
+        if path.last != .cleanupReview(sessionID: sessionID) {
+            path.append(.cleanupReview(sessionID: sessionID))
+        }
+        await refreshDeletionRecovery()
     }
 
     /// Read-only reconciliation. It never calls `start`, retries, or submits

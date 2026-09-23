@@ -512,8 +512,7 @@ private struct ReviewWorkspaceCell: View {
             }
         }
         .clipped()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(model.isSelected(assetID) ? "In album" : "Removed")
+        .accessibilityElement(children: .contain)
     }
 }
 
