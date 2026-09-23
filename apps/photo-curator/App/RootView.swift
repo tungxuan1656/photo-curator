@@ -39,6 +39,8 @@ struct RootView: View {
                     } else {
                         ReviewLoadFailedView(sessionID: id)
                     }
+                case let .cleanupReview(id):
+                    CleanupReviewView(sessionID: id)
                 case let .reviewOverview(id):
                     if appModel.reviewModel?.sessionID == id {
                         ReviewOverview(sessionID: id)

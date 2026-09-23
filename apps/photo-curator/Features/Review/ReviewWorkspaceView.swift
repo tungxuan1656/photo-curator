@@ -440,6 +440,17 @@ private struct ReviewActionTray: View {
 
     var body: some View {
         VStack(spacing: 10) {
+            if appModel.reviewIntent(for: sessionID) == .cleanup {
+                Button("Review Staged Set") {
+                    if appModel.path.last != .cleanupReview(sessionID: sessionID) {
+                        appModel.path.append(.cleanupReview(sessionID: sessionID))
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(model.stagedCleanupIDs.isEmpty)
+                .accessibilityHint("Shows the exact photos staged for deletion")
+            }
             Button("Continue to Save") {
                 if appModel.path.last != .finalReview(sessionID: sessionID) {
                     appModel.path.append(.finalReview(sessionID: sessionID))
@@ -461,6 +472,7 @@ private struct ReviewWorkspaceCell: View {
     let sessionID: SessionID
     let pagerIDs: [AssetID]
     let model: ReviewModel
+    @Environment(AppModel.self) private var appModel
 
     var body: some View {
         VStack(spacing: 2) {
@@ -481,6 +493,23 @@ private struct ReviewWorkspaceCell: View {
             Text(model.isSelected(assetID) ? "In album" : "Removed")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            if appModel.reviewIntent(for: sessionID) == .cleanup {
+                let title = model.cleanupDisposition(for: assetID) == .stagedForDeletion
+                    ? "Unstage" : "Stage for deletion"
+                Button(title) {
+                    if model.cleanupDisposition(for: assetID) == .stagedForDeletion {
+                        model.unstageDeletion([assetID])
+                    } else {
+                        model.stageForDeletion([assetID])
+                    }
+                }
+                .font(.caption)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityLabel(
+                    model.cleanupDisposition(for: assetID) == .stagedForDeletion
+                        ? "Unstage photo" : "Stage photo for deletion"
+                )
+            }
         }
         .clipped()
         .accessibilityElement(children: .combine)

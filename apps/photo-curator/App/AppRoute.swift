@@ -13,6 +13,7 @@ enum AppRoute: Hashable, Sendable {
     case processing(sessionID: SessionID)
     case settings
     case reviewWorkspace(sessionID: SessionID)
+    case cleanupReview(sessionID: SessionID)
     case reviewOverview(sessionID: SessionID)
     case curatedGrid(sessionID: SessionID)
     case similarGroups(sessionID: SessionID)

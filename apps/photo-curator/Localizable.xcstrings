@@ -7812,6 +7812,48 @@
           }
         }
       }
+    },
+    "Cleanup Review" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Cleanup Review" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xem lại dọn dẹp" } }
+      }
+    },
+    "Exact set" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Exact set" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tập hợp chính xác" } }
+      }
+    },
+    "Delete Staged Photos" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Delete Staged Photos" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xóa ảnh đã chọn" } }
+      }
+    },
+    "Check Outcomes" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Check Outcomes" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Kiểm tra kết quả" } }
+      }
+    },
+    "Review Staged Set" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Review Staged Set" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xem lại tập đã chọn" } }
+      }
+    },
+    "Stage for deletion" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Stage for deletion" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chọn để xóa" } }
+      }
+    },
+    "Unstage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Unstage" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bỏ chọn" } }
+      }
     }
   },
   "version" : "1.2"

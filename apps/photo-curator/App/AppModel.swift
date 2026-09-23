@@ -334,6 +334,12 @@ final class AppModel {
     /// Inline retry note for a no-op review retry (already on the failed
     /// route); set by showReview, rendered by ReviewLoadFailedView.
     var reviewLoadRetryFailed = false
+
+    /// The deletion lane owns one in-flight operation per session. The view
+    /// observes this flight so a second tap cannot dispatch another operation.
+    var deletionFlight: (session: SessionID, task: Task<PhotoDeletionResult?, Never>)?
+    var deletionOperation: PhotoDeletionOperationSnapshot?
+    var deletionError: PhotoDeletionServiceError?
 }
 
 // MARK: - feat-006 curation intents
