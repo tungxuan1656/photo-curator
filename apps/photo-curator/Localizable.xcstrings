@@ -7854,6 +7854,96 @@
         "en" : { "stringUnit" : { "state" : "new", "value" : "Unstage" } },
         "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bỏ chọn" } }
       }
+    },
+    "Suggestions" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Suggestions" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Các đề xuất" } }
+      }
+    },
+    "Review Suggestion" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Review Suggestion" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xem lại đề xuất" } }
+      }
+    },
+    "Native analysis" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Native analysis" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phân tích tích hợp" } }
+      }
+    },
+    "Legacy native adapter" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Legacy native adapter" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bộ chuyển đổi tích hợp cũ" } }
+      }
+    },
+    "Not enough information" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Not enough information" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chưa đủ thông tin" } }
+      }
+    },
+    "Suggestion evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Suggestion evidence" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bằng chứng của đề xuất" } }
+      }
+    },
+    "Source" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Source" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nguồn" } }
+      }
+    },
+    "Versions" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Versions" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phiên bản" } }
+      }
+    },
+    "Suggested photos" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Suggested photos" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh được đề xuất" } }
+      }
+    },
+    "Proposed changes" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Proposed changes" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thay đổi được đề xuất" } }
+      }
+    },
+    "These choices already match the suggestion." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "These choices already match the suggestion." } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Các lựa chọn này đã khớp với đề xuất." } }
+      }
+    },
+    "Suggestion used" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Suggestion used" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã dùng đề xuất" } }
+      }
+    },
+    "Suggestion available — review the evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "Suggestion available — review the evidence" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Có đề xuất — hãy xem lại bằng chứng" } }
+      }
+    },
+    "No suggestion — not enough information" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "No suggestion — not enough information" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Không có đề xuất — chưa đủ thông tin" } }
+      }
+    },
+    "The app abstained rather than making a choice without enough evidence." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "new", "value" : "The app abstained rather than making a choice without enough evidence." } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ứng dụng không đưa ra lựa chọn vì chưa đủ bằng chứng." } }
+      }
     }
   },
   "version" : "1.2"
