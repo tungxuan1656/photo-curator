@@ -36,7 +36,8 @@ the handoff below.
   retry; recovery UI with fresh confirmation for prepared operations and
   read-only reconciliation; truthful en/vi outcome copy.
 - Evidence: Final `./init.sh` PASS on 2026-09-23 (SwiftFormat, strict
-  SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040);
-  `git diff --check` PASS; Oracle MERGE-READY. Implementation commits:
-  `250b918`, `14bb92f`, `2634b8c`, `5ba07a8`, `42bcbbb`, `bdf0530`.
+   SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040);
+  `git diff --check` PASS; Oracle MERGE-READY after the PR review findings.
+  Implementation commits: `250b918`, `14bb92f`, `2634b8c`, `5ba07a8`,
+  `42bcbbb`, `bdf0530`; follow-up commits: `7eac0b8`, `e21c6ac`, `546ad39`.
 - Next: feat-037.

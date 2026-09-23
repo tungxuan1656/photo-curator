@@ -1035,3 +1035,14 @@ SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040);
 `git diff --check` PASS; Oracle MERGE-READY.
 **Blockers**: none
 **Next**: feat-037.
+
+## 2026-09-23 — feat-036 PR #69 final follow-up
+
+**State**: done (PR review follow-up complete)
+**Done**: Closed the P1 duplicate-dispatch gate and corrected P2 prepared
+recovery ordering plus the VoiceOver behavior.
+**Evidence**: Follow-up commits `7eac0b8`, `e21c6ac`, `546ad39`; final
+`./init.sh` PASS on 2026-09-23 (SwiftFormat, strict SwiftLint, generic
+Simulator `BUILD SUCCEEDED`, no tests by DEC-040); Oracle MERGE-READY.
+**Blockers**: none
+**Next**: feat-037.
