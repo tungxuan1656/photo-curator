@@ -1,6 +1,6 @@
 import SwiftUI
 
-// swiftlint:disable file_length - shared workspace shell owns header/filter/grid/group/compare/tray in one file per feat-034 plan; split in feat-035+.
+// swiftlint:disable file_length - shared workspace shell owns the review surfaces.
 
 /// Shared photo-first workspace shell (feat-034 owner). One grouped review
 /// surface for both Clean Up Photos and Build an Album: a compact
@@ -31,9 +31,8 @@ struct ReviewWorkspaceView: View {
                 SuggestionPreviewSheet(
                     suggestion: suggestion,
                     revisionMismatch: previewRevisionMismatch,
-                    currentAlbum: { model.isSelected($0) ? .included : .excluded },
-                    onUse: { appModel.reviewModel?.applySuggestion($0) ?? false },
-                    onKeepMine: {}
+                    model: model,
+                    onUse: { appModel.reviewModel?.applySuggestion($0) ?? false }
                 )
             }
         }
@@ -327,7 +326,7 @@ private struct SimilarGroupPreviewCard: View {
                         .opacity(model.isSelected(id) ? 1 : 0.35)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(model.isSelected(id) ? "In album" : "Removed")
+                    .accessibilityLabel(albumMembershipLabel(model.albumMembership(for: id)))
                 }
             }
             .padding(.horizontal)
@@ -350,7 +349,7 @@ private struct ReviewSuggestionSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Suggestion available")
+            Text("Suggestions")
                 .font(.headline)
                 .padding(.horizontal)
             if suggestions.isEmpty {
@@ -360,76 +359,290 @@ private struct ReviewSuggestionSection: View {
                     .padding(.horizontal)
             } else {
                 ForEach(suggestions.prefix(3)) { suggestion in
-                    Button("Use Suggestion") {
-                        // review-rules: a changed proposal needs a new
-                        // preview. Recompute staleness from the live
-                        // source revision instead of blindly clearing.
+                    SuggestionCard(suggestion: suggestion, model: model) {
                         previewRevisionMismatch = model.isSuggestionStale(suggestion)
                         previewSuggestion = suggestion
                     }
-                    .font(.subheadline)
-                    .padding(.horizontal)
                 }
             }
         }
     }
 }
 
+private struct SuggestionCard: View {
+    let suggestion: ReviewSuggestion
+    let model: ReviewModel
+    let onReview: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Suggestion available", systemImage: "wand.and.stars")
+                    .font(.subheadline.bold())
+                Spacer()
+                Text(evidenceText)
+                    .font(.caption)
+                    .foregroundStyle(suggestion.canUse ? Color.secondary : Color.orange)
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 8) {
+                    ForEach(suggestion.candidateIDs, id: \.self) { assetID in
+                        VStack(alignment: .leading, spacing: 4) {
+                            AsyncPhotoThumbnail(assetID: assetID, targetSizePixels: CGSize(width: 180, height: 180))
+                                .frame(width: 76, height: 76)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            Text(state(for: assetID))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Photo, \(state(for: assetID))")
+                    }
+                }
+            }
+            HStack(spacing: 12) {
+                Label(provenanceText, systemImage: "info.circle")
+                Text(versionText)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .accessibilityElement(children: .combine)
+            Button("Review Suggestion", action: onReview)
+                .buttonStyle(.bordered)
+                .disabled(!suggestion.canUse)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal)
+    }
+
+    private var provenanceText: LocalizedStringResource {
+        switch suggestion.provenance {
+        case .native: "Native analysis"
+        case .legacyNativeAdapter: "Legacy native adapter"
+        }
+    }
+
+    private var evidenceText: LocalizedStringResource {
+        switch suggestion.evidence {
+        case .available: "Evidence available"
+        case .insufficient: "Not enough information"
+        case .unavailable: "Analysis unavailable"
+        }
+    }
+
+    private func state(for assetID: AssetID) -> LocalizedStringResource {
+        let album = albumMembershipLabel(model.albumMembership(for: assetID))
+        let cleanup: LocalizedStringResource = switch model.cleanupDisposition(for: assetID) {
+        case .undecided: "Undecided"
+        case .keep: "Keep"
+        case .stagedForDeletion: "Staged for deletion"
+        }
+        let progress: LocalizedStringResource = switch model.progress(for: assetID) {
+        case .unseen: "Not reviewed"
+        case .inProgress: "Review in progress"
+        case .reviewed: "Reviewed"
+        }
+        return "\(album) · \(cleanup) · \(progress)"
+    }
+
+    private var versionText: LocalizedStringResource {
+        guard let analysisVersion = suggestion.analysisVersion else {
+            return "Analysis unavailable · Engine v\(suggestion.engineVersion)"
+        }
+        return "Analysis v\(analysisVersion) · Engine v\(suggestion.engineVersion)"
+    }
+}
+
 private struct SuggestionPreviewSheet: View {
     let suggestion: ReviewSuggestion
     let revisionMismatch: Bool
-    let currentAlbum: (AssetID) -> AlbumMembership
+    let model: ReviewModel
     let onUse: (ReviewSuggestion) -> Bool
-    let onKeepMine: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var applied = false
 
+    private var rows: [ReviewSuggestionPreviewRow] {
+        switch suggestion.proposal {
+        case .albumMembership:
+            return suggestion.previewRows { model.albumMembership(for: $0) }
+        case let .cleanupKeep(ids):
+            return ids.compactMap { assetID in
+                let disposition = model.cleanupDisposition(for: assetID)
+                guard disposition != .keep else { return nil }
+                let oldValue: LocalizedStringResource = switch disposition {
+                case .undecided: "Undecided"
+                case .keep: "Keep"
+                case .stagedForDeletion: "Staged for deletion"
+                }
+                return ReviewSuggestionPreviewRow(
+                    id: assetID.rawValue,
+                    dimension: "Cleanup choice",
+                    oldValue: oldValue,
+                    newValue: "Keep"
+                )
+            }
+        case .none:
+            return []
+        }
+    }
+
+    private var canApply: Bool {
+        suggestion.canUse && !revisionMismatch && !rows.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Review Suggested Changes")
-                    .font(.title2.bold())
-                Text("The app suggested this. You decide.")
-                    .font(.footnote)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("The app suggested this. You decide.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        Label(provenanceText, systemImage: "info.circle")
+                        Text(versionText)
+                    }
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                if revisionMismatch {
-                    Text("This suggestion changed. Review it again.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(suggestion.previewRows(currentAlbum: currentAlbum), id: \.id) { row in
-                    Text("\(row.dimension): \(row.oldValue) → \(row.newValue)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if applied {
-                    Text("Reviewed")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                HStack(spacing: 10) {
-                    Button("Apply These Changes") {
-                        applied = onUse(suggestion)
-                        if applied {
-                            dismiss()
+                    .accessibilityElement(children: .combine)
+                    Text(evidenceText)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(suggestion.canUse ? Color.secondary : Color.orange)
+                    if revisionMismatch {
+                        Text("This suggestion changed. Review it again.")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
+                    Text("Suggested photos").font(.headline)
+                    ForEach(suggestion.candidateIDs, id: \.self) { assetID in
+                        SuggestionCandidateState(assetID: assetID, model: model)
+                    }
+                    Text("Proposed changes").font(.headline)
+                    if rows.isEmpty {
+                        Text("These choices already match the suggestion.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(rows) { row in
+                            if let assetID = suggestion.candidateIDs.first(where: { $0.rawValue == row.id }) {
+                                SuggestionPreviewRowView(assetID: assetID, row: row)
+                            }
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!suggestion.canUse || revisionMismatch)
-                    Button("Keep My Choice") {
-                        onKeepMine()
-                        dismiss()
+                    if applied {
+                        Text("Reviewed")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
+                    VStack(spacing: 10) {
+                        Button("Use Suggestion") {
+                            applied = onUse(suggestion)
+                            if applied {
+                                dismiss()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(!canApply)
+                        Button("Keep My Choice") { dismiss() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
                 }
-            }
-            .padding()
-            .navigationTitle("Review Suggested Changes")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                .padding()
+                .navigationTitle("Review Suggested Changes")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
             }
         }
+    }
+
+    private var provenanceText: LocalizedStringResource {
+        switch suggestion.provenance {
+        case .native: "Native analysis"
+        case .legacyNativeAdapter: "Legacy native adapter"
+        }
+    }
+
+    private var evidenceText: LocalizedStringResource {
+        switch suggestion.evidence {
+        case .available: "Evidence available"
+        case .insufficient: "Not enough information for a suggestion"
+        case .unavailable: "Analysis unavailable"
+        }
+    }
+
+    private var versionText: LocalizedStringResource {
+        guard let analysisVersion = suggestion.analysisVersion else {
+            return "Analysis unavailable · Engine v\(suggestion.engineVersion)"
+        }
+        return "Analysis v\(analysisVersion) · Engine v\(suggestion.engineVersion)"
+    }
+}
+
+private struct SuggestionPreviewRowView: View {
+    let assetID: AssetID
+    let row: ReviewSuggestionPreviewRow
+
+    var body: some View {
+        HStack(spacing: 10) {
+            AsyncPhotoThumbnail(assetID: assetID, targetSizePixels: CGSize(width: 180, height: 180))
+                .frame(width: 52, height: 52)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(row.dimension).font(.caption.bold())
+                Text("\(row.oldValue) → \(row.newValue)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Suggested change, \(row.dimension): \(row.oldValue) to \(row.newValue)")
+    }
+}
+
+private struct SuggestionCandidateState: View {
+    let assetID: AssetID
+    let model: ReviewModel
+
+    var body: some View {
+        HStack(spacing: 8) {
+            AsyncPhotoThumbnail(assetID: assetID, targetSizePixels: CGSize(width: 180, height: 180))
+                .frame(width: 52, height: 52)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Photo").font(.caption.bold())
+                Text("\(albumState) · \(cleanupState)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var albumState: LocalizedStringResource {
+        albumMembershipLabel(model.albumMembership(for: assetID))
+    }
+
+    private var cleanupState: LocalizedStringResource {
+        switch model.cleanupDisposition(for: assetID) {
+        case .undecided: "Undecided"
+        case .keep: "Keep"
+        case .stagedForDeletion: "Staged for deletion"
+        }
+    }
+}
+
+private func albumMembershipLabel(_ membership: AlbumMembership) -> LocalizedStringResource {
+    switch membership {
+    case .unset: "Not chosen for album"
+    case .included: "In album"
+    case .excluded: "Excluded from album"
     }
 }
 
@@ -490,7 +703,7 @@ private struct ReviewWorkspaceCell: View {
                 .buttonStyle(.plain)
                 SelectionToggle(isSelected: model.isSelected(assetID), onToggle: { model.toggle(assetID) })
             }
-            Text(model.isSelected(assetID) ? "In album" : "Removed")
+            Text(albumMembershipLabel(model.albumMembership(for: assetID)))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             if appModel.reviewIntent(for: sessionID) == .cleanup {

@@ -49,9 +49,11 @@ struct PhotoAnalysisDetail: View {
                                 .frame(maxWidth: .infinity, minHeight: 120)
                         }
 
+                        SuggestionEvidenceSection(assetID: assetID, model: model)
+
                         SelectionResultSection(
                             decision: model.decision(for: assetID),
-                            isSelected: model.isSelected(assetID)
+                            albumMembership: model.albumMembership(for: assetID)
                         )
                     }
                     .padding()
@@ -210,175 +212,23 @@ struct PhotoAnalysisDetail: View {
     }
 
     private func sceneName(_ scene: SceneType) -> LocalizedStringResource {
-        switch scene {
-        case .people: "People"
-        case .group: "Group"
-        case .landscape: "Landscape"
-        case .architecture: "Architecture"
-        case .food: "Food"
-        case .animal: "Animal"
-        case .indoor: "Indoor"
-        case .outdoor: "Outdoor"
-        case .document: "Document"
-        case .screenshot: "Screenshot"
-        case .other: "Other"
-        case .unknown: "Not classified"
-        }
-    }
-}
-
-private struct AnalysisScoreCard: View {
-    let analysis: PhotoAnalysis
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Technical score")
-                .font(.headline)
-            Text("\(Int((analysis.qualityScore * 100).rounded())) / 100")
-                .font(.largeTitle.bold())
-                .monospacedDigit()
-            ProgressView(value: analysis.qualityScore)
-                .tint(.accentColor)
-            Text("Combines sharpness and exposure. It helps compare photos, but it does not decide the album.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityElement(children: .combine)
-    }
-}
-
-private struct AnalysisFact: Identifiable {
-    let id: String
-    let label: LocalizedStringResource
-    let value: LocalizedStringResource
-}
-
-private struct AnalysisFactSection: View {
-    let title: LocalizedStringResource
-    let facts: [AnalysisFact]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-            ForEach(facts) { fact in
-                LabeledContent {
-                    Text(fact.value)
-                        .monospacedDigit()
-                } label: {
-                    Text(fact.label)
-                }
-                .font(.body)
-                .accessibilityElement(children: .combine)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityElement(children: .contain)
-    }
-}
-
-private struct SelectionResultSection: View {
-    let decision: Decision?
-    let isSelected: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Selection result")
-                .font(.headline)
-            LabeledContent("Current state") {
-                Text(currentState)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(currentStateAccessibilityLabel)
-            if let decision {
-                LabeledContent("Original result") {
-                    Text(originalState(for: decision))
-                }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(originalStateAccessibilityLabel(for: decision))
-                if let score = decision.score {
-                    LabeledContent("Selection score") {
-                        Text("\(Int((score * 100).rounded())) / 100")
-                            .monospacedDigit()
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Selection score, \(Int((score * 100).rounded())) out of 100")
-                }
-                ForEach(decision.reasons, id: \.self) { reason in
-                    LabeledContent("Reason") {
-                        Text(reasonText(for: reason))
-                            .multilineTextAlignment(.trailing)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(reasonText(for: reason))
-                }
-            } else {
-                Text("The original automatic result is unavailable.")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityElement(children: .contain)
+        Self.sceneNames[scene] ?? "Not classified"
     }
 
-    private var currentState: LocalizedStringResource {
-        isSelected ? "Selected" : "Removed"
-    }
-
-    private var currentStateAccessibilityLabel: LocalizedStringResource {
-        isSelected ? "Current state, Selected" : "Current state, Removed"
-    }
-
-    private func originalState(for decision: Decision) -> LocalizedStringResource {
-        decision.status == .selected ? "Selected" : "Removed"
-    }
-
-    private func originalStateAccessibilityLabel(for decision: Decision) -> LocalizedStringResource {
-        decision.status == .selected ? "Original result, Selected" : "Original result, Removed"
-    }
-
-    private func reasonText(for reason: String) -> LocalizedStringResource {
-        Self.reasonTextByCode[reason] ?? "A recorded selection rule applied"
-    }
-
-    private static let reasonTextByCode: [String: LocalizedStringResource] = {
-        var textByCode: [String: LocalizedStringResource] = [:]
-        textByCode["assetUnavailable"] = "Analysis was unavailable"
-        textByCode["unsupportedAsset"] = "This item is not a supported photo"
-        textByCode["corruptedAsset"] = "This photo could not be read"
-        textByCode["severeBlur"] = "Technical quality was below the selection floor"
-        textByCode["lowQuality"] = "Technical quality was below the selection floor"
-        textByCode["severeUnderexposure"] = "The photo was too dark for the selection"
-        textByCode["severeOverexposure"] = "The photo had too many bright areas"
-        textByCode["accidentalFrame"] = "The photo looked accidental"
-        textByCode["exactDuplicate"] = "An identical photo was preferred"
-        textByCode["duplicateRepresentative"] = "This photo represents identical copies"
-        textByCode["nearDuplicate"] = "A similar photo was preferred"
-        textByCode["nearDuplicateRepresentative"] = "This photo represents similar photos"
-        textByCode["burstRepresentative"] = "This photo represents a burst"
-        textByCode["bestInMoment"] = "Best representative for this moment"
-        textByCode["secondaryMomentRepresentative"] = "A distinct second view of this moment"
-        textByCode["bestPortrait"] = "Preferred portrait in a similar group"
-        textByCode["bestGroupPhoto"] = "Preferred group photo"
-        textByCode["betterFaceQuality"] = "Stronger visible-face signal"
-        textByCode["bestLandscape"] = "Preferred landscape view"
-        textByCode["bestSceneRepresentative"] = "Preferred scene representative"
-        textByCode["sceneDiversity"] = "Another scene added more variety"
-        textByCode["peopleDiversity"] = "Other photos covered people more distinctly"
-        textByCode["compositionDiversity"] = "Other photos added more composition variety"
-        textByCode["temporalCoverage"] = "Other photos improved coverage of the session"
-        textByCode["meaningfulVariation"] = "A different view added more information"
-        textByCode["userSelected"] = "Added by your choice"
-        textByCode["userExcluded"] = "Removed by your choice"
-        textByCode["favoriteBoost"] = "Favorite status helped its rank"
-        textByCode["editedVersionPreferred"] = "The edited version was preferred"
-        return textByCode
-    }()
+    // swiftlint:disable trailing_comma
+    private static let sceneNames: [SceneType: LocalizedStringResource] = [
+        .people: "People",
+        .group: "Group",
+        .landscape: "Landscape",
+        .architecture: "Architecture",
+        .food: "Food",
+        .animal: "Animal",
+        .indoor: "Indoor",
+        .outdoor: "Outdoor",
+        .document: "Document",
+        .screenshot: "Screenshot",
+        .other: "Other",
+        .unknown: "Not classified",
+    ]
+    // swiftlint:enable trailing_comma
 }

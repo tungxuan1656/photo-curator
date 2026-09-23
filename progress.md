@@ -1046,3 +1046,44 @@ recovery ordering plus the VoiceOver behavior.
 Simulator `BUILD SUCCEEDED`, no tests by DEC-040); Oracle MERGE-READY.
 **Blockers**: none
 **Next**: feat-037.
+
+## 2026-09-23 — feat-037 activation
+
+**State**: active
+**Done**: Activated feat-037 after feat-036 completion. The approved delivery
+uses native facts and deterministic fallback only; suggestions remain immutable
+and advisory; Qwen remains frozen and unadmitted.
+**Evidence**: Baseline `./init.sh` PASS on 2026-09-23 (SwiftFormat, strict
+SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040).
+**Blockers**: none
+**Next**: Map exact suggestion and legacy-route seams, then refine the existing
+feature plan before implementation.
+
+## 2026-09-23 — feat-037 suggestion review UI checkpoint
+
+**State**: active
+**Done**: Refined the native SwiftUI suggestion and Needs Review surfaces with
+tri-state album membership, explicit unavailable-analysis rendering, combined
+accessibility labels, and en/vi catalog coverage. The slice remains advisory
+and does not claim legacy-route retirement.
+**Evidence**: Focused SwiftFormat/strict SwiftLint passed with 0 violations;
+`./init.sh` PASS with generic Simulator `BUILD SUCCEEDED` and no automated
+tests under DEC-040; `git diff --check` PASS.
+**Blockers**: none
+**Next**: Inventory every legacy selection-route caller and compatibility
+reader before changing active route ownership.
+
+## 2026-09-23 — feat-037 completion
+
+**State**: done
+**Done**: Suggestions now remain explicit, immutable, provenance-bearing native
+advice across review, detail, inspection, similar, and Needs Review surfaces.
+Durable workspace choices are tri-state and no longer receive legacy feedback
+replay or persistence; compatibility readers remain only for unavailable
+workspace, migration, checkpoint, save, and deletion recovery. Qwen remains
+frozen and unadmitted.
+**Evidence**: Final `./init.sh` PASS (SwiftFormat, strict SwiftLint 0
+violations, generic Simulator `BUILD SUCCEEDED`, tests skipped by DEC-040);
+`git diff --check` PASS; Oracle final review MERGE-READY.
+**Blockers**: none
+**Next**: Open PR for feat-037.

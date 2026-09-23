@@ -3,6 +3,27 @@ import Foundation
 // MARK: - feat-034 review action transitions
 
 extension ReviewModel {
+    /// Preserves the workspace's tri-state album membership for review entry.
+    static func workspaceAlbumMembership(
+        workspaceItems: [AssetID: WorkspaceItemSnapshot], live: Set<AssetID>
+    ) -> [AssetID: AlbumMembership] {
+        Dictionary(uniqueKeysWithValues: workspaceItems.values
+            .filter { live.contains($0.assetID) }
+            .map { ($0.assetID, $0.albumMembership) })
+    }
+
+    /// Returns workspace membership without collapsing `.unset` into a
+    /// selection boolean. Legacy sessions retain their binary behavior.
+    func albumMembership(for id: AssetID) -> AlbumMembership {
+        if let membership = albumMembershipByID[id] {
+            return membership
+        }
+        if scopeID != nil {
+            return .unset
+        }
+        return selectedIDs.contains(id) ? .included : .excluded
+    }
+
     /// review-rules: explicit album-membership write; leaves cleanup, progress, facts unchanged.
     func addToAlbum(_ ids: [AssetID]) {
         let display = Set(displayIDs)
@@ -113,14 +134,26 @@ extension ReviewModel {
             guard !targets.isEmpty else { return false }
             let included = targets.filter { $0.value == .included }.map(\.key)
             let excluded = targets.filter { $0.value == .excluded }.map(\.key)
-            let changedIncluded = included.filter { !selectedIDs.contains($0) }
-            let changedExcluded = excluded.filter { selectedIDs.contains($0) }
+            let changedIncluded = included.filter { albumMembership(for: $0) != .included }
+            let changedExcluded = excluded.filter { albumMembership(for: $0) != .excluded }
             guard !changedIncluded.isEmpty || !changedExcluded.isEmpty else { return false }
             if !changedIncluded.isEmpty {
+                guard !isSuggestionStale(suggestion) else { return false }
                 addToAlbum(changedIncluded)
             }
             if !changedExcluded.isEmpty {
-                removeFromAlbum(changedExcluded)
+                guard !isSuggestionStale(suggestion) else { return false }
+                let selected = changedExcluded.filter { selectedIDs.contains($0) }
+                let alreadyUnselected = changedExcluded.filter { !selectedIDs.contains($0) }
+                if !selected.isEmpty {
+                    removeFromAlbum(selected)
+                }
+                if !alreadyUnselected.isEmpty {
+                    persist()
+                    notifyAlbumChanges(
+                        Dictionary(uniqueKeysWithValues: alreadyUnselected.map { ($0, .excluded) })
+                    )
+                }
             }
             return true
         case let .cleanupKeep(ids):
@@ -128,6 +161,7 @@ extension ReviewModel {
             let targets = ids.filter { display.contains($0) }
             let changed = targets.filter { cleanupDisposition(for: $0) != .keep }
             guard !changed.isEmpty else { return false }
+            guard !isSuggestionStale(suggestion) else { return false }
             keepPhoto(Array(changed))
             return true
         case .none:

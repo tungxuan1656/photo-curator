@@ -142,6 +142,15 @@ private struct NeedsReviewCell: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .accessibilityLabel("Reason, \(reasonText(for: item.reason))")
+                Text(albumMembershipText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Album membership, \(albumMembershipText)")
+                Text(suggestionState)
+                    .font(.caption2.bold())
+                    .foregroundStyle(suggestionAvailable ? Color.secondary : Color.orange)
+                    .multilineTextAlignment(.center)
+                    .accessibilityLabel("Suggestion state, \(suggestionState)")
                 if model.isUncertaintyResolved(item.assetID) {
                     Text("Reviewed")
                         .font(.caption2.bold())
@@ -211,6 +220,36 @@ private struct NeedsReviewCell: View {
             "Compare moment views"
         case .considerAddBack:
             "Add photo back to album"
+        }
+    }
+
+    private var suggestionAvailable: Bool {
+        suggestion != nil
+    }
+
+    private var suggestion: ReviewSuggestion? {
+        guard let scopeID = appModel.reviewModel?.scopeID,
+              let model = appModel.reviewModel,
+              model.sessionID == sessionID else { return nil }
+        return NativeReviewSuggestionAdapter.suggestions(
+            scopeID: scopeID,
+            result: model.result,
+            groups: model.similarGroups
+        ).first { $0.candidateIDs.contains(item.assetID) }
+    }
+
+    private var suggestionState: LocalizedStringResource {
+        if suggestion != nil {
+            return "Suggestion available — review the evidence"
+        }
+        return "No suggestion — not enough information"
+    }
+
+    private var albumMembershipText: LocalizedStringResource {
+        switch appModel.reviewModel?.albumMembership(for: item.assetID) ?? .unset {
+        case .unset: "Not chosen for album"
+        case .included: "In album"
+        case .excluded: "Excluded from album"
         }
     }
 }

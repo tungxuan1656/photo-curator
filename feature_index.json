@@ -372,7 +372,7 @@
       ],
       "gate": "advisory suggestions integrate and the legacy active route is retired after evidence",
       "id": "feat-037",
-      "status": "todo",
+      "status": "done",
       "title": "Suggestion integration + legacy retirement"
     }
   ],

@@ -12,7 +12,7 @@ struct PhotoInspectionCanvas: View {
     let loadFailed: Bool
     let position: Int
     let total: Int
-    let isSelected: Bool
+    let albumMembership: AlbumMembership
     let canGoPrevious: Bool
     let canGoNext: Bool
     let back: () -> Void
@@ -47,7 +47,7 @@ struct PhotoInspectionCanvas: View {
                     loadFailed: loadFailed,
                     position: position,
                     total: total,
-                    isSelected: isSelected,
+                    albumMembership: albumMembership,
                     isZoomed: !inspectionState.isAtFit,
                     canGoPrevious: canGoPrevious,
                     canGoNext: canGoNext,
@@ -282,7 +282,7 @@ private struct PhotoInspectionChrome: View {
     let loadFailed: Bool
     let position: Int
     let total: Int
-    let isSelected: Bool
+    let albumMembership: AlbumMembership
     let isZoomed: Bool
     let canGoPrevious: Bool
     let canGoNext: Bool
@@ -387,12 +387,12 @@ private struct PhotoInspectionChrome: View {
                 Label {
                     Text(albumStateTitle)
                 } icon: {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    Image(systemName: isIncluded ? "checkmark.circle.fill" : "circle")
                 }
             }
             .buttonStyle(
                 InspectionButtonStyle(
-                    kind: isSelected ? .primary : .secondary,
+                    kind: isIncluded ? .primary : .secondary,
                     reduceMotion: reduceMotion
                 )
             )
@@ -431,11 +431,26 @@ private struct PhotoInspectionChrome: View {
     }
 
     private var albumStateTitle: LocalizedStringResource {
-        isSelected ? "In Album" : "Removed"
+        switch albumMembership {
+        case .unset: "Not chosen for album"
+        case .included: "In Album"
+        case .excluded: "Excluded from album"
+        }
     }
 
     private var albumStateAccessibilityValue: LocalizedStringResource {
-        isSelected ? "In album" : "Removed"
+        switch albumMembership {
+        case .unset: "Not chosen for album"
+        case .included: "In album"
+        case .excluded: "Excluded from album"
+        }
+    }
+
+    private var isIncluded: Bool {
+        if case .included = albumMembership {
+            return true
+        }
+        return false
     }
 
     private func animate(_ action: () -> Void) {
