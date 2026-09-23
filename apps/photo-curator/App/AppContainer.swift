@@ -12,6 +12,8 @@ struct AppContainer: Sendable {
         let availability: WorkspaceAvailability
         let albumOperations: AlbumSaveOperationStore?
         let albumSaveService: AlbumSaveService?
+        let deletionOperations: DeletionOperationStore?
+        let deletionService: PhotoDeletionService?
         let photoLibrary: any PhotoLibraryService
         let exporter: any AlbumExportService
     }
@@ -40,6 +42,11 @@ struct AppContainer: Sendable {
     /// Independent album-save boundary (feat-035 owner). The only caller of
     /// album mutation APIs; nil when workspace storage is unavailable.
     let albumSaveService: AlbumSaveService?
+    /// Durable original-deletion operation store (feat-036 owner). Shares the
+    /// workspace container but is independent from album-save state.
+    let deletionOperations: DeletionOperationStore?
+    /// The only original-deletion PhotoKit mutation boundary.
+    let deletionService: PhotoDeletionService?
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
     let modelInstallation: ModelInstallationService
@@ -61,6 +68,8 @@ struct AppContainer: Sendable {
         exporter: any AlbumExportService,
         albumOperations: AlbumSaveOperationStore? = nil,
         albumSaveService: AlbumSaveService? = nil,
+        deletionOperations: DeletionOperationStore? = nil,
+        deletionService: PhotoDeletionService? = nil,
         analytics: any AnalyticsService,
         memoryPressure: MemoryPressureObserver,
         modelInstallation: ModelInstallationService,
@@ -81,6 +90,8 @@ struct AppContainer: Sendable {
         self.exporter = exporter
         self.albumOperations = albumOperations
         self.albumSaveService = albumSaveService
+        self.deletionOperations = deletionOperations
+        self.deletionService = deletionService
         self.analytics = analytics
         self.memoryPressure = memoryPressure
         self.modelInstallation = modelInstallation
@@ -122,6 +133,8 @@ struct AppContainer: Sendable {
             exporter: workspace.exporter,
             albumOperations: workspace.albumOperations,
             albumSaveService: workspace.albumSaveService,
+            deletionOperations: workspace.deletionOperations,
+            deletionService: workspace.deletionService,
             analytics: NoopAnalytics(),
             memoryPressure: MemoryPressureObserver(),
             modelInstallation: ModelInstallationService(
@@ -131,8 +144,8 @@ struct AppContainer: Sendable {
         )
     }
 
-    /// feat-035 explicit SwiftData schema migration: the workspace store
-    /// opens with `AlbumSaveOperation` alongside the feat-033 models. The
+    /// feat-035/036 additive SwiftData schema migration: the workspace store
+    /// opens with both independent operation entities alongside the feat-033 models. The
     /// added model is additive: pre-existing scope/item/marker rows reopen
     /// untouched. Rollback removes the model from this list; operation rows
     /// stay on disk unread while scopes/items keep working and unresolved
@@ -148,6 +161,7 @@ struct AppContainer: Sendable {
                 WorkspaceItem.self,
                 WorkspaceMigrationMarker.self,
                 AlbumSaveOperation.self,
+                PhotoDeletionOperation.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )
             let store = WorkspaceStore(modelContainer: modelContainer)
@@ -160,6 +174,10 @@ struct AppContainer: Sendable {
             let albumSaveService = AlbumSaveService(
                 exporter: exporter, operations: albumOperations, photoLibrary: photoLibrary
             )
+            let deletionOperations = DeletionOperationStore(modelContainer: modelContainer)
+            let deletionService = PhotoDeletionService(
+                operations: deletionOperations, photoLibrary: photoLibrary
+            )
             return WorkspaceSetup(
                 modelContainer: modelContainer,
                 store: store,
@@ -167,6 +185,8 @@ struct AppContainer: Sendable {
                 availability: .available,
                 albumOperations: albumOperations,
                 albumSaveService: albumSaveService,
+                deletionOperations: deletionOperations,
+                deletionService: deletionService,
                 photoLibrary: photoLibrary,
                 exporter: exporter
             )
@@ -186,6 +206,8 @@ struct AppContainer: Sendable {
                 availability: .unavailable,
                 albumOperations: nil,
                 albumSaveService: nil,
+                deletionOperations: nil,
+                deletionService: nil,
                 photoLibrary: PhotoLibraryPermissionService(),
                 exporter: PhotoKitAlbumExporter()
             )
