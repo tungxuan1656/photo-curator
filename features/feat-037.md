@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `todo`.
+- Status: `active`.
 - Depends on: `feat-036`.
 
 ## Goal and acceptance
@@ -25,3 +25,11 @@ Primary owners: [photo-intelligence.md](../docs/design-docs/photo-intelligence.m
 
 This multi-file retirement feature remains implementation-gated by feat-036;
 no code is claimed here.
+
+## Approved delivery shape
+
+Use the existing native facts and deterministic fallback only. Extend immutable
+suggestion provenance and bind review uncertainty without changing user-choice
+semantics. Retire only active legacy route ownership after its callers and
+compatibility readers are verified. Qwen and all other research candidates stay
+unadmitted.

@@ -1046,3 +1046,15 @@ recovery ordering plus the VoiceOver behavior.
 Simulator `BUILD SUCCEEDED`, no tests by DEC-040); Oracle MERGE-READY.
 **Blockers**: none
 **Next**: feat-037.
+
+## 2026-09-23 — feat-037 activation
+
+**State**: active
+**Done**: Activated feat-037 after feat-036 completion. The approved delivery
+uses native facts and deterministic fallback only; suggestions remain immutable
+and advisory; Qwen remains frozen and unadmitted.
+**Evidence**: Baseline `./init.sh` PASS on 2026-09-23 (SwiftFormat, strict
+SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040).
+**Blockers**: none
+**Next**: Map exact suggestion and legacy-route seams, then refine the existing
+feature plan before implementation.
