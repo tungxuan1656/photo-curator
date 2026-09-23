@@ -1021,3 +1021,17 @@ were made.
 the parent coordinator, and no tests were run in this update.
 **Blockers**: none
 **Next**: Implement the core deletion lane.
+
+## 2026-09-23 — feat-036 closeout
+
+**State**: done (Oracle MERGE-READY)
+**Done**: Completed the separate `PhotoDeletionService` and explicit migration;
+exact digest plus full-access gating; durable atomic lifecycle with no automatic
+retry; recovery UI with fresh confirmation for prepared operations and read-only
+reconciliation; and truthful en/vi outcome copy. Implementation commits:
+`250b918`, `14bb92f`, `2634b8c`, `5ba07a8`, `42bcbbb`, `bdf0530`.
+**Evidence**: Final `./init.sh` PASS on 2026-09-23 (SwiftFormat, strict
+SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040);
+`git diff --check` PASS; Oracle MERGE-READY.
+**Blockers**: none
+**Next**: feat-037.

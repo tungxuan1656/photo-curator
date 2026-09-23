@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `active`.
+- Status: `done`.
 - Depends on: `feat-035`.
 
 ## Goal and acceptance
@@ -25,14 +25,18 @@ Primary owners: [review-rules.md](../docs/product-specs/review-rules.md),
 [data-model.md](../docs/design-docs/data-model.md). The actionable record is
 [docs/plans/feat-036.md](../docs/plans/feat-036.md).
 
-This safety-sensitive feature is unblocked by completed feat-035; no code is
-claimed in this tracker activation.
+This safety-sensitive feature is complete; its implementation is recorded in
+the handoff below.
 
 ## Handoff
 
-- State: Active; feat-035 is complete and the existing scope and acceptance
-  remain unchanged.
-- Baseline: `./init.sh` PASS on 2026-09-23; validation is owned by the parent
-  coordinator.
-- Next: Implement and verify the core deletion lane, including its operation
-  state, migration, service, and reconciliation boundaries.
+- State: Done; feat-035 is complete.
+- Acceptance: Separate `PhotoDeletionService` and explicit migration; exact
+  digest plus full-access gating; durable atomic lifecycle with no automatic
+  retry; recovery UI with fresh confirmation for prepared operations and
+  read-only reconciliation; truthful en/vi outcome copy.
+- Evidence: Final `./init.sh` PASS on 2026-09-23 (SwiftFormat, strict
+  SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040);
+  `git diff --check` PASS; Oracle MERGE-READY. Implementation commits:
+  `250b918`, `14bb92f`, `2634b8c`, `5ba07a8`, `42bcbbb`, `bdf0530`.
+- Next: feat-037.

@@ -363,7 +363,7 @@
       ],
       "gate": "exact-set confirmed deletion is full-access gated, bounded, and reconciles without automatic retry",
       "id": "feat-036",
-      "status": "active",
+      "status": "done",
       "title": "Confirmed original deletion"
     },
     {
