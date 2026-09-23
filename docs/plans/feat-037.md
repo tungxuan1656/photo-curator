@@ -86,6 +86,27 @@ or quality claims.
 - Record acceptance evidence and handoff in the feature/progress artifacts as
   required by the repository workflow. Validation owner: parent coordinator.
 
+## Initial legacy ownership inventory — 2026-09-23
+
+The first caller pass confirms that legacy ownership is still active and must
+not be removed in this slice:
+
+- `AppModel` constructs and owns `SelectionSessionCoordinator`; `ProcessingModel`
+  still drives the source-selection → summary → processing path.
+- `RootView` still exposes `.sourceSelection`, `.summary`, and `.processing`;
+  review now enters through the shared `.reviewWorkspace` route.
+- `AppModel+ReviewEntry` keeps `SelectionFeedback` persistence only when the
+  durable workspace is unavailable. This compatibility fallback must remain
+  readable and non-authoritative.
+- `AppContainer` and `LegacyWorkspaceImporter` retain durable-workspace
+  migration and legacy-schema fallback behavior.
+- `AppModel+Save`, `AlbumSaveService`, and `LegacySaveFlow` retain the
+  file-backed save handoff for unavailable-workspace/reconciliation paths.
+
+This is an inventory checkpoint, not retirement approval. A complete caller
+and decoder inventory is required before changing any of these ownership
+boundaries.
+
 ## Expected implementation areas
 
 Likely existing areas include
