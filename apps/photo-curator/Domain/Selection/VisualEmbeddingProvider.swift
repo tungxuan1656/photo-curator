@@ -16,11 +16,14 @@ import Foundation
 ///
 /// Tier-C never runs on every photo: the router accepts shortlist-scale input
 /// only (≤ `maxShortlistForTierC` assets, pairs capped at `maxTierCPairs`) and
-/// the engine consumes only explicitly supplied `tierCEdges`. The default
-/// (`[]`) is the complete native FeaturePrint fallback, identical to the
-/// pre-feat-024 path. Tier-C edges feed diversity novelty only — never cluster
-/// membership (feat-021 frozen) or moment boundaries (feat-022 frozen).
+/// the engine consumes only explicitly supplied `tierCEdges`. Scalar Tier-C
+/// novelty is disabled until calibration; FeaturePrint remains the only
+/// measured visual signal. Tier-C never affects cluster membership (feat-021
+/// frozen) or moment boundaries (feat-022 frozen).
 enum TierCRoutingPolicy {
+    /// Scalar Tier-C has no calibrated novelty semantics yet. Keep routing and
+    /// evidence contracts available, but do not let it change ranking.
+    static let scalarNoveltyInfluenceEnabled = false
     /// Shortlist-scale ceiling: larger inputs refuse Tier-C (fallback).
     /// Matches the feat-023 150–250 candidate-graph operating range.
     static let maxShortlistForTierC = 250
@@ -33,29 +36,61 @@ enum TierCRoutingPolicy {
 ///
 /// Selects which shortlist-scale pairs deserve embedding work. The caller MUST
 /// pass shortlist members, never the full library; larger inputs return `[]`
-/// so model work can never silently cover every photo. Output is canonical
-/// (unordered pairs, lexicographic) and capped, so the same shortlist always
-/// routes the same pairs.
+/// so model work can never silently cover every photo. Output is canonical,
+/// balanced across members, and capped, so the same shortlist always routes
+/// the same bounded pairs.
 enum VisualEmbeddingRouter {
+    struct CandidateSelection: Sendable {
+        let pairs: [SimilarityCandidate]
+        let candidateCount: Int
+        let pairLimit: Int
+        let truncatedPairCount: Int
+        let coveredAssetCount: Int
+    }
+
     static func tierCCandidates(
         for assets: [PhotoAsset], cap: Int = TierCRoutingPolicy.maxTierCPairs
     ) -> [SimilarityCandidate] {
+        tierCCandidateSelection(for: assets, cap: cap).pairs
+    }
+
+    static func tierCCandidateSelection(
+        for assets: [PhotoAsset], cap: Int = TierCRoutingPolicy.maxTierCPairs
+    ) -> CandidateSelection {
         let ordered = assets.map(\.id).sorted { $0.rawValue < $1.rawValue }
         guard ordered.count >= 2, ordered.count <= TierCRoutingPolicy.maxShortlistForTierC else {
-            return []
+            let totalPairs = ordered.count * max(0, ordered.count - 1) / 2
+            return CandidateSelection(
+                pairs: [], candidateCount: ordered.count,
+                pairLimit: 0, truncatedPairCount: totalPairs, coveredAssetCount: 0
+            )
         }
         let limit = max(0, min(cap, TierCRoutingPolicy.maxTierCPairs))
         var out: [SimilarityCandidate] = []
         out.reserveCapacity(min(limit, ordered.count * (ordered.count - 1) / 2))
-        for indexI in ordered.indices {
-            for indexJ in ordered.indices.dropFirst(indexI + 1) {
-                guard out.count < limit else {
-                    return out
-                }
-                out.append(SimilarityCandidate(first: ordered[indexI], second: ordered[indexJ]))
+        var seen = Set<TierCPairKey>()
+        var offset = 1
+        while out.count < limit && offset < ordered.count {
+            for index in ordered.indices.dropLast(offset) {
+                guard out.count < limit else { break }
+                let key = TierCPairKey(ordered[index], ordered[index + offset])
+                guard seen.insert(key).inserted else { continue }
+                out.append(SimilarityCandidate(first: key.first, second: key.second))
             }
+            offset += 1
         }
-        return out
+        let covered = out.reduce(into: Set<AssetID>()) { result, pair in
+            result.insert(pair.first)
+            result.insert(pair.second)
+        }
+        let totalPairs = ordered.count * (ordered.count - 1) / 2
+        return CandidateSelection(
+            pairs: out,
+            candidateCount: ordered.count,
+            pairLimit: limit,
+            truncatedPairCount: max(0, totalPairs - out.count),
+            coveredAssetCount: covered.count
+        )
     }
 }
 
@@ -81,6 +116,7 @@ struct NativeDerivedEmbeddingProvider: VisualEmbeddingProvider, Sendable {
     func tierCDistances(
         for pairs: [SimilarityCandidate], analyses: [AssetID: PhotoAnalysis]
     ) -> [SimilarityEdge] {
+        guard TierCRoutingPolicy.scalarNoveltyInfluenceEnabled else { return [] }
         var edges: [SimilarityEdge] = []
         edges.reserveCapacity(pairs.count)
         for pair in pairs {
@@ -126,9 +162,8 @@ struct NativeDerivedEmbeddingProvider: VisualEmbeddingProvider, Sendable {
     }
 }
 
-/// Fallback provider: produces no Tier-C edges, so the engine runs the
-/// complete native FeaturePrint path exactly. Mirrors the default pipeline
-/// (which supplies no `tierCEdges`) and anchors the fallback proof arm.
+/// Fallback provider: produces no Tier-C edges. The graph records missing
+/// visual evidence explicitly and applies no novelty reward for it.
 struct NoopVisualEmbeddingProvider: VisualEmbeddingProvider, Sendable {
     func tierCDistances(
         for _: [SimilarityCandidate], analyses _: [AssetID: PhotoAnalysis]
@@ -137,22 +172,20 @@ struct NoopVisualEmbeddingProvider: VisualEmbeddingProvider, Sendable {
     }
 }
 
-/// Tier-C / FeaturePrint edge merge (feat-024).
+/// FeaturePrint edge normalization (feat-024).
 ///
-/// Union by unordered pair keeping the smaller distance: either signal may
-/// flag redundancy, so Tier-C can only add diversity pressure, never hide a
-/// FeaturePrint-similar pair. Deterministic canonical order. The empty-Tier-C
-/// fast path returns the FeaturePrint edges untouched, so the fallback is
-/// exactly the pre-feat-024 path.
+/// Tier-C scalar edges are ignored until calibration. FeaturePrint remains a
+/// single-provider signal; no cross-provider minimum can manufacture evidence.
+/// Deterministic canonical order is retained.
 enum VisualEmbeddingEdges {
     static func merged(
         featurePrintEdges: [SimilarityEdge], tierCEdges: [SimilarityEdge]
     ) -> [SimilarityEdge] {
-        guard !tierCEdges.isEmpty else {
-            return featurePrintEdges
-        }
+        // Tier-C remains retained as an availability path, but scalar novelty
+        // is disabled until calibration. Do not cross-provider-min merge it.
+        _ = tierCEdges
         var best: [TierCPairKey: SimilarityEdge] = [:]
-        for edge in featurePrintEdges + tierCEdges {
+        for edge in featurePrintEdges {
             let key = TierCPairKey(edge.first, edge.second)
             if let current = best[key] {
                 if edge.distance < current.distance {

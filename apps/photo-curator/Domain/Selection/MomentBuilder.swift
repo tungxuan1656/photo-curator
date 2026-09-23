@@ -18,11 +18,24 @@ struct MomentBuilder: Sendable {
         representatives: [PhotoAsset],
         analyses: [AssetID: PhotoAnalysis],
         edges: [SimilarityEdge],
-        configuration: SelectionConfiguration
+        configuration: SelectionConfiguration,
+        memberIDsByRepresentative: [AssetID: [AssetID]] = [:],
+        allAssets: [PhotoAsset] = []
     ) -> [PhotoMoment] {
         let ordered = canonicalOrder(representatives)
+        let indexByID = Dictionary(uniqueKeysWithValues: ordered.enumerated().map { ($1.id, $0) })
         var closePairs = Set<EdgeKey>()
-        for edge in edges where edge.distance < configuration.nearDuplicateSimilarityThreshold {
+        for edge in edges {
+            guard edge.distance < configuration.nearDuplicateSimilarityThreshold,
+                  edge.distance.isFinite,
+                  boundedPair(
+                      edge.first,
+                      edge.second,
+                      ordered: ordered,
+                      indexByID: indexByID,
+                      configuration: configuration
+                  )
+            else { continue }
             closePairs.insert(EdgeKey(edge.first, edge.second))
         }
         var groups: [[PhotoAsset]] = []
@@ -45,7 +58,25 @@ struct MomentBuilder: Sendable {
                 groups[groups.count - 1].append(asset)
             }
         }
-        return groups.map { makeMoment($0, analyses: analyses) }
+        let assetsByID = Dictionary(uniqueKeysWithValues: allAssets.map { ($0.id, $0) })
+            .merging(Dictionary(uniqueKeysWithValues: representatives.map { ($0.id, $0) })) { current, _ in current }
+        return groups.map {
+            let members = expandedMembers(
+                for: $0,
+                memberIDsByRepresentative: memberIDsByRepresentative,
+                assetsByID: assetsByID
+            )
+            return makeMoment($0, members: members, analyses: analyses)
+        }
+    }
+
+    private func expandedMembers(
+        for representatives: [PhotoAsset],
+        memberIDsByRepresentative: [AssetID: [AssetID]],
+        assetsByID: [AssetID: PhotoAsset]
+    ) -> [PhotoAsset] {
+        let ids = representatives.flatMap { memberIDsByRepresentative[$0.id] ?? [$0.id] }
+        return canonicalOrder(Set(ids).compactMap { assetsByID[$0] })
     }
 
     private func continuesMoment(
@@ -77,13 +108,29 @@ struct MomentBuilder: Sendable {
                 rightAsset: next, rightAnalysis: analyses[next.id]
             )
         default:
-            if closePairs.contains(EdgeKey(previous.id, next.id)) {
-                return true
-            }
-            return !Self.semanticChangeSplits(
-                leftAsset: previous, leftAnalysis: analyses[previous.id],
-                rightAsset: next, rightAnalysis: analyses[next.id]
-            )
+            // An unknown date is not an event-order hint. Only a direct,
+            // bounded visual edge may connect it to another candidate;
+            // otherwise it starts its own moment.
+            return closePairs.contains(EdgeKey(previous.id, next.id))
+        }
+    }
+
+    private func boundedPair(
+        _ leftID: AssetID, _ rightID: AssetID, ordered: [PhotoAsset],
+        indexByID: [AssetID: Int], configuration: SelectionConfiguration
+    ) -> Bool {
+        guard let left = ordered.first(where: { $0.id == leftID }),
+              let right = ordered.first(where: { $0.id == rightID })
+        else { return false }
+        switch (left.creationDate, right.creationDate) {
+        case let (leftDate?, rightDate?):
+            // Moment continuity has its own bounded comparison horizon. It
+            // must not inherit the narrower duplicate-candidate window, or a
+            // supplied 180–900 second continuity edge can never be observed.
+            return abs(leftDate.timeIntervalSince(rightDate)) <= configuration.momentHardGap
+        default:
+            guard let leftIndex = indexByID[leftID], let rightIndex = indexByID[rightID] else { return false }
+            return abs(leftIndex - rightIndex) == 1
         }
     }
 
@@ -143,10 +190,12 @@ struct MomentBuilder: Sendable {
         return left != right
     }
 
-    private func makeMoment(_ assets: [PhotoAsset], analyses: [AssetID: PhotoAnalysis]) -> PhotoMoment {
-        let memberIDs = assets.map(\.id)
-        let dates = assets.compactMap(\.creationDate)
-        let representative = assets.max {
+    private func makeMoment(
+        _ representatives: [PhotoAsset], members: [PhotoAsset], analyses: [AssetID: PhotoAnalysis]
+    ) -> PhotoMoment {
+        let memberIDs = members.map(\.id)
+        let dates = members.compactMap(\.creationDate)
+        let representative = representatives.max {
             let leftScore = analyses[$0.id]?.qualityScore ?? -1
             let rightScore = analyses[$1.id]?.qualityScore ?? -1
             if leftScore != rightScore {
@@ -166,7 +215,7 @@ struct MomentBuilder: Sendable {
             return $0.id.rawValue > $1.id.rawValue
         }?.id
         var sceneCounts: [SceneType: Int] = [:]
-        for asset in assets {
+        for asset in members {
             if let scene = analyses[asset.id]?.content.sceneType {
                 sceneCounts[scene, default: 0] += 1
             }

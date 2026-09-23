@@ -45,16 +45,15 @@ final class ProcessingModel {
     }
 
     var shouldShowNativeFallbackNotice: Bool {
-        guard requestedQualityMode.requiresModel else { return false }
-        if let qualityExecutionMetadata {
-            return qualityExecutionMetadata.executedMode == .qualityNative
-        }
-        return !modelAvailableAtStart
+        // Native is the selected production path, not a fallback from an AI
+        // attempt. Keep this compatibility property for the existing view
+        // contract, but never expose the old fallback state.
+        false
     }
 
     var usedAIModel: Bool? {
-        guard let qualityExecutionMetadata else { return nil }
-        return qualityExecutionMetadata.executedMode.requiresModel
+        guard qualityExecutionMetadata != nil else { return nil }
+        return false
     }
 
     /// True while a run task exists (starting, running, or finishing).
@@ -140,7 +139,9 @@ final class ProcessingModel {
             return
         }
         guard let request else { return }
-        let completed = (try? await checkpointStore.load(sessionID: request.sessionID))?.completedAssetIDs ?? []
+        let checkpoint = try? await checkpointStore.load(sessionID: request.sessionID)
+        let completed = checkpoint?.completedAssetIDs ?? []
+        let unavailable = checkpoint?.unavailableAssetIDs ?? []
         let stage: ProcessingStage
         if case let .running(live) = state {
             stage = live.stage
@@ -151,6 +152,8 @@ final class ProcessingModel {
         await coordinator.checkpointNow(
             sessionID: request.sessionID,
             completed: completed,
+            unavailable: unavailable,
+            sourceAssetIDs: request.sourceAssetIDs,
             stage: stage,
             qualityIdentity: QualityCheckpointIdentity.expected(
                 for: request.qualityMode,

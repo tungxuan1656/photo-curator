@@ -20,6 +20,7 @@ struct ScoredCandidate: Sendable {
     let containsPeople: Bool
     let isPortrait: Bool
     let score: Double
+    let scoreContributions: FinalScoreContributions
     let disposition: QualityDisposition
     let reasons: [String]
 }
@@ -37,6 +38,21 @@ struct ScoredCandidate: Sendable {
 /// through unchanged — never padded (selection-rules Sec 14). Rank, cap, and
 /// round-robin math are otherwise untouched.
 struct QualityScorer: Sendable {
+    /// One sizing contract for both native selection intents.
+    /// `usableCount` is applied before the hard maximum, so a small source is
+    /// never padded and a large source can never silently exceed the maximum.
+    static func albumTargetCount(
+        usableCount: Int, configuration: SelectionConfiguration
+    ) -> Int {
+        let usable = max(0, usableCount)
+        let scaled = Int((Double(usable) * configuration.targetSelectionRatio).rounded(.up))
+        let clamped = min(
+            max(scaled, configuration.minimumFinalCount),
+            configuration.maximumFinalCount
+        )
+        return min(usable, clamped)
+    }
+
     func score(
         asset: PhotoAsset,
         analysis: PhotoAnalysis,
@@ -44,40 +60,37 @@ struct QualityScorer: Sendable {
         momentID: MomentID,
         configuration: SelectionConfiguration
     ) -> ScoredCandidate {
-        var numerator = analysis.qualityScore * configuration.technicalQualityWeight
+        let technical = analysis.qualityScore
+        var numerator = technical * configuration.technicalQualityWeight
         var denominator = configuration.technicalQualityWeight
-        // feat-020 weakest-face fold: the people term is the weaker of the
-        // persisted count-proxy group score and the transient per-face minimum
-        // (one failed face drags the group down, never up). Weights stay in
-        // configuration; no threshold is invented here.
-        if let group = analysis.people.groupPhotoScore {
-            let peopleTerm = analysis.people.minFaceQuality.map { min(group, $0) } ?? group
+        // A face count or the legacy count-derived group score is not a
+        // quality claim. Only a measured per-face quality observation can
+        // contribute to the final ranking.
+        let peopleTerm = analysis.people.minFaceQuality
+        if let peopleTerm {
             numerator += peopleTerm * configuration.humanImportanceWeight
             denominator += configuration.humanImportanceWeight
         }
-        var compositionScores: [Double] = []
-        compositionScores.append(contentsOf: analysis.composition.aestheticScore.map { [$0] } ?? [])
-        compositionScores.append(contentsOf: analysis.composition.subjectPlacementScore.map { [$0] } ?? [])
-        compositionScores.append(contentsOf: analysis.composition.horizonScore.map { [$0] } ?? [])
-        compositionScores.append(contentsOf: analysis.composition.visualBalanceScore.map { [$0] } ?? [])
-        let composition = compositionScores
-        if !composition.isEmpty {
-            let mean = composition.reduce(0, +) / Double(composition.count)
-            numerator += mean * configuration.representativenessWeight
+        let composition = compositionScore(for: analysis)
+        if let composition {
+            numerator += composition * configuration.representativenessWeight
             denominator += configuration.representativenessWeight
         }
-        var score = denominator > 0 ? numerator / denominator : analysis.qualityScore
-        if asset.isFavorite {
-            score += configuration.favoriteBonus
-        }
-        if asset.isEdited {
-            score += configuration.editedBonus
-        }
+        let weightedBase = denominator > 0 ? numerator / denominator : technical
+        let contributionDenominator = max(denominator, 1.0)
+        let favoriteBonus = asset.isFavorite ? configuration.favoriteBonus : 0
+        let editedBonus = asset.isEdited ? configuration.editedBonus : 0
+        let unclampedTotal = weightedBase + favoriteBonus + editedBonus
+        var score = unclampedTotal
         score = min(1.0, max(0.0, score))
+        // Technical eligibility is a gate; the final score above is only the
+        // relative ranking signal. People/composition evidence may improve or
+        // lower rank, but it cannot turn a technically failed frame into an
+        // eligible one (or reject an uncertain technical frame by itself).
         let disposition: QualityDisposition
-        if score < configuration.hardRejectThreshold {
+        if technical < configuration.hardRejectThreshold {
             disposition = .hardRejected
-        } else if score < configuration.lowQualityThreshold {
+        } else if technical < configuration.lowQualityThreshold {
             disposition = .lowQuality
         } else {
             disposition = .usable
@@ -91,9 +104,37 @@ struct QualityScorer: Sendable {
             containsPeople: analysis.people.containsPeople,
             isPortrait: asset.pixelHeight > asset.pixelWidth,
             score: score,
+            scoreContributions: FinalScoreContributions(
+                technical: technical,
+                people: peopleTerm,
+                composition: composition,
+                technicalContribution: denominator > 0
+                    ? technical * configuration.technicalQualityWeight / contributionDenominator
+                    : technical,
+                peopleContribution: peopleTerm.map {
+                    $0 * configuration.humanImportanceWeight / contributionDenominator
+                },
+                compositionContribution: composition.map {
+                    $0 * configuration.representativenessWeight / contributionDenominator
+                },
+                favoriteBonus: favoriteBonus,
+                editedBonus: editedBonus,
+                unclampedTotal: unclampedTotal,
+                total: score
+            ),
             disposition: disposition,
             reasons: disposition == .usable ? [] : ["lowQuality"]
         )
+    }
+
+    private func compositionScore(for analysis: PhotoAnalysis) -> Double? {
+        var scores: [Double] = []
+        scores.append(contentsOf: analysis.composition.aestheticScore.map { [$0] } ?? [])
+        scores.append(contentsOf: analysis.composition.subjectPlacementScore.map { [$0] } ?? [])
+        scores.append(contentsOf: analysis.composition.horizonScore.map { [$0] } ?? [])
+        scores.append(contentsOf: analysis.composition.visualBalanceScore.map { [$0] } ?? [])
+        guard !scores.isEmpty else { return nil }
+        return scores.reduce(0, +) / Double(scores.count)
     }
 
     func shortlist(

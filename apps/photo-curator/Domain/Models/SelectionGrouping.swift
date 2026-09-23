@@ -27,6 +27,8 @@ enum ClusterType: String, Codable, Sendable {
 struct PhotoCluster: Identifiable, Codable, Sendable {
     let id: ClusterID
     let type: ClusterType
+    /// Complete cluster membership; the representative is one member, not a
+    /// replacement for the member list.
     let assetIDs: [AssetID]
     let representativeAssetID: AssetID?
     let similarityScore: Double?
@@ -34,6 +36,9 @@ struct PhotoCluster: Identifiable, Codable, Sendable {
 
 struct PhotoMoment: Identifiable, Codable, Sendable {
     let id: MomentID
+    /// Complete membership expanded from representative-driven segmentation.
+    /// Older result payloads decode unchanged because the field remains the
+    /// existing `assetIDs` contract.
     let assetIDs: [AssetID]
     let startDate: Date?
     let endDate: Date?

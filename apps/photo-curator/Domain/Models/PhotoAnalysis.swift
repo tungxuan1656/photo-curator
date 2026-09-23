@@ -5,6 +5,13 @@ import Foundation
 struct TechnicalAnalysis: Codable, Sendable {
     let sharpnessScore: Double
     let exposureScore: Double
+    /// Score of the bounded analysis image, not the asset's original pixels.
+    /// Kept separate from source-resolution facts so a resized Vision input is
+    /// never presented as the original photo resolution.
+    let analysisImageResolutionScore: Double?
+    /// Legacy compatibility projection. New writers also populate the explicit
+    /// `analysisImageResolutionScore`; consumers should migrate before using
+    /// this value as a user-facing resolution fact.
     let resolutionScore: Double
     let blurProbability: Double
     let underexposureProbability: Double
@@ -17,13 +24,46 @@ struct TechnicalAnalysis: Codable, Sendable {
 /// `GroupEvidenceCalculator` from the Tier-A face observations, never boxes/landmarks/pixels.
 struct PeopleAnalysis: Codable, Sendable {
     let faceCount: Int
+    /// Distinguishes a successful zero-face result from a failed or skipped
+    /// detector. Nil is retained for legacy rows that predate this fact.
+    let faceDetectionStatus: FaceDetectionStatus?
+    /// Maximum per-face capture-quality observation. This is not subject
+    /// placement and is not a calibrated group-quality score.
+    let bestFaceCaptureQuality: Double?
+    let faceQualityAvailability: FactAvailability?
+    /// Legacy field retained for decoding. New native analyses do not claim a
+    /// calibrated group-quality score from face count alone.
     let groupPhotoScore: Double?
     let minFaceQuality: Double?
     let meanFaceQuality: Double?
 
     var containsPeople: Bool {
-        faceCount > 0
+        switch faceDetectionStatus {
+        case .facesDetected:
+            return true
+        case .noFaces, .unavailable, .notRun:
+            return false
+        case nil:
+            return faceCount > 0
+        }
     }
+}
+
+/// Durable status for the face detector. `.noFaces` is a confirmed result;
+/// `.unavailable` and `.notRun` must not be treated as negative evidence.
+enum FaceDetectionStatus: String, Codable, Sendable {
+    case notRun
+    case unavailable
+    case noFaces
+    case facesDetected
+}
+
+/// Availability of an analysis fact. Optional fields in older rows decode to
+/// nil; new rows use this status where a missing value affects interpretation.
+enum FactAvailability: String, Codable, Sendable {
+    case notRun
+    case unavailable
+    case available
 }
 
 /// Composition signals. Absent (`nil`) means not run, distinct from middling (`0.5`).
@@ -31,6 +71,9 @@ struct PeopleAnalysis: Codable, Sendable {
 /// `horizonScore`/`visualBalanceScore` are now populated by Tier-B, nil when not run.
 struct CompositionAnalysis: Codable, Sendable {
     let aestheticScore: Double?
+    let aestheticAvailability: FactAvailability?
+    /// Legacy field retained for decoding. New native analyses store face
+    /// capture quality under `PeopleAnalysis.bestFaceCaptureQuality`.
     let subjectPlacementScore: Double?
     let horizonScore: Double?
     let visualBalanceScore: Double?
@@ -54,6 +97,8 @@ enum SceneType: String, Codable, Sendable, Hashable {
 struct ContentAnalysis: Codable, Sendable {
     let sceneType: SceneType
     let tags: [SemanticTag]
+    let classificationAvailability: FactAvailability?
+    let semanticMappingRevision: String?
     let hasText: Bool?
     let textLineCount: Int?
     let screenshotProbability: Double?
@@ -67,6 +112,14 @@ struct QualityScoreBreakdown: Codable, Sendable {
     let composition: Double?
     let content: Double?
     let total: Double
+    /// The native factory currently records the technical gate only; the
+    /// selection scorer owns the later ranked score and weights.
+    let scoreKind: QualityScoreKind?
+}
+
+enum QualityScoreKind: String, Codable, Sendable {
+    case technicalGate
+    case finalSelection
 }
 
 /// Derived facts about one photo. Facts live here; choices live in `Decision`.
@@ -126,11 +179,17 @@ extension PhotoAnalysis {
         assetID: AssetID,
         technical: TechnicalAnalysis,
         faceCount: Int,
-        groupPhotoScore: Double?,
-        subjectPlacementScore: Double?,
+        faceDetectionStatus: FaceDetectionStatus? = nil,
+        groupPhotoScore _: Double?,
+        subjectPlacementScore _: Double?,
+        bestFaceCaptureQuality: Double? = nil,
+        faceQualityAvailability: FactAvailability? = nil,
         sceneType: SceneType,
         aestheticScore: Double? = nil,
+        aestheticAvailability: FactAvailability? = nil,
         tags: [SemanticTag] = [],
+        classificationAvailability: FactAvailability? = nil,
+        semanticMappingRevision: String? = nil,
         featurePrintAvailable: Bool = false,
         horizonScore: Double? = nil,
         visualBalanceScore: Double? = nil,
@@ -150,13 +209,19 @@ extension PhotoAnalysis {
             technical: technical,
             people: PeopleAnalysis(
                 faceCount: max(0, faceCount),
-                groupPhotoScore: groupPhotoScore.map(clamped01),
+                faceDetectionStatus: faceDetectionStatus,
+                bestFaceCaptureQuality: bestFaceCaptureQuality.map(clamped01),
+                faceQualityAvailability: faceQualityAvailability,
+                // A count alone is evidence of detections, not calibrated
+                // group quality. New native rows leave this legacy field nil.
+                groupPhotoScore: nil,
                 minFaceQuality: minFaceQuality.map(clamped01),
                 meanFaceQuality: meanFaceQuality.map(clamped01)
             ),
             composition: CompositionAnalysis(
                 aestheticScore: aestheticScore.map(clamped01),
-                subjectPlacementScore: subjectPlacementScore.map(clamped01),
+                aestheticAvailability: aestheticAvailability,
+                subjectPlacementScore: nil,
                 horizonScore: horizonScore.map(clamped01),
                 visualBalanceScore: visualBalanceScore.map(clamped01),
                 salientRegionCount: salientRegionCount.map { min(10, max(0, $0)) }
@@ -164,6 +229,8 @@ extension PhotoAnalysis {
             content: ContentAnalysis(
                 sceneType: sceneType,
                 tags: tags,
+                classificationAvailability: classificationAvailability,
+                semanticMappingRevision: semanticMappingRevision,
                 hasText: hasText,
                 textLineCount: textLineCount.map { min(50, max(0, $0)) },
                 screenshotProbability: screenshotProbability.map(clamped01),
@@ -172,7 +239,12 @@ extension PhotoAnalysis {
             featurePrintAvailable: featurePrintAvailable,
             qualityScore: total,
             qualityBreakdown: QualityScoreBreakdown(
-                technical: total, people: nil, composition: nil, content: nil, total: total
+                technical: total,
+                people: nil,
+                composition: nil,
+                content: nil,
+                total: total,
+                scoreKind: .technicalGate
             ),
             analyzedAt: Date(),
             analysisVersion: currentVersion
@@ -200,6 +272,7 @@ extension PhotoAnalysis {
         composition = (try? container.decode(CompositionAnalysis.self, forKey: .composition))
             ?? CompositionAnalysis(
                 aestheticScore: nil,
+                aestheticAvailability: nil,
                 subjectPlacementScore: nil,
                 horizonScore: nil,
                 visualBalanceScore: nil,
@@ -209,6 +282,8 @@ extension PhotoAnalysis {
             ?? ContentAnalysis(
                 sceneType: .unknown,
                 tags: [],
+                classificationAvailability: nil,
+                semanticMappingRevision: nil,
                 hasText: nil,
                 textLineCount: nil,
                 screenshotProbability: nil,

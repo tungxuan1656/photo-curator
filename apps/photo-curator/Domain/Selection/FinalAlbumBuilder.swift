@@ -8,39 +8,63 @@ import Foundation
 /// group picks, `bestPortrait` for single-face picks; frozen codes only).
 /// Rejected duplicate losers receive `nearDuplicate` with the winner in
 /// `competingIDs`; quality-floor exclusions receive `lowQuality`; usable
+struct FinalAlbumBuildInput: Sendable {
+    let sourceAssets: [PhotoAsset]
+    let analyses: [AssetID: PhotoAnalysis]
+    let clusters: [PhotoCluster]
+    let moments: [PhotoMoment]
+    let scored: [ScoredCandidate]
+    let selectedIDs: Set<AssetID>
+}
+
 struct FinalAlbumBuilder: Sendable {
-    // swiftlint:disable:next function_parameter_count
-    func build(
-        sourceAssets: [PhotoAsset],
-        analyses: [AssetID: PhotoAnalysis],
-        clusters: [PhotoCluster],
-        moments: [PhotoMoment],
-        scored: [ScoredCandidate],
-        selectedIDs: Set<AssetID>,
-        configuration _: SelectionConfiguration
-    ) throws -> SelectionResult {
-        let context = BuilderContext(sourceAssets: sourceAssets, clusters: clusters, moments: moments, scored: scored)
+    func build(_ input: FinalAlbumBuildInput) throws -> SelectionResult {
+        let context = BuilderContext(
+            sourceAssets: input.sourceAssets,
+            clusters: input.clusters,
+            moments: input.moments,
+            scored: input.scored
+        )
         var decisions: [Decision] = []
-        for asset in sourceAssets {
-            decisions.append(context.decision(for: asset, analyses: analyses, selectedIDs: selectedIDs))
+        for asset in input.sourceAssets {
+            decisions.append(context.decision(for: asset, analyses: input.analyses, selectedIDs: input.selectedIDs))
         }
-        let byID = Dictionary(uniqueKeysWithValues: sourceAssets.map { ($0.id, $0) })
+        let byID = Dictionary(uniqueKeysWithValues: input.sourceAssets.map { ($0.id, $0) })
         let selected = decisions.filter { $0.status == .selected }.map(\.assetID).sorted {
             context.chronological($0, $1, byID: byID)
         }
-        try context.verify(decisions: decisions, sourceCount: sourceAssets.count, selected: selected, byID: byID)
+        try context.verify(decisions: decisions, sourceCount: input.sourceAssets.count, selected: selected, byID: byID)
+        let provenance = context.provenance(
+            ProvenanceInput(
+                sourceAssets: input.sourceAssets,
+                analyses: input.analyses,
+                clusters: input.clusters,
+                moments: input.moments,
+                scored: input.scored
+            ),
+            selectedCount: selected.count
+        )
         return SelectionResult(
             sessionID: SessionID(rawValue: UUID()),
             selectedAssetIDs: selected,
-            rejectedAssetIDs: sourceAssets.map(\.id).filter { !selected.contains($0) },
+            rejectedAssetIDs: input.sourceAssets.map(\.id).filter { !selected.contains($0) },
             decisions: decisions,
             generatedAt: Date(),
-            engineVersion: 3
+            engineVersion: 3,
+            provenance: provenance
         )
     }
 }
 
 /// Decision assembly plus invariant checks over frozen source order.
+private struct ProvenanceInput {
+    let sourceAssets: [PhotoAsset]
+    let analyses: [AssetID: PhotoAnalysis]
+    let clusters: [PhotoCluster]
+    let moments: [PhotoMoment]
+    let scored: [ScoredCandidate]
+}
+
 private struct BuilderContext {
     let order: [AssetID: Int]
     let winnerByCluster: [AssetID: AssetID]
@@ -155,6 +179,65 @@ private struct BuilderContext {
         guard pairs.allSatisfy({ chronological($0, $1, byID: byID) }) else {
             throw SelectionError.internal
         }
+    }
+
+    func provenance(_ input: ProvenanceInput, selectedCount: Int) -> SelectionResultProvenance {
+        let sourceIDs = input.sourceAssets.map(\.id)
+        let sourceSet = Set(sourceIDs)
+        let groupedIDs = Set(
+            input.clusters.flatMap(\.assetIDs) + input.moments.flatMap(\.assetIDs)
+        ).intersection(sourceSet)
+        let analyzedIDs = Set(input.analyses.keys).intersection(sourceSet)
+        let scoredIDs = Set(input.scored.map { $0.asset.id }).intersection(sourceSet)
+        let analysisRevisions = Set(input.analyses.values.map(\.analysisVersion))
+        let analysisRevision = analysisRevisions.count == 1 ? analysisRevisions.first : nil
+        return SelectionResultProvenance(
+            schemaVersion: SelectionResultProvenance.schemaVersion,
+            sourceAssetIDs: sourceIDs,
+            analysisRevision: analysisRevision,
+            groupingRevision: 1,
+            clusters: input.clusters.map {
+                SelectionClusterRecord(
+                    id: $0.id,
+                    type: $0.type,
+                    memberIDs: $0.assetIDs,
+                    representativeAssetID: $0.representativeAssetID
+                )
+            },
+            moments: input.moments.map {
+                SelectionMomentRecord(
+                    id: $0.id,
+                    memberIDs: $0.assetIDs,
+                    representativeAssetID: $0.representativeAssetID
+                )
+            },
+            evidence: SelectionEvidenceAvailability(
+                analyzedAssetCount: analyzedIDs.count,
+                unavailableAssetCount: sourceSet.subtracting(analyzedIDs).count,
+                scoredAssetCount: scoredIDs.count,
+                unscoredAssetCount: analyzedIDs.subtracting(scoredIDs).count,
+                scoreContributionAssetCount: scoredIDs.count,
+                qualityEvidenceAvailable: false,
+                coverageEvidenceAvailable: false
+            ),
+            coverage: SelectionCoverageCounters(
+                sourceAssetCount: sourceIDs.count,
+                groupedAssetCount: groupedIDs.count,
+                ungroupedAssetCount: sourceSet.subtracting(groupedIDs).count,
+                clusterCount: input.clusters.count,
+                momentCount: input.moments.count,
+                selectedAssetCount: selectedCount,
+                uncoveredMomentCount: nil,
+                candidateCount: nil,
+                candidateLimit: nil,
+                truncatedCandidateCount: nil,
+                pairCount: nil,
+                pairLimit: nil,
+                truncatedPairCount: nil,
+                coveredMemberCount: nil,
+                unknownPairCount: nil
+            )
+        )
     }
 
     private func diversityCutReason(for id: AssetID, selectedIDs: Set<AssetID>) -> String {

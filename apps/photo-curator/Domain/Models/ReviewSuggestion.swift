@@ -18,9 +18,41 @@ enum ReviewSuggestionEvidence: String, Codable, Sendable {
 
 /// One choice dimension plus per-asset values. Deletion staging is never
 /// expressible here; cleanup proposals carry keep-only sets.
-enum ReviewSuggestionProposal: Sendable {
+enum ReviewSuggestionProposal: Sendable, Codable {
     case albumMembership([AssetID: AlbumMembership])
     case cleanupKeep(Set<AssetID>)
+
+    private enum CodingKeys: String, CodingKey { case kind, albumMembership, cleanupKeep }
+    private enum Kind: String, Codable { case albumMembership, cleanupKeep }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        switch try container.decode(Kind.self, forKey: .kind) {
+        case .albumMembership:
+            let values = try container.decode([String: AlbumMembership].self, forKey: .albumMembership)
+            self = .albumMembership(Dictionary(uniqueKeysWithValues: values.map {
+                (AssetID(rawValue: $0.key), $0.value)
+            }))
+        case .cleanupKeep:
+            let values = try container.decode([String].self, forKey: .cleanupKeep)
+            self = .cleanupKeep(Set(values.map(AssetID.init(rawValue:))))
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case let .albumMembership(values):
+            try container.encode(Kind.albumMembership, forKey: .kind)
+            try container.encode(
+                Dictionary(uniqueKeysWithValues: values.map { ($0.key.rawValue, $0.value) }),
+                forKey: .albumMembership
+            )
+        case let .cleanupKeep(ids):
+            try container.encode(Kind.cleanupKeep, forKey: .kind)
+            try container.encode(ids.map(\.rawValue).sorted(), forKey: .cleanupKeep)
+        }
+    }
 }
 
 /// Owner-copy keys for suggestion display. Views resolve them as
@@ -63,6 +95,7 @@ struct ReviewSuggestion: Sendable, Identifiable {
     let provenance: ReviewSuggestionProvenance
     let evidence: ReviewSuggestionEvidence
     let proposal: ReviewSuggestionProposal?
+    let evidenceReasons: [String]
 
     /// Gated: only available records with a complete proposal and a stable
     /// revision enable Use Suggestion. Anything else renders as
@@ -73,8 +106,8 @@ struct ReviewSuggestion: Sendable, Identifiable {
         switch proposal {
         case let .albumMembership(values):
             return !values.isEmpty && values.values.allSatisfy { $0 != .unset }
-        case .cleanupKeep:
-            return true
+        case let .cleanupKeep(ids):
+            return !ids.isEmpty
         }
     }
 
@@ -129,7 +162,8 @@ enum NativeReviewSuggestionAdapter: Sendable {
     /// at preview time; any drift (regroup, re-analysis) marks the preview
     /// stale so the user previews the new proposal instead.
     struct Facts: Sendable {
-        let analysisVersion: Int
+        let analysisVersion: Int?
+        let groupingVersion: Int?
         let engineVersion: Int
         let winnerByGroup: [ClusterID: AssetID]
     }
@@ -140,21 +174,26 @@ enum NativeReviewSuggestionAdapter: Sendable {
             winnerByGroup[group.id] = group.engineWinner
         }
         return Facts(
-            analysisVersion: PhotoAnalysis.currentVersion,
+            analysisVersion: result.provenance?.analysisRevision,
+            groupingVersion: result.provenance?.groupingRevision,
             engineVersion: result.engineVersion,
             winnerByGroup: winnerByGroup
         )
     }
 
     static func revision(result: SelectionResult, scopeID _: UUID) -> String {
-        "native-a\(PhotoAnalysis.currentVersion)-e\(result.engineVersion)"
+        let analysis = result.provenance?.analysisRevision.map(String.init) ?? "unknown"
+        let grouping = result.provenance?.groupingRevision.map(String.init) ?? "unknown"
+        return "native-a\(analysis)-g\(grouping)-e\(result.engineVersion)"
     }
 
     static func revision(facts: Facts) -> String {
+        let analysis = facts.analysisVersion.map(String.init) ?? "unknown"
+        let grouping = facts.groupingVersion.map(String.init) ?? "unknown"
         let winners = facts.winnerByGroup.sorted { $0.key.rawValue.uuidString < $1.key.rawValue.uuidString }
             .map { "\($0.key.rawValue.uuidString)=\($0.value.rawValue)" }
             .joined(separator: ",")
-        return "native-a\(facts.analysisVersion)-e\(facts.engineVersion)-w\(winners)"
+        return "native-a\(analysis)-g\(grouping)-e\(facts.engineVersion)-w\(winners)"
     }
 
     static func suggestions(
@@ -165,6 +204,7 @@ enum NativeReviewSuggestionAdapter: Sendable {
         let facts = facts(result: result, groups: groups)
         let revision = revision(facts: facts)
         var records: [ReviewSuggestion] = []
+        let groupedIDs = Set(groups.flatMap(\.memberIDs))
         for group in groups {
             let winner = group.engineWinner
             guard group.memberIDs.contains(winner) else { continue }
@@ -184,7 +224,44 @@ enum NativeReviewSuggestionAdapter: Sendable {
                 sourceRevision: revision,
                 provenance: .native,
                 evidence: .available,
-                proposal: proposal
+                proposal: proposal,
+                evidenceReasons: ["nearDuplicateRepresentative"]
+            ))
+        }
+        // Keep every nonduplicate outcome discoverable. In particular, an
+        // ordinary photo must not vanish merely because no duplicate group
+        // exists. These are advisory proposals only; the workspace remains
+        // `.unset` until the user explicitly applies one.
+        for decision in result.decisions where !groupedIDs.contains(decision.assetID) {
+            let proposal: ReviewSuggestionProposal?
+            let evidence: ReviewSuggestionEvidence
+            if decision.reasons.contains("assetUnavailable") || decision.reasons.contains("unsupportedAsset") {
+                proposal = nil
+                evidence = .unavailable
+            } else if decision.status == .selected {
+                proposal = .albumMembership([decision.assetID: .included])
+                evidence = .available
+            } else if decision.reasons.contains("lowQuality") {
+                proposal = .cleanupKeep([decision.assetID])
+                evidence = .available
+            } else {
+                proposal = .albumMembership([decision.assetID: .included])
+                evidence = .available
+            }
+            let reasonKey = decision.reasons.sorted().joined(separator: "+")
+            let kind = "suggestion-\(scopeID.uuidString)-\(revision)-native-asset:\(decision.assetID.rawValue)-\(reasonKey)"
+            records.append(ReviewSuggestion(
+                id: StableSelectionID.uuid(kind: kind, members: [decision.assetID]),
+                scopeID: scopeID,
+                candidateIDs: [decision.assetID],
+                groupID: nil,
+                analysisVersion: facts.analysisVersion,
+                engineVersion: facts.engineVersion,
+                sourceRevision: revision,
+                provenance: .native,
+                evidence: evidence,
+                proposal: proposal,
+                evidenceReasons: decision.reasons
             ))
         }
         return records.sorted { $0.id.uuidString < $1.id.uuidString }

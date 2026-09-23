@@ -7,8 +7,8 @@ Rechecked against `90ae8bf` (feat-037) and the current working tree. The user's
 Preserve them. This is static source/call-path evidence, not a replay of the
 user's device session or an image-quality benchmark.
 
-The user approved native-only direction and requested this feature plan.
-Implementation remains `todo`. Do not activate feat-031 or admit a model.
+The user approved native-only direction and this feature plan. Feat-038 is now
+complete after feat-037. Do not activate feat-031 or admit a model.
 Approved choice semantics remain authoritative: suggestions do not automatically
 include/exclude photos, mark progress, or stage deletion.
 
@@ -79,7 +79,7 @@ Source paths below are relative to `apps/photo-curator/`.
 - Scope is analysis-to-review correctness. This audit does not certify every
   album-save/deletion implementation path or third-party runtime.
 
-## Proposed repair design
+## Approved repair design
 
 ### Phase 1 — Native execution and recoverable evidence (A1, A2, A6)
 
@@ -88,8 +88,8 @@ Source paths below are relative to `apps/photo-curator/`.
    delete downloaded artifacts: the earlier cleanup proposal was only noted,
    not approved for execution. Retain an explicit storage-removal action for
    installed legacy artifacts with truthful inactive status.
-2. Use a single native orchestration path across source sizes. Resolve the
-   policy in Phase 2 instead of blindly changing all runs to qualityNative.
+2. Use one native orchestration path across every source size; do not switch
+   algorithms by photo count.
 3. Version cached facts with asset modification metadata and analysis revision.
    Legacy rows without a valid fingerprint are cache misses, not unavailable photos.
 4. Separate checkpoint completion from durable fact availability. Recompute
@@ -99,8 +99,8 @@ Source paths below are relative to `apps/photo-curator/`.
 
 ### Phase 2 — Consistent native algorithms (A5, A7)
 
-Proposed defaults below require approval when activating this feature; do not
-silently turn them into current product policy in canonical docs.
+The following defaults are approved policy for this feature; implementation must
+make them explicit in the canonical contracts and execution paths.
 
 1. Share facts/grouping across both intents. Separate technical eligibility,
    relative ranking, and album-size selection; album rejection is never a cleanup verdict.
@@ -112,10 +112,10 @@ silently turn them into current product policy in canonical docs.
 4. Keep existing ranking weights initially; correct semantic labels and missing
    evidence first. Eliminate count-only “group quality” as a quality claim.
    Store final-score contributions and reason evidence, not a technical-only breakdown.
-5. Proposed album sizing baseline: `min(usableCount, clamp(ceil(usableCount *
+5. Album sizing baseline: `min(usableCount, clamp(ceil(usableCount *
    targetRatio), minimum, maximum))`. Apply the existing parameters consistently;
    preserve additional eligible photos as alternatives. Record uncovered moments
-   instead of exceeding a declared hard maximum silently.
+   and never silently exceed the declared hard maximum.
 6. Disable scalar Tier-C influence on visual novelty until calibrated; retain
    FeaturePrint evidence without cross-provider min merging. Missing edges are
    unknown, not maximum novelty. Use bounded, balanced pair selection with
@@ -199,7 +199,14 @@ evidence decision, not speculative weight changes in this repair.
   through native with truthful execution metadata; never dispatch Qwen implicitly.
 - Roll back UI/execution adapters without reverting persisted choices. Keep
   parsers for data written during this feature; never reopen a store destructively.
-- Finish phases in order under one active feature. Record acceptance evidence,
-  unresolved limitations and final `./init.sh` in the feature and append progress.
-- If policy or contract choices remain unresolved at activation, obtain approval
-  before changing them. This planning session claims no implementation completion.
+- Phases completed in order under one active feature. Acceptance evidence,
+  limitations, and final verification are recorded in the feature and progress
+  closeout.
+- The implementation is native-only and manages legacy artifacts without
+  reintroducing a legacy runtime path. It provides revision-aware recoverable
+  cache/checkpoints; canonical representative grouping; conservative facts;
+  bounded evidence and album sizing; persisted provenance; zero-pick/actionable
+  review; atomic reactive workspace actions; and localized accessible UI.
+- Limitations: no device PhotoKit/image-quality benchmark or manual QA was run;
+  compilation does not calibrate visual thresholds. Final evidence supplied for
+  closeout is `./init.sh` PASS and `git diff --check` PASS on 2026-09-23.

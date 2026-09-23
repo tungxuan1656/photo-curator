@@ -10,10 +10,10 @@ enum ReviewWorkspaceFilter: String, CaseIterable, Hashable, Sendable {
 
     var title: LocalizedStringResource {
         switch self {
-        case .all: "Review Photos"
+        case .all: "All"
         case .needsReview: "Needs Review"
-        case .albumDraft: "Album Draft"
-        case .staged: "Review Staged Photos"
+        case .albumDraft: "Album"
+        case .staged: "Staged"
         }
     }
 }

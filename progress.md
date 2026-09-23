@@ -1111,3 +1111,31 @@ image-quality benchmark, or new build evidence. Existing String Catalog edits
 were preserved.
 **Next**: Review the proposed algorithm policy, then approve feat-038 activation
 and run baseline `./init.sh` before implementation.
+
+## 2026-09-23 — feat-038 activation
+
+**State**: active
+**Done**: Activated feat-038 after feat-037 completed. Approved the native
+policy: one path for every photo count, conservative duplicate representatives
+with unknown dates separate, bounded album selection, and no uncalibrated scalar
+Tier-C novelty.
+**Evidence**: Baseline `./init.sh` PASS on 2026-09-23; design policy approved.
+Validation is parent-owned; no source changes were made.
+**Blockers**: none
+**Next**: Begin Phase 1.
+
+## 2026-09-23 — feat-038 closeout
+
+**State**: done
+**Done**: Completed native-only execution and legacy artifact management;
+revision-aware recoverable cache/checkpoints; canonical representative grouping,
+conservative facts, bounded evidence/sizing, and persisted provenance;
+zero-pick/actionable review; atomic reactive workspace actions; and localized
+accessible UI. All feat-038 acceptance items are satisfied by the completed
+implementation and recorded verification.
+**Evidence**: Final `./init.sh` PASS and `git diff --check` PASS on 2026-09-23.
+Validation is parent-owned.
+**Limitations**: No device PhotoKit/image-quality benchmark or manual QA was
+run; compilation does not calibrate visual thresholds.
+**Blockers**: none
+**Next**: none.

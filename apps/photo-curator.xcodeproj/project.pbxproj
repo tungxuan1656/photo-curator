@@ -20,8 +20,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E248D601305265D40041F29F /* photo-curator */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = "photo-curator";
 			sourceTree = "<group>";
 		};

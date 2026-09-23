@@ -56,17 +56,14 @@ actor FileAnalysisCache: AnalysisCache {
     }
 
     func analysis(for id: AssetID) async -> PhotoAnalysis? {
-        // Source-compatible read for older consumers that have only an ID.
-        // It never accepts legacy rows or a row with no revision, but cannot
-        // compare the revision until the caller supplies the live asset.
-        guard let record = await record(for: id), isReusableVersion(record) else {
-            return nil
-        }
-        return record.analysis
+        // An ID-only read cannot validate the current PhotoKit revision.
+        // Keep the compatibility API, but conservatively treat it as a miss.
+        nil
     }
 
     func analysis(for id: AssetID, assetRevision: AssetModificationFingerprint) async -> PhotoAnalysis? {
         guard let record = await record(for: id),
+              assetRevision.isPresent,
               record.schemaVersion == CachedAnalysisRecord.currentSchemaVersion,
               record.analysis.assetID == id,
               record.analysis.analysisVersion == analysisVersion,
@@ -83,7 +80,7 @@ actor FileAnalysisCache: AnalysisCache {
     }
 
     func store(_ analysis: PhotoAnalysis, assetRevision: AssetModificationFingerprint) async {
-        guard analysis.analysisVersion == analysisVersion else {
+        guard analysis.analysisVersion == analysisVersion, assetRevision.isPresent else {
             return
         }
         let record = CachedAnalysisRecord(analysis: analysis, assetRevision: assetRevision)
@@ -104,12 +101,6 @@ actor FileAnalysisCache: AnalysisCache {
         }
         memory[id] = loaded
         return loaded
-    }
-
-    private func isReusableVersion(_ record: CachedAnalysisRecord) -> Bool {
-        record.schemaVersion == CachedAnalysisRecord.currentSchemaVersion
-            && record.analysis.analysisVersion == analysisVersion
-            && record.assetRevision != nil
     }
 
     /// Reset Analysis: drops in-memory rows plus every persisted analysis

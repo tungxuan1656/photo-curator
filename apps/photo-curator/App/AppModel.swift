@@ -775,7 +775,9 @@ extension AppModel {
             let assets = confirmedSourceAssets()
             var analyses: [AssetID: PhotoAnalysis] = [:]
             for asset in assets where completedIDs.contains(asset.id) {
-                if let hit = await container.analysisCache.analysis(for: asset.id) {
+                if let hit = await container.analysisCache.analysis(
+                    for: asset.id, assetRevision: asset.modificationFingerprint
+                ) {
                     analyses[asset.id] = hit
                 }
             }
@@ -797,7 +799,9 @@ extension AppModel {
                 decisions: engineOut.decisions,
                 generatedAt: engineOut.generatedAt,
                 engineVersion: engineOut.engineVersion,
-                qualityEvidence: engineOut.qualityEvidence
+                qualityEvidence: engineOut.qualityEvidence,
+                coverageEvidence: engineOut.coverageEvidence,
+                provenance: engineOut.provenance
             )
             try await container.checkpointStore.saveResult(partial)
             let done = SessionCheckpoint(

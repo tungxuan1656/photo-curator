@@ -26,6 +26,7 @@ enum WorkspaceStoreError: Error, Sendable {
     case assetNotInScope
     case itemNotFound
     case invalidState
+    case staleChoice
 }
 
 /// Concrete SwiftData owner for durable workspace state. It intentionally
@@ -183,6 +184,53 @@ actor WorkspaceStore {
         }
     }
 
+    /// Commits one exact review action in one SwiftData transaction. The
+    /// timestamp is a persisted generation pin: queued work with an older
+    /// intent is rejected before any item is mutated.
+    @discardableResult
+    func applyChoice(_ choice: ReviewWorkspaceChoice) throws -> [WorkspaceItemSnapshot] {
+        let albumChanges = choice.effectiveAlbumMemberships
+        let cleanupChanges = choice.effectiveCleanupDispositions
+        let progressChanges = choice.effectiveReviewProgresses
+        let changedIDs = orderedAssetIDs(
+            albumChanges.keys.map(\.rawValue)
+                + cleanupChanges.keys.map(\.rawValue)
+                + progressChanges.keys.map(\.rawValue)
+        ).map(AssetID.init(rawValue:))
+        guard !changedIDs.isEmpty else { throw WorkspaceStoreError.invalidState }
+
+        var result: [WorkspaceItemSnapshot] = []
+        try context.transaction {
+            let scope = try requireScope(choice.scopeID)
+            guard choice.issuedAt > scope.updatedAt else { throw WorkspaceStoreError.staleChoice }
+            for assetID in changedIDs {
+                try requireAsset(assetID, sourceAssetIDs: scope.sourceAssetIDs)
+            }
+            let items = try context.fetch(FetchDescriptor<WorkspaceItem>())
+            var updated: [WorkspaceItem] = []
+            for assetID in changedIDs {
+                guard let item = items.first(where: {
+                    $0.scopeID == choice.scopeID && $0.assetID == assetID.rawValue
+                }) else { throw WorkspaceStoreError.itemNotFound }
+                if let membership = albumChanges[assetID] {
+                    item.albumMembershipRawValue = membership.rawValue
+                }
+                if let disposition = cleanupChanges[assetID] {
+                    item.cleanupDispositionRawValue = disposition.rawValue
+                }
+                if let progress = progressChanges[assetID] {
+                    item.reviewProgressRawValue = progress.rawValue
+                }
+                item.updatedAt = choice.issuedAt
+                updated.append(item)
+            }
+            scope.updatedAt = choice.issuedAt
+            try context.save()
+            result = updated.map(makeItemSnapshot)
+        }
+        return result
+    }
+
     /// Imports one legacy session in one transaction. Repeating this call
     /// updates the same scope/items instead of creating duplicate rows.
     func importLegacyScope(
@@ -275,7 +323,9 @@ actor WorkspaceStore {
         guard let result else { throw WorkspaceStoreError.invalidState }
         return result
     }
+}
 
+extension WorkspaceStore {
     private func updateItem(
         scopeID: UUID,
         assetID: AssetID,

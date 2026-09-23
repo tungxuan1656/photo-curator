@@ -100,7 +100,6 @@ private struct SimilarGroupCard: View {
                                 } label: {
                                     AsyncPhotoThumbnail(assetID: id, targetSizePixels: targetSizePixels)
                                         .clipped()
-                                        .opacity(isIncluded(membership) ? 1 : 0.35)
                                 }
                                 .buttonStyle(.plain)
                                 SelectionToggle(

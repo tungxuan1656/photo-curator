@@ -22,7 +22,6 @@ struct SelectionEngine: Sendable {
     let qualityScorer = QualityScorer()
     let diversitySelector = DiversitySelector()
     let finalAlbumBuilder = FinalAlbumBuilder()
-
     func duplicateCandidates(for assets: [PhotoAsset], configuration: SelectionConfiguration) -> [SimilarityCandidate] {
         duplicateResolver.candidates(for: assets, configuration: configuration)
     }
@@ -139,11 +138,52 @@ struct SelectionEngine: Sendable {
             ),
             configuration: configuration, feedback: feedback
         )
-        return try finalAlbumBuilder.build(
-            sourceAssets: assets, analyses: analyses, clusters: effectiveClusters(
-                clusters: resolution.clusters, scored: overridden, feedback: feedback
-            ),
-            moments: moments, scored: overridden, selectedIDs: picked, configuration: configuration
+        let boundedPicked = Self.boundedSelection(
+            selected: picked, candidates: shortlist, moments: moments,
+            targetCount: target, forcedIDs: feedback?.restoredIDs ?? []
+        )
+        let graph = Self.diversityGraph(
+            shortlist: shortlist, similarityEdges: similarityEdges, tierCEdges: tierCEdges
+        )
+        let base = try finalAlbumBuilder.build(
+            FinalAlbumBuildInput(
+                sourceAssets: assets,
+                analyses: analyses,
+                clusters: effectiveClusters(
+                    clusters: resolution.clusters, scored: overridden, feedback: feedback
+                ),
+                moments: moments,
+                scored: overridden,
+                selectedIDs: boundedPicked
+            )
+        )
+        let uncovered = Set(moments.compactMap { moment in
+            boundedPicked.contains(where: moment.assetIDs.contains) ? nil : moment.id
+        })
+        let alternatives = Set(overridden.filter {
+            $0.disposition == .usable && !boundedPicked.contains($0.asset.id)
+        }.map(\.asset.id))
+        return Self.withSelectionEvidence(
+            base,
+            scored: overridden,
+            coverage: SelectionCoverageEvidence(
+                usableCount: overridden.filter { $0.disposition == .usable }.count,
+                targetCount: target,
+                selectedCount: base.selectedAssetIDs.count,
+                maximumCount: configuration.maximumFinalCount,
+                uncoveredMomentIDs: uncovered.sorted {
+                    $0.rawValue.uuidString < $1.rawValue.uuidString
+                },
+                alternativeAssetIDs: alternatives.sorted { $0.rawValue < $1.rawValue },
+                candidateCount: shortlist.count + graph.truncatedMemberCount,
+                candidateLimit: GlobalDiversityGraphBuilder.maxGraphMembers,
+                truncatedCandidateCount: graph.truncatedMemberCount,
+                pairCount: graph.edges.count,
+                pairLimit: GlobalDiversityGraphBuilder.maxGraphPairs,
+                truncatedPairCount: graph.truncatedPairCount,
+                coveredMemberCount: graph.coveredMemberCount,
+                unknownPairCount: graph.unknownPairCount
+            )
         )
     }
 
@@ -169,7 +209,6 @@ struct SelectionEngine: Sendable {
         var decisionsByID = Dictionary(uniqueKeysWithValues: result.decisions.map { ($0.assetID, $0) })
         var touchedClusters = Set<ClusterID>()
         var changed = false
-
         for override in overrides where override.choice == .chooseA || override.choice == .chooseB {
             guard override.first != override.second,
                   let cluster = resolution.clusters.first(where: {
@@ -191,12 +230,10 @@ struct SelectionEngine: Sendable {
                 configuration: configuration
             )
             guard replacement.disposition == .usable else { continue }
-
             selected.remove(loser)
             selected.insert(winner)
             touchedClusters.insert(cluster.id)
             changed = true
-
             let winnerScore = replacement.score
             var reasons = decisionsByID[winner]?.reasons.filter { $0 != "nearDuplicate" } ?? []
             if !reasons.contains("nearDuplicateRepresentative") {
@@ -217,6 +254,7 @@ struct SelectionEngine: Sendable {
                 status: .selected,
                 score: winnerScore,
                 qualityBreakdown: winnerAnalysis.qualityBreakdown,
+                scoreContributions: replacement.scoreContributions,
                 reasons: reasons,
                 competingIDs: []
             )
@@ -225,11 +263,11 @@ struct SelectionEngine: Sendable {
                 status: .rejected,
                 score: nil,
                 qualityBreakdown: nil,
+                scoreContributions: nil,
                 reasons: ["nearDuplicate"],
                 competingIDs: [winner]
             )
         }
-
         guard changed else { return result }
         let sourceOrder = Dictionary(uniqueKeysWithValues: assets.enumerated().map { ($1.id, $0) })
         let orderedSelected = selected.sorted {
@@ -244,7 +282,10 @@ struct SelectionEngine: Sendable {
             rejectedAssetIDs: orderedRejected,
             decisions: orderedDecisions,
             generatedAt: result.generatedAt,
-            engineVersion: result.engineVersion
+            engineVersion: result.engineVersion,
+            qualityEvidence: result.qualityEvidence,
+            coverageEvidence: result.coverageEvidence,
+            provenance: result.provenance
         )
     }
 
@@ -289,8 +330,79 @@ struct SelectionEngine: Sendable {
 
     private static func targetCount(for scored: [ScoredCandidate], configuration: SelectionConfiguration) -> Int {
         let usable = scored.filter { $0.disposition == .usable }.count
-        let scaled = Int((Double(usable) * configuration.targetSelectionRatio).rounded(.up))
-        return min(max(scaled, configuration.minimumFinalCount), configuration.maximumFinalCount)
+        return QualityScorer.albumTargetCount(usableCount: usable, configuration: configuration)
+    }
+
+    private static func boundedSelection(
+        selected: Set<AssetID>, candidates: [ScoredCandidate], moments: [PhotoMoment],
+        targetCount: Int, forcedIDs: Set<AssetID>
+    ) -> Set<AssetID> {
+        guard selected.count > targetCount else { return selected }
+        let byID = Dictionary(uniqueKeysWithValues: candidates.map { ($0.asset.id, $0) })
+        var output = Set<AssetID>()
+        var clusters = Set<ClusterID>()
+        func insert(_ candidate: ScoredCandidate) {
+            guard output.count < targetCount else { return }
+            if let clusterID = candidate.clusterID, clusters.contains(clusterID) {
+                return
+            }
+            output.insert(candidate.asset.id)
+            if let clusterID = candidate.clusterID {
+                clusters.insert(clusterID)
+            }
+        }
+        for id in forcedIDs.sorted(by: { $0.rawValue < $1.rawValue }) {
+            guard let candidate = byID[id], selected.contains(id) else { continue }
+            insert(candidate)
+        }
+        let selectedByMoment = Dictionary(grouping: selected.compactMap { byID[$0] }) { $0.momentID }
+        for moment in moments {
+            guard let candidatesForMoment = selectedByMoment[moment.id] else { continue }
+            for candidate in candidatesForMoment.sorted(by: QualityScorer.compareRank) {
+                insert(candidate)
+                if output.count == targetCount {
+                    return output
+                }
+            }
+        }
+        for candidate in selected.compactMap({ byID[$0] }).sorted(by: QualityScorer.compareRank) {
+            insert(candidate)
+            if output.count == targetCount {
+                break
+            }
+        }
+        return output
+    }
+
+    private static func withSelectionEvidence(
+        _ result: SelectionResult, scored: [ScoredCandidate], coverage: SelectionCoverageEvidence
+    ) -> SelectionResult {
+        let byID = Dictionary(uniqueKeysWithValues: scored.map { ($0.asset.id, $0) })
+        let decisions = result.decisions.map { decision in
+            guard let candidate = byID[decision.assetID] else { return decision }
+            return Decision(
+                assetID: decision.assetID,
+                status: decision.status,
+                score: decision.score ?? candidate.score,
+                qualityBreakdown: decision.qualityBreakdown,
+                scoreContributions: candidate.scoreContributions,
+                reasons: decision.reasons,
+                competingIDs: decision.competingIDs
+            )
+        }
+        return SelectionResult(
+            sessionID: result.sessionID,
+            selectedAssetIDs: result.selectedAssetIDs,
+            rejectedAssetIDs: result.rejectedAssetIDs,
+            decisions: decisions,
+            generatedAt: result.generatedAt,
+            engineVersion: result.engineVersion,
+            qualityEvidence: result.qualityEvidence,
+            coverageEvidence: coverage,
+            provenance: result.provenance?.updating(
+                with: coverage, selectedAssetCount: result.selectedAssetIDs.count
+            )
+        )
     }
 
     /// Feedback override inputs bundled so helpers stay within the parameter limit.
@@ -299,7 +411,6 @@ struct SelectionEngine: Sendable {
         let analyses: [AssetID: PhotoAnalysis]
         let momentByID: [AssetID: MomentID]
         let configuration: SelectionConfiguration
-
         func applySwaps(
             scored: [ScoredCandidate], clusters: [PhotoCluster], feedback: SelectionFeedback?
         ) -> [ScoredCandidate] {
@@ -380,21 +491,6 @@ struct SelectionEngine: Sendable {
             seen.insert(id)
         }
         return merged
-    }
-
-    private func effectiveClusters(
-        clusters: [PhotoCluster], scored: [ScoredCandidate], feedback: SelectionFeedback?
-    ) -> [PhotoCluster] {
-        guard let swaps = feedback?.swapWinner, !swaps.isEmpty else { return clusters }
-        let usableIDs = Set(scored.filter { $0.disposition == .usable }.map(\.asset.id))
-        return clusters.map { cluster in
-            guard let winner = swaps[cluster.id], cluster.assetIDs.contains(winner),
-                  usableIDs.contains(winner) else { return cluster }
-            return PhotoCluster(
-                id: cluster.id, type: cluster.type, assetIDs: cluster.assetIDs,
-                representativeAssetID: winner, similarityScore: cluster.similarityScore
-            )
-        }
     }
 }
 

@@ -6,22 +6,26 @@ import Foundation
 /// Candidate pairs come from `candidates(for:configuration:)`; raw edges
 /// below `nearDuplicateSimilarityThreshold` propose merges closest-first, and
 /// each proposal joins only when every already-grouped member stays pairwise
-/// compatible — semantic variation resists transitive chain collapse
-/// (feat-021). Each component of two or more assets becomes one
+/// semantically compatible and has direct bounded visual evidence. This
+/// prevents transitive chains from becoming strong retake claims. Each
+/// component of two or more assets becomes one
 /// `.nearDuplicate` cluster with a context-aware winner and up to two
-/// alternatives. Assets without analysis or without edges pass through as
-/// singletons, never rejections. Missing evidence degrades to the legacy
-/// union-find plus legacy rank exactly.
+/// alternatives. Assets without analysis or without bounded visual evidence
+/// pass through as singletons, never rejections. Missing ranking facts still
+/// use the legacy-compatible deterministic rank.
 struct DuplicateResolution: Sendable {
     let clusters: [PhotoCluster]
     let representativeIDs: [AssetID]
     let alternativesByCluster: [ClusterID: [AssetID]]
+    /// Complete membership keyed by the representative used for downstream
+    /// moment segmentation. Singleton groups are included as identity maps.
+    let membersByRepresentative: [AssetID: [AssetID]]
 }
 
 struct DuplicateResolver: Sendable {
     func candidates(for assets: [PhotoAsset], configuration: SelectionConfiguration) -> [SimilarityCandidate] {
-        let indexed = Dictionary(uniqueKeysWithValues: assets.enumerated().map { ($1.id, $0) })
         let ordered = canonicalOrder(assets)
+        let indexed = Dictionary(uniqueKeysWithValues: ordered.enumerated().map { ($1.id, $0) })
         var out: [SimilarityCandidate] = []
         for indexI in ordered.indices {
             for indexJ in ordered.indices.dropFirst(indexI + 1) {
@@ -60,19 +64,50 @@ struct DuplicateResolver: Sendable {
             analyses: analyses
         )
         let threshold = configuration.nearDuplicateSimilarityThreshold
-        for edge in qualifyingEdges(edges, threshold: threshold) {
-            disjoint.union(edge.first, edge.second) { gate.compatible($0, $1) }
+        let acceptedEdges = qualifyingEdges(
+            edges,
+            ordered: ordered,
+            threshold: threshold,
+            configuration: configuration
+        )
+        let distances = Dictionary(
+            acceptedEdges.map { (MemberPair($0.first, $0.second), $0.distance) },
+            uniquingKeysWith: min
+        )
+        for edge in acceptedEdges {
+            disjoint.union(edge.first, edge.second) { left, right in
+                gate.compatible(left, right)
+                    && visualConsistency(left: left, right: right, distances: distances)
+            }
         }
         return assemble(
             ordered: ordered, disjoint: &disjoint, analyses: analyses,
-            edges: edges, configuration: configuration
+            edges: acceptedEdges, configuration: configuration
         )
     }
 
     /// Closest-first canonical edge order: the merge outcome never depends on
     /// caller edge order, and the strongest visual evidence groups first.
-    private func qualifyingEdges(_ edges: [SimilarityEdge], threshold: Double) -> [SimilarityEdge] {
-        edges.filter { $0.distance < threshold }.sorted {
+    private func qualifyingEdges(
+        _ edges: [SimilarityEdge], ordered: [PhotoAsset], threshold: Double,
+        configuration: SelectionConfiguration
+    ) -> [SimilarityEdge] {
+        let indexByID = Dictionary(uniqueKeysWithValues: ordered.enumerated().map { ($1.id, $0) })
+        let knownIDs = Set(indexByID.keys)
+        return edges.filter {
+            guard $0.first != $0.second,
+                  knownIDs.contains($0.first), knownIDs.contains($0.second),
+                  $0.distance < threshold,
+                  $0.distance.isFinite
+            else { return false }
+            return boundedPair(
+                $0.first,
+                $0.second,
+                ordered: ordered,
+                indexByID: indexByID,
+                configuration: configuration
+            )
+        }.sorted {
             if $0.distance != $1.distance {
                 return $0.distance < $1.distance
             }
@@ -83,6 +118,36 @@ struct DuplicateResolver: Sendable {
             }
             return left.second.rawValue < right.second.rawValue
         }
+    }
+
+    /// Retake evidence is allowed to cross only the same bounded candidate
+    /// neighborhood used to request the visual comparison. This prevents a
+    /// caller-provided edge from silently turning an unknown-date asset into a
+    /// library-wide match.
+    private func boundedPair(
+        _ leftID: AssetID, _ rightID: AssetID, ordered: [PhotoAsset],
+        indexByID: [AssetID: Int], configuration: SelectionConfiguration
+    ) -> Bool {
+        guard let left = ordered.first(where: { $0.id == leftID }),
+              let right = ordered.first(where: { $0.id == rightID })
+        else { return false }
+        switch (left.creationDate, right.creationDate) {
+        case let (leftDate?, rightDate?):
+            return abs(leftDate.timeIntervalSince(rightDate)) <= configuration.duplicateTimeWindow
+        default:
+            guard let leftIndex = indexByID[leftID], let rightIndex = indexByID[rightID] else { return false }
+            return abs(leftIndex - rightIndex) == 1
+        }
+    }
+
+    /// A cluster may not be justified by a transitive chain alone. Every
+    /// newly crossed member pair must have its own bounded, qualifying visual
+    /// edge. The pair check is performed only for proposed component merges,
+    /// keeping work local to candidate groups rather than all library pairs.
+    private func visualConsistency(
+        left: AssetID, right: AssetID, distances: [MemberPair: Double]
+    ) -> Bool {
+        distances[MemberPair(left, right)] != nil
     }
 
     private func assemble(
@@ -96,11 +161,13 @@ struct DuplicateResolver: Sendable {
         var clusters: [PhotoCluster] = []
         var representatives: [AssetID] = []
         var alternatives: [ClusterID: [AssetID]] = [:]
+        var membersByRepresentative: [AssetID: [AssetID]] = [:]
         let scorer = QualityScorer()
         let sortedGroups = groupsByRoot.values.sorted { ($0.first?.id.rawValue ?? "") < ($1.first?.id.rawValue ?? "") }
         for group in sortedGroups {
             guard group.count > 1 else {
                 representatives.append(group[0].id)
+                membersByRepresentative[group[0].id] = [group[0].id]
                 continue
             }
             let ranked = rank(group, analyses: analyses, scorer: scorer, configuration: configuration)
@@ -115,12 +182,14 @@ struct DuplicateResolver: Sendable {
                 similarityScore: 1 / (1 + mean)
             ))
             representatives.append(ranked[0].id)
+            membersByRepresentative[ranked[0].id] = memberIDs
             alternatives[id] = Array(ranked.dropFirst().prefix(2).map(\.id))
         }
         return DuplicateResolution(
             clusters: clusters,
             representativeIDs: representatives,
-            alternativesByCluster: alternatives
+            alternativesByCluster: alternatives,
+            membersByRepresentative: membersByRepresentative
         )
     }
 

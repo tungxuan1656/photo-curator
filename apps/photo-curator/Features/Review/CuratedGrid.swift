@@ -113,7 +113,6 @@ private struct ReviewCell: View {
                 } label: {
                     AsyncPhotoThumbnail(assetID: assetID, targetSizePixels: targetSizePixels)
                         .clipped()
-                        .opacity(isSelected ? 1 : 0.35)
                 }
                 .buttonStyle(.plain)
                 SelectionToggle(isSelected: isSelected, onToggle: onToggle)

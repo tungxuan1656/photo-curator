@@ -54,15 +54,15 @@ protocol AnalysisCache: Actor {
 }
 
 extension AnalysisCache {
-    /// Compatibility defaults keep older cache implementations and callers
-    /// source-compatible. The file-backed implementation overrides these
-    /// overloads with actual revision validation.
+    /// Compatibility defaults keep older cache implementations source-compatible,
+    /// but an implementation that cannot validate a live revision must miss.
+    /// Never silently downgrade a revision-aware read to an ID-only read.
     func analysis(for id: AssetID, assetRevision _: AssetModificationFingerprint) async -> PhotoAnalysis? {
-        await analysis(for: id)
+        nil
     }
 
     func store(_ analysis: PhotoAnalysis, assetRevision _: AssetModificationFingerprint) async {
-        await store(analysis)
+        // A revision-less implementation cannot safely persist a reusable row.
     }
 }
 

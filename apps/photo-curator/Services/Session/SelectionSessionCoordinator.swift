@@ -210,14 +210,23 @@ actor SelectionSessionCoordinator {
     func checkpointNow(
         sessionID: SessionID,
         completed: [AssetID],
+        unavailable: [AssetID] = [],
+        sourceAssetIDs: [AssetID] = [],
         stage: ProcessingStage,
         qualityIdentity: QualityCheckpointIdentity? = nil
     ) async {
+        let existing = try? await checkpointStore.load(sessionID: sessionID)
+        let preservedCompleted = Set(existing?.completedAssetIDs ?? []).union(completed)
+        let preservedUnavailable = Set(existing?.unavailableAssetIDs ?? []).union(unavailable)
+        let preservedSource = sourceAssetIDs.isEmpty
+            ? (existing?.sourceAssetIDs ?? [])
+            : sourceAssetIDs
         let stub = SessionCheckpoint(
             sessionID: sessionID,
             stage: stage.rawValue,
-            completedAssetIDs: completed,
-            sourceAssetIDs: [],
+            completedAssetIDs: Array(preservedCompleted),
+            unavailableAssetIDs: Array(preservedUnavailable),
+            sourceAssetIDs: preservedSource,
             configVersion: AppConfiguration.default.configVersion,
             analysisVersion: PhotoAnalysis.currentVersion,
             qualityIdentity: qualityIdentity,
@@ -357,7 +366,10 @@ actor SelectionSessionCoordinator {
             rejectedAssetIDs: juried.rejectedAssetIDs,
             decisions: juried.decisions,
             generatedAt: juried.generatedAt,
-            engineVersion: juried.engineVersion
+            engineVersion: juried.engineVersion,
+            qualityEvidence: juried.qualityEvidence,
+            coverageEvidence: juried.coverageEvidence,
+            provenance: juried.provenance
         )
     }
 

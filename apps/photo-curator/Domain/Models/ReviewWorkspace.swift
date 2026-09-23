@@ -32,6 +32,78 @@ struct ReviewWorkspaceChoice: Sendable {
     let albumMembership: AlbumMembership?
     let cleanupDisposition: CleanupDisposition?
     let reviewProgress: ReviewProgress?
+    /// Heterogeneous bulk writes (for example a winner swap) stay one exact
+    /// transaction instead of being split into several optimistic writes.
+    let albumMemberships: [AssetID: AlbumMembership]
+    let cleanupDispositions: [AssetID: CleanupDisposition]
+    let reviewProgresses: [AssetID: ReviewProgress]
+    let previousAlbumMemberships: [AssetID: AlbumMembership]
+    let previousCleanupDispositions: [AssetID: CleanupDisposition]
+    let previousReviewProgresses: [AssetID: ReviewProgress]
+    /// Monotonic within a live review model. `issuedAt` is also used by the
+    /// store so an older queued action cannot overwrite a newer one.
+    let generation: UInt64
+    let issuedAt: Date
+
+    init(
+        scopeID: UUID,
+        assetIDs: [AssetID],
+        albumMembership: AlbumMembership? = nil,
+        cleanupDisposition: CleanupDisposition? = nil,
+        reviewProgress: ReviewProgress? = nil,
+        albumMemberships: [AssetID: AlbumMembership] = [:],
+        cleanupDispositions: [AssetID: CleanupDisposition] = [:],
+        reviewProgresses: [AssetID: ReviewProgress] = [:],
+        previousAlbumMemberships: [AssetID: AlbumMembership] = [:],
+        previousCleanupDispositions: [AssetID: CleanupDisposition] = [:],
+        previousReviewProgresses: [AssetID: ReviewProgress] = [:],
+        generation: UInt64 = 0,
+        issuedAt: Date = Date()
+    ) {
+        self.scopeID = scopeID
+        self.assetIDs = assetIDs
+        self.albumMembership = albumMembership
+        self.cleanupDisposition = cleanupDisposition
+        self.reviewProgress = reviewProgress
+        self.albumMemberships = albumMemberships
+        self.cleanupDispositions = cleanupDispositions
+        self.reviewProgresses = reviewProgresses
+        self.previousAlbumMemberships = previousAlbumMemberships
+        self.previousCleanupDispositions = previousCleanupDispositions
+        self.previousReviewProgresses = previousReviewProgresses
+        self.generation = generation
+        self.issuedAt = issuedAt
+    }
+
+    var effectiveAlbumMemberships: [AssetID: AlbumMembership] {
+        var values = albumMemberships
+        if let albumMembership {
+            for assetID in assetIDs {
+                values[assetID] = albumMembership
+            }
+        }
+        return values
+    }
+
+    var effectiveCleanupDispositions: [AssetID: CleanupDisposition] {
+        var values = cleanupDispositions
+        if let cleanupDisposition {
+            for assetID in assetIDs {
+                values[assetID] = cleanupDisposition
+            }
+        }
+        return values
+    }
+
+    var effectiveReviewProgresses: [AssetID: ReviewProgress] {
+        var values = reviewProgresses
+        if let reviewProgress {
+            for assetID in assetIDs {
+                values[assetID] = reviewProgress
+            }
+        }
+        return values
+    }
 }
 
 /// Last durable write failure for one choice action. Views render explicit
@@ -44,6 +116,35 @@ struct ReviewChoiceSaveError: Sendable, Equatable {
     let albumMembership: AlbumMembership?
     let cleanupDisposition: CleanupDisposition?
     let reviewProgress: ReviewProgress?
+    let albumMemberships: [AssetID: AlbumMembership]
+    let cleanupDispositions: [AssetID: CleanupDisposition]
+    let reviewProgresses: [AssetID: ReviewProgress]
+    let generation: UInt64
+    let issuedAt: Date
+
+    init(
+        scopeID: UUID,
+        assetIDs: [AssetID],
+        albumMembership: AlbumMembership? = nil,
+        cleanupDisposition: CleanupDisposition? = nil,
+        reviewProgress: ReviewProgress? = nil,
+        albumMemberships: [AssetID: AlbumMembership] = [:],
+        cleanupDispositions: [AssetID: CleanupDisposition] = [:],
+        reviewProgresses: [AssetID: ReviewProgress] = [:],
+        generation: UInt64 = 0,
+        issuedAt: Date = Date()
+    ) {
+        self.scopeID = scopeID
+        self.assetIDs = assetIDs
+        self.albumMembership = albumMembership
+        self.cleanupDisposition = cleanupDisposition
+        self.reviewProgress = reviewProgress
+        self.albumMemberships = albumMemberships
+        self.cleanupDispositions = cleanupDispositions
+        self.reviewProgresses = reviewProgresses
+        self.generation = generation
+        self.issuedAt = issuedAt
+    }
 }
 
 enum WorkspaceAvailability: Sendable {

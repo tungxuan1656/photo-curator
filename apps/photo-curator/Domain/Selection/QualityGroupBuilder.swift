@@ -30,11 +30,15 @@ struct QualityGroupBuilder: Sendable {
             edges: similarityEdges,
             configuration: configuration
         )
+        let byID = Dictionary(uniqueKeysWithValues: analyzed.map { ($0.id, $0) })
+        let representatives = resolution.representativeIDs.compactMap { byID[$0] }
         let coverageGroups = momentBuilder.build(
-            representatives: analyzed,
+            representatives: representatives,
             analyses: analyses,
             edges: similarityEdges,
-            configuration: configuration
+            configuration: configuration,
+            memberIDsByRepresentative: resolution.membersByRepresentative,
+            allAssets: analyzed
         )
         return QualityGroupSet(
             candidateIDs: analyzed.map(\.id),
