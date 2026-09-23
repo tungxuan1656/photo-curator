@@ -1,20 +1,96 @@
-# feat-037 — Suggestion integration and legacy retirement plan
+# feat-037 — Suggestion integration and legacy retirement
 
-## Scope and dependency
+## Scope and canonical constraints
 
 After feat-036, integrate immutable intelligence suggestions into the shared
-review experience and retire the legacy selection route as an active behavior
-owner. This feature does not admit Qwen or another model by documentation
-assertion. Stable contracts are in
+review workspace and retire the legacy selection route as an active behavior
+owner. Stable contracts are defined in
 [photo-intelligence.md](../design-docs/photo-intelligence.md),
 [curation-runtime-stack.md](../design-docs/curation-runtime-stack.md), and
 [review-rules.md](../product-specs/review-rules.md).
 
-## Anticipated code areas
+Suggestions and facts are immutable, versioned, provenance-bearing, advisory,
+and never user choices. Applying one is explicit and must not implicitly mutate
+cleanup disposition, album membership, or review progress. Unknown evidence may
+enter Needs Review. The suggestion input remains one review-facing contract;
+preserve consumer compatibility or explicitly migrate records, without adding
+user-choice fields to suggestion records.
 
-Existing areas to reshape: `apps/photo-curator/Domain/Models/PhotoAnalysis.swift`,
-`Domain/Models/SelectionResult.swift`,
-`Domain/Selection/SelectionEngine.swift`,
+Qwen remains frozen and unadmitted. MobileCLIP/FastVLM weights remain
+research-only under their model licenses, IQA-PyTorch remains noncommercial,
+and no candidate is admitted without license, privacy, fallback, runtime,
+quality, and iPhone-performance evidence. The native derived provider is eight
+scalar facts, not a learned pixel embedding; the iOS 26 native path remains
+complete. Runtime providers stay behind bounded service seams with a
+deterministic native fallback. Do not turn host/Simulator results into device
+or quality claims.
+
+## Phased execution plan
+
+### Phase 1 — Native suggestion producer and deterministic fallback
+
+**Commit boundary: producer contract and fallback only.**
+
+- Audit the feat-034 shared review input contract and current native fact
+  production. Extend the immutable suggestion record with producer provenance,
+  analysis/runtime versions, evidence status, and abstention while retaining
+  advisory semantics and reader compatibility.
+- Audit/extend the native provider and bounded suggestion coordinator around the
+  eight scalar facts. Keep model providers unadmitted and ensure unavailable,
+  unsupported, and incomplete-input cases resolve through a deterministic native
+  fallback/abstention path without model downloads or implicit choices.
+- Keep migration/checkpoint decoding requirements visible to later phases and
+  limit this commit to model/service contracts and producer behavior.
+
+### Phase 2 — Native SwiftUI suggestion and Needs Review surfaces
+
+**Commit boundary: designer-owned review UI and localization.**
+
+- With the designer as owner of the native SwiftUI surface, bind suggestion
+  provenance and uncertainty to Needs Review and the existing preview/compare
+  flow. Show producer, versions, evidence status, and abstention without
+  presenting advisory output as fact or a decision.
+- Add explicit **Use Suggestion** and **Keep My Choice** actions. Preserve user
+  authority, independent workspace state, exact-set confirmation, stable resume,
+  and the rule that applying a suggestion does not mutate cleanup disposition,
+  album membership, or review progress implicitly.
+- Add the en/vi catalog entries and verify unavailable-workspace behavior is
+  still clear and non-destructive. Keep uncertain items routable to Needs
+  Review; do not create a second review-facing contract.
+
+### Phase 3 — Retire legacy active ownership
+
+**Commit boundary: compatibility inventory, then active-route retirement.**
+
+- Inventory every legacy selection-route caller, registration, adapter, and
+  persisted compatibility reader across workspace, review, album, deletion,
+  migration, and checkpoint flows.
+- Add or verify compatibility decoding before removing active ownership. Retain
+  migration and checkpoint decoders/readers, historical records, and the
+  workspace-unavailable behavior; they must remain readable and must not regain
+  authority over current workspace choices.
+- Remove only the legacy active route after the inventory and decoder path are
+  complete. Preserve the shared workspace, review, album, deletion, and exact-set
+  safety boundaries. A rollback restores the compatibility adapter, not the old
+  route as a choice authority.
+
+### Phase 4 — Verification and closure
+
+**Commit boundary: closure evidence only.**
+
+- Review the complete diff for immutable/advisory data safety, provenance,
+  explicit user actions, en/vi coverage, deterministic fallback, Qwen
+  non-admission, decoder retention, and workspace-unavailable behavior.
+- Run `./init.sh` and `git diff --check`. Do not add tests, test targets, test
+  files, proof harnesses, model downloads, or unverified quality claims.
+- Record acceptance evidence and handoff in the feature/progress artifacts as
+  required by the repository workflow. Validation owner: parent coordinator.
+
+## Expected implementation areas
+
+Likely existing areas include
+`apps/photo-curator/Domain/Models/PhotoAnalysis.swift`,
+`Domain/Models/SelectionResult.swift`, `Domain/Selection/SelectionEngine.swift`,
 `Domain/Selection/UncertaintyReview.swift`,
 `Domain/Selection/QualityGroupBuilder.swift`,
 `Domain/Selection/SemanticJury.swift`,
@@ -23,72 +99,27 @@ Existing areas to reshape: `apps/photo-curator/Domain/Models/PhotoAnalysis.swift
 `Services/Session/SelectionSessionCoordinator.swift`,
 `Services/Intelligence/QualityCurationRunner.swift`,
 `Services/Intelligence/QwenPairJudge.swift`,
-`Services/Intelligence/QwenRuntime.swift`,
-`App/AppContainer.swift`, `App/AppModel.swift`,
-`Features/Review/ReviewModel.swift`,
+`Services/Intelligence/QwenRuntime.swift`, `App/AppContainer.swift`,
+`App/AppModel.swift`, `Features/Review/ReviewModel.swift`,
 `Features/Review/NeedsReview.swift`, and
 `Features/Review/PhotoAnalysisDetail.swift`.
 
-Anticipated new areas: `Domain/Models/AnalysisSuggestion.swift` and
+Likely new seams are `Domain/Models/AnalysisSuggestion.swift` and
 `Services/Analysis/SuggestionCoordinator.swift`, unless the existing analysis
-service is the smaller safe seam. Legacy route retirement may touch route
-registration and the selection-result adapter; migration decoders remain.
+service is the smaller safe seam. Actual ownership must follow the existing
+contracts and the phase boundaries above.
 
-## Intelligence and safety constraints
+## Acceptance checklist
 
-Facts and suggestions are immutable, versioned, provenance-bearing, and
-advisory. Applying a suggestion is explicit and cannot implicitly mutate
-cleanup disposition, album membership, or review progress. Unknown evidence
-remains unknown and can enter Needs Review.
-
-Qwen stays frozen/unadmitted. Current MobileCLIP/FastVLM weights remain
-research-only under their model licenses; IQA-PyTorch remains noncommercial.
-No candidate is admitted without license, privacy, fallback, runtime, quality,
-and iPhone performance evidence. The native derived provider is eight scalar
-facts, not a learned pixel embedding. The iOS 26 native path remains complete.
-
-Data safety: suggestion records never become user choices and migration
-readers remain available. UX safety: suggestions are explicit and uncertain
-items route to Needs Review. API safety: runtime providers stay behind bounded
-service seams with deterministic native fallback; no Qwen activation is
-planned.
-
-## Work steps
-
-1. Extend the feat-034 [suggestion input contract](../design-docs/photo-intelligence.md#shared-review-input-contract)
-   with producer provenance, analysis/runtime versions, evidence status, and
-   abstention. Preserve consumer compatibility or explicitly migrate records;
-   do not introduce a second review-facing contract or user-choice fields.
-2. Adapt native fact production and bounded suggestion coordination with a
-   deterministic unavailable/fallback path.
-3. Bind suggestions and uncertainty to Needs Review and compare surfaces with
-   explicit choice actions and stable resume behavior.
-4. Inventory legacy selection-route callers; add compatibility decoding before
-   removing active route ownership.
-5. Retire only the active legacy path after workspace, review, album, and
-   deletion dependencies are proven; retain historical docs and readers.
-6. Record any future model admission as a separate evidence-backed decision;
-   do not turn host/Simulator results into device or quality claims.
-
-## Validation
-
-Run `./init.sh` after implementation. No tests, test targets, test files, proof
-harnesses, model downloads during analysis, or unverified quality claims may be
-introduced. Use `git diff --check` and automated lint/build evidence; image
-quality and iPhone fit require separate evidence.
-
-## Rollback and migration
-
-Keep suggestion records readable as advisory and retain native fallback. If a
-candidate fails license, runtime, privacy, or quality admission, disable that
-candidate and preserve facts/user choices. Retire the legacy route only after
-the committed migration marker; rollback restores the compatibility adapter,
-not old behavior as an authority over workspace choices.
-
-## Acceptance mapping
-
-- Immutable advisory suggestions → model/service and ReviewModel integration.
-- Frozen unadmitted Qwen → runtime guard and evidence/decision record.
-- Needs Review/user authority → review surfaces and independent workspace state.
-- Legacy retirement → route inventory, migration decoder, compatibility path.
-- Gate → feature acceptance and `./init.sh` without tests/harnesses.
+- Immutable, versioned, provenance-bearing advisory suggestions use the shared
+  contract, native facts, deterministic fallback, and explicit abstention.
+- Native SwiftUI review surfaces expose provenance, preview, uncertainty,
+  **Use Suggestion**, **Keep My Choice**, and en/vi copy without taking user
+  authority.
+- Qwen and other unadmitted candidates remain inactive; no model or quality
+  admission is implied.
+- Legacy active ownership is retired only after caller inventory and
+  compatibility coverage; migration/checkpoint decoders and
+  workspace-unavailable behavior remain available.
+- Parent coordinator records `./init.sh` and `git diff --check` results. No
+  tests or proof harnesses are introduced.
