@@ -43,14 +43,26 @@ actor DeletionOperationStore {
             .sorted { $0.updatedAt > $1.updatedAt }
     }
 
-    /// Atomic insert-if-absent. The unique operation ID and the explicit
-    /// conflict check make a second start unable to create another dispatch.
+    /// Atomic insert-if-absent. The unique operation ID and the durable exact
+    /// set check make a second start unable to create another dispatch for the
+    /// same review scope and digest, even after relaunch.
     func insertIfAbsent(_ snapshot: PhotoDeletionOperationSnapshot) throws {
         let operationID = snapshot.operationID
         let rows = try context.fetch(FetchDescriptor<PhotoDeletionOperation>(
             predicate: #Predicate { $0.operationID == operationID }
         ))
         guard rows.isEmpty else { throw DeletionOperationStoreError.operationAlreadyExists }
+
+        let scopeID = snapshot.scopeID
+        let digest = snapshot.digest
+        let matchingSetRows = try context.fetch(FetchDescriptor<PhotoDeletionOperation>(
+            predicate: #Predicate { $0.scopeID == scopeID && $0.digest == digest }
+        ))
+        guard matchingSetRows.allSatisfy({
+            PhotoDeletionStatus(rawValue: $0.statusRawValue) == .cancelled
+        }) else {
+            throw DeletionOperationStoreError.operationAlreadyExists
+        }
 
         context.insert(PhotoDeletionOperation(
             operationID: snapshot.operationID,
