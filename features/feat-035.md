@@ -27,7 +27,7 @@ Primary owners: [review-rules.md](../docs/product-specs/review-rules.md),
 ## Implementation and verification
 
 - New `Domain/Models/AlbumSaveOperation.swift` (feat-035 owner): `AlbumSaveStatus`
-  (`prepared/executing/needsReconciliation/completed/partial/failed/cancelled`),
+  (`prepared/executing/needsReconciliation/completed/partial/failed`),
   durable `@Model AlbumSaveOperation` (session/scope IDs, ordered draft IDs,
   canonical SHA-256 digest over sorted IDs + schema v1, status, album identity,
   per-ID added/missing outcomes, timestamps), plus value snapshot with
