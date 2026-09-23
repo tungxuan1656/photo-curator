@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SelectionSummaryView: View {
     @Environment(AppModel.self) private var appModel
-    @Environment(ModelInstallationModel.self) private var modelInstallation
     @Environment(\.dismiss) private var dismiss
 
     private var previewIDs: [AssetID] {
@@ -21,9 +20,12 @@ struct SelectionSummaryView: View {
                             AsyncPhotoThumbnail(assetID: id, targetSizePixels: CGSize(width: 200, height: 200))
                                 .frame(width: 76, height: 76)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .accessibilityLabel("Selected photo")
                         }
                     }
                     .padding(.top, 8)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Selected photos")
                 }
 
                 VStack(spacing: 6) {
@@ -117,29 +119,6 @@ struct SelectionSummaryView: View {
                     }
                 }
 
-                if appModel.qualityModelNeededForCurrentSelection, !modelInstallation.isInstalled {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("AI model not ready", systemImage: "info.circle")
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.orange)
-                        Text("This run uses native analysis until Qwen is available.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        if modelInstallation.canStartDownload {
-                            Button("Download Model") { modelInstallation.download() }
-                                .font(.subheadline.weight(.semibold))
-                        } else if modelInstallation.isDownloading {
-                            Text("The model is downloading in Settings. Starting now will not switch this run later.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
-                }
-
                 Text("This may take a while for large libraries.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -151,6 +130,7 @@ struct SelectionSummaryView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .disabled(appModel.summary.selectedCount == 0)
+                    .accessibilityHint("Starts native on-device photo analysis")
 
                     Button("Change Photos") { dismiss() }
                         .font(.subheadline)

@@ -84,7 +84,8 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
             mediaSubtype: mapSubtype(ph.mediaSubtypes),
             isFavorite: ph.isFavorite,
             isEdited: ph.hasAdjustments,
-            source: .unknown
+            source: .unknown,
+            modificationFingerprint: AssetModificationFingerprint(modificationDate: ph.modificationDate)
         )
     }
 

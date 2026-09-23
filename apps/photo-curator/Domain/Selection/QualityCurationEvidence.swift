@@ -106,6 +106,7 @@ enum QualityGroupOutcome: String, Codable, Sendable {
     case userExcluded
     case coveredBySelectedRepresentative
     case repaired
+    case uncovered
 }
 
 /// An auditable group outcome without retaining pixels or model responses.
@@ -114,9 +115,55 @@ struct QualityGroupAudit: Codable, Sendable {
     let memberCount: Int
     let selectedAssetCount: Int
     let outcome: QualityGroupOutcome
+    /// Usable alternatives retained for review when the hard album cap leaves
+    /// this moment uncovered. Nil preserves old payload decoding semantics.
+    let alternativeAssetIDs: [AssetID]?
+
+    init(
+        groupID: UUID,
+        memberCount: Int,
+        selectedAssetCount: Int,
+        outcome: QualityGroupOutcome,
+        alternativeAssetIDs: [AssetID]? = nil
+    ) {
+        self.groupID = groupID
+        self.memberCount = memberCount
+        self.selectedAssetCount = selectedAssetCount
+        self.outcome = outcome
+        self.alternativeAssetIDs = alternativeAssetIDs
+    }
+}
+
+struct QualityAlbumSizingEvidence: Codable, Sendable {
+    let usableCount: Int
+    let targetCount: Int
+    let minimumCount: Int
+    let maximumCount: Int
+    let selectedCount: Int
+    let uncoveredMomentIDs: [MomentID]
+    let alternativeAssetIDs: [AssetID]
+    let candidateCount: Int
+    let candidateLimit: Int
+    let truncatedCandidateCount: Int
+    let pairCount: Int
+    let pairLimit: Int
+    let truncatedPairCount: Int
+    let coveredMemberCount: Int
+    let unknownPairCount: Int
 }
 
 struct QualityCurationEvidence: Codable, Sendable {
     let metadata: QualityExecutionMetadata
     let groupAudits: [QualityGroupAudit]
+    let sizing: QualityAlbumSizingEvidence?
+
+    init(
+        metadata: QualityExecutionMetadata,
+        groupAudits: [QualityGroupAudit],
+        sizing: QualityAlbumSizingEvidence? = nil
+    ) {
+        self.metadata = metadata
+        self.groupAudits = groupAudits
+        self.sizing = sizing
+    }
 }

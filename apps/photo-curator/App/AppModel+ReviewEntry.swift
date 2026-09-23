@@ -33,19 +33,25 @@ extension AppModel {
             }
             return true
         }
-        guard let result = await loadResult(for: sessionID),
-              result.sessionID == sessionID,
-              !result.selectedAssetIDs.isEmpty
-        else { return false }
-        let live = Dictionary(uniqueKeysWithValues: confirmedSourceAssets().map { ($0.id, $0) })
+        guard let result = await loadResult(for: sessionID), result.sessionID == sessionID else { return false }
+        let checkpoint = try? await container.checkpointStore.load(sessionID: sessionID)
+        let frozenSource = confirmedSourceIDs.isEmpty
+            ? (checkpoint?.sourceAssetIDs.isEmpty == false ? checkpoint?.sourceAssetIDs : result.outcomeAssetIDs)
+            : confirmedSourceIDs
+        guard result.hasValidReviewOutcome(
+            for: frozenSource ?? [], unavailableAssetIDs: checkpoint?.unavailableAssetIDs ?? []
+        ) else { return false }
+        let live = Dictionary(uniqueKeysWithValues: (frozenSource ?? []).compactMap { sourceByID[$0] }
+            .map { ($0.id, $0) })
         let workspaceBinding = await ensureReviewScope(
-            for: sessionID, confirmedSource: confirmedSourceIDs
+            for: sessionID, confirmedSource: frozenSource ?? []
         )
         let model = await makeReviewModel(
             sessionID: sessionID,
             result: result,
             sourceByID: live,
-            workspaceBinding: workspaceBinding
+            workspaceBinding: workspaceBinding,
+            frozenSourceIDs: frozenSource ?? []
         )
         // Legacy feedback persistence is retained only for the file-backed
         // fallback. Available durable-workspace sessions do not reopen a
@@ -73,7 +79,8 @@ extension AppModel {
         sessionID: SessionID,
         result: SelectionResult,
         sourceByID: [AssetID: PhotoAsset],
-        workspaceBinding: (scopeID: UUID, items: [AssetID: WorkspaceItemSnapshot])?
+        workspaceBinding: (scopeID: UUID, items: [AssetID: WorkspaceItemSnapshot])?,
+        frozenSourceIDs: [AssetID]
     ) async -> ReviewModel {
         let feedback: SelectionFeedback?
         if workspaceBinding == nil {
@@ -90,6 +97,7 @@ extension AppModel {
             lowQualityThreshold: AppConfiguration.default.selection.lowQualityThreshold,
             scopeID: workspaceBinding?.scopeID,
             workspaceItems: workspaceBinding?.items,
+            frozenSourceIDs: frozenSourceIDs,
             onWorkspaceChoice: { [weak self] choice in
                 Task { await self?.persistWorkspaceChoice(choice) }
             }
@@ -178,41 +186,39 @@ extension AppModel {
     private func persistWorkspaceChoice(_ choice: ReviewWorkspaceChoice) async {
         guard let workspaceStore = container.workspaceStore else { return }
         do {
-            for assetID in choice.assetIDs {
-                if let membership = choice.albumMembership {
-                    _ = try await workspaceStore.updateAlbumMembership(
-                        membership, scopeID: choice.scopeID, assetID: assetID
-                    )
-                }
-                if let disposition = choice.cleanupDisposition {
-                    _ = try await workspaceStore.updateCleanupDisposition(
-                        disposition, scopeID: choice.scopeID, assetID: assetID
-                    )
-                }
-                if let progress = choice.reviewProgress {
-                    _ = try await workspaceStore.updateReviewProgress(
-                        progress, scopeID: choice.scopeID, assetID: assetID
-                    )
-                }
-            }
             guard let model = reviewModel,
                   model.scopeID == choice.scopeID,
-                  let pending = model.saveError,
-                  pending.scopeID == choice.scopeID,
-                  Set(choice.assetIDs).isSuperset(of: pending.assetIDs),
-                  pending.albumMembership == choice.albumMembership,
-                  pending.cleanupDisposition == choice.cleanupDisposition,
-                  pending.reviewProgress == choice.reviewProgress
+                  model.isCurrentWorkspaceChoice(choice) else { return }
+            _ = try await workspaceStore.applyChoice(choice)
+            guard let model = reviewModel,
+                  model.scopeID == choice.scopeID,
+                  model.isCurrentWorkspaceChoice(choice)
             else { return }
-            model.clearSaveError()
+            if let pending = model.saveError {
+                guard pending.scopeID == choice.scopeID,
+                      pending.albumMemberships == choice.albumMemberships,
+                      pending.cleanupDispositions == choice.cleanupDispositions,
+                      pending.reviewProgresses == choice.reviewProgresses
+                else { return }
+                model.clearSaveError()
+            }
         } catch {
-            guard let model = reviewModel, model.scopeID == choice.scopeID else { return }
+            guard let model = reviewModel,
+                  model.scopeID == choice.scopeID,
+                  model.isCurrentWorkspaceChoice(choice)
+            else { return }
+            model.rollbackWorkspaceChoice(choice)
             model.reportSaveError(ReviewChoiceSaveError(
                 scopeID: choice.scopeID,
                 assetIDs: choice.assetIDs,
                 albumMembership: choice.albumMembership,
                 cleanupDisposition: choice.cleanupDisposition,
-                reviewProgress: choice.reviewProgress
+                reviewProgress: choice.reviewProgress,
+                albumMemberships: choice.albumMemberships,
+                cleanupDispositions: choice.cleanupDispositions,
+                reviewProgresses: choice.reviewProgresses,
+                generation: choice.generation,
+                issuedAt: choice.issuedAt
             ))
         }
     }

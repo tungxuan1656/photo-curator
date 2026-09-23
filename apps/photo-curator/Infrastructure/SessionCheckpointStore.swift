@@ -8,6 +8,9 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
     let sessionID: SessionID
     let stage: String
     let completedAssetIDs: [AssetID]
+    /// Explicit load/analyzer failures. Completed IDs without this marker are
+    /// requeued when their cache row is absent or stale.
+    let unavailableAssetIDs: [AssetID]
     let sourceAssetIDs: [AssetID]
     let configVersion: Int
     let analysisVersion: Int
@@ -19,6 +22,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         sessionID: SessionID,
         stage: String,
         completedAssetIDs: [AssetID],
+        unavailableAssetIDs: [AssetID] = [],
         sourceAssetIDs: [AssetID] = [],
         configVersion: Int,
         analysisVersion: Int,
@@ -28,6 +32,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         self.sessionID = sessionID
         self.stage = stage
         self.completedAssetIDs = completedAssetIDs
+        self.unavailableAssetIDs = unavailableAssetIDs
         self.sourceAssetIDs = sourceAssetIDs
         self.configVersion = configVersion
         self.analysisVersion = analysisVersion
@@ -39,6 +44,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         case sessionID
         case stage
         case completedAssetIDs
+        case unavailableAssetIDs
         case sourceAssetIDs
         case configVersion
         case analysisVersion
@@ -52,6 +58,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         sessionID = try container.decode(SessionID.self, forKey: .sessionID)
         stage = try container.decode(String.self, forKey: .stage)
         completedAssetIDs = try container.decode([AssetID].self, forKey: .completedAssetIDs)
+        unavailableAssetIDs = try container.decodeIfPresent([AssetID].self, forKey: .unavailableAssetIDs) ?? []
         sourceAssetIDs = try container.decodeIfPresent([AssetID].self, forKey: .sourceAssetIDs) ?? []
         configVersion = try container.decode(Int.self, forKey: .configVersion)
         analysisVersion = try container.decode(Int.self, forKey: .analysisVersion)
@@ -64,6 +71,7 @@ nonisolated struct SessionCheckpoint: Codable, Sendable {
         try container.encode(sessionID, forKey: .sessionID)
         try container.encode(stage, forKey: .stage)
         try container.encode(completedAssetIDs, forKey: .completedAssetIDs)
+        try container.encode(unavailableAssetIDs, forKey: .unavailableAssetIDs)
         try container.encode(sourceAssetIDs, forKey: .sourceAssetIDs)
         try container.encode(configVersion, forKey: .configVersion)
         try container.encode(analysisVersion, forKey: .analysisVersion)

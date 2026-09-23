@@ -186,22 +186,12 @@ struct ProcessingView: View {
         )
     }
 
-    @ViewBuilder
     private var analysisDisclosure: some View {
-        if appModel.processing.shouldShowNativeFallbackNotice {
-            Label(
-                "AI unavailable - using on-device native analysis",
-                systemImage: "info.circle"
-            )
+        Label("Native analysis", systemImage: "iphone.gen3")
             .font(.subheadline)
-            .foregroundStyle(.orange)
+            .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
-            .accessibilityLabel("AI unavailable - using on-device native analysis")
-        } else if appModel.processing.usedAIModel == true {
-            Label("AI model used for quality comparisons", systemImage: "sparkles")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
+            .accessibilityLabel("Native on-device analysis is active")
     }
 }
 

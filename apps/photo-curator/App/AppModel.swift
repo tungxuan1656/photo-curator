@@ -96,8 +96,6 @@ final class AppModel {
             tierCProvider: container.tierCProvider,
             semanticJuryProvider: container.semanticJuryProvider,
             qualityRunner: QualityCurationRunner(
-                modelInstallation: container.modelInstallation,
-                judge: container.qwenJudge,
                 memoryPressure: container.memoryPressure,
                 policy: .default
             )
@@ -140,7 +138,6 @@ final class AppModel {
                 "Durable workspace unavailable; legacy selection, analysis, review, and resume flow will continue."
             )
         }
-        await modelInstallation.startupCheck()
         await refreshAuthorization()
         await refreshDeletionRecovery()
         await refreshResumeSnapshot()
@@ -184,7 +181,7 @@ final class AppModel {
 
     var requestedQualityMode: QualityMode {
         AppConfiguration.default.quality.mode(
-            for: .qualityQwen2B,
+            for: .qualityNative,
             sourceCount: summary.selectedCount
         )
     }
@@ -361,7 +358,10 @@ extension AppModel {
         freezeConfirmedSource()
         let assets = confirmedSourceAssets()
         guard !assets.isEmpty else { return }
-        let modelAvailable = modelInstallation.isInstalled
+        // Native analysis is the only production execution path. Keep the
+        // legacy availability field false for old request/checkpoint readers;
+        // it must never gate or select the execution engine.
+        let modelAvailable = false
         let request = SelectionRequest(
             sessionID: SessionID(rawValue: UUID()),
             sourceAssetIDs: confirmedSourceIDs,
@@ -659,8 +659,11 @@ extension AppModel {
                     return
                 }
                 confirmedSourceIDs = checkpoint.sourceAssetIDs
-                let modelAvailable = checkpoint.qualityIdentity?.modelAvailableAtStart ?? modelInstallation.isInstalled
-                let requestedMode = checkpoint.qualityIdentity?.requestedMode ?? .native
+                let modelAvailable = false
+                let storedMode = checkpoint.qualityIdentity?.requestedMode ?? .native
+                // Old Qwen checkpoints remain readable, but resume through the
+                // native quality route and write truthful native provenance.
+                let requestedMode = storedMode.isQualityMode ? QualityMode.qualityNative : storedMode
                 let request = SelectionRequest(
                     sessionID: snapshot.sessionID,
                     sourceAssetIDs: checkpoint.sourceAssetIDs,
@@ -772,7 +775,9 @@ extension AppModel {
             let assets = confirmedSourceAssets()
             var analyses: [AssetID: PhotoAnalysis] = [:]
             for asset in assets where completedIDs.contains(asset.id) {
-                if let hit = await container.analysisCache.analysis(for: asset.id) {
+                if let hit = await container.analysisCache.analysis(
+                    for: asset.id, assetRevision: asset.modificationFingerprint
+                ) {
                     analyses[asset.id] = hit
                 }
             }
@@ -794,7 +799,9 @@ extension AppModel {
                 decisions: engineOut.decisions,
                 generatedAt: engineOut.generatedAt,
                 engineVersion: engineOut.engineVersion,
-                qualityEvidence: engineOut.qualityEvidence
+                qualityEvidence: engineOut.qualityEvidence,
+                coverageEvidence: engineOut.coverageEvidence,
+                provenance: engineOut.provenance
             )
             try await container.checkpointStore.saveResult(partial)
             let done = SessionCheckpoint(

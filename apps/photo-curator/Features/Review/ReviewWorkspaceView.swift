@@ -47,6 +47,13 @@ struct ReviewWorkspaceView: View {
             VStack(spacing: 16) {
                 workspaceHeader(model: model)
                 filterBar
+                ReviewSummarySection(model: model)
+                ReviewSuggestionSection(
+                    sessionID: sessionID,
+                    model: model,
+                    previewSuggestion: $previewSuggestion,
+                    previewRevisionMismatch: $previewRevisionMismatch
+                )
                 if let saveError = model.saveError {
                     saveFailureCard(saveError: saveError, model: model)
                 }
@@ -163,13 +170,53 @@ private struct ReviewGridSection: View {
             )
             .padding()
         }
-        ReviewSuggestionSection(
-            sessionID: sessionID,
-            model: model,
-            previewSuggestion: $previewSuggestion,
-            previewRevisionMismatch: $previewRevisionMismatch
-        )
         ReviewGroupSection(sessionID: sessionID, model: model)
+    }
+}
+
+private struct ReviewSummarySection: View {
+    let model: ReviewModel
+
+    private let columns = Array(repeating: GridItem(.flexible(), alignment: .top), count: 2)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Review summary")
+                .font(.headline)
+                .padding(.horizontal)
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
+                summaryTile("Analyzed", value: model.analysisAvailableCount)
+                summaryTile("Unavailable", value: model.analysisUnavailableCount)
+                summaryTile("Suggestions", value: model.actionableSuggestionCount)
+                summaryTile("In album", value: albumCount)
+                summaryTile("Staged", value: model.stagedCleanupIDs.count)
+                summaryTile("Reviewed", value: model.reviewedAssetIDs.count)
+            }
+            .padding(.horizontal)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Review summary")
+    }
+
+    private var albumCount: Int {
+        model.displayIDs.filter { model.albumMembership(for: $0) == .included }.count
+    }
+
+    private func summaryTile(_ title: LocalizedStringResource, value: Int) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value, format: .number)
+                .font(.title3.bold())
+                .monospacedDigit()
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(value)")
     }
 }
 
@@ -323,7 +370,6 @@ private struct SimilarGroupPreviewCard: View {
                         .frame(width: 96, height: 96)
                         .clipped()
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .opacity(model.isSelected(id) ? 1 : 0.35)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(albumMembershipLabel(model.albumMembership(for: id)))
@@ -358,7 +404,7 @@ private struct ReviewSuggestionSection: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)
             } else {
-                ForEach(suggestions.prefix(3)) { suggestion in
+                ForEach(suggestions) { suggestion in
                     SuggestionCard(suggestion: suggestion, model: model) {
                         previewRevisionMismatch = model.isSuggestionStale(suggestion)
                         previewSuggestion = suggestion
@@ -376,10 +422,9 @@ private struct SuggestionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
+            VStack(alignment: .leading, spacing: 4) {
                 Label("Suggestion available", systemImage: "wand.and.stars")
                     .font(.subheadline.bold())
-                Spacer()
                 Text(evidenceText)
                     .font(.caption)
                     .foregroundStyle(suggestion.canUse ? Color.secondary : Color.orange)
@@ -400,7 +445,7 @@ private struct SuggestionCard: View {
                     }
                 }
             }
-            HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
                 Label(provenanceText, systemImage: "info.circle")
                 Text(versionText)
             }
@@ -698,7 +743,6 @@ private struct ReviewWorkspaceCell: View {
                         targetSizePixels: CGSize(width: 300, height: 300)
                     )
                     .clipped()
-                    .opacity(model.isSelected(assetID) ? 1 : 0.35)
                 }
                 .buttonStyle(.plain)
                 SelectionToggle(isSelected: model.isSelected(assetID), onToggle: { model.toggle(assetID) })
@@ -726,6 +770,22 @@ private struct ReviewWorkspaceCell: View {
         }
         .clipped()
         .accessibilityElement(children: .contain)
+        .accessibilityLabel(cellAccessibilityLabel)
+    }
+
+    private var cellAccessibilityLabel: LocalizedStringResource {
+        let membership = albumMembershipLabel(model.albumMembership(for: assetID))
+        let cleanup: LocalizedStringResource = switch model.cleanupDisposition(for: assetID) {
+        case .undecided: "Undecided"
+        case .keep: "Keep"
+        case .stagedForDeletion: "Staged for deletion"
+        }
+        let progress: LocalizedStringResource = switch model.progress(for: assetID) {
+        case .unseen: "Not reviewed"
+        case .inProgress: "Review in progress"
+        case .reviewed: "Reviewed"
+        }
+        return "Photo, \(membership), \(cleanup), \(progress)"
     }
 }
 

@@ -1,6 +1,8 @@
 import Foundation
 import Observation
 
+// swiftlint:disable file_length - durable review state and its transactional dispatch share one model.
+
 /// One near-duplicate set for S12. `engineWinner` is the automatic pick
 /// (`Recommended best pick`); selection state stays in `ReviewModel`.
 struct SimilarGroup: Hashable, Sendable {
@@ -52,15 +54,15 @@ final class ReviewModel {
     /// Seeded from `workspaceItems` at init. Same-extension writes only:
     /// the action-transition extension in `ReviewModelActions.swift` is the
     /// only writer; reads stay here.
-    @ObservationIgnored private(set) var progressByID: [AssetID: ReviewProgress] = [:]
+    private(set) var progressByID: [AssetID: ReviewProgress] = [:]
     /// Session-local cleanup overlay seeded from durable items at
     /// `beginReview`. Same-extension writes only: the action-transition
     /// extension in `ReviewModelActions.swift` is the only writer.
-    @ObservationIgnored private(set) var stagedCleanupByID: [AssetID: CleanupDisposition] = [:]
+    private(set) var stagedCleanupByID: [AssetID: CleanupDisposition] = [:]
     /// Durable album membership, including `.unset`, is retained separately
     /// from the selection overlay so callers can distinguish an undecided
     /// workspace row from an explicit include/exclude choice.
-    @ObservationIgnored private(set) var albumMembershipByID: [AssetID: AlbumMembership] = [:]
+    private(set) var albumMembershipByID: [AssetID: AlbumMembership] = [:]
     private(set) var removedEditIDs: Set<AssetID>
     private(set) var restoredEditIDs: Set<AssetID>
     var favoriteEditIDs: Set<AssetID>
@@ -71,6 +73,8 @@ final class ReviewModel {
     /// owner can persist through `WorkspaceStore` without the model touching
     /// PhotoKit or SwiftData directly.
     @ObservationIgnored private var onWorkspaceChoice: ((ReviewWorkspaceChoice) -> Void)?
+    @ObservationIgnored private var workspaceActionGeneration: UInt64 = 0
+    @ObservationIgnored private var lastChoiceIssuedAt = Date.distantPast
 
     init(
         sessionID: SessionID,
@@ -82,6 +86,7 @@ final class ReviewModel {
         lowQualityThreshold: Double? = nil,
         scopeID: UUID? = nil,
         workspaceItems: [AssetID: WorkspaceItemSnapshot]? = nil,
+        frozenSourceIDs: [AssetID]? = nil,
         onWorkspaceChoice: ((ReviewWorkspaceChoice) -> Void)? = nil
     ) {
         self.sessionID = sessionID
@@ -94,7 +99,8 @@ final class ReviewModel {
         self.onFeedbackChanged = onFeedbackChanged
         let threshold = lowQualityThreshold ?? AppConfiguration.default.selection.lowQualityThreshold
         let live = Set(sourceByID.keys)
-        let allResultIDs = Set(result.selectedAssetIDs + result.rejectedAssetIDs)
+        let allResultIDs = Set(result.selectedAssetIDs + result.rejectedAssetIDs + result.decisions.map(\.assetID)
+            + (result.provenance?.sourceAssetIDs ?? []) + (frozenSourceIDs ?? []))
         let chrono = Self.chronoOrder(ids: allResultIDs, sourceByID: sourceByID)
         displayIDs = chrono.filter(live.contains)
         let liveSet = Set(displayIDs)
@@ -241,7 +247,12 @@ final class ReviewModel {
             return await flight.value
         }
         let cache = analysisCache
-        let flight = Task { await cache.analysis(for: id) }
+        guard let asset = sourceByID[id], asset.modificationFingerprint.isPresent else {
+            unavailableAnalysisIDs.insert(id)
+            return nil
+        }
+        let revision = asset.modificationFingerprint
+        let flight = Task { await cache.analysis(for: id, assetRevision: revision) }
         analysisFlights[id] = flight
         let analysis = await flight.value
         analysisFlights[id] = nil
@@ -266,6 +277,25 @@ final class ReviewModel {
         displayIDs.filter(selectedIDs.contains)
     }
 
+    var reviewedAssetIDs: [AssetID] {
+        displayIDs.filter { progressByID[$0] == .reviewed }
+    }
+
+    var analysisAvailableCount: Int {
+        displayIDs.filter { decision(for: $0)?.reasons.contains("assetUnavailable") != true }.count
+    }
+
+    var analysisUnavailableCount: Int {
+        displayIDs.count - analysisAvailableCount
+    }
+
+    var actionableSuggestionCount: Int {
+        guard let scopeID else { return 0 }
+        return NativeReviewSuggestionAdapter.suggestions(
+            scopeID: scopeID, result: result, groups: similarGroups
+        ).filter(\.canUse).count
+    }
+
     var removedAssetIDs: [AssetID] {
         displayIDs.filter { !selectedIDs.contains($0) }
     }
@@ -275,8 +305,8 @@ final class ReviewModel {
         displayIDs.filter { engineSelected.contains($0) || selectedIDs.contains($0) }
     }
 
-    /// S12 groups from near-duplicate decisions via the `competingIDs` winner
-    /// relation. Engine-stable IDs via `StableSelectionID(kind: "cluster")`.
+    /// Uses persisted grouping when present. Legacy results have no provenance,
+    /// so only that path reconstructs groups from the old decision reasons.
     /// Cached: `SimilarGroups` and `ReviewOverview` both read it per render.
     var similarGroups: [SimilarGroup] {
         cachedSimilarGroups
@@ -286,6 +316,26 @@ final class ReviewModel {
         result: SelectionResult, displayIDs: [AssetID], sourceByID: [AssetID: PhotoAsset]
     ) -> [SimilarGroup] {
         let live = Set(sourceByID.keys)
+        let order = Dictionary(uniqueKeysWithValues: displayIDs.enumerated().map { ($1, $0) })
+        if let provenance = result.provenance {
+            return provenance.clusters.compactMap { cluster in
+                guard let winner = cluster.representativeAssetID,
+                      cluster.memberIDs.contains(winner), live.contains(winner)
+                else { return nil }
+                let members = cluster.memberIDs.filter(live.contains)
+                guard members.count >= 2 else { return nil }
+                let sortedMembers = members.sorted {
+                    (order[$0] ?? Int.max, $0.rawValue) < (order[$1] ?? Int.max, $1.rawValue)
+                }
+                return SimilarGroup(id: cluster.id, memberIDs: sortedMembers, engineWinner: winner)
+            }.sorted {
+                (order[$0.engineWinner] ?? Int.max, $0.id.rawValue.uuidString)
+                    < (order[$1.engineWinner] ?? Int.max, $1.id.rawValue.uuidString)
+            }
+        }
+
+        // Legacy compatibility adapter: old results did not persist cluster
+        // membership, so reason strings are the only available source.
         var membersByWinner: [AssetID: Set<AssetID>] = [:]
         for decision in result.decisions {
             guard live.contains(decision.assetID) else { continue }
@@ -297,7 +347,6 @@ final class ReviewModel {
                 membersByWinner[winner, default: []].insert(winner)
             }
         }
-        let order = Dictionary(uniqueKeysWithValues: displayIDs.enumerated().map { ($1, $0) })
         var groups: [SimilarGroup] = []
         for (winner, members) in membersByWinner {
             let liveMembers = members.intersection(live)
@@ -327,22 +376,28 @@ final class ReviewModel {
 
     func remove(_ id: AssetID) {
         guard selectedIDs.remove(id) != nil else { return }
+        let previous = [id: albumMembership(for: id)]
         trackRemoval(id)
         lastRemovedID = id
         persist()
-        notifyWorkspaceChoice(assetIDs: [id], albumMembership: .excluded)
+        notifyWorkspaceChoice(
+            assetIDs: [id], albumMembership: .excluded, previousAlbumMemberships: previous
+        )
     }
 
     func restore(_ id: AssetID) {
         guard Set(displayIDs).contains(id) else { return }
         guard !selectedIDs.contains(id) else { return }
+        let previous = [id: albumMembership(for: id)]
         selectedIDs.insert(id)
         trackInsertion(id)
         if lastRemovedID == id {
             lastRemovedID = nil
         }
         persist()
-        notifyWorkspaceChoice(assetIDs: [id], albumMembership: .included)
+        notifyWorkspaceChoice(
+            assetIDs: [id], albumMembership: .included, previousAlbumMemberships: previous
+        )
     }
 
     func toggle(_ id: AssetID) {
@@ -370,6 +425,8 @@ final class ReviewModel {
     func selectWinner(_ id: AssetID, in group: SimilarGroup) {
         guard group.memberIDs.contains(id), Set(displayIDs).contains(id) else { return }
         let prior = currentWinner(of: group)
+        let changedIDs = Set([id, prior])
+        let previous = Dictionary(uniqueKeysWithValues: changedIDs.map { ($0, albumMembership(for: $0)) })
         let singlePrior = Set(group.memberIDs.filter(selectedIDs.contains)) == [prior]
         if !selectedIDs.contains(id) {
             selectedIDs.insert(id)
@@ -394,7 +451,7 @@ final class ReviewModel {
         if id != prior, singlePrior {
             albumChanges[prior] = .excluded
         }
-        notifyAlbumChanges(albumChanges)
+        notifyAlbumChanges(albumChanges, previous: previous)
     }
 
     func feedbackSnapshot() -> SelectionFeedback {
@@ -462,31 +519,146 @@ final class ReviewModel {
 // MARK: - feat-034 workspace dispatch (dimension-scoped durable writes)
 
 extension ReviewModel {
+    func isCurrentWorkspaceChoice(_ choice: ReviewWorkspaceChoice) -> Bool {
+        scopeID == choice.scopeID && workspaceActionGeneration == choice.generation
+    }
+
     func notifyWorkspaceChoice(
         assetIDs: [AssetID],
         albumMembership: AlbumMembership? = nil,
         cleanupDisposition: CleanupDisposition? = nil,
-        reviewProgress: ReviewProgress? = nil
+        reviewProgress: ReviewProgress? = nil,
+        albumMemberships: [AssetID: AlbumMembership] = [:],
+        cleanupDispositions: [AssetID: CleanupDisposition] = [:],
+        reviewProgresses: [AssetID: ReviewProgress] = [:],
+        previousAlbumMemberships: [AssetID: AlbumMembership] = [:],
+        previousCleanupDispositions: [AssetID: CleanupDisposition] = [:],
+        previousReviewProgresses: [AssetID: ReviewProgress] = [:]
     ) {
+        let validIDs = Set(displayIDs)
+        var albumChanges = albumMemberships.filter { validIDs.contains($0.key) }
         if let albumMembership {
-            for assetID in assetIDs where displayIDs.contains(assetID) {
-                albumMembershipByID[assetID] = albumMembership
+            for assetID in assetIDs where validIDs.contains(assetID) {
+                albumChanges[assetID] = albumMembership
             }
         }
+        var cleanupChanges = cleanupDispositions.filter { validIDs.contains($0.key) }
+        if let cleanupDisposition {
+            for assetID in assetIDs where validIDs.contains(assetID) {
+                cleanupChanges[assetID] = cleanupDisposition
+            }
+        }
+        var progressChanges = reviewProgresses.filter { validIDs.contains($0.key) }
+        if let reviewProgress {
+            for assetID in assetIDs where validIDs.contains(assetID) {
+                progressChanges[assetID] = reviewProgress
+            }
+        }
+        let changedIDs = Array(Set(albumChanges.keys).union(cleanupChanges.keys).union(progressChanges.keys))
+        guard !changedIDs.isEmpty else { return }
+        workspaceActionGeneration &+= 1
+        let issuedAt = nextChoiceIssuedAt()
+        let previousAlbums = previousAlbumMemberships.isEmpty
+            ? Dictionary(uniqueKeysWithValues: albumChanges.keys.map { ($0, self.albumMembership(for: $0)) })
+            : previousAlbumMemberships
+        let previousCleanup = previousCleanupDispositions.isEmpty
+            ? Dictionary(uniqueKeysWithValues: cleanupChanges.keys.map { ($0, self.cleanupDisposition(for: $0)) })
+            : previousCleanupDispositions
+        let previousProgress = previousReviewProgresses.isEmpty
+            ? Dictionary(uniqueKeysWithValues: progressChanges.keys.map { ($0, progress(for: $0)) })
+            : previousReviewProgresses
+        applyWorkspaceChoice(
+            album: albumChanges, cleanup: cleanupChanges, progress: progressChanges
+        )
+        saveError = nil
         guard let scopeID else { return }
         onWorkspaceChoice?(ReviewWorkspaceChoice(
             scopeID: scopeID,
-            assetIDs: assetIDs,
-            albumMembership: albumMembership,
-            cleanupDisposition: cleanupDisposition,
-            reviewProgress: reviewProgress
+            assetIDs: changedIDs,
+            albumMembership: albumChanges.count == changedIDs.count ? nil : albumMembership,
+            cleanupDisposition: cleanupChanges.count == changedIDs.count ? nil : cleanupDisposition,
+            reviewProgress: progressChanges.count == changedIDs.count ? nil : reviewProgress,
+            albumMemberships: albumChanges,
+            cleanupDispositions: cleanupChanges,
+            reviewProgresses: progressChanges,
+            previousAlbumMemberships: previousAlbums,
+            previousCleanupDispositions: previousCleanup,
+            previousReviewProgresses: previousProgress,
+            generation: workspaceActionGeneration,
+            issuedAt: issuedAt
         ))
     }
 
-    func notifyAlbumChanges(_ changes: [AssetID: AlbumMembership]) {
-        for (assetID, membership) in changes {
-            notifyWorkspaceChoice(assetIDs: [assetID], albumMembership: membership)
+    func notifyAlbumChanges(
+        _ changes: [AssetID: AlbumMembership],
+        previous: [AssetID: AlbumMembership] = [:]
+    ) {
+        notifyWorkspaceChoice(
+            assetIDs: [], albumMemberships: changes, previousAlbumMemberships: previous
+        )
+    }
+
+    private func nextChoiceIssuedAt() -> Date {
+        let now = Date()
+        let issuedAt = max(now, lastChoiceIssuedAt.addingTimeInterval(0.000_001))
+        lastChoiceIssuedAt = issuedAt
+        return issuedAt
+    }
+
+    private func applyWorkspaceChoice(
+        album: [AssetID: AlbumMembership],
+        cleanup: [AssetID: CleanupDisposition],
+        progress: [AssetID: ReviewProgress]
+    ) {
+        for (assetID, membership) in album {
+            albumMembershipByID[assetID] = membership
+            if membership == .included {
+                selectedIDs.insert(assetID)
+            } else {
+                selectedIDs.remove(assetID)
+            }
         }
+        for (assetID, disposition) in cleanup {
+            stagedCleanupByID[assetID] = disposition
+        }
+        for (assetID, value) in progress {
+            progressByID[assetID] = value
+        }
+    }
+
+    /// Restores the last committed presentation after an atomic store failure.
+    /// The rollback is dimension-scoped and keeps selectedIDs synchronized with
+    /// the authoritative album membership map.
+    func rollbackWorkspaceChoice(_ choice: ReviewWorkspaceChoice) {
+        for (assetID, membership) in choice.previousAlbumMemberships {
+            albumMembershipByID[assetID] = membership
+            if membership == .included {
+                selectedIDs.insert(assetID)
+            } else {
+                selectedIDs.remove(assetID)
+            }
+        }
+        for (assetID, disposition) in choice.previousCleanupDispositions {
+            stagedCleanupByID[assetID] = disposition
+        }
+        for (assetID, progress) in choice.previousReviewProgresses {
+            progressByID[assetID] = progress
+        }
+    }
+
+    @discardableResult
+    func retrySaveError() -> Bool {
+        guard let saveError, saveError.scopeID == scopeID, !saveError.assetIDs.isEmpty else { return false }
+        notifyWorkspaceChoice(
+            assetIDs: saveError.assetIDs,
+            albumMembership: saveError.albumMembership,
+            cleanupDisposition: saveError.cleanupDisposition,
+            reviewProgress: saveError.reviewProgress,
+            albumMemberships: saveError.albumMemberships,
+            cleanupDispositions: saveError.cleanupDispositions,
+            reviewProgresses: saveError.reviewProgresses
+        )
+        return true
     }
 
     static func workspaceAlbumSelected(

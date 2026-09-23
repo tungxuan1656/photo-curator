@@ -117,6 +117,7 @@ private extension VisionAnalysisService {
             image: image,
             assetID: assetID,
             faceCount: faceCount,
+            faceDetectionStatus: tierA.faceDetectionStatus,
             technical: technical,
             universalIsUtility: facts.isUtility,
             isScreenshotSubtype: input.isScreenshotSubtype
@@ -125,11 +126,21 @@ private extension VisionAnalysisService {
             assetID: assetID,
             technical: technical,
             faceCount: faceCount,
-            groupPhotoScore: faceCount >= 2 ? Double(faceCount) / 6.0 : nil,
-            subjectPlacementScore: bestFaceQuality,
-            sceneType: faceCount > 0 ? .people : .unknown,
+            faceDetectionStatus: tierA.faceDetectionStatus,
+            // Face count is persisted as detection evidence, not as a
+            // calibrated group-quality score.
+            groupPhotoScore: nil,
+            subjectPlacementScore: nil,
+            bestFaceCaptureQuality: bestFaceQuality,
+            faceQualityAvailability: tierA.faceQualityAvailability,
+            sceneType: facts.sceneType == .unknown && tierA.faceDetectionStatus == .facesDetected
+                ? .people
+                : facts.sceneType,
             aestheticScore: facts.aestheticScore,
+            aestheticAvailability: facts.aestheticAvailability,
             tags: facts.tags,
+            classificationAvailability: facts.classificationAvailability,
+            semanticMappingRevision: facts.semanticMappingRevision,
             featurePrintAvailable: facts.featurePrintAvailable,
             horizonScore: tierB.horizonScore,
             visualBalanceScore: tierB.visualBalanceScore,
@@ -156,14 +167,16 @@ private extension VisionAnalysisService {
         let faceRects = VNDetectFaceRectanglesRequest()
         let faceQuality = VNDetectFaceCaptureQualityRequest()
         let printRequest = VNGenerateImageFeaturePrintRequest()
+        var faceDetectionRan = false
+        var faceQualityRan = false
         do {
             try Task.checkCancellation()
-            autoreleasepool {
-                try? handler.perform([faceRects])
+            faceDetectionRan = autoreleasepool {
+                (try? handler.perform([faceRects])) != nil
             }
             try Task.checkCancellation()
-            autoreleasepool {
-                try? handler.perform([faceQuality])
+            faceQualityRan = autoreleasepool {
+                (try? handler.perform([faceQuality])) != nil
             }
             try Task.checkCancellation()
             autoreleasepool {
@@ -191,7 +204,15 @@ private extension VisionAnalysisService {
         let similarity = (printRequest.results?.first as? VNFeaturePrintObservation)
             .map(ImageSimilarityArtifact.init(observation:))
         return TierABaseline(
-            faceCount: faceCount, bestFaceQuality: bestFaceQuality, faceQualities: faceQualities,
+            faceCount: faceDetectionRan ? faceCount : 0,
+            faceDetectionStatus: faceDetectionRan
+                ? (faceCount > 0 ? .facesDetected : .noFaces)
+                : .unavailable,
+            bestFaceQuality: bestFaceQuality,
+            faceQualityAvailability: faceQualityRan
+                ? (faceQuality.results == nil ? .unavailable : .available)
+                : .unavailable,
+            faceQualities: faceQualityRan ? faceQualities : nil,
             similarity: similarity
         )
     }
@@ -213,12 +234,12 @@ private extension VisionAnalysisService {
         )
         let lowFloor = await AppConfiguration.default.selection.lowQualityThreshold
         let technicallyUsable = qualityProbe.qualityScore >= lowFloor
-        let saliencyEligible = technicallyUsable && input.faceCount == 0
+        let saliencyEligible = technicallyUsable && input.faceDetectionStatus == .noFaces
         // Horizon eligibility needs the asset shape: landscape input only.
         // performAll sees pixels only (AnalysisInput carries no PhotoAsset),
         // so it gates on the image dims — the same comparison, no new data.
         let horizonEligible = saliencyEligible && input.image.width >= input.image.height
-        let personSegEligible = technicallyUsable && input.faceCount >= 1
+        let personSegEligible = technicallyUsable && input.faceDetectionStatus == .facesDetected
         let utilityEligible = technicallyUsable && (input.isScreenshotSubtype || input.universalIsUtility)
         let composition = try await gatedCompositionFacts(
             image: input.image,
@@ -292,7 +313,9 @@ private extension VisionAnalysisService {
 
     private nonisolated struct TierABaseline: Sendable {
         let faceCount: Int
+        let faceDetectionStatus: FaceDetectionStatus
         let bestFaceQuality: Double?
+        let faceQualityAvailability: FactAvailability
         let faceQualities: [Double]?
         let similarity: ImageSimilarityArtifact?
     }
@@ -304,6 +327,7 @@ private extension VisionAnalysisService {
         let image: CGImage
         let assetID: AssetID
         let faceCount: Int
+        let faceDetectionStatus: FaceDetectionStatus
         let technical: TechnicalAnalysis
         let universalIsUtility: Bool
         let isScreenshotSubtype: Bool
@@ -334,6 +358,7 @@ private extension VisionAnalysisService {
             return await TechnicalAnalysis(
                 sharpnessScore: 0,
                 exposureScore: 0.5,
+                analysisImageResolutionScore: resolution,
                 resolutionScore: resolution,
                 blurProbability: 1,
                 underexposureProbability: 0,
@@ -344,6 +369,7 @@ private extension VisionAnalysisService {
         return await TechnicalAnalysis(
             sharpnessScore: scored.sharpness,
             exposureScore: scored.exposure,
+            analysisImageResolutionScore: scored.resolution,
             resolutionScore: scored.resolution,
             blurProbability: scored.blur,
             underexposureProbability: scored.under,

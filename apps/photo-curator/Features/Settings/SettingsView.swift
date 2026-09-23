@@ -67,15 +67,12 @@ struct SettingsView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            Section("AI Model") {
-                Text("Qwen3.5-2B (4-bit)")
+            Section("Legacy model artifact") {
+                Text("Native analysis is used for curation")
                     .font(.headline)
-                Text(modelInstallation.modelID)
+                Text("An older optional model download may remain on this iPhone.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
-                LabeledContent("Model download size", value: byteString(modelInstallation.modelSize))
-                    .font(.footnote)
 
                 Label(modelStateTitle, systemImage: modelStateSymbol)
                     .foregroundStyle(modelStateColor)
@@ -96,15 +93,14 @@ struct SettingsView: View {
 
                 switch modelInstallation.state {
                 case .notInstalled:
-                    Button("Download Model") { modelInstallation.download() }
-                        .disabled(!modelInstallation.canStartDownload)
+                    EmptyView()
                 case .downloading, .verifying:
                     Button("Cancel Download", role: .cancel) { modelInstallation.cancelDownload() }
                 case .paused, .failed:
                     Button("Retry Download") { modelInstallation.retryDownload() }
                         .disabled(!modelInstallation.canStartDownload)
                 case .installed:
-                    Button("Remove Model", role: .destructive) { confirmingModelRemoval = true }
+                    Button("Remove Legacy Artifact", role: .destructive) { confirmingModelRemoval = true }
                         .disabled(modelInstallation.isBusy)
                 }
             }
@@ -138,21 +134,21 @@ struct SettingsView: View {
             Text("Saved analysis is removed. Your original photos stay unchanged.")
         }
         .confirmationDialog(
-            "Remove the AI model?",
+            "Remove the legacy artifact?",
             isPresented: $confirmingModelRemoval,
             titleVisibility: .visible
         ) {
-            Button("Remove Model", role: .destructive) { modelInstallation.remove() }
+            Button("Remove Legacy Artifact", role: .destructive) { modelInstallation.remove() }
             Button("Keep Model", role: .cancel) {}
         } message: {
-            Text("The model can be downloaded again later. Your photos and saved albums stay unchanged.")
+            Text("Removing this artifact does not affect your photos or saved albums.")
         }
     }
 
     private var modelStateTitle: LocalizedStringResource {
         switch modelInstallation.state {
         case .notInstalled:
-            "Not downloaded"
+            "Not present"
         case .downloading:
             "Downloading"
         case .verifying:
@@ -160,7 +156,7 @@ struct SettingsView: View {
         case .paused:
             "Download paused"
         case .installed:
-            "Ready for AI analysis"
+            "Legacy artifact present"
         case .failed:
             "Download failed"
         }
@@ -169,7 +165,7 @@ struct SettingsView: View {
     private var modelStateMessage: LocalizedStringResource {
         switch modelInstallation.state {
         case .notInstalled:
-            "Download the pinned model for local AI curation."
+            "No legacy model is needed. Native analysis is ready to use."
         case .downloading:
             "The download continues without blocking the app."
         case .verifying:
@@ -177,7 +173,7 @@ struct SettingsView: View {
         case .paused:
             "The verified partial download will resume when you retry."
         case .installed:
-            "Qwen is available for small-set curation."
+            "Curation continues to use native analysis. You can remove this artifact."
         case let .failed(failure):
             failureMessage(failure)
         }

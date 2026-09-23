@@ -64,6 +64,16 @@
         }
       }
     },
+    "%@, %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld"
+          }
+        }
+      }
+    },
     "%lld" : {
       "localizations" : {
         "en" : {
@@ -786,6 +796,7 @@
       }
     },
     "AI Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -802,6 +813,7 @@
       }
     },
     "AI model not ready" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -838,29 +850,30 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "AI unavailable - native analysis was used"
+            "value" : "Native analysis was used"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI không khả dụng - đã dùng phân tích trên thiết bị"
+            "value" : "Đã dùng phân tích trên thiết bị"
           }
         }
       }
     },
     "AI unavailable - using on-device native analysis" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "AI unavailable - using on-device native analysis"
+            "value" : "Native on-device analysis"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI không khả dụng - đang dùng phân tích trên thiết bị"
+            "value" : "Đang dùng phân tích trên thiết bị"
           }
         }
       }
@@ -870,13 +883,29 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "AI unavailable. Native analysis was used."
+            "value" : "Native analysis was used."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI không khả dụng. Đã dùng phân tích trên thiết bị."
+            "value" : "Đã dùng phân tích trên thiết bị."
+          }
+        }
+      }
+    },
+    "Album" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Album"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album"
           }
         }
       }
@@ -1090,6 +1119,22 @@
         }
       }
     },
+    "An older optional model download may remain on this iPhone." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "An older optional model download may remain on this iPhone."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Một bản tải xuống mô hình cũ tùy chọn có thể vẫn còn trên iPhone này."
+          }
+        }
+      }
+    },
     "Analysis complete" : {
       "localizations" : {
         "en" : {
@@ -1232,6 +1277,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phân tích không khả dụng"
+          }
+        }
+      }
+    },
+    "Analyzed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Analyzed"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã phân tích"
           }
         }
       }
@@ -2328,6 +2389,22 @@
         }
       }
     },
+    "Curation continues to use native analysis. You can remove this artifact." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Curation continues to use native analysis. You can remove this artifact."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Việc tuyển chọn vẫn dùng phân tích trên thiết bị. Bạn có thể xóa tệp này."
+          }
+        }
+      }
+    },
     "Curation Paused" : {
       "localizations" : {
         "en" : {
@@ -2601,6 +2678,7 @@
       }
     },
     "Download AI model?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2633,6 +2711,7 @@
       }
     },
     "Download Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2665,6 +2744,7 @@
       }
     },
     "Download Qwen3.5-2B for on-device AI curation. The download runs while you use the app." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2681,6 +2761,7 @@
       }
     },
     "Download the pinned model for local AI curation." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3609,6 +3690,7 @@
       }
     },
     "Later" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3652,6 +3734,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Được bỏ ra để tăng sự đa dạng — thêm lại nếu ảnh quan trọng"
+          }
+        }
+      }
+    },
+    "Legacy artifact present" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Legacy artifact present"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Có tệp cũ"
+          }
+        }
+      }
+    },
+    "Legacy model artifact" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Legacy model artifact"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tệp mô hình cũ"
           }
         }
       }
@@ -3935,6 +4049,7 @@
       }
     },
     "Model download size" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3994,6 +4109,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Phân tích tích hợp"
+          }
+        }
+      }
+    },
+    "Native analysis is used for curation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Native analysis is used for curation"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dùng phân tích gốc trên thiết bị để tuyển chọn"
+          }
+        }
+      }
+    },
+    "Native on-device analysis is active" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Native on-device analysis is active"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phân tích trên thiết bị đang hoạt động"
           }
         }
       }
@@ -4123,6 +4270,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Không tìm thấy ảnh trùng"
+          }
+        }
+      }
+    },
+    "No legacy model is needed. Native analysis is ready to use." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No legacy model is needed. Native analysis is ready to use."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không cần mô hình cũ. Phân tích trên thiết bị đã sẵn sàng."
           }
         }
       }
@@ -4257,6 +4420,7 @@
       }
     },
     "Not downloaded" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4316,6 +4480,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Để sau"
+          }
+        }
+      }
+    },
+    "Not present" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not present"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không có"
           }
         }
       }
@@ -4901,6 +5081,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ảnh, %1$@"
+          }
+        }
+      }
+    },
+    "Photo, %@, %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photo, %1$@, %2$@, %3$@"
           }
         }
       }
@@ -5540,6 +5730,7 @@
       }
     },
     "Qwen is available for small-set curation." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5556,6 +5747,7 @@
       }
     },
     "Qwen3.5-2B (4-bit)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5591,6 +5783,7 @@
 
     },
     "Ready for AI analysis" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5784,7 +5977,24 @@
         }
       }
     },
+    "Remove Legacy Artifact" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove Legacy Artifact"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xóa tệp cũ"
+          }
+        }
+      }
+    },
     "Remove Model" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5817,6 +6027,7 @@
       }
     },
     "Remove the AI model?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5828,6 +6039,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Xóa mô hình AI?"
+          }
+        }
+      }
+    },
+    "Remove the legacy artifact?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove the legacy artifact?"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xóa tệp cũ?"
           }
         }
       }
@@ -5909,6 +6136,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Đã bỏ, %@"
+          }
+        }
+      }
+    },
+    "Removing this artifact does not affect your photos or saved albums." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Removing this artifact does not affect your photos or saved albums."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xóa tệp này không ảnh hưởng đến ảnh hoặc album đã lưu."
           }
         }
       }
@@ -6360,6 +6603,22 @@
         }
       }
     },
+    "Review summary" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Review summary"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tóm tắt xem lại"
+          }
+        }
+      }
+    },
     "Reviewed" : {
       "localizations" : {
         "en" : {
@@ -6631,6 +6890,12 @@
           }
         }
       }
+    },
+    "Selected photo" : {
+
+    },
+    "Selected photos" : {
+
     },
     "Selection" : {
       "localizations" : {
@@ -6994,6 +7259,22 @@
     "Stage photo for deletion" : {
 
     },
+    "Staged" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Staged"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã đánh dấu"
+          }
+        }
+      }
+    },
     "Staged for deletion" : {
       "localizations" : {
         "en" : {
@@ -7044,6 +7325,9 @@
           }
         }
       }
+    },
+    "Starts native on-device photo analysis" : {
+
     },
     "Status" : {
 
@@ -7562,6 +7846,7 @@
       }
     },
     "The model can be downloaded again later. Your photos and saved albums stay unchanged." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7610,6 +7895,7 @@
       }
     },
     "The model is downloading in Settings. Starting now will not switch this run later." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7853,6 +8139,7 @@
       }
     },
     "This run uses native analysis until Qwen is available." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -7960,6 +8247,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Biến ảnh lộn xộn thành những câu chuyện được tuyển chọn"
+          }
+        }
+      }
+    },
+    "Unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unavailable"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không khả dụng"
           }
         }
       }

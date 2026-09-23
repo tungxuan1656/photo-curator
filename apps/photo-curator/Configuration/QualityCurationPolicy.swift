@@ -69,11 +69,12 @@ struct QualityCurationPolicy: Codable, Sendable {
         policyVersion: 1
     )
 
-    func mode(for requestedMode: QualityMode, sourceCount: Int) -> QualityMode {
-        guard requestedMode.isQualityMode, sourceCount <= maxSourceAssets else {
-            return sourceCount > maxSourceAssets ? .native : requestedMode
-        }
-        return requestedMode
+    func mode(for requestedMode: QualityMode, sourceCount _: Int) -> QualityMode {
+        guard requestedMode.isQualityMode else { return .native }
+        // The native quality route is consistent across all source sizes.
+        // Keep this policy seam so old callers and persisted mode values remain
+        // source-compatible without retaining the former 100-photo switch.
+        return .qualityNative
     }
 
     func validationErrors() -> [String] {

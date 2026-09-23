@@ -29,18 +29,23 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) && !selectedIDs.contains($0) }
         guard !targets.isEmpty else { return }
+        let previous = Dictionary(uniqueKeysWithValues: targets.map { ($0, albumMembership(for: $0)) })
         setSelected(selectedIDs.union(targets))
         for id in targets {
             trackInsertion(id)
         }
         persist()
-        notifyAlbumChanges(Dictionary(uniqueKeysWithValues: targets.map { ($0, AlbumMembership.included) }))
+        notifyAlbumChanges(
+            Dictionary(uniqueKeysWithValues: targets.map { ($0, AlbumMembership.included) }),
+            previous: previous
+        )
     }
 
     /// review-rules: explicit album-membership write; leaves cleanup, progress, facts unchanged.
     func removeFromAlbum(_ ids: [AssetID]) {
         let targets = ids.filter { selectedIDs.contains($0) }
         guard !targets.isEmpty else { return }
+        let previous = Dictionary(uniqueKeysWithValues: targets.map { ($0, albumMembership(for: $0)) })
         setSelected(selectedIDs.subtracting(targets))
         for id in targets {
             trackRemoval(id)
@@ -49,7 +54,10 @@ extension ReviewModel {
             setLastRemovedID(nil)
         }
         persist()
-        notifyAlbumChanges(Dictionary(uniqueKeysWithValues: targets.map { ($0, AlbumMembership.excluded) }))
+        notifyAlbumChanges(
+            Dictionary(uniqueKeysWithValues: targets.map { ($0, AlbumMembership.excluded) }),
+            previous: previous
+        )
     }
 
     /// review-rules: explicit progress write; leaves album, cleanup, facts unchanged.
@@ -57,9 +65,12 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) }
         guard !targets.isEmpty else { return }
+        let previous = Dictionary(uniqueKeysWithValues: targets.map { ($0, progress(for: $0)) })
         setProgress(.reviewed, for: targets)
         persist()
-        notifyWorkspaceChoice(assetIDs: targets, reviewProgress: .reviewed)
+        notifyWorkspaceChoice(
+            assetIDs: targets, reviewProgress: .reviewed, previousReviewProgresses: previous
+        )
     }
 
     /// review-rules: grid visibility never marks progress; only explicit open does.
@@ -67,9 +78,12 @@ extension ReviewModel {
     func markOpened(_ ids: [AssetID]) {
         let targets = ids.filter { progress(for: $0) == .unseen }
         guard !targets.isEmpty else { return }
+        let previous = Dictionary(uniqueKeysWithValues: targets.map { ($0, progress(for: $0)) })
         setProgress(.inProgress, for: targets)
         persist()
-        notifyWorkspaceChoice(assetIDs: targets, reviewProgress: .inProgress)
+        notifyWorkspaceChoice(
+            assetIDs: targets, reviewProgress: .inProgress, previousReviewProgresses: previous
+        )
     }
 
     /// review-rules: explicit cleanup write; leaves album, progress, facts unchanged.
@@ -77,9 +91,13 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) }
         guard !targets.isEmpty else { return }
+        let previous = Dictionary(uniqueKeysWithValues: targets.map { ($0, cleanupDisposition(for: $0)) })
         setCleanup(.stagedForDeletion, for: targets)
         persist()
-        notifyWorkspaceChoice(assetIDs: targets, cleanupDisposition: .stagedForDeletion)
+        notifyWorkspaceChoice(
+            assetIDs: targets, cleanupDisposition: .stagedForDeletion,
+            previousCleanupDispositions: previous
+        )
     }
 
     /// review-rules: explicit cleanup write; leaves album, progress, facts unchanged.
@@ -87,9 +105,13 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) }
         guard !targets.isEmpty else { return }
+        let previous = Dictionary(uniqueKeysWithValues: targets.map { ($0, cleanupDisposition(for: $0)) })
         setCleanup(.undecided, for: targets)
         persist()
-        notifyWorkspaceChoice(assetIDs: targets, cleanupDisposition: .undecided)
+        notifyWorkspaceChoice(
+            assetIDs: targets, cleanupDisposition: .undecided,
+            previousCleanupDispositions: previous
+        )
     }
 
     /// review-rules: explicit cleanup write; leaves album, progress, facts unchanged.
@@ -97,9 +119,13 @@ extension ReviewModel {
         let display = Set(displayIDs)
         let targets = ids.filter { display.contains($0) }
         guard !targets.isEmpty else { return }
+        let previous = Dictionary(uniqueKeysWithValues: targets.map { ($0, cleanupDisposition(for: $0)) })
         setCleanup(.keep, for: targets)
         persist()
-        notifyWorkspaceChoice(assetIDs: targets, cleanupDisposition: .keep)
+        notifyWorkspaceChoice(
+            assetIDs: targets, cleanupDisposition: .keep,
+            previousCleanupDispositions: previous
+        )
     }
 
     /// review-rules: explicit retry re-issues the exact failed dimension
@@ -109,18 +135,6 @@ extension ReviewModel {
     var canRetrySaveError: Bool {
         guard let saveError, saveError.scopeID == scopeID else { return false }
         return !saveError.assetIDs.isEmpty
-    }
-
-    @discardableResult
-    func retrySaveError() -> Bool {
-        guard let saveError, saveError.scopeID == scopeID, !saveError.assetIDs.isEmpty else { return false }
-        notifyWorkspaceChoice(
-            assetIDs: saveError.assetIDs,
-            albumMembership: saveError.albumMembership,
-            cleanupDisposition: saveError.cleanupDisposition,
-            reviewProgress: saveError.reviewProgress
-        )
-        return true
     }
 
     /// Applies one confirmed advisory proposal to its named dimension only.

@@ -1,8 +1,9 @@
 import Foundation
 import Observation
 
-/// Main-actor presentation state for the pinned Qwen model installation.
-/// The installer remains the only owner of downloaded files and network work.
+/// Main-actor presentation state for the legacy model artifact.
+/// Native analysis is the production path; the installer only owns any existing
+/// artifact and its removal.
 @MainActor
 @Observable
 final class ModelInstallationModel {
@@ -17,7 +18,6 @@ final class ModelInstallationModel {
 
     private(set) var state: ModelInstallationState = .notInstalled
     private(set) var didRunStartupCheck = false
-    var isSetupPromptPresented = false
 
     init(service: ModelInstallationService) {
         self.service = service
@@ -76,18 +76,10 @@ final class ModelInstallationModel {
         _ = await service.installedModel()
         state = await service.currentState()
         didRunStartupCheck = true
-        if !isInstalled {
-            isSetupPromptPresented = true
-        }
-    }
-
-    func dismissSetupPrompt() {
-        isSetupPromptPresented = false
     }
 
     func download() {
         guard canStartDownload else { return }
-        isSetupPromptPresented = false
         let service = self.service
         installationTask = Task(priority: .utility) { [weak self] in
             do {

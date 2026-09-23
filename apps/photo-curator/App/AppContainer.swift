@@ -50,7 +50,6 @@ struct AppContainer: Sendable {
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
     let modelInstallation: ModelInstallationService
-    let qwenJudge: QwenPairJudge?
 
     init(
         photoLibrary: any PhotoLibraryService,
@@ -95,7 +94,10 @@ struct AppContainer: Sendable {
         self.analytics = analytics
         self.memoryPressure = memoryPressure
         self.modelInstallation = modelInstallation
-        self.qwenJudge = qwenJudge
+        // The legacy Qwen argument remains source-compatible for callers that
+        // still construct a container, but is intentionally not retained or
+        // wired into production execution.
+        _ = qwenJudge
     }
 
     /// G1 wiring: real permission service + file-backed cache/checkpoint + real
@@ -139,8 +141,7 @@ struct AppContainer: Sendable {
             memoryPressure: MemoryPressureObserver(),
             modelInstallation: ModelInstallationService(
                 rootDirectory: root.appendingPathComponent("models", isDirectory: true)
-            ),
-            qwenJudge: QwenPairJudge(imageLoader: imageLoader)
+            )
         )
     }
 
