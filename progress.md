@@ -1010,3 +1010,39 @@ violations, generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
 **Blockers**: none.
 **Next**: feat-036 (confirmed original deletion) after user approval; it owns
 its separate operation schema and must not share the album-save mutator.
+
+## 2026-09-23 — feat-036 activation
+
+**State**: active (sole active feature; feat-035 is done)
+**Done**: Activated feat-036 while preserving its existing scope and acceptance.
+This was a tracker-only update; no application or other documentation changes
+were made.
+**Evidence**: Baseline `./init.sh` PASS on 2026-09-23; validation is owned by
+the parent coordinator, and no tests were run in this update.
+**Blockers**: none
+**Next**: Implement the core deletion lane.
+
+## 2026-09-23 — feat-036 closeout
+
+**State**: done (Oracle MERGE-READY)
+**Done**: Completed the separate `PhotoDeletionService` and explicit migration;
+exact digest plus full-access gating; durable atomic lifecycle with no automatic
+retry; recovery UI with fresh confirmation for prepared operations and read-only
+reconciliation; and truthful en/vi outcome copy. Implementation commits:
+`250b918`, `14bb92f`, `2634b8c`, `5ba07a8`, `42bcbbb`, `bdf0530`.
+**Evidence**: Final `./init.sh` PASS on 2026-09-23 (SwiftFormat, strict
+SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040);
+`git diff --check` PASS; Oracle MERGE-READY.
+**Blockers**: none
+**Next**: feat-037.
+
+## 2026-09-23 — feat-036 PR #69 final follow-up
+
+**State**: done (PR review follow-up complete)
+**Done**: Closed the P1 duplicate-dispatch gate and corrected P2 prepared
+recovery ordering plus the VoiceOver behavior.
+**Evidence**: Follow-up commits `7eac0b8`, `e21c6ac`, `546ad39`; final
+`./init.sh` PASS on 2026-09-23 (SwiftFormat, strict SwiftLint, generic
+Simulator `BUILD SUCCEEDED`, no tests by DEC-040); Oracle MERGE-READY.
+**Blockers**: none
+**Next**: feat-037.

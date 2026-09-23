@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `todo`.
+- Status: `done`.
 - Depends on: `feat-035`.
 
 ## Goal and acceptance
@@ -25,5 +25,19 @@ Primary owners: [review-rules.md](../docs/product-specs/review-rules.md),
 [data-model.md](../docs/design-docs/data-model.md). The actionable record is
 [docs/plans/feat-036.md](../docs/plans/feat-036.md).
 
-This safety-sensitive feature remains implementation-gated by feat-035; no
-code is claimed here.
+This safety-sensitive feature is complete; its implementation is recorded in
+the handoff below.
+
+## Handoff
+
+- State: Done; feat-035 is complete.
+- Acceptance: Separate `PhotoDeletionService` and explicit migration; exact
+  digest plus full-access gating; durable atomic lifecycle with no automatic
+  retry; recovery UI with fresh confirmation for prepared operations and
+  read-only reconciliation; truthful en/vi outcome copy.
+- Evidence: Final `./init.sh` PASS on 2026-09-23 (SwiftFormat, strict
+   SwiftLint, generic Simulator `BUILD SUCCEEDED`, no tests by DEC-040);
+  `git diff --check` PASS; Oracle MERGE-READY after the PR review findings.
+  Implementation commits: `250b918`, `14bb92f`, `2634b8c`, `5ba07a8`,
+  `42bcbbb`, `bdf0530`; follow-up commits: `7eac0b8`, `e21c6ac`, `546ad39`.
+- Next: feat-037.

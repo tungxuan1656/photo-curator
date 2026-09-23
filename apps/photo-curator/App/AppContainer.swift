@@ -12,6 +12,8 @@ struct AppContainer: Sendable {
         let availability: WorkspaceAvailability
         let albumOperations: AlbumSaveOperationStore?
         let albumSaveService: AlbumSaveService?
+        let deletionOperations: DeletionOperationStore?
+        let deletionService: PhotoDeletionService?
         let photoLibrary: any PhotoLibraryService
         let exporter: any AlbumExportService
     }
@@ -40,6 +42,11 @@ struct AppContainer: Sendable {
     /// Independent album-save boundary (feat-035 owner). The only caller of
     /// album mutation APIs; nil when workspace storage is unavailable.
     let albumSaveService: AlbumSaveService?
+    /// Durable original-deletion operation store (feat-036 owner). Shares the
+    /// workspace container but is independent from album-save state.
+    let deletionOperations: DeletionOperationStore?
+    /// The only original-deletion PhotoKit mutation boundary.
+    let deletionService: PhotoDeletionService?
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
     let modelInstallation: ModelInstallationService
@@ -61,6 +68,8 @@ struct AppContainer: Sendable {
         exporter: any AlbumExportService,
         albumOperations: AlbumSaveOperationStore? = nil,
         albumSaveService: AlbumSaveService? = nil,
+        deletionOperations: DeletionOperationStore? = nil,
+        deletionService: PhotoDeletionService? = nil,
         analytics: any AnalyticsService,
         memoryPressure: MemoryPressureObserver,
         modelInstallation: ModelInstallationService,
@@ -81,6 +90,8 @@ struct AppContainer: Sendable {
         self.exporter = exporter
         self.albumOperations = albumOperations
         self.albumSaveService = albumSaveService
+        self.deletionOperations = deletionOperations
+        self.deletionService = deletionService
         self.analytics = analytics
         self.memoryPressure = memoryPressure
         self.modelInstallation = modelInstallation
@@ -122,6 +133,8 @@ struct AppContainer: Sendable {
             exporter: workspace.exporter,
             albumOperations: workspace.albumOperations,
             albumSaveService: workspace.albumSaveService,
+            deletionOperations: workspace.deletionOperations,
+            deletionService: workspace.deletionService,
             analytics: NoopAnalytics(),
             memoryPressure: MemoryPressureObserver(),
             modelInstallation: ModelInstallationService(
@@ -131,12 +144,10 @@ struct AppContainer: Sendable {
         )
     }
 
-    /// feat-035 explicit SwiftData schema migration: the workspace store
-    /// opens with `AlbumSaveOperation` alongside the feat-033 models. The
-    /// added model is additive: pre-existing scope/item/marker rows reopen
-    /// untouched. Rollback removes the model from this list; operation rows
-    /// stay on disk unread while scopes/items keep working and unresolved
-    /// saves fall back to the file `SaveState` handoff.
+    /// Opens the current versioned workspace schema. If the additive deletion
+    /// migration cannot open, retry with the legacy schema so existing scopes,
+    /// staged choices, and album-save state remain available without enabling
+    /// the deletion lane.
     private static func makeWorkspaceSetup(
         root: URL,
         checkpointStore: SessionCheckpointStore
@@ -144,51 +155,91 @@ struct AppContainer: Sendable {
         let workspaceURL = root.appendingPathComponent("workspace.store")
         do {
             let modelContainer = try ModelContainer(
-                for: ReviewScope.self,
-                WorkspaceItem.self,
-                WorkspaceMigrationMarker.self,
-                AlbumSaveOperation.self,
+                for: Schema(versionedSchema: PhotoCuratorSchemaV2.self),
+                migrationPlan: PhotoCuratorMigrationPlan.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )
-            let store = WorkspaceStore(modelContainer: modelContainer)
-            // Shared with the container fields below: one save path, one
-            // permission service (both are stateless structs, so sharing is
-            // identity-clarity, not state-sharing).
-            let photoLibrary = PhotoLibraryPermissionService()
-            let exporter = PhotoKitAlbumExporter()
-            let albumOperations = AlbumSaveOperationStore(modelContainer: modelContainer)
-            let albumSaveService = AlbumSaveService(
-                exporter: exporter, operations: albumOperations, photoLibrary: photoLibrary
-            )
-            return WorkspaceSetup(
+            return makeAvailableWorkspaceSetup(
                 modelContainer: modelContainer,
-                store: store,
-                importer: LegacyWorkspaceImporter(checkpointStore: checkpointStore, workspaceStore: store),
-                availability: .available,
-                albumOperations: albumOperations,
-                albumSaveService: albumSaveService,
-                photoLibrary: photoLibrary,
-                exporter: exporter
+                checkpointStore: checkpointStore,
+                deletionEnabled: true
             )
         } catch {
             Logger(
                 subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "workspace"
             ).error(
                 """
-                Durable workspace unavailable; preserving legacy file-backed flow and skipping migration.
-                Failure category: workspace_unavailable.
+                Current workspace schema unavailable; attempting legacy schema fallback.
+                Failure category: schema_migration.
                 """
             )
-            return WorkspaceSetup(
-                modelContainer: nil,
-                store: nil,
-                importer: nil,
-                availability: .unavailable,
-                albumOperations: nil,
-                albumSaveService: nil,
-                photoLibrary: PhotoLibraryPermissionService(),
-                exporter: PhotoKitAlbumExporter()
-            )
+            do {
+                let legacyContainer = try ModelContainer(
+                    for: ReviewScope.self,
+                    WorkspaceItem.self,
+                    WorkspaceMigrationMarker.self,
+                    AlbumSaveOperation.self,
+                    configurations: ModelConfiguration(url: workspaceURL)
+                )
+                return makeAvailableWorkspaceSetup(
+                    modelContainer: legacyContainer,
+                    checkpointStore: checkpointStore,
+                    deletionEnabled: false
+                )
+            } catch {
+                Logger(
+                    subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "workspace"
+                ).error(
+                    """
+                    Durable workspace unavailable; preserving legacy file-backed flow.
+                    Failure category: workspace_unavailable.
+                    """
+                )
+                return WorkspaceSetup(
+                    modelContainer: nil,
+                    store: nil,
+                    importer: nil,
+                    availability: .unavailable,
+                    albumOperations: nil,
+                    albumSaveService: nil,
+                    deletionOperations: nil,
+                    deletionService: nil,
+                    photoLibrary: PhotoLibraryPermissionService(),
+                    exporter: PhotoKitAlbumExporter()
+                )
+            }
         }
+    }
+
+    private static func makeAvailableWorkspaceSetup(
+        modelContainer: ModelContainer,
+        checkpointStore: SessionCheckpointStore,
+        deletionEnabled: Bool
+    ) -> WorkspaceSetup {
+        let store = WorkspaceStore(modelContainer: modelContainer)
+        let photoLibrary = PhotoLibraryPermissionService()
+        let exporter = PhotoKitAlbumExporter()
+        let albumOperations = AlbumSaveOperationStore(modelContainer: modelContainer)
+        let albumSaveService = AlbumSaveService(
+            exporter: exporter, operations: albumOperations, photoLibrary: photoLibrary
+        )
+        let deletionOperations = deletionEnabled
+            ? DeletionOperationStore(modelContainer: modelContainer)
+            : nil
+        let deletionService = deletionOperations.map {
+            PhotoDeletionService(operations: $0, photoLibrary: photoLibrary)
+        }
+        return WorkspaceSetup(
+            modelContainer: modelContainer,
+            store: store,
+            importer: LegacyWorkspaceImporter(checkpointStore: checkpointStore, workspaceStore: store),
+            availability: .available,
+            albumOperations: albumOperations,
+            albumSaveService: albumSaveService,
+            deletionOperations: deletionOperations,
+            deletionService: deletionService,
+            photoLibrary: photoLibrary,
+            exporter: exporter
+        )
     }
 }
