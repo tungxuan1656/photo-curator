@@ -1010,3 +1010,14 @@ violations, generic Simulator `BUILD SUCCEEDED`, `SKIP [test]` by DEC-040);
 **Blockers**: none.
 **Next**: feat-036 (confirmed original deletion) after user approval; it owns
 its separate operation schema and must not share the album-save mutator.
+
+## 2026-09-23 — feat-036 activation
+
+**State**: active (sole active feature; feat-035 is done)
+**Done**: Activated feat-036 while preserving its existing scope and acceptance.
+This was a tracker-only update; no application or other documentation changes
+were made.
+**Evidence**: Baseline `./init.sh` PASS on 2026-09-23; validation is owned by
+the parent coordinator, and no tests were run in this update.
+**Blockers**: none
+**Next**: Implement the core deletion lane.

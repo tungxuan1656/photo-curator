@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `todo`.
+- Status: `active`.
 - Depends on: `feat-035`.
 
 ## Goal and acceptance
@@ -25,5 +25,14 @@ Primary owners: [review-rules.md](../docs/product-specs/review-rules.md),
 [data-model.md](../docs/design-docs/data-model.md). The actionable record is
 [docs/plans/feat-036.md](../docs/plans/feat-036.md).
 
-This safety-sensitive feature remains implementation-gated by feat-035; no
-code is claimed here.
+This safety-sensitive feature is unblocked by completed feat-035; no code is
+claimed in this tracker activation.
+
+## Handoff
+
+- State: Active; feat-035 is complete and the existing scope and acceptance
+  remain unchanged.
+- Baseline: `./init.sh` PASS on 2026-09-23; validation is owned by the parent
+  coordinator.
+- Next: Implement and verify the core deletion lane, including its operation
+  state, migration, service, and reconciliation boundaries.
