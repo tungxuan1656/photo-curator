@@ -125,6 +125,7 @@ final class AppModel {
 
     func refreshAuthorization() async {
         authorization = await container.photoLibrary.authorizationStatus()
+        await container.catalogStore?.recordAuthorization(authorization)
     }
 
     func startup() async {
@@ -139,8 +140,20 @@ final class AppModel {
             )
         }
         await refreshAuthorization()
+        reconcileCatalog()
         await refreshDeletionRecovery()
         await refreshResumeSnapshot()
+    }
+
+    /// Catalog reconciliation is lifecycle work, not a discovery route. It is
+    /// queued outside startup/recovery/resume critical paths; the store owns
+    /// single-flight serialization and coalesces change notifications.
+    func reconcileCatalog() {
+        guard let catalogStore = container.catalogStore else { return }
+        let photoLibrary = container.photoLibrary
+        Task {
+            await catalogStore.enqueueReconciliation(using: photoLibrary)
+        }
     }
 
     func requestPermission() async {
@@ -148,8 +161,10 @@ final class AppModel {
         isRequesting = true
         defer { isRequesting = false }
         authorization = await container.photoLibrary.requestAuthorization()
+        await container.catalogStore?.recordAuthorization(authorization)
         markSeen()
         path = []
+        reconcileCatalog()
     }
 
     func presentPicker() {

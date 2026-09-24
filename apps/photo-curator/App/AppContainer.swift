@@ -10,6 +10,8 @@ struct AppContainer: Sendable {
         let store: WorkspaceStore?
         let importer: LegacyWorkspaceImporter?
         let availability: WorkspaceAvailability
+        let catalogStore: LibraryCatalogStore?
+        let catalogStorageAvailability: CatalogStorageAvailability
         let albumOperations: AlbumSaveOperationStore?
         let albumSaveService: AlbumSaveService?
         let deletionOperations: DeletionOperationStore?
@@ -27,6 +29,10 @@ struct AppContainer: Sendable {
     let workspaceStore: WorkspaceStore?
     let workspaceImporter: LegacyWorkspaceImporter?
     let workspaceAvailability: WorkspaceAvailability
+    /// Nil means the V3 durable container did not open. A non-nil store can
+    /// independently report access/reconciliation availability through state().
+    let catalogStore: LibraryCatalogStore?
+    let catalogStorageAvailability: CatalogStorageAvailability
     let selectionEngine: SelectionEngine
     /// Tier-C visual-embedding provider (feat-024, DEC-035): native derived
     /// by default, injected into `SelectionSessionCoordinator` for both
@@ -72,7 +78,9 @@ struct AppContainer: Sendable {
         analytics: any AnalyticsService,
         memoryPressure: MemoryPressureObserver,
         modelInstallation: ModelInstallationService,
-        qwenJudge: QwenPairJudge? = nil
+        qwenJudge: QwenPairJudge? = nil,
+        catalogStore: LibraryCatalogStore? = nil,
+        catalogStorageAvailability: CatalogStorageAvailability = .unavailable
     ) {
         self.photoLibrary = photoLibrary
         self.imageLoader = imageLoader
@@ -83,6 +91,8 @@ struct AppContainer: Sendable {
         self.workspaceStore = workspaceStore
         self.workspaceImporter = workspaceImporter
         self.workspaceAvailability = workspaceAvailability
+        self.catalogStore = catalogStore
+        self.catalogStorageAvailability = catalogStorageAvailability
         self.selectionEngine = selectionEngine
         self.tierCProvider = tierCProvider
         self.semanticJuryProvider = semanticJuryProvider
@@ -98,6 +108,25 @@ struct AppContainer: Sendable {
         // still construct a container, but is intentionally not retained or
         // wired into production execution.
         _ = qwenJudge
+    }
+
+    /// Catalog reconciliation availability is durable state, not a launch-time
+    /// copy. A missing store represents the separate V3 container failure.
+    func catalogState() async -> CatalogStateSnapshot {
+        guard let catalogStore else {
+            return CatalogStateSnapshot(
+                currentGenerationID: nil,
+                latestAttemptID: nil,
+                availability: .unavailable,
+                updatedAt: nil
+            )
+        }
+        return (try? await catalogStore.state()) ?? CatalogStateSnapshot(
+            currentGenerationID: nil,
+            latestAttemptID: nil,
+            availability: .unavailable,
+            updatedAt: nil
+        )
     }
 
     /// G1 wiring: real permission service + file-backed cache/checkpoint + real
@@ -141,14 +170,16 @@ struct AppContainer: Sendable {
             memoryPressure: MemoryPressureObserver(),
             modelInstallation: ModelInstallationService(
                 rootDirectory: root.appendingPathComponent("models", isDirectory: true)
-            )
+            ),
+            qwenJudge: QwenPairJudge(imageLoader: imageLoader),
+            catalogStore: workspace.catalogStore,
+            catalogStorageAvailability: workspace.catalogStorageAvailability
         )
     }
 
-    /// Opens the current versioned workspace schema. If the additive deletion
-    /// migration cannot open, retry with the legacy schema so existing scopes,
-    /// staged choices, and album-save state remain available without enabling
-    /// the deletion lane.
+    /// Opens the V3 workspace/catalog schema exactly once. A failed migration
+    /// is reported as unavailable; reopening the same store through V2 would
+    /// risk hiding or misinterpreting the additive catalog migration.
     private static func makeWorkspaceSetup(
         root: URL,
         checkpointStore: SessionCheckpointStore
@@ -156,7 +187,7 @@ struct AppContainer: Sendable {
         let workspaceURL = root.appendingPathComponent("workspace.store")
         do {
             let modelContainer = try ModelContainer(
-                for: Schema(versionedSchema: PhotoCuratorSchemaV2.self),
+                for: Schema(versionedSchema: PhotoCuratorSchemaV3.self),
                 migrationPlan: PhotoCuratorMigrationPlan.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )
@@ -170,45 +201,24 @@ struct AppContainer: Sendable {
                 subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "workspace"
             ).error(
                 """
-                Current workspace schema unavailable; attempting legacy schema fallback.
+                V3 workspace/catalog schema unavailable; preserving the store file.
                 Failure category: schema_migration.
                 """
             )
-            do {
-                let legacyContainer = try ModelContainer(
-                    for: ReviewScope.self,
-                    WorkspaceItem.self,
-                    WorkspaceMigrationMarker.self,
-                    AlbumSaveOperation.self,
-                    configurations: ModelConfiguration(url: workspaceURL)
-                )
-                return makeAvailableWorkspaceSetup(
-                    modelContainer: legacyContainer,
-                    checkpointStore: checkpointStore,
-                    deletionEnabled: false
-                )
-            } catch {
-                Logger(
-                    subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "workspace"
-                ).error(
-                    """
-                    Durable workspace unavailable; preserving legacy file-backed flow.
-                    Failure category: workspace_unavailable.
-                    """
-                )
-                return WorkspaceSetup(
-                    modelContainer: nil,
-                    store: nil,
-                    importer: nil,
-                    availability: .unavailable,
-                    albumOperations: nil,
-                    albumSaveService: nil,
-                    deletionOperations: nil,
-                    deletionService: nil,
-                    photoLibrary: PhotoLibraryPermissionService(),
-                    exporter: PhotoKitAlbumExporter()
-                )
-            }
+            return WorkspaceSetup(
+                modelContainer: nil,
+                store: nil,
+                importer: nil,
+                availability: .unavailable,
+                catalogStore: nil,
+                catalogStorageAvailability: .unavailable,
+                albumOperations: nil,
+                albumSaveService: nil,
+                deletionOperations: nil,
+                deletionService: nil,
+                photoLibrary: PhotoLibraryPermissionService(),
+                exporter: PhotoKitAlbumExporter()
+            )
         }
     }
 
@@ -235,6 +245,8 @@ struct AppContainer: Sendable {
             store: store,
             importer: LegacyWorkspaceImporter(checkpointStore: checkpointStore, workspaceStore: store),
             availability: .available,
+            catalogStore: LibraryCatalogStore(modelContainer: modelContainer),
+            catalogStorageAvailability: .available,
             albumOperations: albumOperations,
             albumSaveService: albumSaveService,
             deletionOperations: deletionOperations,

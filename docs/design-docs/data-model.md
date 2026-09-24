@@ -8,10 +8,12 @@ PhotoKit remains authoritative for originals. Domain behavior belongs to [organi
 
 - `PhotoCuratorSchemaV1`: `ReviewScope`, `WorkspaceItem`, `WorkspaceMigrationMarker`, `AlbumSaveOperation`.
 - `PhotoCuratorSchemaV2`: V1 plus `PhotoDeletionOperation` through an additive migration.
+- `PhotoCuratorSchemaV3`: V2 plus `LibraryAsset`, `CatalogAssetObservation`, `CatalogGeneration`, and `CatalogState` through an additive migration.
 - `WorkspaceItem`: per-scope cleanup, album, progress, and analysis-reference dimensions.
 - `FileAnalysisCache`: schema/version/asset-revision checked `PhotoAnalysis` records.
 - Session checkpoint and result files remain compatibility inputs.
 - FeaturePrint objects are transient and rebuilt when necessary; no persisted visual search index exists.
+- Catalog observations are immutable per generation. `CatalogState.currentGenerationID` is the only browseable snapshot pointer.
 
 ## Intended persistence boundary
 
@@ -33,18 +35,18 @@ Use SwiftData directly for durable catalog state. No generic repository layer is
 
 ## Intended catalog records
 
-Names below are proposed implementation names. feat-040 freezes concrete schema types before migration.
+`LibraryAsset`, `CatalogAssetObservation`, `CatalogGeneration`, and `CatalogState` ship in V3. The remaining names are feature-owned proposals.
 
 | Record | Identity and required content |
 |---|---|
-| `LibraryAsset` | Asset ID; cheap metadata; modification fingerprint; access state; last observed catalog generation |
+| `LibraryAsset` | Asset ID; stable catalog attachment point; last observed generation |
 | `AnalysisWorkState` | Asset ID + capability; requested/completed revisions; pending/running/available/unavailable/stale state; reason |
 | `LabelDefinition` | Stable label ID; facet; taxonomy revision; localization keys; supported capability |
 | `AutomaticLabelAssignment` | Asset + label + evidence revision; provider reference; confidence/evidence status |
 | `LabelOverride` | Asset + label; confirm/reject; user revision and timestamp |
 | `PersonalLabelAssignment` | Asset + user label ID; explicit user assignment |
 | `ComparisonGroupSnapshot` | Group ID/revision; relation; ordered exact members; representative; evidence refs; grouping version |
-| `CatalogGeneration` | Enumeration/projection generation and completion state; prevents partial scans becoming deletion evidence |
+| `CatalogGeneration` | Enumeration generation, authorization snapshot, status, timestamps, count, and non-sensitive failure category; prevents partial scans becoming deletion evidence |
 
 Effective labels resolve user overrides over current automatic assignments.
 Unknown confidence stays absent; it cannot be invented for metadata or user labels.
@@ -104,7 +106,7 @@ Reconciliation never dispatches deletion. Dismissing an outcome never discards u
 
 ## Migration
 
-1. Add catalog entities without replacing existing scope and operation schemas.
+1. V3 adds catalog entities without replacing existing scope and operation schemas.
 2. Enumerate authorized assets into a generation; commit only a complete metadata reconciliation boundary.
 3. Import reusable analysis only when asset/provider revisions match.
 4. Rebuild automatic projections from valid evidence; preserve existing scope choices and operation IDs.

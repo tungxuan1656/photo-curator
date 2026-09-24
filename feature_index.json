@@ -403,7 +403,7 @@
       "depends_on": ["feat-039"],
       "gate": "Durable asset catalog, revision/access reconciliation, additive migration and legacy operation preservation; ./init.sh passes",
       "id": "feat-040",
-      "status": "todo",
+      "status": "done",
       "title": "Persistent photo catalog foundation"
     },
     {

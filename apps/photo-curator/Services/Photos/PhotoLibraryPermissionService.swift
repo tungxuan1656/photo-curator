@@ -21,6 +21,7 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
     }
 
     func fetchAssets() async throws -> [PhotoAsset] {
+        guard !Task.isCancelled else { throw CancellationError() }
         LibraryChangeTracker.shared.ensureRegistered()
         let status = await authorizationStatus()
         guard status == .authorized || status == .limited else {
@@ -28,6 +29,7 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
                 .warning("fetchAssets called without photo access.")
             throw SelectionError.invalidInput
         }
+        guard !Task.isCancelled else { throw CancellationError() }
         let options = PHFetchOptions()
         options.includeHiddenAssets = false
         options.includeAllBurstAssets = true
@@ -35,9 +37,14 @@ struct PhotoLibraryPermissionService: PhotoLibraryService, Sendable {
         let result = PHAsset.fetchAssets(with: .image, options: options)
         var assets: [PhotoAsset] = []
         assets.reserveCapacity(result.count)
-        result.enumerateObjects { phAsset, _, _ in
+        result.enumerateObjects { phAsset, _, stop in
+            guard !Task.isCancelled else {
+                stop.pointee = true
+                return
+            }
             assets.append(Self.map(phAsset))
         }
+        guard !Task.isCancelled else { throw CancellationError() }
         return assets
     }
 
