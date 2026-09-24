@@ -2,9 +2,9 @@
 
 ## Status
 
-- Status: `todo`
+- Status: `active`
 - Depends on: `feat-039`.
-- Planning requested; implementation activation requires user approval.
+- Activated by user on 2026-09-24.
 
 ## Goal
 
@@ -27,9 +27,9 @@ Use [data model](../docs/design-docs/data-model.md), [architecture](../docs/desi
 
 ## Readiness plan
 
-1. Freeze additive schema and query contracts before migration.
-2. Implement catalog persistence and metadata reconciliation.
-3. Integrate startup while retaining legacy saved-work routes.
+1. Freeze the V3 additive schema and committed-generation query contract.
+2. Implement immutable metadata observations and single-flight reconciliation.
+3. Integrate catalog startup without weakening existing workspace recovery.
 
 Detailed ownership and rollback: [plan](../docs/plans/feat-040.md).
 
