@@ -265,6 +265,56 @@ typealias CatalogComparisonSnapshot = ComparisonSnapshot
 typealias CatalogComparisonGroupSnapshot = ComparisonGroupSnapshot
 typealias CatalogComparisonMemberSnapshot = ComparisonMemberSnapshot
 
+enum CatalogLabelOverrideIntent: String, Codable, Sendable, Equatable {
+    case confirm
+    case reject
+}
+
+enum CatalogEffectiveLabelSource: String, Codable, Sendable, Equatable {
+    case automatic
+    case confirmed
+    case personal
+}
+
+struct CatalogLabelAnalysisSnapshot: Codable, Sendable, Equatable {
+    let assetID: AssetID
+    let assetRevision: AssetModificationFingerprint
+    let generationID: UUID?
+    let evidenceReferenceID: String?
+    let analysisRevision: Int?
+    let outcome: PhotoLabelAnalysisOutcome
+    let sourceRevision: String
+    let providerRevision: String
+    let runtimeRevision: String
+    let mappingRevision: String
+    let taxonomyRevision: String
+    let confidenceFloor: Double
+    let ambiguityMargin: Double
+    let projectionRevision: UUID
+    let catalogProjectionRevision: Int64
+    let publicationPending: Bool
+    let updatedAt: Date
+}
+
+struct CatalogPersonalLabelSnapshot: Codable, Sendable, Equatable, Identifiable {
+    let id: UUID
+    let name: String
+    let createdAt: Date
+    let updatedAt: Date
+}
+
+struct CatalogEffectiveLabelSnapshot: Codable, Sendable, Equatable {
+    let assetID: AssetID
+    let labelID: PhotoLabelID?
+    let personalLabelID: UUID?
+    let facet: PhotoLabelFacet
+    let source: CatalogEffectiveLabelSource
+    let taxonomyRevision: String
+    let rawScore: Double?
+    let projectionRevision: UUID
+    let catalogProjectionRevision: Int64
+}
+
 /// Stable attachment point for future user-owned catalog records. The row is
 /// bookkeeping only; scan-specific metadata belongs to immutable observations.
 @Model
@@ -402,18 +452,21 @@ final class CatalogState {
     var currentGenerationID: UUID?
     var latestAttemptID: UUID?
     var availabilityRawValue: String
+    var labelProjectionRevision: Int64
     var updatedAt: Date
 
     init(
         currentGenerationID: UUID? = nil,
         latestAttemptID: UUID? = nil,
         availability: CatalogAvailability = .unavailable,
+        labelProjectionRevision: Int64 = 0,
         updatedAt: Date = Date()
     ) {
         singletonKey = Self.singletonID
         self.currentGenerationID = currentGenerationID
         self.latestAttemptID = latestAttemptID
         availabilityRawValue = availability.rawValue
+        self.labelProjectionRevision = labelProjectionRevision
         self.updatedAt = updatedAt
     }
 
@@ -783,6 +836,341 @@ final class AnalysisWorkState {
             completedAssetFingerprint: completedAssetFingerprint,
             completedRevision: completedRevision,
             evidence: evidence
+        )
+    }
+}
+
+/// Immutable automatic evidence for one asset/label/revision. A later native
+/// analysis creates another row; it never edits an earlier evidence row.
+@Model
+final class CatalogAutomaticLabelAssignment {
+    @Attribute(.unique) var identity: String
+    var assetID: String
+    var modificationDate: Date?
+    var fingerprintIsPresent: Bool
+    var generationID: UUID?
+    var evidenceReferenceID: String?
+    var analysisRevision: Int?
+    var labelIDRawValue: String
+    var facetRawValue: String
+    var sourceRevision: String
+    var providerRevision: String
+    var runtimeRevision: String
+    var mappingRevision: String
+    var taxonomyRevision: String
+    var evidenceSourceRawValue: String
+    var outcomeRawValue: String
+    var rawScore: Double?
+    var confidenceFloor: Double?
+    var ambiguityMargin: Double?
+
+    init(_ assignment: PhotoLabelAutomaticAssignment) {
+        identity = Self.identity(for: assignment)
+        assetID = assignment.assetID.rawValue
+        modificationDate = assignment.assetRevision.modificationDate
+        fingerprintIsPresent = assignment.assetRevision.isPresent
+        generationID = assignment.generationID
+        evidenceReferenceID = assignment.evidenceReferenceID
+        analysisRevision = assignment.analysisRevision
+        labelIDRawValue = assignment.labelID.rawValue
+        facetRawValue = assignment.facet.rawValue
+        sourceRevision = assignment.sourceRevision
+        providerRevision = assignment.providerRevision
+        runtimeRevision = assignment.runtimeRevision
+        mappingRevision = assignment.mappingRevision
+        taxonomyRevision = assignment.taxonomyRevision
+        evidenceSourceRawValue = assignment.evidenceSource.rawValue
+        outcomeRawValue = assignment.outcome.rawValue
+        rawScore = assignment.rawScore
+        confidenceFloor = assignment.confidenceFloor
+        ambiguityMargin = assignment.ambiguityMargin
+    }
+
+    static func identity(for assignment: PhotoLabelAutomaticAssignment) -> String {
+        let date: String
+        if let modificationDate = assignment.assetRevision.modificationDate {
+            date = String(modificationDate.timeIntervalSinceReferenceDate)
+        } else {
+            date = "nil"
+        }
+        return [
+            assignment.assetID.rawValue,
+            assignment.labelID.rawValue,
+            assignment.generationID?.uuidString ?? "nil",
+            assignment.evidenceReferenceID ?? "nil",
+            assignment.analysisRevision.map(String.init) ?? "nil",
+            assignment.sourceRevision,
+            assignment.providerRevision,
+            assignment.runtimeRevision,
+            assignment.confidenceFloor.description,
+            assignment.ambiguityMargin.description,
+            assignment.taxonomyRevision,
+            assignment.mappingRevision,
+            assignment.assetRevision.isPresent ? "present" : "missing",
+            date, // swiftlint:disable:this trailing_comma
+        ].joined(separator: "::")
+    }
+
+    var assetRevision: AssetModificationFingerprint {
+        fingerprintIsPresent
+            ? AssetModificationFingerprint(modificationDate: modificationDate)
+            : .missing
+    }
+
+    var labelID: PhotoLabelID? {
+        PhotoLabelID(rawValue: labelIDRawValue)
+    }
+
+    var outcome: PhotoLabelAnalysisOutcome {
+        PhotoLabelAnalysisOutcome(rawValue: outcomeRawValue) ?? .stale
+    }
+}
+
+/// One asset-level V7 label analysis result. It is separate from automatic
+/// assignment rows so empty and degraded outcomes remain queryable.
+@Model
+final class CatalogLabelAnalysisState {
+    @Attribute(.unique) var identity: String
+    var assetID: String
+    var modificationDate: Date?
+    var fingerprintIsPresent: Bool
+    var generationID: UUID?
+    var evidenceReferenceID: String?
+    var analysisRevision: Int?
+    var outcomeRawValue: String
+    var sourceRevision: String
+    var providerRevision: String
+    var runtimeRevision: String
+    var mappingRevision: String
+    var taxonomyRevision: String
+    var confidenceFloor: Double
+    var ambiguityMargin: Double
+    var projectionRevision: UUID
+    var catalogProjectionRevision: Int64
+    var publicationPending: Bool
+    var updatedAt: Date
+
+    init(
+        assetID: AssetID,
+        assetRevision: AssetModificationFingerprint,
+        outcome: PhotoLabelAnalysisOutcome,
+        generationID: UUID? = nil,
+        evidenceReferenceID: String? = nil,
+        analysisRevision: Int? = nil,
+        confidenceFloor: Double = PhotoLabelTaxonomy.confidenceFloor,
+        ambiguityMargin: Double = PhotoLabelTaxonomy.ambiguityMargin,
+        publicationPending: Bool = false,
+        catalogProjectionRevision: Int64 = 0,
+        updatedAt: Date = Date()
+    ) {
+        identity = assetID.rawValue
+        self.assetID = assetID.rawValue
+        modificationDate = assetRevision.modificationDate
+        fingerprintIsPresent = assetRevision.isPresent
+        self.generationID = generationID
+        self.evidenceReferenceID = evidenceReferenceID
+        self.analysisRevision = analysisRevision
+        outcomeRawValue = outcome.rawValue
+        sourceRevision = PhotoLabelTaxonomy.sourceRevision
+        providerRevision = PhotoLabelTaxonomy.providerRevision
+        runtimeRevision = PhotoLabelTaxonomy.runtimeRevision
+        mappingRevision = PhotoLabelTaxonomy.mappingRevision
+        taxonomyRevision = PhotoLabelTaxonomy.revision
+        self.confidenceFloor = confidenceFloor
+        self.ambiguityMargin = ambiguityMargin
+        projectionRevision = UUID()
+        self.catalogProjectionRevision = catalogProjectionRevision
+        self.publicationPending = publicationPending
+        self.updatedAt = updatedAt
+    }
+
+    var assetRevision: AssetModificationFingerprint {
+        fingerprintIsPresent
+            ? AssetModificationFingerprint(modificationDate: modificationDate)
+            : .missing
+    }
+
+    var outcome: PhotoLabelAnalysisOutcome {
+        get { PhotoLabelAnalysisOutcome(rawValue: outcomeRawValue) ?? .stale }
+        set { outcomeRawValue = newValue.rawValue }
+    }
+
+    func snapshot() -> CatalogLabelAnalysisSnapshot {
+        CatalogLabelAnalysisSnapshot(
+            assetID: AssetID(rawValue: assetID),
+            assetRevision: assetRevision,
+            generationID: generationID,
+            evidenceReferenceID: evidenceReferenceID,
+            analysisRevision: analysisRevision,
+            outcome: outcome,
+            sourceRevision: sourceRevision,
+            providerRevision: providerRevision,
+            runtimeRevision: runtimeRevision,
+            mappingRevision: mappingRevision,
+            taxonomyRevision: taxonomyRevision,
+            confidenceFloor: confidenceFloor,
+            ambiguityMargin: ambiguityMargin,
+            projectionRevision: projectionRevision,
+            catalogProjectionRevision: catalogProjectionRevision,
+            publicationPending: publicationPending,
+            updatedAt: updatedAt
+        )
+    }
+}
+
+@Model
+final class CatalogLabelOverride {
+    @Attribute(.unique) var identity: String
+    var assetID: String
+    var labelIDRawValue: String
+    var intentRawValue: String
+    var taxonomyRevision: String
+    var updatedAt: Date
+
+    init(
+        assetID: AssetID,
+        labelID: PhotoLabelID,
+        intent: CatalogLabelOverrideIntent,
+        updatedAt: Date = Date()
+    ) {
+        identity = Self.identity(assetID: assetID, labelID: labelID)
+        self.assetID = assetID.rawValue
+        labelIDRawValue = labelID.rawValue
+        intentRawValue = intent.rawValue
+        taxonomyRevision = PhotoLabelTaxonomy.revision
+        self.updatedAt = updatedAt
+    }
+
+    static func identity(assetID: AssetID, labelID: PhotoLabelID) -> String {
+        "\(assetID.rawValue)::\(labelID.rawValue)"
+    }
+
+    var labelID: PhotoLabelID? {
+        PhotoLabelID(rawValue: labelIDRawValue)
+    }
+
+    var intent: CatalogLabelOverrideIntent? {
+        CatalogLabelOverrideIntent(rawValue: intentRawValue)
+    }
+}
+
+@Model
+final class CatalogPersonalLabelDefinition {
+    @Attribute(.unique) var id: UUID
+    var name: String
+    var createdAt: Date
+    var updatedAt: Date
+
+    init(id: UUID = UUID(), name: String, createdAt: Date = Date(), updatedAt: Date = Date()) {
+        self.id = id
+        self.name = name
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    var snapshot: CatalogPersonalLabelSnapshot {
+        CatalogPersonalLabelSnapshot(id: id, name: name, createdAt: createdAt, updatedAt: updatedAt)
+    }
+}
+
+@Model
+final class CatalogPersonalLabelAssignment {
+    @Attribute(.unique) var identity: String
+    var assetID: String
+    var personalLabelID: UUID
+    var assignedAt: Date
+
+    init(assetID: AssetID, personalLabelID: UUID, assignedAt: Date = Date()) {
+        identity = Self.identity(assetID: assetID, personalLabelID: personalLabelID)
+        self.assetID = assetID.rawValue
+        self.personalLabelID = personalLabelID
+        self.assignedAt = assignedAt
+    }
+
+    static func identity(assetID: AssetID, personalLabelID: UUID) -> String {
+        "\(assetID.rawValue)::\(personalLabelID.uuidString)"
+    }
+}
+
+/// Rebuildable current query projection. User state is never inferred from
+/// this row; it is rebuilt from automatic evidence, overrides, and personal
+/// assignments in one transaction.
+@Model
+final class CatalogEffectiveLabelProjection {
+    @Attribute(.unique) var identity: String
+    var assetID: String
+    var labelKey: String
+    var labelIDRawValue: String?
+    var personalLabelID: UUID?
+    var facetRawValue: String
+    var sourceRawValue: String
+    var taxonomyRevision: String
+    var rawScore: Double?
+    var projectionRevision: UUID
+    var catalogProjectionRevision: Int64
+
+    init(
+        assetID: AssetID,
+        labelID: PhotoLabelID,
+        facet: PhotoLabelFacet,
+        source: CatalogEffectiveLabelSource,
+        taxonomyRevision: String,
+        rawScore: Double?,
+        projectionRevision: UUID,
+        catalogProjectionRevision: Int64
+    ) {
+        identity = Self.identity(assetID: assetID, labelKey: labelID.rawValue, source: source)
+        self.assetID = assetID.rawValue
+        labelKey = labelID.rawValue
+        labelIDRawValue = labelID.rawValue
+        personalLabelID = nil
+        facetRawValue = facet.rawValue
+        sourceRawValue = source.rawValue
+        self.taxonomyRevision = taxonomyRevision
+        self.rawScore = rawScore
+        self.projectionRevision = projectionRevision
+        self.catalogProjectionRevision = catalogProjectionRevision
+    }
+
+    init(
+        assetID: AssetID,
+        personalLabelID: UUID,
+        source: CatalogEffectiveLabelSource = .personal,
+        projectionRevision: UUID,
+        catalogProjectionRevision: Int64
+    ) {
+        let key = personalLabelID.uuidString
+        identity = Self.identity(assetID: assetID, labelKey: key, source: source)
+        self.assetID = assetID.rawValue
+        labelKey = key
+        labelIDRawValue = nil
+        self.personalLabelID = personalLabelID
+        facetRawValue = PhotoLabelFacet.personal.rawValue
+        sourceRawValue = source.rawValue
+        taxonomyRevision = PhotoLabelTaxonomy.durableLayerRevision
+        rawScore = nil
+        self.projectionRevision = projectionRevision
+        self.catalogProjectionRevision = catalogProjectionRevision
+    }
+
+    static func identity(assetID: AssetID, labelKey: String, source: CatalogEffectiveLabelSource) -> String {
+        "\(assetID.rawValue)::\(source.rawValue)::\(labelKey)"
+    }
+
+    var snapshot: CatalogEffectiveLabelSnapshot? {
+        guard let facet = PhotoLabelFacet(rawValue: facetRawValue),
+              let source = CatalogEffectiveLabelSource(rawValue: sourceRawValue)
+        else { return nil }
+        return CatalogEffectiveLabelSnapshot(
+            assetID: AssetID(rawValue: assetID),
+            labelID: labelIDRawValue.flatMap(PhotoLabelID.init(rawValue:)),
+            personalLabelID: personalLabelID,
+            facet: facet,
+            source: source,
+            taxonomyRevision: taxonomyRevision,
+            rawScore: rawScore,
+            projectionRevision: projectionRevision,
+            catalogProjectionRevision: catalogProjectionRevision
         )
     }
 }

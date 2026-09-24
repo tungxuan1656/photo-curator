@@ -924,7 +924,13 @@ extension AppModel {
         Task {
             await cancelSave(for: sessionID)
             if let coordinator = container.libraryAnalysisCoordinator {
-                await coordinator.reset()
+                do {
+                    try await coordinator.reset()
+                } catch {
+                    libraryAnalysisState = .failed
+                    analysisResetInFlight = false
+                    return
+                }
                 libraryAnalysisState = await coordinator.currentState()
                 libraryAnalysisProgress = nil
             }

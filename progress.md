@@ -12,6 +12,22 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-24 — feat-044 residual Oracle closure
+
+**State**: done
+**Done**: Closed the six residual label findings: pending publication atomically retracts automatic projections and is scanned on every startup/resume; reconciliation marks changed/removed assets stale in the same transaction; Vision provenance and ambiguity policy are truthful; reset is atomic with propagated failure; and reads expose a catalog-level monotonic label projection revision.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-045 — Faceted discovery and label editing.
+
+## 2026-09-24 — feat-044 completion
+
+**State**: done
+**Done**: Implemented V7 native Vision label taxonomy and mapper, namespaced app-owned label IDs with explicit raw Vision mapping, complete assignment evidence identity, durable pending reconciliation around analysis publication, durable degraded states, stale/reset projection cleanup, durable correction precedence, and projection snapshot revisions. Unsupported raw identifiers remain transient mapping evidence and are not persisted.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-045 — Faceted discovery and label editing.
+
 ## 2026-09-24 — feat-043 completion
 
 **State**: done
@@ -19,6 +35,14 @@
 **Evidence**: Final `./init.sh` PASS after review fixes: SwiftFormat, strict SwiftLint with 0 violations, generic Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. `git diff --check` PASS. Parent owns final diff validation.
 **Blockers**: none
 **Next**: feat-044 — Useful AI labels and durable corrections.
+
+## 2026-09-24 — feat-044 activation
+
+**State**: active
+**Done**: Activated feat-044 after feat-041 and feat-043 completion. Recorded the approved native-only admission: existing on-device `VNClassifyImageRequest` only, exact ten-ID scene taxonomy, no new model/Qwen/Photos private semantics, and frozen source/provider/runtime/mapping/taxonomy revisions. Defined the `catalog-labels-v7` durable layer for immutable automatic assignments, separate corrections, personal labels, and rebuildable effective projections.
+**Evidence**: Documentation-only activation grounded in the observed `UniversalFactAdapter` path and native Vision request/revision records; no source changes and no implementation or quality claim made. Parent owns validation.
+**Blockers**: V7 implementation, correction persistence, degraded-state handling, and feature verification remain open.
+**Next**: Implement the V7 label taxonomy/assignment layer and verify revision identity, correction precedence, availability states, and `./init.sh`.
 
 ## 2026-09-24 — feat-043 implementation checkpoint
 

@@ -130,6 +130,12 @@ extension LibraryAnalysisCoordinator {
                 needsDurableReread = true
                 return
             }
+            do {
+                try await publishLabels(for: item, analysis: analysis)
+            } catch {
+                needsDurableReread = true
+                return
+            }
             guard isCurrentRun(token) else { return }
             recordDurableCompletion(assetID: item.asset.id, analyzed: true)
             latestFailure = nil
@@ -155,6 +161,20 @@ extension LibraryAnalysisCoordinator {
                 fingerprint: item.asset.modificationFingerprint,
                 revision: item.revision,
                 reason: reason
+            )
+        } catch let error as LibraryCatalogStoreError {
+            if case .analysisTransitionRejected = error {
+                needsDurableReread = true
+                return
+            }
+            throw error
+        }
+        do {
+            try await catalogStore.recordLabelAnalysisState(
+                for: item.asset.id,
+                assetRevision: item.asset.modificationFingerprint,
+                state: Self.labelInputState(for: failure),
+                generationID: item.generationID
             )
         } catch let error as LibraryCatalogStoreError {
             if case .analysisTransitionRejected = error {

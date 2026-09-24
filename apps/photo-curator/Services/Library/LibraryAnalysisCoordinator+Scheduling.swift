@@ -118,6 +118,16 @@ extension LibraryAnalysisCoordinator {
             do {
                 if let analysis = try await evidenceStore.load(reference, revision: revision) {
                     guard analysis.assetID == asset.id else { return nil }
+                    do {
+                        try await publishLabels(for: WorkItem(
+                            asset: asset,
+                            generationID: generationID,
+                            revision: revision
+                        ), analysis: analysis)
+                    } catch {
+                        needsDurableReread = true
+                        return nil
+                    }
                     recordDurableCompletion(assetID: asset.id, analyzed: true)
                     return nil
                 }

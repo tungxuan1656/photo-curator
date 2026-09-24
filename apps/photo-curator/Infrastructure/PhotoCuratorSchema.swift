@@ -74,6 +74,32 @@ enum PhotoCuratorSchemaV6: VersionedSchema {
     }
 }
 
+/// Additive V7 label evidence, correction, personal-label, and effective
+/// projection models. Existing catalog and comparison rows are unchanged.
+enum PhotoCuratorSchemaV7: VersionedSchema {
+    static var versionIdentifier = Schema.Version(7, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        PhotoCuratorSchemaV6.models + [
+            CatalogAutomaticLabelAssignment.self,
+            CatalogLabelAnalysisState.self,
+            CatalogLabelOverride.self,
+            CatalogPersonalLabelDefinition.self,
+            CatalogPersonalLabelAssignment.self,
+            CatalogEffectiveLabelProjection.self,
+        ]
+    }
+}
+
+/// Additive label publication metadata and catalog-level projection revision.
+enum PhotoCuratorSchemaV8: VersionedSchema {
+    static var versionIdentifier = Schema.Version(8, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        PhotoCuratorSchemaV7.models
+    }
+}
+
 enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [
@@ -83,6 +109,8 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             PhotoCuratorSchemaV4.self,
             PhotoCuratorSchemaV5.self,
             PhotoCuratorSchemaV6.self,
+            PhotoCuratorSchemaV7.self,
+            PhotoCuratorSchemaV8.self,
         ]
     }
 
@@ -107,6 +135,14 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             .lightweight(
                 fromVersion: PhotoCuratorSchemaV5.self,
                 toVersion: PhotoCuratorSchemaV6.self
+            ),
+            .lightweight(
+                fromVersion: PhotoCuratorSchemaV6.self,
+                toVersion: PhotoCuratorSchemaV7.self
+            ),
+            .lightweight(
+                fromVersion: PhotoCuratorSchemaV7.self,
+                toVersion: PhotoCuratorSchemaV8.self
             ),
         ]
     }

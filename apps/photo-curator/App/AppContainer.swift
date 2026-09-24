@@ -219,7 +219,7 @@ struct AppContainer: Sendable {
         )
     }
 
-    /// Opens the V6 workspace/catalog schema exactly once. A failed migration
+    /// Opens the V7 workspace/catalog schema exactly once. A failed migration
     /// is reported as unavailable; reopening the same store through V2 would
     /// risk hiding or misinterpreting the additive catalog migration.
     private static func makeWorkspaceSetup(
@@ -229,7 +229,7 @@ struct AppContainer: Sendable {
         let workspaceURL = root.appendingPathComponent("workspace.store")
         do {
             let modelContainer = try ModelContainer(
-                for: Schema(versionedSchema: PhotoCuratorSchemaV6.self),
+                for: Schema(versionedSchema: PhotoCuratorSchemaV8.self),
                 migrationPlan: PhotoCuratorMigrationPlan.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )
@@ -243,7 +243,7 @@ struct AppContainer: Sendable {
                 subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "workspace"
             ).error(
                 """
-                V6 workspace/catalog schema unavailable; preserving the store file.
+                V7 workspace/catalog schema unavailable; preserving the store file.
                 Failure category: schema_migration.
                 """
             )

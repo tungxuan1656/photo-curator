@@ -431,7 +431,7 @@
       "depends_on": ["feat-041"],
       "gate": "Recorded provider admission and supported taxonomy, versioned multi-label evidence, durable correction precedence and explicit unknown states; ./init.sh passes",
       "id": "feat-044",
-      "status": "todo",
+      "status": "done",
       "title": "Useful AI labels and durable corrections"
     },
     {

@@ -1,6 +1,41 @@
 import Foundation
 
 extension LibraryAnalysisCoordinator {
+    func publishLabels(for item: WorkItem, analysis: PhotoAnalysis) async throws {
+        let state: PhotoLabelAnalysisInputState
+        switch analysis.content.classificationAvailability {
+        case .available:
+            state = .available
+        case .unavailable:
+            state = .unavailable
+        case .notRun, nil:
+            state = .pending
+        }
+        let input = PhotoLabelMappingInput(
+            assetID: item.asset.id,
+            assetRevision: item.asset.modificationFingerprint,
+            state: state,
+            observations: analysis.content.tags.map {
+                PhotoLabelVisionObservation(identifier: $0.name, score: $0.confidence)
+            }
+        )
+        try await catalogStore.publishLabels(
+            PhotoLabelMapper().map(input),
+            generationID: item.generationID
+        )
+    }
+
+    static func labelInputState(for failure: LibraryAnalysisFailure) -> PhotoLabelAnalysisInputState {
+        switch failure {
+        case .unsupported:
+            .unsupported
+        case .revisionStale:
+            .stale
+        case .imageLoad, .modelUnavailable, .transientFailure:
+            .unavailable
+        }
+    }
+
     func placeholderReference(for item: WorkItem) -> AnalysisEvidenceReference {
         AnalysisEvidenceReference(
             identifier: "in-flight",
