@@ -14,6 +14,14 @@
 
 ## 2026-09-24 — feat-040
 
+**State**: done
+**Done**: Added the V3 additive catalog schema, immutable metadata observations, atomic generation publication, coalesced lifecycle reconciliation, interrupted-generation recovery, and bounded catalog-history retention. Existing scopes and durable operations remain independent.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint, and generic Simulator build; tests skipped by DEC-040.
+**Blockers**: none
+**Next**: feat-041.
+
+## 2026-09-24 — feat-040
+
 **State**: active
 **Done**: Activated catalog foundation. The plan freezes a V3 additive schema, immutable scan observations, committed-generation publication, and independent catalog failure handling.
 **Evidence**: Source and migration review completed; `./init.sh` is deferred until implementation and review fixes complete by user instruction.

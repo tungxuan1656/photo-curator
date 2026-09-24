@@ -36,6 +36,7 @@ enum CatalogFailureCategory: String, Codable, Sendable, Equatable {
     case accessRequired
     case authorizationChanged
     case cancelled
+    case interrupted
     case duplicateAssetID
     case fetchFailed
     case incomplete

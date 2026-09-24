@@ -158,8 +158,6 @@ struct AppContainer: Sendable {
             workspaceStore: workspace.store,
             workspaceImporter: workspace.importer,
             workspaceAvailability: workspace.availability,
-            catalogStore: workspace.catalogStore,
-            catalogStorageAvailability: workspace.catalogStorageAvailability,
             selectionEngine: SelectionEngine(),
             tierCProvider: NativeDerivedEmbeddingProvider(),
             semanticJuryProvider: FoundationModelsSemanticJuryProvider(),
@@ -172,7 +170,10 @@ struct AppContainer: Sendable {
             memoryPressure: MemoryPressureObserver(),
             modelInstallation: ModelInstallationService(
                 rootDirectory: root.appendingPathComponent("models", isDirectory: true)
-            )
+            ),
+            qwenJudge: QwenPairJudge(imageLoader: imageLoader),
+            catalogStore: workspace.catalogStore,
+            catalogStorageAvailability: workspace.catalogStorageAvailability
         )
     }
 

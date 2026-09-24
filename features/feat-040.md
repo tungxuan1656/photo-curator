@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `active`
+- Status: `done`
 - Depends on: `feat-039`.
 - Activated by user on 2026-09-24.
 
@@ -18,23 +18,24 @@ Use [data model](../docs/design-docs/data-model.md), [architecture](../docs/desi
 
 ## Acceptance
 
-- [ ] Metadata enumeration creates one catalog identity per accessible asset without copying originals.
-- [ ] New/edited/inaccessible assets reconcile through complete generations; interrupted scans do not erase user data.
-- [ ] V2 scopes, choices, drafts, staged sets, and operation IDs survive migration unchanged.
-- [ ] Catalog failure preserves the old store and exposes explicit unavailable state.
-- [ ] User overrides and derived projections have separate versioned ownership.
-- [ ] `./init.sh` passes; schema and recovery limitations are recorded.
+- [x] Metadata enumeration creates one catalog identity per accessible asset without copying originals.
+- [x] New/edited/inaccessible assets reconcile through complete generations; interrupted scans do not erase user data.
+- [x] V2 scopes, choices, drafts, staged sets, and operation IDs survive migration unchanged.
+- [x] Catalog failure preserves the old store and exposes explicit unavailable state.
+- [x] User overrides and derived projections have separate versioned ownership.
+- [x] `./init.sh` passes; schema and recovery limitations are recorded.
 
 ## Readiness plan
 
-1. Freeze the V3 additive schema and committed-generation query contract.
-2. Implement immutable metadata observations and single-flight reconciliation.
-3. Integrate catalog startup without weakening existing workspace recovery.
+1. V3 additive schema and committed-generation query contract complete.
+2. Immutable metadata observations and coalesced reconciliation complete.
+3. Startup integration and explicit unavailable state complete.
 
 Detailed ownership and rollback: [plan](../docs/plans/feat-040.md).
 
 ## Evidence and handoff
 
-- Verification not run for this feature; documentation baseline is not implementation evidence.
-- No tests or proof harnesses. Manual QA is not a gate.
-- Next: obtain activation approval, then run baseline `./init.sh`.
+- `./init.sh` PASS on 2026-09-24: SwiftFormat, strict SwiftLint, and Simulator build passed; tests skipped by DEC-040.
+- V3 keeps V1/V2 entities additive and untouched. Complete observations publish only through `CatalogState.currentGenerationID`.
+- Limits: `PHAsset.fetchAssets` itself is synchronous; cancellation stops enumeration before partial results publish. Current snapshot reads materialize the published generation.
+- Next: feat-041.

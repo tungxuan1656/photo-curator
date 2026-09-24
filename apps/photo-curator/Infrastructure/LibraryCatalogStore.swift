@@ -9,7 +9,6 @@ enum LibraryCatalogStoreError: Error, Sendable, Equatable {
     case incompleteGeneration
     case persistenceFailed
     case reconciliationInProgress
-    case reconciliationTimedOut
     case unavailable
 }
 
@@ -46,147 +45,49 @@ struct CatalogReconciliationResult: Sendable, Equatable {
 /// transaction; only complete generations are published through CatalogState.
 actor LibraryCatalogStore {
     static let observationBatchSize = 250
-    static let startupTimeoutNanoseconds: UInt64 = 15_000_000_000
+    static let retainedAbandonedGenerationCount = 2
+    static let retainedSupersededGenerationCount = 2
 
     let modelContainer: ModelContainer
     private let context: ModelContext
     private var reconciliationInFlight = false
+    private var reconciliationQueued = false
+    private var reconciliationPending = false
 
     init(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
         context = ModelContext(modelContainer)
+        try? Self.recoverInterruptedGenerations(in: context)
+        try? Self.pruneCatalogHistory(in: context)
     }
 
-    /// Reconciles one complete Photos enumeration. Actor isolation provides
-    /// single-flight behavior for callers and preserves the prior pointer on
-    /// every failure path.
-    func reconcile(using photoLibrary: any PhotoLibraryService) async throws -> CatalogReconciliationResult {
-        guard !Task.isCancelled else { throw CancellationError() }
-        guard !reconciliationInFlight else {
-            throw LibraryCatalogStoreError.reconciliationInProgress
+    /// Queues lifecycle work without making startup, recovery, or resume await
+    /// Photos enumeration. Notifications received during a scan set a single
+    /// pending bit and produce one follow-up scan after the active one.
+    func enqueueReconciliation(using photoLibrary: any PhotoLibraryService) {
+        if reconciliationInFlight || reconciliationQueued {
+            reconciliationPending = true
+            return
         }
-        reconciliationInFlight = true
-        defer { reconciliationInFlight = false }
-
-        let authorization = await photoLibrary.authorizationStatus()
-        let initialAuthorization = Self.snapshot(for: authorization)
-        let generationID = UUID()
-        do {
-            try beginGeneration(id: generationID, authorization: initialAuthorization)
-        } catch {
-            throw LibraryCatalogStoreError.persistenceFailed
-        }
-
-        do {
-            guard Self.isAccessible(authorization) else {
-                throw LibraryCatalogStoreError.accessRequired
-            }
-            guard !Task.isCancelled else { throw CancellationError() }
-
-            let assets: [PhotoAsset]
-            do {
-                assets = try await photoLibrary.fetchAssets()
-            } catch is CancellationError {
-                throw CancellationError()
-            } catch {
-                if Task.isCancelled { throw CancellationError() }
-                throw LibraryCatalogStoreError.fetchFailed
-            }
-            guard !Task.isCancelled else { throw CancellationError() }
-
-            var seenIDs = Set<String>()
-            for asset in assets {
-                guard seenIDs.insert(asset.id.rawValue).inserted else {
-                    throw LibraryCatalogStoreError.duplicateAssetID
-                }
-            }
-
-            for batch in assets.chunked(into: Self.observationBatchSize) {
-                guard !Task.isCancelled else { throw CancellationError() }
-                do {
-                    try stage(batch, generationID: generationID)
-                } catch {
-                    throw LibraryCatalogStoreError.persistenceFailed
-                }
-            }
-
-            let stagedCount: Int
-            do {
-                stagedCount = try uniqueObservationCount(for: generationID)
-            } catch {
-                throw LibraryCatalogStoreError.persistenceFailed
-            }
-            guard stagedCount == seenIDs.count else {
-                throw LibraryCatalogStoreError.incompleteGeneration
-            }
-
-            let finalAuthorization = await photoLibrary.authorizationStatus()
-            guard !Task.isCancelled else { throw CancellationError() }
-            let finalSnapshot = Self.snapshot(for: finalAuthorization)
-            guard finalSnapshot == initialAuthorization else {
-                if !Self.isAccessible(finalAuthorization) {
-                    throw LibraryCatalogStoreError.accessRequired
-                }
-                throw LibraryCatalogStoreError.authorizationChanged
-            }
-            guard Self.isAccessible(finalAuthorization) else {
-                throw LibraryCatalogStoreError.accessRequired
-            }
-
-            let changedAssetIDs: [AssetID]
-            do {
-                changedAssetIDs = try commit(
-                    generationID: generationID,
-                    assets: assets,
-                    assetIDs: seenIDs,
-                    authorization: finalSnapshot
-                )
-            } catch let error as LibraryCatalogStoreError {
-                throw error
-            } catch {
-                throw LibraryCatalogStoreError.persistenceFailed
-            }
-            return CatalogReconciliationResult(
-                generationID: generationID,
-                assetCount: stagedCount,
-                changedAssetIDs: changedAssetIDs.sorted { $0.rawValue < $1.rawValue }
-            )
-        } catch is CancellationError {
-            try? abandon(generationID: generationID, category: .cancelled)
-            throw CancellationError()
-        } catch let error as LibraryCatalogStoreError {
-            try? abandon(
-                generationID: generationID,
-                category: Self.failureCategory(for: error)
-            )
-            throw error
-        } catch {
-            try? abandon(
-                generationID: generationID,
-                category: .persistenceFailed
-            )
-            throw LibraryCatalogStoreError.persistenceFailed
-        }
+        reconciliationQueued = true
+        Task { await drainReconciliationQueue(using: photoLibrary) }
     }
 
-    /// Bounds lifecycle-triggered work without creating a second writer. The
-    /// reconciliation task observes cancellation and abandons its building
-    /// generation before the task group returns.
-    func reconcileBounded(
-        using photoLibrary: any PhotoLibraryService,
-        timeoutNanoseconds: UInt64 = LibraryCatalogStore.startupTimeoutNanoseconds
-    ) async throws -> CatalogReconciliationResult {
-        try await withThrowingTaskGroup(of: CatalogReconciliationResult.self) { group in
-            group.addTask { try await self.reconcile(using: photoLibrary) }
-            group.addTask {
-                try await Task.sleep(nanoseconds: timeoutNanoseconds)
-                throw LibraryCatalogStoreError.reconciliationTimedOut
+    /// Hides retained observations as soon as lifecycle code observes loss of
+    /// Photos access. It never promotes a store to available; only a complete
+    /// reconciliation may publish that state.
+    func recordAuthorization(_ authorization: PhotoLibraryAuthorization) {
+        guard !Self.isAccessible(authorization) else { return }
+        do {
+            try context.transaction {
+                let state = try stateOrCreate(availability: .accessRequired)
+                state.availability = .accessRequired
+                state.updatedAt = Date()
+                try context.save()
             }
-            defer { group.cancelAll() }
-            guard let result = try await group.next() else {
-                throw LibraryCatalogStoreError.unavailable
-            }
-            return result
+        } catch {
+            // Reconciliation will surface persistence failure without changing
+            // the committed generation pointer.
         }
     }
 
@@ -208,7 +109,10 @@ actor LibraryCatalogStore {
     }
 
     func currentGeneration() throws -> CatalogGenerationSnapshot? {
-        guard let generationID = try fetchState()?.currentGenerationID else { return nil }
+        guard let state = try fetchState(),
+              state.availability == .available || state.availability == .stale,
+              let generationID = state.currentGenerationID
+        else { return nil }
         guard let generation = try fetchGeneration(id: generationID) else { return nil }
         return Self.snapshot(generation)
     }
@@ -216,16 +120,49 @@ actor LibraryCatalogStore {
     /// Reads only the generation published by CatalogState. Building and
     /// abandoned rows are never browseable through this API.
     func currentObservations() throws -> [CatalogAssetObservationSnapshot] {
-        guard let generationID = try fetchState()?.currentGenerationID else { return [] }
+        guard let state = try fetchState(),
+              state.availability == .available || state.availability == .stale,
+              let generationID = state.currentGenerationID
+        else { return [] }
         return try context.fetch(FetchDescriptor<CatalogAssetObservation>(
             predicate: #Predicate { $0.generationID == generationID }
         ))
-            .sorted { $0.assetID < $1.assetID }
-            .map { CatalogAssetObservationSnapshot(generationID: generationID, asset: $0.photoAsset) }
+        .sorted { $0.assetID < $1.assetID }
+        .map { CatalogAssetObservationSnapshot(generationID: generationID, asset: $0.photoAsset) }
     }
 }
 
-private extension LibraryCatalogStore {
+extension LibraryCatalogStore {
+    func acquireReconciliationFlight() throws {
+        guard !reconciliationInFlight, !reconciliationQueued else {
+            throw LibraryCatalogStoreError.reconciliationInProgress
+        }
+        reconciliationInFlight = true
+    }
+
+    func releaseReconciliationFlight() {
+        reconciliationInFlight = false
+    }
+
+    func pruneCatalogHistoryIfNeeded() {
+        try? Self.pruneCatalogHistory(in: context)
+    }
+
+    func drainReconciliationQueue(using photoLibrary: any PhotoLibraryService) async {
+        reconciliationQueued = false
+        repeat {
+            reconciliationPending = false
+            do {
+                _ = try await reconcile(using: photoLibrary)
+            } catch is CancellationError {
+                return
+            } catch {
+                // The failed attempt and its browseability are recorded by
+                // reconcile; a notification can still request one follow-up.
+            }
+        } while reconciliationPending && !Task.isCancelled
+    }
+
     func beginGeneration(id: UUID, authorization: CatalogAuthorizationSnapshot) throws {
         let now = Date()
         try context.transaction {
@@ -240,36 +177,14 @@ private extension LibraryCatalogStore {
     func stage(_ assets: [PhotoAsset], generationID: UUID) throws {
         guard !assets.isEmpty else { return }
         try context.transaction {
-            let existing = Set(
-                try context.fetch(FetchDescriptor<CatalogAssetObservation>(
-                    predicate: #Predicate { $0.generationID == generationID }
-                ))
-                    .map(\.identity)
-            )
-            var insertedCount = 0
             for asset in assets {
-                let identity = CatalogAssetObservation.identity(
-                    generationID: generationID,
-                    assetID: asset.id.rawValue
-                )
-                guard !existing.contains(identity) else { continue }
                 context.insert(CatalogAssetObservation(generationID: generationID, asset: asset))
-                insertedCount += 1
             }
             if let generation = try fetchGeneration(id: generationID) {
-                generation.assetCount += insertedCount
+                generation.assetCount += assets.count
             }
             try context.save()
         }
-    }
-
-    func uniqueObservationCount(for generationID: UUID) throws -> Int {
-        Set(
-            try context.fetch(FetchDescriptor<CatalogAssetObservation>(
-                predicate: #Predicate { $0.generationID == generationID }
-            ))
-                .map(\.assetID)
-        ).count
     }
 
     func commit(
@@ -286,7 +201,7 @@ private extension LibraryCatalogStore {
             guard let generation = try fetchGeneration(id: generationID), generation.status == .building else {
                 throw LibraryCatalogStoreError.incompleteGeneration
             }
-            let stagedCount = try uniqueObservationCount(for: generationID)
+            let stagedCount = generation.assetCount
             guard stagedCount == assetIDs.count else {
                 throw LibraryCatalogStoreError.incompleteGeneration
             }
@@ -350,23 +265,25 @@ private extension LibraryCatalogStore {
 
     func currentFingerprints() throws -> [String: AssetModificationFingerprint] {
         guard let generationID = try fetchState()?.currentGenerationID else { return [:] }
-        return Dictionary(
-            uniqueKeysWithValues: try context.fetch(FetchDescriptor<CatalogAssetObservation>(
+        return try Dictionary(
+            uniqueKeysWithValues: context.fetch(FetchDescriptor<CatalogAssetObservation>(
                 predicate: #Predicate { $0.generationID == generationID }
             ))
-                .map { ($0.assetID, $0.modificationFingerprint) }
+            .map { ($0.assetID, $0.modificationFingerprint) }
         )
     }
 
     func fetchState() throws -> CatalogState? {
         let singletonKey = CatalogState.singletonID
-        try context.fetch(FetchDescriptor<CatalogState>(
+        return try context.fetch(FetchDescriptor<CatalogState>(
             predicate: #Predicate { $0.singletonKey == singletonKey }
         )).first
     }
 
     func stateOrCreate(availability: CatalogAvailability) throws -> CatalogState {
-        if let state = try fetchState() { return state }
+        if let state = try fetchState() {
+            return state
+        }
         let state = CatalogState(availability: availability)
         context.insert(state)
         return state
@@ -376,6 +293,73 @@ private extension LibraryCatalogStore {
         try context.fetch(FetchDescriptor<CatalogGeneration>(
             predicate: #Predicate { $0.id == id }
         )).first
+    }
+
+    static func recoverInterruptedGenerations(in context: ModelContext) throws {
+        let buildingRawValue = CatalogGenerationStatus.building.rawValue
+        let generations = try context.fetch(FetchDescriptor<CatalogGeneration>(
+            predicate: #Predicate { $0.statusRawValue == buildingRawValue }
+        ))
+        guard !generations.isEmpty else { return }
+
+        let now = Date()
+        try context.transaction {
+            for generation in generations {
+                generation.status = .abandoned
+                generation.completedAt = now
+                generation.failureCategory = .interrupted
+            }
+
+            let singletonKey = CatalogState.singletonID
+            let state = try context.fetch(FetchDescriptor<CatalogState>(
+                predicate: #Predicate { $0.singletonKey == singletonKey }
+            )).first
+            if let state {
+                state.availability = state.currentGenerationID == nil ? .unavailable : .stale
+                state.updatedAt = now
+            } else {
+                context.insert(CatalogState(availability: .unavailable, updatedAt: now))
+            }
+            try context.save()
+        }
+    }
+
+    static func pruneCatalogHistory(in context: ModelContext) throws {
+        try context.transaction {
+            let generations = try context.fetch(FetchDescriptor<CatalogGeneration>())
+            let singletonKey = CatalogState.singletonID
+            let state = try context.fetch(FetchDescriptor<CatalogState>(
+                predicate: #Predicate { $0.singletonKey == singletonKey }
+            )).first
+            let currentGenerationID = state?.currentGenerationID
+
+            let committed = generations
+                .filter { $0.status == .committed }
+                .sorted { $0.startedAt > $1.startedAt }
+            let abandoned = generations
+                .filter { $0.status == .abandoned }
+                .sorted { $0.startedAt > $1.startedAt }
+            var retainedIDs = Set(committed.prefix(retainedSupersededGenerationCount).map(\.id))
+            retainedIDs.formUnion(abandoned.prefix(retainedAbandonedGenerationCount).map(\.id))
+            if let currentGenerationID {
+                retainedIDs.insert(currentGenerationID)
+            }
+
+            for generation in generations where generation.status != .building {
+                guard generation.id != currentGenerationID, !retainedIDs.contains(generation.id) else {
+                    continue
+                }
+                let generationID = generation.id
+                let observations = try context.fetch(FetchDescriptor<CatalogAssetObservation>(
+                    predicate: #Predicate { $0.generationID == generationID }
+                ))
+                for observation in observations {
+                    context.delete(observation)
+                }
+                context.delete(generation)
+            }
+            try context.save()
+        }
     }
 
     static func snapshot(for authorization: PhotoLibraryAuthorization) -> CatalogAuthorizationSnapshot {
@@ -404,7 +388,6 @@ private extension LibraryCatalogStore {
         case .incompleteGeneration: .incomplete
         case .persistenceFailed, .unavailable: .persistenceFailed
         case .reconciliationInProgress: .incomplete
-        case .reconciliationTimedOut: .cancelled
         }
     }
 
@@ -416,7 +399,7 @@ private extension LibraryCatalogStore {
         case .accessRequired:
             .accessRequired
         case .authorizationChanged, .cancelled, .duplicateAssetID, .fetchFailed, .incomplete,
-             .persistenceFailed:
+             .interrupted, .persistenceFailed:
             hasPriorGeneration ? .stale : .unavailable
         }
     }
@@ -431,20 +414,5 @@ private extension LibraryCatalogStore {
             assetCount: generation.assetCount,
             failureCategory: generation.failureCategory
         )
-    }
-}
-
-private extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        guard size > 0, !isEmpty else { return isEmpty ? [] : [self] }
-        var result: [[Element]] = []
-        result.reserveCapacity((count + size - 1) / size)
-        var start = startIndex
-        while start < endIndex {
-            let end = index(start, offsetBy: min(size, distance(from: start, to: endIndex)))
-            result.append(Array(self[start..<end]))
-            start = end
-        }
-        return result
     }
 }

@@ -95,13 +95,13 @@ struct RootView: View {
             if newPhase == .active {
                 Task {
                     await appModel.refreshAuthorization()
-                    await appModel.reconcileCatalog()
+                    appModel.reconcileCatalog()
                     await appModel.resumeIfPaused()
                 }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .photoLibraryDidChange)) { _ in
-            Task { await appModel.reconcileCatalog() }
+            appModel.reconcileCatalog()
         }
         .safeAreaInset(edge: .top) {
             if appModel.path.isEmpty, !appModel.deletionRecoveryOperations.isEmpty {

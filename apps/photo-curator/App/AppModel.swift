@@ -125,6 +125,7 @@ final class AppModel {
 
     func refreshAuthorization() async {
         authorization = await container.photoLibrary.authorizationStatus()
+        await container.catalogStore?.recordAuthorization(authorization)
     }
 
     func startup() async {
@@ -139,30 +140,19 @@ final class AppModel {
             )
         }
         await refreshAuthorization()
-        await reconcileCatalog()
+        reconcileCatalog()
         await refreshDeletionRecovery()
         await refreshResumeSnapshot()
     }
 
-    /// Catalog reconciliation is lifecycle work, not a discovery route. The
-    /// store owns single-flight serialization and publishes availability from
-    /// its durable CatalogState.
-    func reconcileCatalog() async {
+    /// Catalog reconciliation is lifecycle work, not a discovery route. It is
+    /// queued outside startup/recovery/resume critical paths; the store owns
+    /// single-flight serialization and coalesces change notifications.
+    func reconcileCatalog() {
         guard let catalogStore = container.catalogStore else { return }
-        do {
-            _ = try await catalogStore.reconcileBounded(using: container.photoLibrary)
-        } catch let error as LibraryCatalogStoreError {
-            switch error {
-            case .reconciliationInProgress:
-                break
-            default:
-                logger.debug("Catalog reconciliation did not publish a generation.")
-            }
-        } catch is CancellationError {
-            // The store records the abandoned attempt while retaining its
-            // prior committed pointer.
-        } catch {
-            logger.debug("Catalog reconciliation did not publish a generation.")
+        let photoLibrary = container.photoLibrary
+        Task {
+            await catalogStore.enqueueReconciliation(using: photoLibrary)
         }
     }
 
@@ -171,9 +161,10 @@ final class AppModel {
         isRequesting = true
         defer { isRequesting = false }
         authorization = await container.photoLibrary.requestAuthorization()
+        await container.catalogStore?.recordAuthorization(authorization)
         markSeen()
         path = []
-        await reconcileCatalog()
+        reconcileCatalog()
     }
 
     func presentPicker() {
