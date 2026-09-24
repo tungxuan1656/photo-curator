@@ -1,50 +1,53 @@
-# Product Docs Index
+# Project Documentation Index
 
-Start at `AGENTS.md`, then read the owner doc for the task. These routes are
-canonical; do not duplicate an owner's facts in another document.
+Start at [AGENTS.md](../AGENTS.md), then select one owner for the task.
+Current direction: [Photos companion product](product-specs/product.md).
+Current code and target architecture are explicitly separated in [architecture](design-docs/ios-architecture.md).
 
-## Task routes
+## Task routes and ownership
 
-| Task | Read first | Owner |
+| Read when | Canonical owner | Update when |
 |---|---|---|
-| Product purpose, scope, platform | [product.md](product-specs/product.md) | Product |
-| Screen flow and visible states | [ux-flows.md](product-specs/ux-flows.md) | UX |
-| User choices, cleanup, deletion safety | [review-rules.md](product-specs/review-rules.md) | Review rules |
-| English/Vietnamese strings | [ui-copy.md](product-specs/ui-copy.md) | UI copy |
-| Legacy pick rules (historical route only) | [selection-rules.md](product-specs/selection-rules.md) | Legacy reference; not active behavior owner |
-| App topology, coordination, services | [ios-architecture.md](design-docs/ios-architecture.md) | iOS architecture |
-| Durable workspace and cache shapes | [data-model.md](design-docs/data-model.md) | Data model |
-| Photo intelligence facts and suggestions | [photo-intelligence.md](design-docs/photo-intelligence.md) | Photo intelligence |
-| Concrete runtime/model candidates | [curation-runtime-stack.md](design-docs/curation-runtime-stack.md) | Runtime stack |
-| PhotoKit, Vision, deletion API facts | [apple-frameworks.md](design-docs/apple-frameworks.md) | Apple frameworks |
-| Privacy and access | [privacy.md](ship-gates/privacy.md) | Privacy |
-| Performance budgets | [performance.md](ship-gates/performance.md) | Performance |
-| Build order | [roadmap.md](exec-plans/roadmap.md) | Roadmap |
-| Why a decision was made | [decision-log.md](design-docs/decision-log.md) | Decision history |
+| Purpose, scope, priority | [Product](product-specs/product.md) | Accepted product decision |
+| Labels, facets, group meaning, filter logic | [Organization rules](product-specs/organization-rules.md) | Domain behavior changes |
+| Screens, navigation, inspection, visible states | [UX flows](product-specs/ux-flows.md) | Route or interaction changes |
+| Selection, album, staging, deletion | [Review rules](product-specs/review-rules.md) | User-action semantics change |
+| English/Vietnamese wording | [UI copy](product-specs/ui-copy.md) | User-visible state/label changes |
+| Code map, orchestration, dependencies | [iOS architecture](design-docs/ios-architecture.md) | Topology or ownership changes |
+| Schema, projections, revisions, migration | [Data model](design-docs/data-model.md) | Stored/query contracts change |
+| Group/label evidence and quality claims | [Photo intelligence](design-docs/photo-intelligence.md) | Evidence policy changes |
+| Concrete AI/runtime candidates and admission | [Runtime stack](design-docs/curation-runtime-stack.md) | Provider/artifact decision changes |
+| Framework service boundaries | [Apple frameworks](design-docs/apple-frameworks.md) | Framework integration changes |
+| Data sensitivity, reset, retention | [Privacy](ship-gates/privacy.md) | Data lifecycle or network behavior changes |
+| Work bounds and lifecycle budgets | [Performance](ship-gates/performance.md) | Scheduling/resource policy changes |
+| Optional event collection | [Analytics](ship-gates/analytics.md) | Provider/consent decision |
+| Optional user exploration | [Manual QA](ship-gates/manual-qa.md) | Useful exploratory cases change |
+| Build order and feature dependencies | [Roadmap](exec-plans/roadmap.md) | Delivery graph changes |
+| Rationale and superseded decisions | [Decision log](design-docs/decision-log.md) | Consequential accepted decision |
 
-`selection-engine.md` and `curation-intelligence.md` remain historical/legacy
-references while the pivot is implemented. They are not active behavior owners.
-Older plans preserve prior implementation history. Current pivot plans are
-listed below.
+A durable fact has one owner. Other documents link to that owner instead of redefining it.
+New features update the affected owner when implementation changes the intended contract.
 
-## Current pivot execution records
+## Execution records
 
-The current actionable plan records are [feat-032](plans/feat-032.md),
-[feat-033](plans/feat-033.md), [feat-034](plans/feat-034.md),
-[feat-035](plans/feat-035.md), [feat-036](plans/feat-036.md), and
-[feat-037](plans/feat-037.md), followed by the audited repair
-[feat-038](plans/feat-038.md), in the order owned by
-[roadmap.md](exec-plans/roadmap.md). Older `docs/plans/*` records remain
-historical implementation records; their links and contents are preserved.
+- Status/dependencies: [feature_index.json](../feature_index.json).
+- Scope, acceptance, evidence, handoff: `features/feat-<id>.md`.
+- Substantial work: linked `docs/plans/feat-<id>.md`.
+- Session results: append-only [progress.md](../progress.md).
+- Organization pivot: feat-039–047, routed by the [roadmap](exec-plans/roadmap.md).
 
-## Platform and validation invariants
+Only activate user-approved features with completed dependencies.
+Behavior changes require `./init.sh`; no test targets or standalone proof harnesses are allowed.
+Manual QA is not an acceptance or release gate.
 
-The planning baseline is iPhone 14+ and iOS 26+, with on-device processing and
-English/Vietnamese UI. The repository has no test targets, test files, test
-frameworks, or standalone proof harnesses. Behavior-changing work must run
-`./init.sh` and record its result in the feature's verification evidence.
+## Historical references
 
-## Ownership rule
+These retain earlier design context and do not own current behavior:
 
-Read the owner doc only; follow links when needed. If two docs appear to state
-the same current fact, move the fact to the owner named above and link to it.
+- [Selection rules](product-specs/selection-rules.md): former automatic album policy.
+- [Selection engine](design-docs/selection-engine.md): former album pipeline design.
+- [Curation intelligence V2](design-docs/curation-intelligence.md): former quality architecture.
+- Plans through feat-038 and [universal request evidence](evidence/universal-request-cost.md): historical implementation/evaluation records.
+
+feat-031 remains blocked and does not authorize Qwen production use.
+Historical success records do not prove the organization pivot is implemented or visually accurate.

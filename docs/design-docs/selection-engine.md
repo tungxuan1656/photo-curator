@@ -1,5 +1,10 @@
 # Selection Engine Design (pipeline + mechanics owner)
 
+> **Historical design, superseded for current product behavior by DEC-055 (2026-09-23).**
+> Some named code remains in the live session path during migration.
+> Use [architecture](ios-architecture.md) for observed code and [photo intelligence](photo-intelligence.md) for the target evidence flow.
+> Do not copy album sizing or selection-result requirements into the catalog pipeline.
+
 **Responsibility:** This file owns how curation runs: stage order and mechanics for ingest → eligible → analyze → dups → moments → rank → shortlist → diversity → verify → order, candidate windows, greedy marginal-utility fill, the config struct, determinism mechanics, and failure degradation.
 
 **Not owned here:** selection policy, formulas, sizing, and reason-code meanings ([03](../product-specs/selection-rules.md)), stored representation ([06](data-model.md)), PhotoKit/Vision call shapes ([07](apple-frameworks.md)), budgets, concurrency numbers, and timing targets ([08](../ship-gates/performance.md)), orchestration, scheduling, and app structure ([05](ios-architecture.md)), review UX and wording ([02](../product-specs/ux-flows.md)), privacy, retention, and redaction ([09](../ship-gates/privacy.md)), QA procedure ([10](../ship-gates/manual-qa.md)), metrics ([11](../ship-gates/analytics.md)). Where those topics appear below, this file states the mechanic; the linked file states the rule.

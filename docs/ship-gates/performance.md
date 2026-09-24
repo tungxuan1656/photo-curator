@@ -1,40 +1,51 @@
-# Performance Gate
+# Performance and Lifecycle
 
-**Status:** Phase 1 pivot contract · budgets owner
+**Status:** Intended catalog budgets, not device measurements · 2026-09-23.
+Owns work bounds and resource claims for a persistent photo index.
 
-Budgets are starting points, not device claims. Measure on the iPhone 14+
-/iOS 26+ baseline before making a claim; Simulator/host evidence cannot prove
-latency, memory, thermal behavior, or image quality.
+## Planning budgets
 
-## Starting budgets
+| Work | Starting constraint |
+|---|---|
+| Library size | Entire authorized photo scope; capacity is unmeasured, not capped by the old 100–2,000 selection target |
+| Image analysis batch | 32 assets; tune within 16–64 only with recorded reason |
+| Heavy image concurrency | At most 2 initial lanes |
+| Progress publication | At most 4 Hz |
+| Checkpoints | About 25 assets or 10 seconds, at safe commit boundaries |
+| Browsing | Metadata-first; no wait for complete inference |
+| Thumbnail work | Visible cells plus a bounded preheat window |
+| Detail previews | Bounded current/adjacent work; release obsolete images |
+| Similarity candidates | Bounded retrieval; no library-wide all-pairs image comparison |
+| Query execution | Compact indexed projections; no per-query scan of every analysis JSON |
+| Mutations | Serialized operation ownership with fixed exact sets |
 
-| Work | Starting budget |
-|---|---:|
-| Normal source | 100–2,000 photos |
-| Analysis batch | 32 (tune 16–64) |
-| Heavy image concurrency | 2 |
-| Progress publication | ≤4 Hz |
-| Checkpoint | every ~25 assets or ~10 s at safe edges |
-| Decoded full images | bounded per-asset only |
-| Review thumbnails | visible plus small preheat window |
-| Workspace persistence | compact SwiftData transactions |
-| Deletion mutation | exact set, serialized operation |
-| Retry | explicit action; none automatic for deletion |
+These are implementation starting points. They do not establish latency, battery, thermal, or whole-library capacity claims.
 
-## Runtime rules
+## Scheduling
 
-Analysis is incremental and resumable. It loads metadata first, processes
-bounded image batches, writes compact facts/checkpoints, and releases decoded
-images. A choice change must not force image re-analysis. Review remains
-responsive and retains user choices under memory pressure or interruption.
+Prioritize image inspection over enrichment.
+Batch cheap metadata and process images incrementally off the main actor.
+Coalesce library-change notifications into reconciliation generations.
+An edited asset invalidates affected evidence; changing filters or selection does not rerun inference.
 
-Album save and deletion are separate operations. Persist semantic progress and
-per-ID outcomes at safe edges. Never claim a time or storage result that has
-not been measured; never claim immediate recovered bytes after deletion.
+Pause at safe edges on suspension or resource pressure.
+Drain cancelled work before publishing terminal state.
+Resume with revision checks, not counters alone.
+Retry unavailable analysis through explicit user action or a documented changed-condition policy; never spin on persistent failures.
+Deletion retry remains exclusively explicit under [review rules](../product-specs/review-rules.md).
 
-## Gate
+## Scale work
 
-A release candidate must show stable resume, bounded memory, responsive review,
-truthful partial outcomes, and explicit deletion gating through reproducible
-automated evidence plus `./init.sh`. No test targets, test files, test
-frameworks, or standalone proof harnesses are allowed.
+The existing time-window pair enumeration is not evidence of scalable cross-date duplicate retrieval.
+feat-042 must bound candidate generation and record any recall tradeoff.
+feat-047 evaluates catalog paging, projection rebuilding, disk growth, and interruption across increasing accessible scopes.
+Do not store full-resolution images or a full library of decoded images.
+Similarity artifact persistence requires the separate decision in [data model](../design-docs/data-model.md).
+
+## Evidence
+
+Every behavior feature runs `./init.sh` and records implementation limits.
+Build success does not prove responsiveness or image quality.
+Resource reports name device, OS, scope size, provider revision, elapsed time, and observed memory where available.
+Unmeasured values stay unmeasured; do not invent numeric release claims.
+Manual QA is optional and never a gate. No standalone measurement/proof harness is introduced.

@@ -1,56 +1,56 @@
-# Privacy and Safety Gate
+# Privacy and Retention
 
-**Status:** Phase 1 pivot contract · privacy owner
-
-Photos Curator processes photo content on device. No account, photo backend,
-cloud inference, or tracking is required. The planning baseline is iPhone 14+
-and iOS 26+ with English/Vietnamese UI.
+**Status:** Organization pivot contract · 2026-09-23.
+Owns sensitive-data boundaries, local retention, access changes, and disclosure.
 
 ## Data boundary
 
-Photo bytes, thumbnails, faces, embeddings, GPS, full EXIF, filenames, and
-`PHAsset.localIdentifier` values stay on device. PhotoKit may retrieve iCloud
-bytes as part of the user's library behavior; that is not a Photos Curator
-upload. Logs and optional analytics contain only approved aggregates and no
-photo-linked identifiers.
+Photo analysis runs on device. The core app has no account, backend, cloud inference, or required analytics.
+Apple Photos retains originals; the app stores references and derived organization data.
+PhotoKit can retrieve iCloud images as part of the user's library. This is not a Photos Curator upload.
 
-SwiftData stores only scopes, independent workspace choices, migration markers,
-and album/deletion operation state. Analyses, suggestions, thumbnails,
-checkpoints, and model artifacts use local files/cache as defined in
-[data-model.md](../design-docs/data-model.md). Retention and eviction never
-remove originals from Apple Photos.
+Photos, thumbnails, labels, corrections, model output, identifiers, and derived visual data never enter app-controlled upload paths.
+Logs and crash attachments exclude photo IDs, filenames, pixels, OCR text, faces, precise location, personal labels, and album names.
+Aggregate diagnostics cannot include values that identify an individual photo or person.
 
-## Access policy
+## Stored state
 
-Read-write access is requested in context because the app can review, save an
-album, and—only after a separate confirmation—delete originals. Limited access
-is valid for review and cleanup staging. It cannot begin deletion. Recheck
-authorization at operation start and offer access recovery without prompt
-loops.
+[Data model](../design-docs/data-model.md) owns physical storage and schema.
+Catalog metadata and derived projections are local and scoped to authorized assets.
+User label corrections and saved work are durable user state, not disposable inference cache.
+FeaturePrint objects, face boxes, and original pixels remain transient.
+Persisted image embeddings require a separate recorded decision before introduction.
 
-## Deletion disclosure
+The pivot does not add a raw OCR text index or face identity database.
+Personal labels such as children or work are explicit user assignments.
 
-Deletion is never automatic or inferred from a suggestion, album exclusion,
-missing asset, or legacy reason. The user must stage exact assets, review them,
-confirm explicitly, and have full read-write access. `PhotoDeletionService`
-persists an exact-set digest and per-ID outcomes; no automatic retries occur.
-The app discloses PhotoKit/iCloud synchronization and Recently Deleted and does
-not claim immediate recovered bytes.
+## Access changes
 
-Album save is independent and does not clear workspace or cleanup choices.
-Partial saves and deletions are reported as partial; unresolved outcomes are
-not presented as complete.
+Limited access is a normal browsing and organization mode.
+The app must not imply that a limited subset represents the entire phone library.
+When access changes, remove inaccessible assets from actionable results and invalidate affected operation previews.
+Preserve local corrections and unresolved operation records without exposing inaccessible image content.
+Reauthorization can reconnect records by asset ID and current revision.
 
-## Manifest and logging
+An inaccessible asset is not proof of deletion.
+Original deletion follows the exact-set/full-access contract in [review rules](../product-specs/review-rules.md#deletion-gate).
 
-`NSPhotoLibraryUsageDescription` must match actual read/write behavior. Privacy
-manifest and store disclosures must match the shipped binary. Logs exclude
-pixels, file paths, IDs, faces, precise location, full EXIF, and model output.
-No photo data is placed in crash attachments or analytics.
+## Reset and retention
 
-## Gate
+- Reset Analysis removes derived facts and projections, then permits recomputation.
+- Reset Analysis preserves user labels, overrides, album drafts, staging, and operation history.
+- Cache eviction never removes originals or user state.
+- Unresolved mutation records survive screen dismissal and analysis reset.
+- Any future action that erases user organization data needs separate explicit wording and confirmation.
 
-Pass only when access states, retention, migration, exact deletion confirmation,
-limited-access blocking, truthful outcomes, and on-device boundaries are
-covered by reproducible automated evidence plus `./init.sh`. No test targets,
-test files, test frameworks, or proof harnesses are added.
+Model delivery must not send photo content or photo-linked metadata.
+No model downloads start implicitly during analysis.
+
+## Disclosure and verification
+
+Usage descriptions, privacy manifests, and store disclosures must match the shipped capabilities, not the target roadmap.
+Explain that local labels organize the companion catalog; they are not promised to appear as Apple Photos keywords.
+Do not promise immediate storage recovery after deletion.
+
+Run `./init.sh` for behavior changes and inspect the relevant data paths.
+No analytics provider is selected by this pivot. The conditional contract is in [analytics](analytics.md).

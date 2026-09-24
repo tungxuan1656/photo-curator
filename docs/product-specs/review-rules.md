@@ -1,139 +1,111 @@
-# Review Rules (choices, cleanup, and deletion owner)
+# Review and Action Rules
 
-**Status:** Phase 1 contract · 2026-09-21
+**Status:** Intended action-selection contract with existing deletion safeguards · 2026-09-23.
+Owns the meaning of user actions and mutation gates.
+[Organization rules](organization-rules.md) own queries and groups; [data model](../design-docs/data-model.md) owns persistence.
 
-This document owns user-choice semantics, review rules, cleanup staging, and
-original-deletion safety. `ux-flows.md` owns screen flow and states;
-`ui-copy.md` owns strings. `data-model.md` owns storage shape.
+## Independent state
 
-## Product contract
+| Dimension | Authority | Meaning |
+|---|---|---|
+| Action selection | User, temporary result snapshot | Photos targeted by the next explicit action |
+| Label override | User, durable | Confirmed/rejected automatic label or personal assignment |
+| Album draft membership | User, durable per draft | Included/excluded/unset for that destination |
+| Cleanup disposition | User, durable staging context | Undecided/keep/staged for deletion |
+| Review progress | User/opening history | Unseen/in progress/reviewed; retained for compatible saved work |
+| Analysis and groups | Versioned derived evidence | Explain or suggest, never imply a choice |
+| Operation outcome | Persisted service evidence | Actual album/deletion result, not inferred intent |
 
-Photos Curator assists with photo review: it classifies, groups, and offers
-quality or content suggestions. The user remains authoritative. **Clean Up
-Photos** and **Build an Album** are two entry intents into one shared,
-photo-first workspace; they are not separate pipelines.
+None of these dimensions is inferred from another.
+Selecting a thumbnail is not album inclusion. Excluding from an album is not deletion.
+Group membership is not evidence that every other member is disposable.
 
-The following dimensions are independent and must never be inferred from one
-another:
+## Action selection
 
-1. **Cleanup disposition:** `undecided`, `keep`, or `stagedForDeletion`.
-2. **Album membership:** `included`, `excluded`, or `unset` for the current
-   album draft.
-3. **Review progress:** `unseen`, `inProgress`, or `reviewed`.
-4. **Analysis facts and suggestions:** immutable facts plus advisory candidate
-   suggestions, each with provenance and analysis version.
+Selection records exact IDs and the query/group revision visible when selection began.
+Select All captures every current matching accessible ID, including results outside the loaded viewport.
+It does not select future matches or hidden full-group context.
 
-Suggestions never mutate a user choice. Analysis availability is separate from
-classification and membership. A later analysis pass must not reset or silently
-reorder reviewed work; new or revised groups enter **Needs Review**.
-
-## Choice rules
-
-- A user action is authoritative immediately and survives navigation, resume,
-  re-analysis, album save, and cleanup staging.
-- Grouping, quality, face, content, and AI signals explain or suggest; they do
-  not decide on the user's behalf.
-- Review may include, exclude, keep both, restore, or leave an asset
-  undecided. No rule forces one winner when the user wants more than one.
-- `stagedForDeletion` is reversible until explicit confirmation. It is not a
-  deletion result and does not remove an asset from the library.
-- Album save is independent: saving an album never clears the workspace,
-  album membership, review progress, or cleanup disposition.
-- Cleanup staging is exact-asset work. A suggestion, group, score, missing
-  asset, or unavailable permission can never create a deletion operation.
+- Filter changes clear the temporary selection.
+- New analysis does not enlarge the selected set.
+- Leaving selection mode clears only temporary selection, not saved drafts or staging.
+- Changed access or a changed preflight set requires an updated preview before mutation.
+- Bulk writes commit atomically where local state is involved. On failure, retain the last committed state.
+- A repeated tap must not create duplicate mutation operations.
 
 ## Review action transitions
 
-These are target behavior contracts for shared review. Each action names its
-exact scope and asset set. Persist the change before reporting it as saved.
-On persistence failure, preserve the last committed choices and offer explicit retry.
+| Action | Effect | Preserved state |
+|---|---|---|
+| Select / Deselect | Change temporary action set | All durable choices and facts |
+| Open photo / compare | Inspect exact opened assets; retain compatible progress semantics | Selection, album, cleanup, labels |
+| Confirm / Reject label | Save that label override | Other labels, album, cleanup |
+| Add personal label | Save assignment for exact chosen IDs | Other dimensions |
+| Restore automatic label | Remove only that label override | Other corrections and facts |
+| Add to Album | Choose destination and prepare an exact-set draft/operation | Cleanup, labels, facts |
+| Remove from draft | Change that draft membership only | Photos library, cleanup, labels |
+| Keep Photo | Cleanup → keep for the explicit staging context | Album, labels, facts |
+| Stage for Deletion | Cleanup → staged for deletion for exact IDs | Originals and album choices |
+| Unstage | Cleanup → undecided | All other dimensions |
+| Mark Reviewed | Progress → reviewed for explicit IDs | Choices and evidence |
+| Select suggested candidates | Preview exact candidates, then update temporary selection on confirmation | All durable choices |
 
-| Action | Preconditions and target | Writes | Leaves unchanged |
-|---|---|---|---|
-| Add to Album / Add Both to Album | Explicitly selected accessible scoped assets | Album membership → `included` | Cleanup, progress, facts |
-| Remove from Album | Explicitly selected scoped assets | Album membership → `excluded` | Cleanup, progress, facts |
-| Keep / Keep Both Photos | Explicitly selected scoped assets | Cleanup → `keep` | Album, progress, facts |
-| Stage for Deletion | Explicit user staging of selected scoped assets | Cleanup → `stagedForDeletion` | Album, progress, facts |
-| Unstage for Deletion | Selected items currently staged | Cleanup → `undecided` | Album, progress, facts |
-| Open photo / compare | Only the assets opened in the detail/compare surface | `unseen` → `inProgress` | Existing `inProgress`/`reviewed`, album, cleanup, facts |
-| Mark Reviewed | Explicit selected set | Progress → `reviewed` | Album, cleanup, facts |
-| Use Suggestion | Preview shows exact IDs and proposed changes; user confirms | Only the named choice dimension | All other dimensions and suggestion record |
-| Keep My Choice | Dismiss the proposal | No choice mutation | All dimensions |
+Opening or scrolling a grid never marks all visible photos reviewed.
+An existing legacy suggestion can still update its named draft dimension after explicit preview.
+It cannot stage deletion or acquire authority over the new catalog selection.
 
-Grid visibility does not count as opening a photo. Choice actions never mark
-an item reviewed. Do not offer the ambiguous label “Keep Both”; name album or
-cleanup explicitly. Entry intent does not change an action's meaning.
+## Album operations
 
-Suggestion acceptance cannot stage deletion. Staging always uses the separate
-explicit staging action. If the proposal or its target set changes during
-preview, require a new preview and confirmation. Changed analysis enters Needs
-Review without resetting the persisted progress of previously reviewed items.
+The user chooses a new album or a supported writable existing album after choosing photos.
+The destination name alone is not an identity. Existing albums require their resolved Photos identifier.
+New-album creation retains collision-safe naming and its created identifier for retry.
+
+Persist destination, exact IDs, digest, progress, and per-ID outcomes before reporting saved work.
+Retry adds only unresolved/missing members after reconciliation; it does not create another destination automatically.
+Album operations do not clear labels, other drafts, staging, or analysis.
+Removing an item from a draft does not remove it from an already saved Photos album.
 
 ## Deletion gate
 
-Original library deletion is allowed only when all conditions hold:
+Original deletion requires all four conditions:
 
-1. the user staged the exact assets;
-2. the user reviewed the exact set and explicitly confirmed deletion;
-3. the app currently has full Photos read-write access; and
-4. a persisted operation records the exact-set digest before PhotoKit mutation.
+1. The user staged the exact assets.
+2. The user reviewed that set and explicitly confirmed deletion.
+3. Current authorization is full Photos read-write access.
+4. A durable operation records the exact-set digest before dispatch.
 
-Limited access may review and retain staged choices, but it cannot begin
-deletion. The app must route to access recovery or let the user keep the staged
-set. An asset absent under limited access is `accessUnknown`, never deletion
-confirmed.
+Limited access permits browsing and staging but cannot start deletion under this product policy.
+Scores, labels, groups, album exclusion, or missing IDs never create deletion intent.
+Suggestion acceptance never stages deletion.
 
-`PhotoDeletionService` is separate from album saving. It resolves the exact
-IDs again, records per-ID outcomes before and during mutation, and has no
-automatic retry. Recovery of an interrupted operation is an explicit,
-authorization-aware reconciliation; it must not silently retry deletion.
+Before dispatch, a changed set invalidates confirmation.
+After dispatch, the operation set is immutable. Later staging belongs to another operation.
+The service resolves IDs and rechecks access at the mutation boundary.
+Deletion has no automatic retry, including after relaunch.
 
-PhotoKit and iCloud behavior, including Recently Deleted, must be disclosed
-truthfully. The app must not claim that deletion immediately freed a byte
-count: iCloud synchronization, storage optimization, and Recently Deleted
-retention affect the result.
+Only persisted successful PhotoKit completion for the submitted set proves deletion.
+An absent asset does not prove successful deletion, even with full access.
+Lost completion evidence remains unresolved. Read-only reconciliation never dispatches another deletion.
+See the [state machine](../design-docs/data-model.md#deletion-operation-state-machine).
 
-### Confirmation and interruption
+Disclose iCloud synchronization and Recently Deleted.
+Never claim immediate recovered bytes.
 
-Before operation start, any change to the confirmed asset set invalidates
-confirmation. Show the new exact set and require confirmation again. Once an
-operation starts, its exact set is immutable; later staging belongs to a future operation.
+## Recovery and migration
 
-Only a successful PhotoKit completion persisted for that operation establishes
-`deleted`. A missing asset alone never proves that the app deleted it, even
-with full access. If execution or completion persistence is interrupted, keep
-the outcome unresolved and never retry automatically.
+Partial and unresolved outcomes remain distinct from success.
+Dismissal does not erase unresolved operations.
+An access change cannot rewrite an earlier known success as unknown.
+Persistent save failures never display a saved-choice claim.
 
-The operation transitions and recovery table are owned by
-[data-model.md](../design-docs/data-model.md#deletion-operation-state-machine).
-
-## User-visible outcome rules
-
-- Album save reports created, partial, or failed truthfully and leaves cleanup
-  state untouched.
-- Deletion reports per-asset success, unavailable/access-unknown, or failure;
-  an operation is not presented as complete when outcomes are unresolved.
-- Failure never converts an asset to `keep`, `undecided`, or deleted-by-inference.
-- Reopening a workspace shows the persisted exact choices and operation state.
-
-## Legacy migration rule
-
-Migration is one-way and idempotent. A legacy `selected` or `restored` value
-imports as album `included`; legacy `rejected` or `removed` imports as album
-`excluded`. Every legacy cleanup disposition becomes `undecided`; review
-progress becomes `unseen`. No deletion intent, review progress, or certainty is
-inferred from legacy reasons, unavailability, or old output state.
-
-The legacy source remains until a committed migration marker is durable. A
-crash before that marker repeats the import safely; it never partially deletes
-legacy data.
+Legacy scopes retain their draft, staging, progress, and operation identities.
+The catalog does not union conflicting per-scope choices into a global decision.
+Historical picks never become labels, current action selection, or permission to delete.
+Migration details belong to [data model](../design-docs/data-model.md#migration).
 
 ## Acceptance
 
-- Every review surface reads and writes the same four independent dimensions.
-- Suggestions are immutable advisory records and cannot mutate user choices.
-- Limited access cannot begin deletion; full read-write is checked again at
-  confirmation and operation start.
-- Album save and original deletion are separate services and state machines.
-- Exact-set digest, per-ID outcomes, interruption reconciliation, and no
-  automatic retry are durable requirements.
+- The same selected photos can receive a label or album action without implicit cleanup changes.
+- Full-group context never silently enters a filtered action set.
+- Changed preflight sets require renewed review.
+- Existing album/deletion safeguards remain valid after session-independent entry.

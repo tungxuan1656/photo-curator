@@ -1,5 +1,10 @@
 # Photo Selection Rules (selection policy owner)
 
+> **Historical, superseded for current product behavior by DEC-055 (2026-09-23).**
+> This document explains the former automatic album policy and retained code.
+> Current owners: [organization rules](organization-rules.md), [review rules](review-rules.md), and [photo intelligence](../design-docs/photo-intelligence.md).
+> Rules and acceptance language below are historical, not new implementation instructions.
+
 **Responsibility:** This file owns what the curator selects and why: moment/duplicate definitions, selection priority, quality tiers, face/group/scene rules, diversity model, album sizing, score policy, tie-breaks, reason codes, user-intent override.
 
 **Not owned here:** product goals ([01](product.md)), UX and review copy ([02](ux-flows.md)), pipeline and orchestration ([04](../design-docs/selection-engine.md)), app architecture ([05](../design-docs/ios-architecture.md)), stored representation ([06](../design-docs/data-model.md)), PhotoKit/Vision APIs ([07](../design-docs/apple-frameworks.md)), performance budgets ([08](../ship-gates/performance.md)), privacy ([09](../ship-gates/privacy.md)), QA procedure ([10](../ship-gates/manual-qa.md)), metrics ([11](../ship-gates/analytics.md)). Where those topics appear below, this file states the rule; the linked file states the mechanism.

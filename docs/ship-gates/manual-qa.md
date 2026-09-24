@@ -1,301 +1,33 @@
-# Manual QA and Selection Evaluation (optional exploratory guidance)
-
-**Doc:** `manual-qa.md` (native filename kept)
-**Status:** MVP specification — historical reference; optional non-blocking exploratory guidance per DEC-032 (Accepted 2026-09-17, supersedes DEC-017)
-**Role:** Optional handbook for hand QA method: dual app + selection QA, datasets, labels, metrics, procedures, checklists, severity, templates, historical release-blocker lists, cadence. Manual QA is NOT required for feature acceptance and never blocks release; every behavior-changing feature MUST instead provide reproducible automated evidence (Simulator-based proof permitted) and pass `./init.sh`. Analytics remains secondary.
-
-**Ownership:**
-This doc owns QA method only. It does not own selection policy, stored shapes, iCloud mechanics, perf targets, privacy rules, or analytics events. It links to those docs and does not copy them.
-
-Related docs:
-
-- `selection-rules.md` — what counts as good selection (duplicate, moment, quality, diversity rules)
-- `data-model.md` — stored shapes and decision record fields
-- `apple-frameworks.md` — PhotoKit, Vision, iCloud mechanics
-- `performance.md` — perf targets and budgets; 10 owns procedure and evidence only
-- `privacy.md` — privacy policy and logging redaction
-- `analytics.md` — event names and aggregates
-
-MUST invariants (only use of MUST in this doc):
-
-- The app MUST never delete or modify an original photo through the normal curation flow.
-- The repo MUST NOT add test targets, `*Test*.swift` files, or test-only architecture per repo policy.
-
----
-
-## 1. What QA covers
-
-Two test areas. Either may be explored by hand on a real iPhone or via Simulator; hand exploration is optional and never acceptance evidence. No automated test suite exists for MVP (no test targets, no `*Test*.swift`, no test frameworks per repo policy). Required repository verification is `./init.sh`.
-
-| Area | Question | Where rules live |
-|---|---|---|
-| App QA | Does the app work without crashes, freezes, or data harm? | This doc (procedure); 07 for API shape, 08 for targets, 09 for privacy |
-| Selection QA | Does the final album keep what matters and drop the rest? | This doc (procedure); 03 for selection policy |
-
-Quality order (highest first):
-
-```text
-1. Originals stay safe.
-2. Important photos stay in the album.
-3. No obviously bad picks.
-4. Duplicates reduced, best shot kept.
-5. Moments and subjects stay varied.
-6. Processing finishes reliably and fast enough.
-7. UI polish.
-```
-
-When unsure, prefer keeping one extra photo over dropping an important one. A slightly large album is fine. A lost memory is not.
-
----
-
-## 2. Datasets (read first)
-
-Keep these sets stable so runs can be compared over time. Do not retune the sets to fit the algorithm.
-
-| ID | Name | Size | Contents | Used for |
-|---|---|---|---|---|
-| A | Basic Mixed | 50–100 | People, landscapes, buildings, food, indoor/outdoor, mixed orientation, a few duplicates, a few bad frames | Smoke test, daily check |
-| B | Duplicate Stress | 50–150 | Same scene repeated: 10x building, 15x selfie, crops, small shifts, exposure and expression changes, frames seconds apart | Clustering, best-shot, leakage |
-| C | Moment Sequence | 100–300 | Chained moments, e.g. airport > hotel > walk > lunch > museum > sunset > dinner > night street, several candidates each | Moment coverage |
-| D | People and Groups | 100–200 | Singles, couples, small/large groups, closed eyes, blur, expressions, partial and back-facing faces, group retakes | Face and group handling |
-| E | Landscape and Context | 100–200 | Landscapes, streets, signs, food, rooms, transport, wide shots, no faces | Checks face-heavy bias |
-| F | Bad Photo Stress | small | Heavy blur, pocket shots, blocked lens, near-black, severe under/over exposure, bad framing | Quality rejection |
-| G | Real Trip | 500–1,500 | Full real trip: duplicates, bursts, people, landscapes, food, transport, night, mistakes, emotional moments | Main question: would I use this album? |
-| H | Large Library Stress | 1,000 / 3,000 / 5,000 | Large input | Stability, memory, cancel, progress, thermal; quality scoring optional here |
-| Golden | Annotated reference | 200–500 | Fixed set with MUST_KEEP / ACCEPTABLE / REJECT labels plus moment, cluster, and best-shot notes (§3) | Regression reference for algorithm changes |
-
-Notes:
-
-- A is the default smoke set. G is the most important qualitative check when hand exploration is used.
-- H checks system behavior, not taste. Do not hand-score all 5,000 photos.
-- Physical-iPhone runs are optional exploratory follow-up only, never acceptance blockers. Where a physical device is available, the daily device plus an older device may be used for extra memory and heat signal.
-- Selection policy terms (moment, cluster, representative, keeper) follow 03. Stored field names follow 06.
-
----
-
-## 3. Ground-truth labels and annotation
-
-### 3.1 Labels
-
-| Label | Meaning | Examples |
-|---|---|---|
-| MUST_KEEP | A good album almost always keeps this | Best group shot, unique key event, only photo of a place, strong portrait or landscape, emotional moment |
-| ACCEPTABLE | Fine to keep or skip based on size and variety | Second portrait, extra landscape, second-best version of a moment |
-| REJECT | A good album normally drops this | Severe blur, accident, clearly worse duplicate, bad expression with better option present, unusable frame |
-
-Optional tags per photo: moment ID, duplicate cluster ID, best-in-cluster flag, group / landscape / portrait / context flag, known defect note.
-
-### 3.2 Annotation order
-
-Annotate before running the app, to avoid bias:
-
-```text
-1. Review source set without seeing app output.
-2. Mark natural moments.
-3. Mark duplicate groups and the best frame in each.
-4. Label each photo MUST_KEEP / ACCEPTABLE / REJECT.
-5. Run the app.
-6. Compare output against labels.
-```
-
----
-
-## 4. Metrics (read second)
-
-Use all metrics together. No single number proves quality.
-
-| Metric | Formula | Initial MVP target | Notes |
-|---|---|---|---|
-| Must-Keep Recall | selected MUST_KEEP / total MUST_KEEP | ≥ 95% | Most important. Missing the single best trip photo fails even at 98%. |
-| Good Selection Rate | selected (MUST_KEEP + ACCEPTABLE) / total selected | ≥ 90% | Share of final album that is reasonable. |
-| Bad Pick Rate | selected REJECT / total selected | ≤ 10% | Lower is better. A few weak picks are fine; a cluster of them is not. |
-| Duplicate Leakage | needless repeat selections / total selected | ≤ 5% | Manual judgment: different expressions, people, or action can justify two similar frames. |
-| Best-Shot Accuracy | clusters where expected best was picked / clusters judged | ≥ 80–85% | Key for groups, portraits, bursts. |
-| Moment Coverage | important moments present / total important moments | ≥ 90% | Missing a whole trip part is a major fail even if per-photo scores look good. |
-| Compression Ratio | final count / input count | track only, no target | Detects behavior breaks (e.g. 1,000 → 130 becomes 1,000 → 420). Not a quality score. |
-| Human Edit Rate | manual changes / final album size | track only | Split into removals (added junk) vs add-backs (lost value). Add-backs are worse. |
-| Subjective score 1–5 | reviewer judgment (§6.4) | 4+ on unseen trips | 5 ready, 4 useful, 3 saves time with mistakes, 2 much work left, 1 prefer manual. |
-
-Targets are starting points, not hard pass/fail lines. Reproducible automated evidence decides acceptance; manual review is advisory only. A 94% recall with a borderline miss can pass; a 98% recall that drops the key photo fails.
-
-Diversity check (visual, not a number): scan the final album for excess focus on one person, place, day, scene, or orientation. A good trip mix covers people, groups, landscapes, buildings, food, details, transport, day and night. The engine prevents one theme from taking over; it does not force quotas. Policy detail: 03.
-
----
-
-## 5. App QA procedures
-
-Short checks. Full perf numbers live in 08; privacy rules live in 09; iCloud behavior lives in 07. This doc gives steps and pass signs only.
-
-### 5.1 Functional smoke (Dataset A)
-
-Run after changes to loading, pipeline, review, permissions, models, concurrency, or save.
-
-```text
-Launch > grant or pick access > choose photos > start > watch progress >
-finish > review album > open previews > add/remove > save > return.
-```
-
-Pass signs: no crash or lasting freeze; progress moves; counts look right; images show correctly; user edits stick; save works; originals unchanged.
-
-### 5.2 Permissions and loading
-
-Permissions (policy: 09): check first launch wording, full access, limited access (only allowed photos used, no false "missing" errors), denied (clear reason + recovery path, no run starts), and Settings changes (full/limited/denied switches recover on relaunch).
-
-Loading: cover portrait, landscape, square, HEIC, JPEG, large files, edited assets, iCloud-backed assets, missing metadata, and failed assets. One bad asset skips safely; it does not abort the session.
-
-iCloud: use a library with some assets off-device, on good and poor networks. Loading states stay clear, slow fetch never looks like a freeze, failed downloads are handled, cancel works, partial failure does not ruin the session. Mechanics: 07.
-
-### 5.3 States, cancel, interrupt, review, save
-
-States: idle, preparing, analyzing, clustering, selecting, completed, failed, cancelled. The UI never sticks in a working state after work ends.
-
-Cancel at start, ~25%, ~50%, ~90%: app stays responsive, work stops, memory clears, no fake completed album, a new run can start, sources untouched.
-
-Interrupt during a run: background, return, lock/unlock, open a heavy app. Continue, pause, resume, or clean restart are all fine if planned. Never fine: silent corruption, fake results, stuck loader, crash loop, dead workflow.
-
-Review screen: correct count, smooth scroll, correct thumbs, full-screen preview, add/remove applies at once, state survives back-navigation, no duplicate rows from ID bugs, no memory blowup on large sets.
-
-Save: create or add to a Photos album, keep originals intact, retry after failure, survive partial PhotoKit failure and backgrounding during save.
-
-### 5.4 Perf, memory, privacy, errors, edges
-
-Perf smoke (budgets: 08): try 100, 500, 1,000, and 5,000 inputs. Watch: run starts, progress moves, UI stays alive, heat stays sane, no crash, cancel works, result looks complete. Record exact times only when chasing a regression.
-
-Memory: test large sets on device. Watch for OS kills, hangs, lost thumbs, long pauses, slowdown over time, repeat decoding. Use Instruments only when a real problem shows. No continuous profiling rig for MVP.
-
-Privacy checklist (rules: [09](privacy.md)): run the privacy spot-check per 09 and record the result.
-
-Error states: photo missing, iCloud failure, revoked permission, asset lost mid-run, low storage, cancel, background, analysis error, save failure. Each case: no state corruption, clear message when the user must act, retry where useful, other photos continue where possible.
-
-Edge cases to cover over time: 1–5 photo inputs; 100 near-identical frames; zero duplicates (do not invent cuts); mostly bad photos (keep the best meaningful ones); mostly great photos (do not over-cut); no faces; all faces; mixed orientations; multi-day; wrong or missing timestamps; edited assets; iCloud-only assets; limited access; panoramas; screenshots if supported; dark night scenes; strong HDR.
-
-Logging while testing: keep session start, input count, analyzed/skipped counts, cluster and moment counts, shortlist and final counts, stage timing, cancel, and load errors. Redaction rules: [09](privacy.md). Stored field reference: 06.
-
----
-
-## 6. Selection QA procedures
-
-### 6.1 Per-cluster and per-group checks
-
-Duplicates (policy: 03): for each cluster ask: do these frames belong together (day vs night tower shots are not duplicates)? Is the picked frame sharper, better exposed, better framed, with open eyes and clear faces? Did needless copies leak in? Did grouping kill meaningful variants?
-
-Groups: check face count, closed eyes, sharpness, expression, blocked faces, key people visible and looking at camera, framing, and whether two variants both deserve a slot. A slightly soft frame where everyone looks good often beats a sharp frame with closed eyes.
-
-Landscapes: check that strong views, landmarks, sunsets, night streets, and context shots survive. An all-portrait trip album fails even with great portraits. Low-quality frames: ask quality and value separately. A weak frame of a unique moment can stay; quality ranks, moment need decides.
-
-### 6.2 Album-level checks
-
-Temporal scan: view the result in date order. A day with far fewer picks than its share (e.g. day 3 gets 2 of 137) needs a look. Causes can include cluster, threshold, timestamp, or balance bugs.
-
-Review questions for each serious run:
-
-```text
-Kept the most important memories?
-Anything obviously bad kept?
-Obvious duplicates kept?
-Best frame usually picked?
-Groups handled well?
-Landscapes and context kept?
-All trip parts present?
-One person or scene taking over?
-Faster to review than the source set?
-Acceptable with only small edits?
-```
-
-Blind check on a fresh set (catches overfit to Golden): take a new trip, do not pre-curate, run the app, log removals needed, missing key photos, duplicate fails, and moment fails.
-
-Regression after scoring, threshold, clustering, diversity, face, or sizing changes (optional exploratory guidance; required acceptance is reproducible automated A/B/Golden-shaped/trip-shaped evidence plus `./init.sh`): run automated A, B, Golden-shaped, and trip-shaped fixture shapes. Record recall, bad-pick rate, leakage, best-shot accuracy, moment coverage, final size, and notes. Do not accept a change on one better number alone (e.g. leakage 5% → 1% with recall 96% → 82% is a fail). Safety, privacy, and data-integrity conditions (originals unchanged, no privacy break, no steady crash or hang, savable album) remain automated acceptance conditions where applicable. Log big calls in `decision-log.md`.
-
-Side-by-side: build albums from old and new configs, diff which photos are only in each, which cluster pick changed, which moments were lost, how balance shifted. Numbers hide taste fails.
-
----
-
-## 7. Severity, failure tags, historical release reference (advisory; non-blocking per DEC-032)
-
-### 7.1 Severity
-
-| Level | Meaning | Examples | Advisory signal |
-|---|---|---|---|
-| P0 Critical | Data harm, privacy break, dead flow | Original lost or changed; privacy violated; steady crash; save corrupts; endless hang | Investigate first (advisory; non-blocking per DEC-032) |
-| P1 Major | Core flow broken | Common album cannot finish; permission flow dead; many key photos lost; bad clustering; review unusable; common iCloud assets fail | Normally investigate first (advisory; non-blocking per DEC-032) |
-| P2 Moderate | Limited harm | Some weak picks, missed duplicate, rare edge fail, small perf drop, fixable UI state bug | Can ship if known and accepted |
-| P3 Minor | Cosmetic or tiny taste gap | Spacing, wording, rare pick disagreement | Does not block |
-
-### 7.2 Selection failure tags
-
-Tag reports with one or more: `IMPORTANT_PHOTO_MISSED`, `BAD_PHOTO_SELECTED`, `DUPLICATE_LEAKAGE`, `WRONG_BEST_SHOT`, `OVER_CLUSTERING`, `UNDER_CLUSTERING`, `MOMENT_MISSING`, `PEOPLE_BIAS`, `LANDSCAPE_BIAS`, `DIVERSITY_FAILURE`, `GROUP_PHOTO_FAILURE`, `QUALITY_SCORING_FAILURE`, `ALBUM_TOO_LARGE`, `ALBUM_TOO_SMALL`, `UNKNOWN_SELECTION_FAILURE`.
-
-### 7.3 Release validation and blockers (historical advisory list; non-blocking per DEC-032)
-
-The lists below are optional exploratory guidance, not acceptance gates. No item here blocks a feature or release by itself; acceptance is reproducible automated evidence plus `./init.sh`.
-
-Before a milestone build, consider as exploratory follow-up: A smoke pass; Golden-shaped automated regression with no big surprise; one trip-shaped review that reads as useful; permission trio (full, limited, denied); 1,000-photo-scale automated run without critical fail; cancel run; review add/remove; save run; privacy spot-check per 09.
-
-Historical release-blocker reference (advisory, not gates): lost or changed originals; steady crash or hang; unsavable album; cross-session photo mix-up; misleading permission behavior; privacy break; common 1,000-photo run fails; whole moments missing on tap; clearly worse picks than the last good build.
-
-Temporary non-blockers: odd weak pick, stray duplicate, small rank dispute, small animation or layout flaw, rare metadata case, small size drift, tie between two good frames. Fix patterns first, not each taste edge.
-
----
-
-## 8. Templates
-
-### 8.1 Selection issue
-
-```text
-Dataset:
-Build:
-Input count / Final count:
-Failure tag(s):
-Expected:
-Actual:
-Photo IDs (format per [09](privacy.md)):
-Moment / cluster:
-Why human view differs:
-Suspected part (quality / duplicate / face / moment / diversity / ranking / unknown):
-Severity:
-Screenshot or clip if useful:
-```
-
-File only recurring, severe, biased, or album-breaking issues. Skip one-off taste notes. Analytics signal definitions live in 11; manual QA stays optional and non-blocking.
-
-### 8.2 Evaluation run
-
-```text
-# Selection Evaluation
-Date: / Build: / Config: / Dataset:
-Input: / Final: / Compression:
-MUST_KEEP total / selected / recall:
-Selected MUST_KEEP / ACCEPTABLE / REJECT:
-Good rate: / Bad-pick rate:
-Clusters judged / leakage / best-shot accuracy:
-Key moments total / covered / coverage:
-User removals / add-backs:
-Top failures:
-Notes:
-Regression vs last build:
-Decision: [ ] Better [ ] Neutral [ ] Worse
-```
-
-Keep major comparison notes; throwaway runs need no permanent record.
-
----
-
-## 9. Cadence and done
-
-Proportional exploratory QA by risk (advisory only; reproducible automated evidence remains the acceptance gate):
-
-```text
-Small UI-only change > run the touched flow.
-Scoring change > A + Golden.
-Duplicate or cluster change > B + Golden.
-Big pipeline change > smoke + Golden + real trip + 1,000-photo check.
-Before milestone > full release list in §7.3.
-```
-
-A selection feature is done when: reproducible automated evidence (Simulator permitted) proves the new behavior with no critical regression on Golden-shaped fixtures; limits known; `./init.sh` passes; big calls noted in 13. Physical-device runs, annotated Golden labels, and real-trip human review are optional exploratory follow-up, never done-gates.
-
-MVP is ready when (proven by reproducible automated evidence plus `./init.sh`; manual and subjective review is optional advisory context only): access, picking, progress, fail/cancel, review/edit, and save all work; 1,000-photo-scale runs are steady; key photos rarely drop; bad frames mostly filtered; duplicates cut; groups, landscapes, and moments read well; originals safe; privacy holds; review effort drops clearly.
-
-Not building for MVP: unit/UI/snapshot suites, auto image comparison, vision benchmarks, CI test gates, device farms, stats-significance rigs, annotation platforms, experiment trackers, QA backends, or a second test app target.
-
-Core test: with hundreds or thousands of photos, does the album keep what matters and cut enough repetition and junk to save real time? Automated evidence decides; hand review is advisory. Loop: build > run automated fixture shapes (plus optional hand review of real photos) > tag the failure > smallest fix > re-run stable sets > keep or revert.
+# Optional Organization Exploration
+
+**Status:** Optional, non-blocking guidance · 2026-09-23.
+Manual QA is never an acceptance criterion, blocker, or release gate under DEC-040.
+Required behavior verification remains `./init.sh`; no test targets or standalone proof harnesses are permitted.
+
+## Purpose
+
+User reports can reveal whether groups and labels help actual organization.
+These observations are useful evidence, but are not a substitute for recorded implementation verification.
+Quality claim definitions belong to [photo intelligence](../design-docs/photo-intelligence.md#evidence-and-quality).
+
+## Optional exploration cases
+
+| Case | Question |
+|---|---|
+| Repeated selfies with expression changes | Does one coherent comparison group preserve all useful alternatives? |
+| Similar beaches from different trips | Do labels connect them without a false retake group? |
+| Same image saved on different dates | Does cross-date retrieval find the near-copy? |
+| Chained visual variations | Does grouping avoid merging unrelated endpoints? |
+| Blurred nature shots and deliberate night photos | Are technical signals distinct from a delete recommendation? |
+| Documents and screenshots with text | Are kind labels useful without exposing raw text? |
+| Two filtered matches in a five-photo group | Are outside-filter alternatives visible but not silently selected? |
+| Incorrect AI label corrected by user | Does the correction survive re-analysis and restart? |
+| Partial access or unavailable iCloud image | Does the app show honest coverage and recovery? |
+| Album or deletion interrupted | Does saved work remain reachable without inferred success? |
+
+## Report format
+
+Record build, provider/grouping revision if visible, entry route, expected behavior, actual behavior, and impact.
+Use failure categories such as false merge, missed near-copy, incorrect label, missing label, inaccessible detail, or action-scope mismatch.
+Keep private image identifiers and screenshots out of public records.
+Do not convert optional exploration into a release checklist or revive historical fixture/proof procedures.

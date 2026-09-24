@@ -1,6 +1,10 @@
 # Photos Curator — Decision Log
 
-**Doc:** `decision-log.md` · **Status:** Living · **Updated:** 2026-09-18
+**Doc:** `decision-log.md` · **Status:** Living · **Updated:** 2026-09-23
+
+**Current direction:** [DEC-055](#dec-055--similarity-first-photo-organization-companion) supersedes the cleanup/album-entry product model.
+Current behavior owners are [product](../product-specs/product.md), [organization](../product-specs/organization-rules.md), and [review rules](../product-specs/review-rules.md).
+Older tables, open questions, and philosophy below retain historical context and do not override those owners or DEC-040 verification policy.
 
 **Ownership:** This doc OWNS rationale/history only (why a choice was made, append-only DEC-xxx).
 It never owns current operational values — those live in owner docs (linked per entry).
@@ -715,6 +719,9 @@ early personalization, big dep graphs, test targets, deletion, opaque top-N.
 
 # DEC-054 — Assisted review and cleanup pivot
 
+**Superseded in part by DEC-055:** entry intents and shared-workspace product priority.
+Independent choices, exact-set deletion, and retained migration/operation evidence remain applicable.
+
 **Status:** Accepted · **Date:** 2026-09-21
 **Owner:** [`product.md`](../product-specs/product.md), [`review-rules.md`](../product-specs/review-rules.md), [`data-model.md`](data-model.md), [`ios-architecture.md`](ios-architecture.md)
 **Affected:** `ux-flows.md`, `ui-copy.md`, `photo-intelligence.md`, `apple-frameworks.md`, `privacy.md`, `performance.md`, `roadmap.md`, feat-031–037
@@ -773,3 +780,46 @@ deletion. Changed pre-start sets require new confirmation. See the
 [operation state machine](data-model.md#deletion-operation-state-machine).
 These choices favor explicit user control and truthful outcomes over implicit
 undo history, automatic review completion, or inferred deletion success.
+
+## DEC-055 — Similarity-first photo organization companion
+
+**Status:** Accepted direction by the user · **Date:** 2026-09-23.
+**Owners:** [product](../product-specs/product.md), [organization rules](../product-specs/organization-rules.md), [architecture](ios-architecture.md).
+**Affected:** Current owner documents, README, AGENTS, roadmap, feat-039–047.
+
+### Context
+
+User evaluation found mixed cleanup/album intent, unclear analysis results, invisible grouping, and unreliable access to photo inspection.
+The current session-based architecture has reusable services but does not provide a continuous organization catalog.
+Completed builds and historical feature records do not establish useful grouping or label accuracy.
+
+### Decision
+
+Build a companion to Apple Photos, not an editor or a full replacement photo manager.
+Prioritize comparison groups, then useful overlapping labels and combined filters.
+Duplicates/near-copies and comparable same-scene retakes form comparison groups.
+Shared topics across unrelated scenes connect through labels instead.
+
+Index authorized Photos references and enrich them incrementally without copying originals.
+Users inspect and select photos before choosing label, album, or cleanup actions.
+Automatic evidence and durable user corrections remain separate.
+Existing explicit deletion safeguards and independent operation recovery remain required.
+
+### Alternatives
+
+| Alternative | Reason not selected |
+|---|---|
+| Patch the shared review screen only | Leaves session picks and mixed intent as the product center |
+| Separate cleanup and album products | Organizes around the action before helping users find the relevant photos |
+| Replace Apple Photos | Expands into editing and everyday management outside the user's goal |
+
+### Consequences and limits
+
+The pivot needs a persistent catalog, incremental jobs, independent grouping, taxonomy/corrections, discovery, and exact-set action integration.
+feat-039 records contracts; feat-040–047 implement them after approval.
+Detailed proposed schema/provider choices remain owned by their readiness plans.
+No model, taxonomy completeness, or numeric accuracy claim is admitted by this decision.
+Qwen remains frozen. Current local-only and verification policies remain unchanged.
+
+**Risk:** Broad labels or false comparison groups can mislead user decisions.
+**Reconsider when:** Evidence shows the group/label distinction or local runtime cannot support the intended organization tasks.
