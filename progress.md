@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-24 — feat-045 completion
+
+**State**: done
+**Done**: Implemented revisioned faceted Photos and Matching Groups browsing, contextual counts and truthful incomplete states, personal-label filtering and editing, full-group inspection context without expanding selection, and exact-ID frozen selection invalidated by query/revision changes. Added English/Vietnamese facet and taxonomy String Catalog entries.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-046 — action integration.
+
 ## 2026-09-24 — feat-044 residual Oracle closure
 
 **State**: done
@@ -19,6 +27,14 @@
 **Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. `git diff --check` PASS.
 **Blockers**: none
 **Next**: feat-045 — Faceted discovery and label editing.
+
+## 2026-09-24 — feat-045 activation
+
+**State**: active
+**Done**: Activated feat-045 after feat-043 and feat-044 completion. Recorded the approved truthful query contract: only the ten admitted semantic labels are queryable across Image kind, Content, and Setting facets; native blur/underexposure scalars are unsupported pending label-specific evaluation and never appear as labels or chips. Integrated the explorer/designer atomic snapshot contract binding catalog generation with label-projection revision, plus non-mutating exact-ID frozen selection.
+**Evidence**: Documentation/tracker activation only; no source edits and no implementation or quality claim. Parent owns validation.
+**Blockers**: Query implementation, contextual counts, filtered groups, label editor integration, and snapshot selection remain open.
+**Next**: Implement revisioned queries and contextual counts, then add filtered group views and non-mutating frozen selection.
 
 ## 2026-09-24 — feat-044 completion
 

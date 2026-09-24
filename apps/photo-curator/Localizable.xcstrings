@@ -3856,6 +3856,22 @@
         }
       }
     },
+    "Labels unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Labels unavailable"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhãn không khả dụng"
+          }
+        }
+      }
+    },
     "Loading analysis…" : {
       "localizations" : {
         "en" : {
@@ -3868,6 +3884,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Đang tải phân tích…"
+          }
+        }
+      }
+    },
+    "Loading labels" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Loading labels"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang tải nhãn"
           }
         }
       }
@@ -5554,6 +5586,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Đang chuẩn bị ảnh"
+          }
+        }
+      }
+    },
+    "Preparing label filters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Preparing label filters"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang chuẩn bị bộ lọc nhãn"
           }
         }
       }
@@ -8096,6 +8144,22 @@
         }
       }
     },
+    "This photo's label state could not be loaded." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This photo's label state could not be loaded."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể tải trạng thái nhãn của ảnh này."
+          }
+        }
+      }
+    },
     "This photo represents a burst" : {
       "localizations" : {
         "en" : {
@@ -9676,6 +9740,180 @@
         }
       }
     },
+    "facet.content" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nội dung" } }
+      }
+    },
+    "facet.imageKind" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Image Kind" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Loại ảnh" } }
+      }
+    },
+    "facet.personal" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal Labels" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhãn cá nhân" } }
+      }
+    },
+    "facet.setting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Setting" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bối cảnh" } }
+      }
+    },
+    "label.animal" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Animal" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Động vật" } }
+      }
+    },
+    "label.architecture" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Architecture" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Kiến trúc" } }
+      }
+    },
+    "label.document" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Document" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tài liệu" } }
+      }
+    },
+    "label.food" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Food" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đồ ăn" } }
+      }
+    },
+    "label.group" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Group" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhóm người" } }
+      }
+    },
+    "label.indoor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Indoor" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Trong nhà" } }
+      }
+    },
+    "label.landscape" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Landscape" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phong cảnh" } }
+      }
+    },
+    "label.outdoor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Outdoor" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ngoài trời" } }
+      }
+    },
+    "label.people" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "People" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Người" } }
+      }
+    },
+    "label.screenshot" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Screenshot" } },
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh chụp màn hình" } }
+      }
+    },
+    "library.browse.activeSummaryAccessibility" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Match all categories. Match any selected label within a category." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Khớp mọi danh mục. Khớp bất kỳ nhãn nào trong một danh mục." } } } },
+    "library.browse.navigationTitle" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Labels" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhãn" } } } },
+    "library.browse.photoAccessibility" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Photo %@" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh %@" } } } },
+    "library.browse.activeFilters" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Active filters" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bộ lọc đang dùng" } } } },
+    "library.browse.activeSummary" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Match all categories · any selected label within a category" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Khớp mọi danh mục · khớp bất kỳ nhãn nào trong một danh mục" } } } },
+    "library.browse.allPhotos" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "All photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tất cả ảnh" } } } },
+    "library.browse.coverageComplete" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Label coverage is complete" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã phân tích đầy đủ nhãn" } } } },
+    "library.browse.coveragePartial" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Results are available for analyzed photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Kết quả hiện có cho các ảnh đã phân tích" } } } },
+    "library.browse.coverageCounts" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld of %2$lld accessible photos analyzed · %3$lld matching" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã phân tích %1$lld trên %2$lld ảnh có thể truy cập · %3$lld ảnh khớp" } } } },
+    "library.browse.clearFilters" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear Filters" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xóa bộ lọc" } } } },
+    "library.browse.deselectAll" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Deselect All" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bỏ chọn tất cả" } } } },
+    "library.browse.editLabels" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Edit Labels" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Sửa nhãn" } } } },
+    "library.browse.filter" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Filter Photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Lọc ảnh" } } } },
+    "library.browse.filterHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose labels and categories." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chọn nhãn và danh mục." } } } },
+    "library.browse.groupAccessibility" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@, %2$lld of %3$lld photos match your filters" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "%1$@, %2$lld trên %3$lld ảnh khớp bộ lọc" } } } },
+    "library.browse.groupMatchCounts" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld of %2$lld photos match your filters" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld trên %2$lld ảnh khớp bộ lọc" } } } },
+    "library.browse.matchingGroups" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Matching Groups" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhóm khớp" } } } },
+    "library.browse.matchingPhoto" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Matching photo" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh khớp" } } } },
+    "library.browse.matchingPhotos" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld matching photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "%lld ảnh khớp" } } } },
+    "library.browse.nearCopies" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Near-copies" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh gần giống" } } } },
+    "library.browse.noAnalyzedMatches" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No matches in analyzed photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Không có ảnh khớp trong số ảnh đã phân tích" } } } },
+    "library.browse.noAnalyzedMatchesHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "More photos are waiting for label analysis. This is not a complete zero-result answer." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Một số ảnh đang chờ phân tích nhãn. Đây chưa phải kết luận không có kết quả hoàn chỉnh." } } } },
+    "library.browse.noFilters" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No labels are narrowing this view." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chưa có nhãn nào thu hẹp chế độ xem này." } } } },
+    "library.browse.noGroupsYet" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No groups found in analyzed photos yet" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chưa tìm thấy nhóm trong các ảnh đã phân tích" } } } },
+    "library.browse.noGroupsYetHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "More photos are waiting for grouping. This is not a complete zero-result answer." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Một số ảnh đang chờ gom nhóm. Đây chưa phải kết luận không có kết quả hoàn chỉnh." } } } },
+    "library.browse.noPhotoMatches" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No photos match these filters" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Không có ảnh nào khớp bộ lọc" } } } },
+    "library.browse.noPhotoMatchesHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Try clearing a label or choosing a different category." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Hãy thử bỏ một nhãn hoặc chọn danh mục khác." } } } },
+    "library.browse.noSimilarGroups" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No similar groups found in analyzed photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Không tìm thấy nhóm tương tự trong các ảnh đã phân tích" } } } },
+    "library.browse.noSimilarGroupsHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Groups appear when analyzed photos share a supported visual relationship." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhóm xuất hiện khi các ảnh đã phân tích có mối liên hệ hình ảnh được hỗ trợ." } } } },
+    "library.browse.openCompleteGroupHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Opens the complete group for inspection." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Mở toàn bộ nhóm để kiểm tra." } } } },
+    "library.browse.openPhotoHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Opens photo inspection." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Mở phần kiểm tra ảnh." } } } },
+    "library.browse.outsideFilters" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Outside filters" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ngoài bộ lọc" } } } },
+    "library.browse.outsideFiltersAccessibility" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Photo outside your current filters" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh nằm ngoài bộ lọc hiện tại" } } } },
+    "library.browse.personalLabel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal label" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhãn cá nhân" } } } },
+    "library.browse.photoActions" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Photo actions" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tác vụ ảnh" } } } },
+    "library.browse.photos" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh" } } } },
+    "library.browse.resultView" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Result view" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chế độ xem kết quả" } } } },
+    "library.browse.resultViewHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Shows the same query as photos or matching groups." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Hiển thị cùng truy vấn dưới dạng ảnh hoặc nhóm khớp." } } } },
+    "library.browse.selectPhoto" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Select photo" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chọn ảnh" } } } },
+    "library.browse.selectPhotos" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chọn ảnh" } } } },
+    "library.browse.selectedPhoto" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Selected photo" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh đã chọn" } } } },
+    "library.browse.selectionCleared" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Selection cleared because the library labels were updated." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã bỏ chọn vì nhãn thư viện đã được cập nhật." } } } },
+    "library.browse.subtitle" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Labels can overlap. Choose several labels in a category, or combine categories to narrow the view." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Các nhãn có thể chồng lấp. Chọn nhiều nhãn trong một danh mục hoặc kết hợp các danh mục để thu hẹp chế độ xem." } } } },
+    "library.browse.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Find the photos that belong together." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tìm những ảnh thuộc cùng một nhóm." } } } },
+    "library.filter.activeSummary" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Match all categories · match any selected label within a category" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Khớp mọi danh mục · khớp bất kỳ nhãn nào trong một danh mục" } } } },
+    "library.filter.apply" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Apply" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Áp dụng" } } } },
+    "library.filter.buildFocusedView" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Build a focused view" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tạo chế độ xem tập trung" } } } },
+    "library.filter.cancel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Hủy" } } } },
+    "library.filter.combinationHelp" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Categories combine with AND. Labels selected inside one category combine with OR." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Các danh mục kết hợp bằng AND. Các nhãn trong cùng danh mục kết hợp bằng OR." } } } },
+    "library.filter.matchAnyInCategory" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Match any selected label in this category" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Khớp bất kỳ nhãn nào được chọn trong danh mục này" } } } },
+    "library.filter.labelAccessibility" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@, %2$lld matching photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "%1$@, %2$lld ảnh khớp" } } } },
+    "library.filter.personalLabelAccessibility" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@, %2$lld matching photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "%1$@, %2$lld ảnh khớp" } } } },
+    "library.filter.manage" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Manage" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Quản lý" } } } },
+    "library.filter.or" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "OR" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "HOẶC" } } } },
+    "library.filter.personalHelp" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add your own labels to organize photos your way." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm nhãn riêng để sắp xếp ảnh theo cách của bạn." } } } },
+    "library.filter.personalLabels" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal Labels" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhãn cá nhân" } } } },
+    "library.filter.selected" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Selected" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã chọn" } } } },
+    "library.filter.notSelected" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Not selected" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chưa chọn" } } } },
+    "library.filter.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Filter Photos" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Lọc ảnh" } } } },
+    "library.filter.toggleHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Adds or removes this label filter." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm hoặc xóa bộ lọc nhãn này." } } } },
+    "library.filter.togglePersonalHint" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Adds or removes this personal label filter." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm hoặc xóa bộ lọc nhãn cá nhân này." } } } },
+    "library.browse.retakes" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Retakes" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Ảnh chụp lại" } } } },
+    "library.editor.add" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm" } } } },
+    "library.editor.addPersonalLabel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add Personal Label" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm nhãn cá nhân" } } } },
+    "library.editor.addPersonalLabelNamed" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add personal label %@" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thêm nhãn cá nhân %@" } } } },
+    "library.editor.analysis.loaded" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Labels loaded" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã tải nhãn" } } } },
+    "library.editor.analysis.pending" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Not analyzed yet" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chưa phân tích" } } } },
+    "library.editor.analysis.stale" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Analysis needs updating" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Cần cập nhật phân tích" } } } },
+    "library.editor.analysis.unavailable" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Analysis unavailable" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phân tích không khả dụng" } } } },
+    "library.editor.cancel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Hủy" } } } },
+    "library.editor.confirmLabel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Confirm Label" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xác nhận nhãn" } } } },
+    "library.editor.description" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Correct labels without changing the photo or its place in Photos." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Sửa nhãn mà không thay đổi ảnh hoặc vị trí của ảnh trong Photos." } } } },
+    "library.editor.done" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Done" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xong" } } } },
+    "library.editor.incorrectLabel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Incorrect Label" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhãn không đúng" } } } },
+    "library.editor.labelName" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Label name" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tên nhãn" } } } },
+    "library.editor.noPersonalLabels" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No personal labels yet." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chưa có nhãn cá nhân." } } } },
+    "library.editor.notSuggested" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Not suggested" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Không được đề xuất" } } } },
+    "library.editor.personalLabels" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal Labels" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhãn cá nhân" } } } },
+    "library.editor.remove" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xóa" } } } },
+    "library.editor.removePersonalLabel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Remove personal label %@" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Xóa nhãn cá nhân %@" } } } },
+    "library.editor.retry" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thử lại" } } } },
+    "library.editor.save" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Save" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Lưu" } } } },
+    "library.editor.saveErrorMessage" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Your previous choices are unchanged." } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Các lựa chọn trước đó của bạn chưa thay đổi." } } } },
+    "library.editor.saveErrorTitle" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not save this change" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Không thể lưu thay đổi này" } } } },
+    "library.editor.state.confirmed" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Confirmed" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Đã xác nhận" } } } },
+    "library.editor.state.incorrect" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Incorrect label" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Nhãn không đúng" } } } },
+    "library.editor.state.notApplied" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Not applied" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chưa áp dụng" } } } },
+    "library.editor.state.suggested" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Suggested" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Được đề xuất" } } } },
+    "library.editor.suggestedByAI" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Suggested by AI" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "AI đề xuất" } } } },
+    "library.editor.useAutomaticLabel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Use Automatic Label" } }, "vi" : { "stringUnit" : { "state" : "translated", "value" : "Dùng nhãn tự động" } } } },
     "Why these are together" : {
       "localizations" : {
         "en" : {

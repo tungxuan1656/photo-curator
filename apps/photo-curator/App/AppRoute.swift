@@ -10,8 +10,10 @@ enum AppRoute: Hashable, Sendable {
     /// Reserved: Home is the root (never pushed) in G1; later stages push it.
     case home
     case libraryDiscovery
+    case libraryFacetedBrowsing
     case libraryGroup(groupID: UUID)
     case libraryPhoto(assetID: AssetID, pagerIDs: [AssetID])
+    case libraryLabelEditor(assetID: AssetID)
     case sourceSelection
     case summary
     case processing(sessionID: SessionID)

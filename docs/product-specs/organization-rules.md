@@ -19,25 +19,27 @@ The user approved the group-versus-topic distinction. Detailed behavior here is 
 ## Overlapping labels
 
 A photo can carry labels from multiple facets and multiple compatible labels within a facet.
-An outdoor portrait can contain a person, trees, and a blur signal.
+An outdoor landscape photo can carry labels from Content and Setting when each
+has evidence; native technical scalars remain separate evidence, not labels.
 Labels reference the same asset; they never duplicate the photo.
 
-| Facet | Initial candidate vocabulary | Interpretation |
+| Facet | Admitted semantic vocabulary | Interpretation |
 |---|---|---|
-| Image kind | Screenshot, document | Metadata or image evidence |
-| Content | People, nature, animal, food, vehicle, object, architecture | Visible content, not personal identity |
-| Capture style | Selfie, portrait, full-body, group portrait | Image evidence; abstain when uncertain |
+| Image kind | Screenshot, document | Admitted semantic IDs; source attribution remains explicit |
+| Content | People, group, landscape, architecture, food, animal | Visible content, not personal identity |
 | Setting | Indoor, outdoor | Context evidence |
-| Technical condition | Blur signal, underexposure signal, overexposure signal, low resolution | Separate signals, not a verdict to delete |
+| Technical condition | None | Native blur/underexposure scalars are unsupported pending label-specific evaluation and never appear as labels or chips |
 | Personal | User-created labels | User meaning, such as children or work documents |
 
-This vocabulary is a candidate set, not a claim that every label works today.
-The label feature freezes supported label IDs, definitions, exclusions, and bilingual names after capability review.
-Unsupported candidates remain unavailable rather than acquiring guessed heuristic labels.
+The semantic rows above are the exact labels admitted by feat-044. Other
+candidate labels remain unavailable rather than acquiring guessed heuristic
+labels. Technical scalars are evidence inputs only until a separate
+label-specific evaluation admits a label.
 
 - A face count alone does not prove selfie, full-body, or family identity.
 - Darkness alone does not prove an unusable photo.
-- Low resolution and blur remain separate properties.
+- Native blur and underexposure scalars remain separate unsupported properties;
+  neither is a label or chip.
 - “Beautiful” and “keep” are not factual labels. Comparative advice names its evidence and limits.
 - Raw provider identifiers are not user-facing label IDs.
 
@@ -85,9 +87,9 @@ This restriction does not limit overlapping labels.
 - The first release has positive inclusion filters; arbitrary Boolean nesting and negation are outside this pivot.
 
 ```text
-Content = nature
-Technical condition = blur OR underexposure
-Result = nature AND (blur OR underexposure)
+Content = landscape
+Setting = indoor OR outdoor
+Result = landscape AND (indoor OR outdoor)
 ```
 
 Only current effective assignments match a label filter.
@@ -101,20 +103,22 @@ Show groups with at least one matching member, including matched/total member co
 Opening the full group can reveal nonmatching alternatives for comparison.
 Reveal those alternatives as context, not as selected query results.
 
-Example: two blurry matches belong to a five-photo group.
+Example: two landscape matches belong to a five-photo group.
 The user can inspect all five, but Select All in the filter still targets only its matching assets.
 Selecting outside-filter context requires an explicit new group selection context.
 
 ## Stable browsing
 
-Each visible query/group result has a revision and deterministic ordering.
+Each visible query/group result has a revision and deterministic ordering. A
+query snapshot atomically binds one catalog generation to one effective-label
+projection revision; no result or count may mix revisions.
 Analysis can announce new results without reordering an open comparison or expanding an action selection.
-Changing filters clears the temporary selection. A newer analysis snapshot never silently adds selected IDs.
+Changing filters clears the temporary selection. A newer analysis snapshot never silently adds selected IDs. Temporary selection is a non-mutating frozen snapshot of exact result IDs and its query/revision identity.
 Unavailable assets leave actionable results; their loss invalidates affected action previews.
 
 ## Acceptance examples
 
-- A portrait in a park appears under people, outdoor, and nature only when each has evidence.
+- A landscape photo appears under landscape and outdoor only when each has evidence.
 - Two unrelated beach photos share labels but do not become a comparison group solely for that reason.
 - A user-rejected vehicle label stays rejected after model revision changes.
 - Zero matches with pending analysis shows incomplete coverage, not “no such photos.”

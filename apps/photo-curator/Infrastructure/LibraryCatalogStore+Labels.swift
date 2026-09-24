@@ -17,34 +17,54 @@ extension LibraryCatalogStore {
     }
 
     func automaticLabelAssignments(for assetID: AssetID) throws -> [PhotoLabelAutomaticAssignment] {
-        try context.fetch(FetchDescriptor<CatalogAutomaticLabelAssignment>())
+        guard let state = try fetchLabelAnalysisState(assetID: assetID.rawValue),
+              state.outcome.isSuccessful,
+              !state.publicationPending
+        else { return [] }
+        let assignments = try context.fetch(FetchDescriptor<CatalogAutomaticLabelAssignment>())
             .filter { $0.assetID == assetID.rawValue }
-            .compactMap { assignment in
-                guard let labelID = assignment.labelID,
-                      assignment.outcome == .completed
-                else { return nil }
-                return PhotoLabelAutomaticAssignment(
-                    assetID: assetID,
-                    assetRevision: assignment.assetRevision,
-                    labelID: labelID,
-                    facet: PhotoLabelFacet(rawValue: assignment.facetRawValue) ?? .content,
-                    sourceRevision: assignment.sourceRevision,
-                    providerRevision: assignment.providerRevision,
-                    runtimeRevision: assignment.runtimeRevision,
-                    mappingRevision: assignment.mappingRevision,
-                    taxonomyRevision: assignment.taxonomyRevision,
-                    evidenceSource: PhotoLabelEvidenceSource(rawValue: assignment.evidenceSourceRawValue)
-                        ?? .visionClassification,
-                    outcome: assignment.outcome,
-                    rawScore: assignment.rawScore,
-                    evidenceReferenceID: assignment.evidenceReferenceID,
-                    generationID: assignment.generationID,
-                    analysisRevision: assignment.analysisRevision,
-                    confidenceFloor: assignment.confidenceFloor ?? PhotoLabelTaxonomy.confidenceFloor,
-                    ambiguityMargin: assignment.ambiguityMargin ?? PhotoLabelTaxonomy.ambiguityMargin
-                )
+            .filter { assignment in
+                assignment.outcome == .completed
+                    && assignment.assetRevision == state.assetRevision
+                    && assignment.generationID == state.generationID
+                    && assignment.evidenceReferenceID == state.evidenceReferenceID
+                    && assignment.analysisRevision == state.analysisRevision
+                    && assignment.sourceRevision == state.sourceRevision
+                    && assignment.providerRevision == state.providerRevision
+                    && assignment.runtimeRevision == state.runtimeRevision
+                    && assignment.mappingRevision == state.mappingRevision
+                    && assignment.taxonomyRevision == state.taxonomyRevision
+                    && assignment.confidenceFloor == state.confidenceFloor
+                    && assignment.ambiguityMargin == state.ambiguityMargin
             }
-            .sorted { $0.labelID.rawValue < $1.labelID.rawValue }
+        let currentAssignments: [PhotoLabelAutomaticAssignment] = assignments.compactMap { assignment in
+            guard let labelID = assignment.labelID,
+                  PhotoLabelTaxonomy.supportedLabels.contains(where: { $0.id == labelID })
+            else {
+                return nil
+            }
+            return PhotoLabelAutomaticAssignment(
+                assetID: assetID,
+                assetRevision: assignment.assetRevision,
+                labelID: labelID,
+                facet: PhotoLabelFacet(rawValue: assignment.facetRawValue) ?? .content,
+                sourceRevision: assignment.sourceRevision,
+                providerRevision: assignment.providerRevision,
+                runtimeRevision: assignment.runtimeRevision,
+                mappingRevision: assignment.mappingRevision,
+                taxonomyRevision: assignment.taxonomyRevision,
+                evidenceSource: PhotoLabelEvidenceSource(rawValue: assignment.evidenceSourceRawValue)
+                    ?? .visionClassification,
+                outcome: assignment.outcome,
+                rawScore: assignment.rawScore,
+                evidenceReferenceID: assignment.evidenceReferenceID,
+                generationID: assignment.generationID,
+                analysisRevision: assignment.analysisRevision,
+                confidenceFloor: assignment.confidenceFloor ?? PhotoLabelTaxonomy.confidenceFloor,
+                ambiguityMargin: assignment.ambiguityMargin ?? PhotoLabelTaxonomy.ambiguityMargin
+            )
+        }
+        return currentAssignments.sorted { $0.labelID.rawValue < $1.labelID.rawValue }
     }
 
     func effectiveLabels(for assetID: AssetID) throws -> [CatalogEffectiveLabelSnapshot] {
@@ -187,11 +207,26 @@ extension LibraryCatalogStore {
 
     @discardableResult
     func createPersonalLabel(name: String) throws -> CatalogPersonalLabelSnapshot {
+        try createPersonalLabel(name: name, assigningTo: [])
+    }
+
+    @discardableResult
+    func createPersonalLabel(
+        name: String,
+        assigningTo assetIDs: [AssetID]
+    ) throws -> CatalogPersonalLabelSnapshot {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw LibraryCatalogStoreError.persistenceFailed }
         let label = CatalogPersonalLabelDefinition(name: trimmed)
         try context.transaction {
             context.insert(label)
+            for assetID in Set(assetIDs) {
+                context.insert(CatalogPersonalLabelAssignment(
+                    assetID: assetID,
+                    personalLabelID: label.id
+                ))
+                try rebuildEffectiveLabelProjection(assetID: assetID)
+            }
             try context.save()
         }
         return label.snapshot

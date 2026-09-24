@@ -35,6 +35,42 @@ struct RootView: View {
                         onOpenPhoto: { appModel.openLibraryPhoto(assetID: $0, pagerIDs: $1) }
                     )
                     .task { await appModel.loadLibrarySnapshot() }
+                case .libraryFacetedBrowsing:
+                    Group {
+                        if let result = appModel.libraryQueryResult {
+                            LibraryFacetedBrowsingView(
+                                result: result,
+                                observations: appModel.libraryObservations,
+                                personalLabels: appModel.libraryPersonalLabels,
+                                onQueryChanged: { appModel.applyLibraryQuery($0) },
+                                onOpenPhoto: { appModel.openLibraryPhoto(assetID: $0, pagerIDs: $1) },
+                                onOpenGroup: { appModel.openLibraryQueryGroup($0) },
+                                onEditLabels: { appModel.openLibraryLabelEditor(assetID: $0) },
+                                onManagePersonalLabels: {
+                                    Task { await appModel.refreshLibraryPersonalLabels() }
+                                },
+                                onSelectionChanged: { appModel.updateLibrarySelection($0) }
+                            )
+                        } else {
+                            LibraryDiscoveryView(
+                                snapshot: appModel.libraryComparisonSnapshot,
+                                observations: appModel.libraryObservations,
+                                catalogState: appModel.libraryCatalogState,
+                                loadFailed: appModel.librarySnapshotLoadFailed || appModel.libraryQueryLoadFailed,
+                                onRefresh: { await appModel.loadLibraryFacetedBrowsing() },
+                                onOpenGroup: { appModel.openLibraryGroup($0) },
+                                onOpenPhoto: { appModel.openLibraryPhoto(assetID: $0, pagerIDs: $1) }
+                            )
+                            .overlay {
+                                if !appModel.libraryQueryLoadFailed {
+                                    ProgressView("Preparing label filters")
+                                        .padding()
+                                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                }
+                            }
+                        }
+                    }
+                    .task { await appModel.loadLibraryFacetedBrowsing() }
                 case let .libraryGroup(groupID):
                     if let context = appModel.libraryGroupContext(for: groupID) {
                         LibraryGroupDetailView(
@@ -57,6 +93,51 @@ struct RootView: View {
                         onDismiss: { appModel.dismissLibraryPhoto() }
                     )
                     .toolbar(.hidden, for: .navigationBar)
+                case let .libraryLabelEditor(assetID):
+                    Group {
+                        if let editor = appModel.libraryLabelEditor, editor.assetID == assetID {
+                            PhotoLabelEditor(
+                                assetID: editor.assetID,
+                                automaticLabels: editor.automaticLabels,
+                                effectiveLabels: editor.effectiveLabels,
+                                overrides: editor.overrides,
+                                personalLabels: editor.personalLabels,
+                                analysisState: editor.analysisState,
+                                onOverride: { labelID, intent in
+                                    try await appModel.setLibraryLabelOverride(
+                                        assetID: assetID, labelID: labelID, intent: intent
+                                    )
+                                },
+                                onRestore: { labelID in
+                                    try await appModel.restoreLibraryAutomaticLabel(
+                                        assetID: assetID, labelID: labelID
+                                    )
+                                },
+                                onAssignPersonal: { labelID in
+                                    try await appModel.assignLibraryPersonalLabel(labelID, to: assetID)
+                                },
+                                onRemovePersonal: { labelID in
+                                    try await appModel.removeLibraryPersonalLabel(labelID, from: assetID)
+                                },
+                                onCreatePersonal: { name in
+                                    try await appModel.createLibraryPersonalLabel(name, for: assetID)
+                                }
+                            )
+                        } else if appModel.libraryLabelEditorLoadFailed {
+                            ContentUnavailableView(
+                                "Labels unavailable",
+                                systemImage: "tag.slash",
+                                description: Text("This photo's label state could not be loaded.")
+                            )
+                        } else {
+                            ProgressView("Loading labels")
+                        }
+                    }
+                    .task {
+                        if appModel.libraryLabelEditor?.assetID != assetID {
+                            await appModel.loadLibraryLabelEditor(assetID: assetID)
+                        }
+                    }
                 case .sourceSelection:
                     SourceSelectionView()
                 case .summary:
