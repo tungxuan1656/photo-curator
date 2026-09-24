@@ -60,7 +60,7 @@ final class BatchPipeline: Sendable {
         checkpoints: SessionCheckpointStore,
         config: AppConfiguration = .default,
         pressure: MemoryPressureObserver? = nil,
-        imageWorkArbiter: ImageWorkArbiter = ImageWorkArbiter()
+        imageWorkArbiter: ImageWorkArbiter
     ) {
         self.imageLoader = imageLoader
         self.analyzer = analyzer
@@ -406,6 +406,8 @@ final class BatchPipeline: Sendable {
     private func processOne(_ asset: PhotoAsset) async throws -> AssetOutcome {
         try Task.checkCancellation()
         do {
+            let imageLoader = self.imageLoader
+            let analyzer = self.analyzer
             let output = try await imageWorkArbiter.withPermit(priority: .session) {
                 let cgImage = try await imageLoader.analysisImage(for: asset.id)
                 try Task.checkCancellation()

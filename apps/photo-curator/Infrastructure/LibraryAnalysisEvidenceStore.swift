@@ -245,13 +245,11 @@ actor LibraryAnalysisEvidenceStore {
         revision: AnalysisCapabilityRevision
     ) -> String {
         let fingerprint = assetFingerprintKey(assetFingerprint)
-        return [
-            revision.capability.rawValue,
-            component(assetID.rawValue),
-            component(fingerprint),
-            String(revision.analysisRevision.rawValue),
-            component(revision.providerRuntimeRevision.rawValue)
-        ].joined(separator: "-")
+        return (
+            [revision.capability.rawValue, component(assetID.rawValue)]
+                + [component(fingerprint), String(revision.analysisRevision.rawValue)]
+                + [component(revision.providerRuntimeRevision.rawValue)]
+        ).joined(separator: "-")
     }
 
     private func assetFingerprintKey(_ fingerprint: AssetModificationFingerprint) -> String {

@@ -74,7 +74,7 @@ struct PhotoDetail: View {
                         loadFailed = false
                         do {
                             try Task.checkCancellation()
-                            let image = try await appModel.imageLoader.preview(
+                            let image = try await appModel.container.visibleImageLoader.preview(
                                 for: requested,
                                 targetSize: CGSize(width: 2048, height: 2048)
                             )

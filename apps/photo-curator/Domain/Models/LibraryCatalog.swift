@@ -282,6 +282,24 @@ final class AnalysisWorkState {
         set { reasonRawValue = newValue?.rawValue }
     }
 
+    var retryEligibility: AnalysisRetryEligibility {
+        switch status {
+        case .pending, .unavailable, .stale:
+            reason?.retryEligibility ?? .automatic
+        case .running, .available:
+            .never
+        }
+    }
+
+    var retryPolicy: AnalysisRetryPolicy {
+        switch status {
+        case .pending, .unavailable, .stale:
+            reason?.retryPolicy ?? .automatic
+        case .running, .available:
+            .doNotRetry
+        }
+    }
+
     var completedAssetFingerprint: AssetModificationFingerprint? {
         guard completedAnalysisRevision != nil,
               completedProviderRuntimeRevision != nil

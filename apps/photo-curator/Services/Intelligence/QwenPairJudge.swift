@@ -45,6 +45,7 @@ actor QwenPairJudge {
     """
 
     private let imageLoader: any PhotoImageLoader
+    private let imageWorkArbiter: ImageWorkArbiter
     private let runtime: any QwenInferenceRuntime
     private let manifest: ModelManifest
     private let policy: QualityCurationPolicy
@@ -54,11 +55,13 @@ actor QwenPairJudge {
 
     init(
         imageLoader: any PhotoImageLoader,
+        imageWorkArbiter: ImageWorkArbiter,
         runtime: any QwenInferenceRuntime = QwenRuntime(),
         manifest: ModelManifest = .qwen35TwoBFourBit,
         policy: QualityCurationPolicy = .default
     ) {
         self.imageLoader = imageLoader
+        self.imageWorkArbiter = imageWorkArbiter
         self.runtime = runtime
         self.manifest = manifest
         self.policy = policy
@@ -135,28 +138,33 @@ actor QwenPairJudge {
         }
 
         try Task.checkCancellation()
-        let lease = try await ImageLease.make(
-            loader: imageLoader,
-            first: request.first,
-            second: request.second,
-            targetSize: CGSize(
-                width: policy.qwenImageMaxDimension,
-                height: policy.qwenImageMaxDimension
+        let imageLoader = self.imageLoader
+        let imageWorkArbiter = self.imageWorkArbiter
+        let policy = self.policy
+        let runtime = self.runtime
+        let result = try await imageWorkArbiter.withPermit(priority: .session) {
+            let lease = try await ImageLease.make(
+                loader: imageLoader,
+                first: request.first,
+                second: request.second,
+                targetSize: CGSize(
+                    width: policy.qwenImageMaxDimension,
+                    height: policy.qwenImageMaxDimension
+                )
             )
-        )
-        defer { lease.remove() }
-
-        let result = try await runtime.respond(
-            QwenInferenceRequest(
-                requestID: request.requestID,
-                firstImage: lease.first,
-                secondImage: lease.second,
-                prompt: Self.prompt,
-                generation: request.generation,
-                maxPixels: policy.qwenImageMaxDimension * policy.qwenImageMaxDimension,
-                maxTokens: policy.maxGeneratedTokens
+            defer { lease.remove() }
+            return try await runtime.respond(
+                QwenInferenceRequest(
+                    requestID: request.requestID,
+                    firstImage: lease.first,
+                    secondImage: lease.second,
+                    prompt: Self.prompt,
+                    generation: request.generation,
+                    maxPixels: policy.qwenImageMaxDimension * policy.qwenImageMaxDimension,
+                    maxTokens: policy.maxGeneratedTokens
+                )
             )
-        )
+        }
         try Task.checkCancellation()
         guard result.generation == request.generation else {
             throw QwenPairJudgeError.staleGeneration

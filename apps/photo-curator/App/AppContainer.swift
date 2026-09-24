@@ -22,6 +22,7 @@ struct AppContainer: Sendable {
 
     let photoLibrary: any PhotoLibraryService
     let imageLoader: any PhotoImageLoader
+    let visibleImageLoader: any PhotoImageLoader
     let analyzer: any ImageAnalysisService
     let analysisCache: any AnalysisCache
     let checkpointStore: SessionCheckpointStore
@@ -33,7 +34,7 @@ struct AppContainer: Sendable {
     /// independently report access/reconciliation availability through state().
     let catalogStore: LibraryCatalogStore?
     let catalogStorageAvailability: CatalogStorageAvailability
-    /// One arbiter is shared by the legacy session lane and catalog enrichment.
+    /// The single arbiter shared by every image-work lane and visible loading.
     let imageWorkArbiter: ImageWorkArbiter
     /// Nil only when the durable catalog container could not be opened.
     let libraryAnalysisCoordinator: LibraryAnalysisCoordinator?
@@ -85,11 +86,14 @@ struct AppContainer: Sendable {
         qwenJudge: QwenPairJudge? = nil,
         catalogStore: LibraryCatalogStore? = nil,
         catalogStorageAvailability: CatalogStorageAvailability = .unavailable,
-        imageWorkArbiter: ImageWorkArbiter = ImageWorkArbiter(),
+        imageWorkArbiter: ImageWorkArbiter,
         libraryAnalysisCoordinator: LibraryAnalysisCoordinator? = nil
     ) {
         self.photoLibrary = photoLibrary
         self.imageLoader = imageLoader
+        visibleImageLoader = ArbitratedPhotoImageLoader(
+            loader: imageLoader, imageWorkArbiter: imageWorkArbiter
+        )
         self.analyzer = analyzer
         self.analysisCache = analysisCache
         self.checkpointStore = checkpointStore
@@ -191,7 +195,9 @@ struct AppContainer: Sendable {
             modelInstallation: ModelInstallationService(
                 rootDirectory: root.appendingPathComponent("models", isDirectory: true)
             ),
-            qwenJudge: QwenPairJudge(imageLoader: imageLoader),
+            qwenJudge: QwenPairJudge(
+                imageLoader: imageLoader, imageWorkArbiter: imageWorkArbiter
+            ),
             catalogStore: workspace.catalogStore,
             catalogStorageAvailability: workspace.catalogStorageAvailability,
             imageWorkArbiter: imageWorkArbiter,

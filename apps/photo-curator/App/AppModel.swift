@@ -61,9 +61,11 @@ final class AppModel {
     var lastSessionID: SessionID?
     var resumeSnapshot: ResumeSnapshot?
     var confirmingNewSession = false
-    private var analysisLifecyclePermitted = true
-    private var analysisResetInFlight = false
-    private var libraryAnalysisHasStarted = false
+    var analysisLifecyclePermitted = true
+    var analysisResetInFlight = false
+    var libraryAnalysisHasStarted = false
+    var catalogReconciliationTask: Task<Void, Never>?
+    var catalogReconciliationRequested = false
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -72,9 +74,9 @@ final class AppModel {
     var saveFlight: (session: SessionID, task: Task<SaveOutcome, Never>)?
     let modelInstallation: ModelInstallationModel
     let processing: ProcessingModel
-    private(set) var libraryAnalysisProgress: LibraryAnalysisProgress?
-    private(set) var libraryAnalysisState: LibraryAnalysisCoordinatorState = .idle
-    private var isRequesting = false
+    internal(set) var libraryAnalysisProgress: LibraryAnalysisProgress?
+    internal(set) var libraryAnalysisState: LibraryAnalysisCoordinatorState = .idle
+    var isRequesting = false
     private var sourceGeneration = 0
     let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "session"
@@ -127,108 +129,6 @@ final class AppModel {
     func skipPermission() {
         markSeen()
         path = []
-    }
-
-    func refreshAuthorization() async {
-        authorization = await container.photoLibrary.authorizationStatus()
-        await container.catalogStore?.recordAuthorization(authorization)
-    }
-
-    func startup() async {
-        analysisLifecyclePermitted = true
-        switch container.workspaceAvailability {
-        case .available:
-            if let workspaceImporter = container.workspaceImporter {
-                _ = await workspaceImporter.importIfNeeded()
-            }
-        case .unavailable:
-            logger.error(
-                "Durable workspace unavailable; legacy selection, analysis, review, and resume flow will continue."
-            )
-        }
-        await refreshAuthorization()
-        reconcileCatalog()
-        await refreshDeletionRecovery()
-        await refreshResumeSnapshot()
-        await startLibraryAnalysis(resume: false)
-    }
-
-    /// Catalog reconciliation is lifecycle work, not a discovery route. It is
-    /// queued outside startup/recovery/resume critical paths; the store owns
-    /// single-flight serialization and coalesces change notifications.
-    func reconcileCatalog() {
-        guard let catalogStore = container.catalogStore else { return }
-        let photoLibrary = container.photoLibrary
-        Task {
-            await catalogStore.enqueueReconciliation(using: photoLibrary)
-        }
-    }
-
-    /// Starts or resumes catalog enrichment as lifecycle work. The coordinator
-    /// owns its root task, so awaiting this method does not wait for the library
-    /// scan and never blocks the browsing routes.
-    func startLibraryAnalysis(resume: Bool) async {
-        guard analysisLifecyclePermitted, !analysisResetInFlight,
-              authorization == .authorized || authorization == .limited,
-              let coordinator = container.libraryAnalysisCoordinator
-        else { return }
-
-        if resume, libraryAnalysisHasStarted {
-            let currentState = await coordinator.currentState()
-            if currentState == .running {
-                libraryAnalysisState = currentState
-                return
-            }
-        }
-        libraryAnalysisHasStarted = true
-
-        let onProgress: @Sendable (LibraryAnalysisProgress) async -> Void = { [weak self] progress in
-            await self?.applyLibraryAnalysisProgress(progress)
-        }
-        if resume {
-            await coordinator.resume(onProgress: onProgress)
-        } else {
-            await coordinator.start(onProgress: onProgress)
-        }
-        libraryAnalysisState = await coordinator.currentState()
-    }
-
-    /// Scene foreground lifecycle: authorization and catalog reconciliation are
-    /// refreshed before resumable enrichment and legacy session work continue.
-    func applicationDidBecomeActive() async {
-        analysisLifecyclePermitted = true
-        await refreshAuthorization()
-        reconcileCatalog()
-        await startLibraryAnalysis(resume: true)
-        await resumeIfPaused()
-    }
-
-    /// Scene background lifecycle: prevent new catalog work, drain it, then use
-    /// the existing session checkpoint path for legacy selection work.
-    func applicationDidEnterBackground() async {
-        analysisLifecyclePermitted = false
-        if let coordinator = container.libraryAnalysisCoordinator {
-            await coordinator.pause()
-            libraryAnalysisState = await coordinator.currentState()
-        }
-        await processing.pauseForBackground()
-    }
-
-    private func applyLibraryAnalysisProgress(_ progress: LibraryAnalysisProgress) {
-        libraryAnalysisProgress = progress
-        libraryAnalysisState = progress.state
-    }
-
-    func requestPermission() async {
-        guard !isRequesting else { return }
-        isRequesting = true
-        defer { isRequesting = false }
-        authorization = await container.photoLibrary.requestAuthorization()
-        await container.catalogStore?.recordAuthorization(authorization)
-        markSeen()
-        path = []
-        reconcileCatalog()
-        await startLibraryAnalysis(resume: true)
     }
 
     func presentPicker() {
@@ -975,7 +875,7 @@ extension AppModel {
         }
     }
 
-    private func markSeen() {
+    func markSeen() {
         hasSeenWelcome = true
         UserDefaults.standard.set(true, forKey: Self.seenWelcomeKey)
     }

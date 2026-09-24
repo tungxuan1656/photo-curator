@@ -27,7 +27,9 @@ struct AsyncPhotoThumbnail: View {
             .contentShape(Rectangle())
             .task(id: assetID) {
                 do {
-                    let cg = try await appModel.imageLoader.thumbnail(for: assetID, targetSize: targetSizePixels)
+                    let cg = try await appModel.container.visibleImageLoader.thumbnail(
+                        for: assetID, targetSize: targetSizePixels
+                    )
                     self.cgImage = cg
                 } catch {
                     self.cgImage = nil

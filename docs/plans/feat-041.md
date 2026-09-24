@@ -27,34 +27,34 @@ It does not produce mandatory album picks or mutate saved choices.
 Existing: `apps/photo-curator/Services/Photos/BatchPipeline.swift`, `Services/Session/SelectionSessionCoordinator.swift`, `Services/ServiceProtocols.swift`.
 Proposed new: `apps/photo-curator/Services/Library/LibraryAnalysisCoordinator.swift`.
 
-- [ ] Extract the reusable analysis lifecycle without invoking album sizing, diversity selection, or final album building.
-- [ ] Define the minimal capability contract as `nativeImageFacts` with asset-fingerprint, analysis, and provider/runtime revisions.
-- [ ] Retain session compatibility entry points while catalog jobs use asset/capability revisions and the same shared two-permit `ImageWorkArbiter`.
-- [ ] Establish bounded queues with visible-photo requests taking priority over session and enrichment work.
+- [x] Extract the reusable analysis lifecycle without invoking album sizing, diversity selection, or final album building.
+- [x] Define the minimal capability contract as `nativeImageFacts` with asset-fingerprint, analysis, and provider/runtime revisions.
+- [x] Retain session compatibility entry points while catalog jobs use asset/capability revisions and the same shared two-permit `ImageWorkArbiter`.
+- [x] Establish bounded queues with visible-photo requests taking priority over session and enrichment work.
 
 ### 2. Persist safe progress
 
 Existing: `apps/photo-curator/Infrastructure/FileAnalysisCache.swift`, `SessionCheckpointStore.swift`.
 Proposed new: `apps/photo-curator/Infrastructure/LibraryAnalysisCheckpointStore.swift`.
 
-- [ ] Add the additive V4 per-asset/capability work-state record without moving evidence facts into SwiftData.
-- [ ] Treat the evidence file as authoritative; use SwiftData for current status and a checkpoint only as a resume hint.
-- [ ] Check asset, analysis, and provider/runtime revisions before reuse and before result commit.
-- [ ] Commit in order: durable evidence → guarded catalog commit → publish → durable reconciliation checkpoint.
-- [ ] Requeue stale or missing cache work even when old counters report completion.
-- [ ] Preserve typed unavailable/retry reasons and distinguish completed empty output from failed capability output.
-- [ ] Publish progress only after the corresponding result/checkpoint boundary is safe.
+- [x] Add the additive V4 per-asset/capability work-state record without moving evidence facts into SwiftData.
+- [x] Treat the evidence file as authoritative; use SwiftData for current status and a checkpoint only as a resume hint.
+- [x] Check asset, analysis, and provider/runtime revisions before reuse and before result commit.
+- [x] Commit in order: durable evidence → guarded catalog commit → publish → durable reconciliation checkpoint.
+- [x] Requeue stale or missing cache work even when old counters report completion.
+- [x] Preserve typed unavailable/retry reasons and distinguish completed empty output from failed capability output.
+- [x] Publish progress only after the corresponding result/checkpoint boundary is safe.
 
 ### 3. Integrate lifecycle
 
 Existing: `apps/photo-curator/App/AppContainer.swift`, `AppModel.swift`, `PhotoCuratorApp.swift`, `Infrastructure/MemoryPressureObserver.swift`.
 
-- [ ] Coalesce library changes and invalidate obsolete generations through a durable reconciliation handoff.
-- [ ] Keep generation, fingerprint, revision, and commit guards actor-isolated; reject late publications.
-- [ ] Use a run token: new runs invalidate older work, cancellation drains tasks before terminal publication, and reset invalidates the token and clears resumable work safely.
-- [ ] Pause/cancel at safe boundaries and share the two-permit `ImageWorkArbiter` across session, enrichment, and visible image work.
-- [ ] Resume on app execution opportunity with explicit status; expose typed iCloud waiting, access, model, and transient retry reasons separately.
-- [ ] Provide capability coverage to feat-043 without a full-result barrier.
+- [x] Coalesce library changes and invalidate obsolete generations through a durable reconciliation handoff.
+- [x] Keep generation, fingerprint, revision, and commit guards actor-isolated; reject late publications.
+- [x] Use a run token: new runs invalidate older work, cancellation drains tasks before terminal publication, and reset invalidates the token and clears resumable work safely.
+- [x] Pause/cancel at safe boundaries and share the two-permit `ImageWorkArbiter` across session, enrichment, and visible image work.
+- [x] Resume on app execution opportunity with explicit status; expose typed iCloud waiting, access, model, and transient retry reasons separately.
+- [x] Provide capability coverage to feat-043 without a full-result barrier.
 
 ## Verification
 

@@ -118,7 +118,7 @@ actor SelectionSessionCoordinator {
         engine: SelectionEngine,
         config: AppConfiguration = .default,
         pressure: MemoryPressureObserver? = nil,
-        imageWorkArbiter: ImageWorkArbiter = ImageWorkArbiter(),
+        imageWorkArbiter: ImageWorkArbiter,
         tierCProvider: any VisualEmbeddingProvider = NativeDerivedEmbeddingProvider(),
         semanticJuryProvider: any SemanticJuryProvider = NoopSemanticJuryProvider(),
         semanticJuryAvailability: @escaping @Sendable () -> Bool = { SemanticJuryPolicy.isAvailableOnProductOS() },
@@ -431,26 +431,34 @@ actor SelectionSessionCoordinator {
             result: result, sourceAssets: assets, analyses: analyses
         )
         guard !baseRequests.isEmpty else { return result }
-        var requests: [SemanticJuryRequest] = []
-        for request in baseRequests.prefix(SemanticJuryPolicy.maximumRequests) {
-            try Task.checkCancellation()
-            var images: [AssetID: CGImage] = [:]
-            for candidate in request.candidates {
-                guard let image = try? await imageLoader.analysisImage(for: candidate.assetID) else {
-                    images = [:]
-                    break
+        let imageLoader = self.imageLoader
+        let semanticJuryProvider = self.semanticJuryProvider
+        let semanticJuryAvailability = self.semanticJuryAvailability
+        let imageWorkArbiter = self.imageWorkArbiter
+        let evaluation = try await imageWorkArbiter.withPermit(priority: .session) {
+            var requests: [SemanticJuryRequest] = []
+            for request in baseRequests.prefix(SemanticJuryPolicy.maximumRequests) {
+                try Task.checkCancellation()
+                var images: [AssetID: CGImage] = [:]
+                for candidate in request.candidates {
+                    guard let image = try? await imageLoader.analysisImage(for: candidate.assetID) else {
+                        images = [:]
+                        break
+                    }
+                    images[candidate.assetID] = image
                 }
-                images[candidate.assetID] = image
+                if let request = request.withImages(images) {
+                    requests.append(request)
+                }
             }
-            if let request = request.withImages(images) {
-                requests.append(request)
+            guard !requests.isEmpty else {
+                return SemanticJuryEvaluation(overrides: [], diagnostics: [])
             }
+            defer { requests.forEach { $0.releaseImages() } }
+            return await SemanticJuryRouter(
+                provider: semanticJuryProvider, availability: semanticJuryAvailability
+            ).evaluate(requests)
         }
-        guard !requests.isEmpty else { return result }
-        defer { requests.forEach { $0.releaseImages() } }
-        let evaluation = await SemanticJuryRouter(
-            provider: semanticJuryProvider, availability: semanticJuryAvailability
-        ).evaluate(requests)
         guard !evaluation.overrides.isEmpty else { return result }
         return try engine.applyJuryOverrides(
             to: result,

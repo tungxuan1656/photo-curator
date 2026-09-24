@@ -9,18 +9,6 @@ struct SimilarityRebuilder: Sendable {
     let laneCount: Int
     let imageWorkArbiter: ImageWorkArbiter
 
-    init(
-        imageLoader: any PhotoImageLoader,
-        analyzer: any ImageAnalysisService,
-        laneCount: Int,
-        imageWorkArbiter: ImageWorkArbiter = ImageWorkArbiter()
-    ) {
-        self.imageLoader = imageLoader
-        self.analyzer = analyzer
-        self.laneCount = laneCount
-        self.imageWorkArbiter = imageWorkArbiter
-    }
-
     func rebuild(for ids: [AssetID]) async throws -> [AssetID: ImageSimilarityArtifact] {
         let lanes = max(1, laneCount)
         var artifacts: [AssetID: ImageSimilarityArtifact] = [:]

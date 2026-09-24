@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// Priority assigned to image acquisition followed by image inference.
@@ -117,6 +118,38 @@ actor ImageWorkArbiter {
             availablePermits -= 1
             activeIDs.insert(waiter.id)
             waiter.continuation.resume()
+        }
+    }
+}
+
+/// The loader boundary for user-visible image work. Analysis callers use the
+/// raw loader and hold their permit across both acquisition and inference;
+/// visible callers have no inference phase, so the boundary owns the single
+/// `.visible` permit for the request.
+struct ArbitratedPhotoImageLoader: PhotoImageLoader {
+    private let loader: any PhotoImageLoader
+    private let imageWorkArbiter: ImageWorkArbiter
+
+    init(loader: any PhotoImageLoader, imageWorkArbiter: ImageWorkArbiter) {
+        self.loader = loader
+        self.imageWorkArbiter = imageWorkArbiter
+    }
+
+    func thumbnail(for id: AssetID, targetSize: CGSize) async throws -> CGImage {
+        try await imageWorkArbiter.withPermit(priority: .visible) {
+            try await loader.thumbnail(for: id, targetSize: targetSize)
+        }
+    }
+
+    func analysisImage(for id: AssetID) async throws -> CGImage {
+        try await imageWorkArbiter.withPermit(priority: .visible) {
+            try await loader.analysisImage(for: id)
+        }
+    }
+
+    func preview(for id: AssetID, targetSize: CGSize) async throws -> CGImage {
+        try await imageWorkArbiter.withPermit(priority: .visible) {
+            try await loader.preview(for: id, targetSize: targetSize)
         }
     }
 }

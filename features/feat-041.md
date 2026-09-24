@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `active`
+- Status: `done`
 - Depends on: `feat-040`.
 
 ## Goal
@@ -17,12 +17,12 @@ Contracts: [architecture](../docs/design-docs/ios-architecture.md), [data model]
 
 ## Acceptance
 
-- [ ] Metadata is browseable before analysis completes; partial evidence publishes incrementally.
-- [ ] Asset/provider revisions gate reuse and late results; cache loss requeues work.
-- [ ] Pending, running, stale, unavailable, and available states remain distinct by capability.
-- [ ] Pause, cancellation, suspension, iCloud delay, and relaunch preserve completed work and user state.
-- [ ] Jobs produce catalog evidence without album sizing, `SelectionResult` picks, or automatic user-choice writes.
-- [ ] Bounded resource policies and `./init.sh` pass with limitations recorded.
+- [x] Metadata is browseable before analysis completes; partial evidence publishes incrementally.
+- [x] Asset/provider revisions gate reuse and late results; cache loss requeues work.
+- [x] Pending, running, stale, unavailable, and available states remain distinct by capability.
+- [x] Pause, cancellation, suspension, iCloud delay, and relaunch preserve completed work and user state.
+- [x] Jobs produce catalog evidence without album sizing, `SelectionResult` picks, or automatic user-choice writes.
+- [x] Bounded resource policies and `./init.sh` pass with limitations recorded.
 
 ## Readiness plan
 
@@ -34,6 +34,8 @@ See [plan](../docs/plans/feat-041.md).
 
 ## Evidence and handoff
 
-- Activated after feat-040 merged. The existing plan is approved: catalog-backed incremental analysis, revision-safe cache/checkpoints, lifecycle pause/resume, and no album-selection coupling.
+- Added catalog-backed `nativeImageFacts` work states, revision-guarded evidence commits, durable scheduling checkpoints, and foreground lifecycle reconciliation without selection-session output.
+- Added shared two-permit arbitration for visible, session, and enrichment image work. Existing Swift 6 isolation warnings remain outside this feature's scope.
+- Evidence: `./init.sh` PASS on 2026-09-24 (SwiftFormat, strict SwiftLint, generic Simulator build; tests skipped by DEC-040).
 - No tests/proof harnesses or mandatory manual QA.
-- Next: implement the bounded catalog analysis lifecycle.
+- Next: feat-042.
