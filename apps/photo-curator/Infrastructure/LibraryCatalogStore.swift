@@ -8,6 +8,7 @@ enum LibraryCatalogStoreError: Error, Sendable, Equatable {
     case fetchFailed
     case incompleteGeneration
     case analysisPageLimitExceeded
+    case invalidQuery
     case analysisTransitionRejected(AnalysisCommitRejection)
     case persistenceFailed
     case reconciliationInProgress
@@ -437,7 +438,7 @@ extension LibraryCatalogStore {
         case .incompleteGeneration: .incomplete
         case .analysisPageLimitExceeded: .incomplete
         case .analysisTransitionRejected: .incomplete
-        case .persistenceFailed, .unavailable: .persistenceFailed
+        case .persistenceFailed, .unavailable, .invalidQuery: .persistenceFailed
         case .reconciliationInProgress: .incomplete
         }
     }

@@ -30,6 +30,15 @@ struct LibrarySnapshotTuple: Sendable, Equatable {
     let comparisonSnapshot: ComparisonSnapshot?
 }
 
+struct LibraryLabelEditorSnapshot: Sendable, Equatable {
+    let assetID: AssetID
+    let automaticLabels: [PhotoLabelID]
+    let effectiveLabels: [CatalogEffectiveLabelSnapshot]
+    let overrides: [CatalogLabelOverrideIntent: Set<PhotoLabelID>]
+    let personalLabels: [CatalogPersonalLabelSnapshot]
+    let analysisState: CatalogLabelAnalysisSnapshot?
+}
+
 /// G1 skeleton session state. Runs on the `PhotoLibraryService` protocol (Noop in G1);
 /// real permission wiring landed in feat-002.
 @MainActor
@@ -89,6 +98,15 @@ final class AppModel {
     )
     var librarySnapshotLoadFailed = false
     var librarySnapshotGeneration = 0
+    var libraryQueryResult: LibraryQueryResultSnapshot?
+    var libraryQuery = LibraryQuery()
+    var libraryPersonalLabels: [CatalogPersonalLabelSnapshot] = []
+    var libraryQueryLoadFailed = false
+    var librarySelection: LibraryQuerySelectionSnapshot?
+    var libraryLabelEditor: LibraryLabelEditorSnapshot?
+    var libraryLabelEditorLoadFailed = false
+    var libraryQueryGeneration = 0
+    var libraryLabelEditorGeneration = 0
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -752,6 +770,13 @@ extension AppModel {
     /// Opens the session-independent, group-first catalog. Loading is explicit
     /// so the Home screen remains useful even when catalog storage is unavailable.
     func openLibraryDiscovery() {
+        if path.last != .libraryFacetedBrowsing {
+            path.append(.libraryFacetedBrowsing)
+        }
+        Task { await loadLibraryFacetedBrowsing() }
+    }
+
+    func openLegacyLibraryDiscovery() {
         if path.last != .libraryDiscovery {
             path.append(.libraryDiscovery)
         }
@@ -760,6 +785,13 @@ extension AppModel {
 
     func openLibraryGroup(_ group: ComparisonGroupSnapshot) {
         path.append(.libraryGroup(groupID: group.id))
+    }
+
+    func openLibraryQueryGroup(_ group: LibraryQueryGroupContext) {
+        guard libraryComparisonSnapshot?.groups.contains(where: { $0.id == group.groupID }) == true else {
+            return
+        }
+        path.append(.libraryGroup(groupID: group.groupID))
     }
 
     func libraryGroupContext(
@@ -773,6 +805,13 @@ extension AppModel {
 
     func openLibraryPhoto(assetID: AssetID, pagerIDs: [AssetID]) {
         path.append(.libraryPhoto(assetID: assetID, pagerIDs: pagerIDs))
+    }
+
+    func openLibraryLabelEditor(assetID: AssetID) {
+        libraryLabelEditor = nil
+        libraryLabelEditorLoadFailed = false
+        path.append(.libraryLabelEditor(assetID: assetID))
+        Task { await loadLibraryLabelEditor(assetID: assetID) }
     }
 
     func dismissLibraryPhoto() {

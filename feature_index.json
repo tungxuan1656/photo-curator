@@ -438,7 +438,7 @@
       "depends_on": ["feat-043", "feat-044"],
       "gate": "AND/OR faceted queries, contextual counts, editable labels, filtered groups and exact snapshot selection; en/vi and ./init.sh pass",
       "id": "feat-045",
-      "status": "todo",
+      "status": "active",
       "title": "Faceted discovery and label editing"
     },
     {
