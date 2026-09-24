@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `todo`
+- Status: `done`
 - Depends on: `feat-041`.
 
 ## Goal
@@ -17,12 +17,12 @@ Contracts: [organization](../docs/product-specs/organization-rules.md), [intelli
 
 ## Acceptance
 
-- [ ] Retake and cross-date near-copy candidate paths use bounded work and image-sensitive evidence.
-- [ ] Shared labels/time alone never establish a group; transitive chains cannot merge unrelated endpoints.
-- [ ] Every published group has exact members, relation, reason, representative, revision, and current evidence references.
-- [ ] Unknown dates/evidence remain honest; ungrouped assets remain browseable.
-- [ ] Rebuilds preserve user choices and stable open snapshots; no album-count policy controls coverage.
-- [ ] Retrieval/storage decisions and quality limitations are recorded; `./init.sh` passes.
+- [x] Retake and cross-date near-copy candidate paths use bounded work and image-sensitive evidence.
+- [x] Shared labels/time alone never establish a group; transitive chains cannot merge unrelated endpoints.
+- [x] Every published group has exact members, relation, reason, representative, revision, and current evidence references.
+- [x] Unknown dates/evidence remain honest; ungrouped assets remain browseable.
+- [x] Rebuilds preserve user choices and stable open snapshots; no album-count policy controls coverage.
+- [x] Retrieval/storage decisions and quality limitations are recorded; `./init.sh` passes.
 
 ## Readiness plan
 
@@ -34,6 +34,9 @@ See [plan](../docs/plans/feat-042.md).
 
 ## Evidence and handoff
 
-- No accuracy or library-scale measurement is claimed.
+- Retrieval decision: use bounded same-capture neighbors and transient cross-date perceptual-hash buckets, followed by image-sensitive Vision validation. Do not persist hashes, FeaturePrints, vectors, decoded images, or bucket contents.
+- Candidate and bucket overflow reduce recall and publish incomplete coverage; no whole-library recall or accuracy claim is made.
+- Implemented V5/V6 additive comparison projections, complete-link validation, generation/revision guards, and bounded snapshot retention.
 - No tests/proof harnesses or mandatory manual QA.
-- Next: complete feat-041 and approve the retrieval readiness decision before implementation.
+- Evidence: `./init.sh` PASS on 2026-09-24 (SwiftFormat, strict SwiftLint, generic Simulator build; tests skipped by DEC-040).
+- Next: feat-043.

@@ -11,6 +11,7 @@ extension AppModel {
         guard authorization == .authorized || authorization == .limited else {
             analysisLifecyclePermitted = false
             await pauseLibraryAnalysis()
+            await container.libraryComparisonCoordinator?.pause()
             return
         }
         analysisLifecyclePermitted = true
@@ -31,6 +32,7 @@ extension AppModel {
         await refreshDeletionRecovery()
         await refreshResumeSnapshot()
         await awaitCatalogReconciliation()
+        await reconcileLibraryComparison()
         await startLibraryAnalysis(resume: false)
     }
 
@@ -41,6 +43,7 @@ extension AppModel {
         Task { [weak self] in
             guard let self else { return }
             await self.awaitCatalogReconciliation()
+            await self.reconcileLibraryComparison()
             await self.startLibraryAnalysis(resume: true)
         }
     }
@@ -100,6 +103,7 @@ extension AppModel {
         await refreshAuthorization()
         if analysisLifecyclePermitted {
             await awaitCatalogReconciliation()
+            await reconcileLibraryComparison()
             await startLibraryAnalysis(resume: true)
         }
         await resumeIfPaused()
@@ -110,6 +114,7 @@ extension AppModel {
     func applicationDidEnterBackground() async {
         analysisLifecyclePermitted = false
         await pauseLibraryAnalysis()
+        await container.libraryComparisonCoordinator?.pause()
         await processing.pauseForBackground()
     }
 
@@ -135,10 +140,17 @@ extension AppModel {
         guard authorization == .authorized || authorization == .limited else {
             analysisLifecyclePermitted = false
             await pauseLibraryAnalysis()
+            await container.libraryComparisonCoordinator?.pause()
             return
         }
         analysisLifecyclePermitted = true
         await awaitCatalogReconciliation()
+        await reconcileLibraryComparison()
         await startLibraryAnalysis(resume: true)
+    }
+
+    private func reconcileLibraryComparison() async {
+        guard analysisLifecyclePermitted else { return }
+        await container.libraryComparisonCoordinator?.reconcile()
     }
 }

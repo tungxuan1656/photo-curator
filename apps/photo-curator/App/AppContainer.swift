@@ -30,7 +30,7 @@ struct AppContainer: Sendable {
     let workspaceStore: WorkspaceStore?
     let workspaceImporter: LegacyWorkspaceImporter?
     let workspaceAvailability: WorkspaceAvailability
-    /// Nil means the V4 durable container did not open. A non-nil store can
+    /// Nil means the V6 durable container did not open. A non-nil store can
     /// independently report access/reconciliation availability through state().
     let catalogStore: LibraryCatalogStore?
     let catalogStorageAvailability: CatalogStorageAvailability
@@ -38,6 +38,8 @@ struct AppContainer: Sendable {
     let imageWorkArbiter: ImageWorkArbiter
     /// Nil only when the durable catalog container could not be opened.
     let libraryAnalysisCoordinator: LibraryAnalysisCoordinator?
+    /// Rebuilds transient Vision comparisons into the guarded V5 projection.
+    let libraryComparisonCoordinator: LibraryComparisonCoordinator?
     let selectionEngine: SelectionEngine
     /// Tier-C visual-embedding provider (feat-024, DEC-035): native derived
     /// by default, injected into `SelectionSessionCoordinator` for both
@@ -87,7 +89,8 @@ struct AppContainer: Sendable {
         catalogStore: LibraryCatalogStore? = nil,
         catalogStorageAvailability: CatalogStorageAvailability = .unavailable,
         imageWorkArbiter: ImageWorkArbiter,
-        libraryAnalysisCoordinator: LibraryAnalysisCoordinator? = nil
+        libraryAnalysisCoordinator: LibraryAnalysisCoordinator? = nil,
+        libraryComparisonCoordinator: LibraryComparisonCoordinator? = nil
     ) {
         self.photoLibrary = photoLibrary
         self.imageLoader = imageLoader
@@ -105,6 +108,7 @@ struct AppContainer: Sendable {
         self.catalogStorageAvailability = catalogStorageAvailability
         self.imageWorkArbiter = imageWorkArbiter
         self.libraryAnalysisCoordinator = libraryAnalysisCoordinator
+        self.libraryComparisonCoordinator = libraryComparisonCoordinator
         self.selectionEngine = selectionEngine
         self.tierCProvider = tierCProvider
         self.semanticJuryProvider = semanticJuryProvider
@@ -141,6 +145,7 @@ struct AppContainer: Sendable {
         )
     }
 
+    // swiftlint:disable function_body_length
     /// G1 wiring: real permission service + file-backed cache/checkpoint + real
     /// analysis pipeline (feat-006 flips the analyzer switch); analytics stays
     /// Noop until its owning stage. Export is concrete since feat-011.
@@ -164,6 +169,14 @@ struct AppContainer: Sendable {
                 catalogStore: $0,
                 evidenceStore: LibraryAnalysisEvidenceStore(files: files),
                 checkpointStore: LibraryAnalysisCheckpointStore(files: files),
+                imageLoader: imageLoader,
+                analyzer: analyzer,
+                imageWorkArbiter: imageWorkArbiter
+            )
+        }
+        let libraryComparisonCoordinator = workspace.catalogStore.map {
+            LibraryComparisonCoordinator(
+                catalogStore: $0,
                 imageLoader: imageLoader,
                 analyzer: analyzer,
                 imageWorkArbiter: imageWorkArbiter
@@ -201,11 +214,12 @@ struct AppContainer: Sendable {
             catalogStore: workspace.catalogStore,
             catalogStorageAvailability: workspace.catalogStorageAvailability,
             imageWorkArbiter: imageWorkArbiter,
-            libraryAnalysisCoordinator: libraryAnalysisCoordinator
+            libraryAnalysisCoordinator: libraryAnalysisCoordinator,
+            libraryComparisonCoordinator: libraryComparisonCoordinator
         )
     }
 
-    /// Opens the V4 workspace/catalog schema exactly once. A failed migration
+    /// Opens the V6 workspace/catalog schema exactly once. A failed migration
     /// is reported as unavailable; reopening the same store through V2 would
     /// risk hiding or misinterpreting the additive catalog migration.
     private static func makeWorkspaceSetup(
@@ -215,7 +229,7 @@ struct AppContainer: Sendable {
         let workspaceURL = root.appendingPathComponent("workspace.store")
         do {
             let modelContainer = try ModelContainer(
-                for: Schema(versionedSchema: PhotoCuratorSchemaV4.self),
+                for: Schema(versionedSchema: PhotoCuratorSchemaV6.self),
                 migrationPlan: PhotoCuratorMigrationPlan.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )
@@ -229,7 +243,7 @@ struct AppContainer: Sendable {
                 subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "workspace"
             ).error(
                 """
-                V3 workspace/catalog schema unavailable; preserving the store file.
+                V6 workspace/catalog schema unavailable; preserving the store file.
                 Failure category: schema_migration.
                 """
             )
@@ -283,4 +297,6 @@ struct AppContainer: Sendable {
             exporter: exporter
         )
     }
+
+    // swiftlint:enable function_body_length
 }

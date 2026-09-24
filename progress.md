@@ -12,6 +12,22 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-24 — feat-042
+
+**State**: done
+**Done**: Added bounded same-capture and cross-date candidate retrieval, transient hash/FeaturePrint validation, complete-link comparison groups, V5/V6 derived projections, guarded publication, and snapshot retention. No visual artifact persists.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint, and generic Simulator build; tests skipped by DEC-040. `git diff --check` PASS.
+**Blockers**: Grouping quality and whole-library recall remain unmeasured.
+**Next**: feat-043.
+
+## 2026-09-24 — feat-042
+
+**State**: active
+**Done**: Activated bounded comparison-group delivery. Retakes use bounded chronological neighbors; cross-date candidates use transient in-memory hash buckets and image-sensitive validation. No visual artifact persists.
+**Evidence**: Baseline `./init.sh` PASS: SwiftFormat, strict SwiftLint, and generic Simulator build; tests skipped by DEC-040.
+**Blockers**: Group quality and whole-library recall remain unmeasured.
+**Next**: Add V5 comparison snapshot projections and bounded publication.
+
 ## 2026-09-24 — feat-041
 
 **State**: done

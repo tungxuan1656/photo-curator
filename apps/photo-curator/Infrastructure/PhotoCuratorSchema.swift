@@ -50,6 +50,30 @@ enum PhotoCuratorSchemaV4: VersionedSchema {
     }
 }
 
+/// Additive comparison projections. Visual hashes, feature prints, vectors,
+/// decoded images, and candidate buckets remain transient and are not models.
+enum PhotoCuratorSchemaV5: VersionedSchema {
+    static var versionIdentifier = Schema.Version(5, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        PhotoCuratorSchemaV4.models + [
+            CatalogComparisonState.self,
+            CatalogComparisonSnapshotProjection.self,
+            CatalogComparisonGroupProjection.self,
+            CatalogComparisonMemberProjection.self,
+        ]
+    }
+}
+
+/// Additive comparison coverage and revision-bound evidence rows.
+enum PhotoCuratorSchemaV6: VersionedSchema {
+    static var versionIdentifier = Schema.Version(6, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        PhotoCuratorSchemaV5.models + [CatalogComparisonEvidenceProjection.self]
+    }
+}
+
 enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [
@@ -57,6 +81,8 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             PhotoCuratorSchemaV2.self,
             PhotoCuratorSchemaV3.self,
             PhotoCuratorSchemaV4.self,
+            PhotoCuratorSchemaV5.self,
+            PhotoCuratorSchemaV6.self,
         ]
     }
 
@@ -73,6 +99,14 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             .lightweight(
                 fromVersion: PhotoCuratorSchemaV3.self,
                 toVersion: PhotoCuratorSchemaV4.self
+            ),
+            .lightweight(
+                fromVersion: PhotoCuratorSchemaV4.self,
+                toVersion: PhotoCuratorSchemaV5.self
+            ),
+            .lightweight(
+                fromVersion: PhotoCuratorSchemaV5.self,
+                toVersion: PhotoCuratorSchemaV6.self
             ),
         ]
     }

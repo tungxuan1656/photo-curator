@@ -417,7 +417,7 @@
       "depends_on": ["feat-041"],
       "gate": "Bounded retake/cross-date retrieval, coherent image-backed group snapshots and honest coverage independent of album picks; ./init.sh passes",
       "id": "feat-042",
-      "status": "todo",
+      "status": "done",
       "title": "Library-wide comparison groups"
     },
     {
