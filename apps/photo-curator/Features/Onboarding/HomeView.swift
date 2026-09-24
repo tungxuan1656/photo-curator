@@ -13,6 +13,8 @@ struct HomeView: View {
             VStack(spacing: 24) {
                 HomeHeroBanner()
 
+                libraryEntryCard(appModel: appModel)
+
                 actionArea(appModel: appModel)
 
                 HomeHowItWorksSection()
@@ -165,6 +167,35 @@ struct HomeView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal)
+    }
+
+    private func libraryEntryCard(appModel: AppModel) -> some View {
+        Button {
+            appModel.openLibraryDiscovery()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "square.stack.3d.up.fill")
+                    .font(.title2)
+                    .foregroundStyle(Color.curatorAccent)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Browse Your Library")
+                        .font(.headline)
+                    Text("Start with similar groups, then inspect every photo.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .accessibilityHint("Opens group discovery and all photos.")
     }
 
     private var limitedAccessBanner: some View {

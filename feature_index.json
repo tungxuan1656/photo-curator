@@ -424,7 +424,7 @@
       "depends_on": ["feat-042"],
       "gate": "Direct group discovery, catalog browsing and accessible scoped inspection for every displayed photo; en/vi and ./init.sh pass",
       "id": "feat-043",
-      "status": "todo",
+      "status": "done",
       "title": "Group-first discovery and photo inspection"
     },
     {

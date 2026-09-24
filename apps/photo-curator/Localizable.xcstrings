@@ -204,6 +204,12 @@
             "state" : "new",
             "value" : "%1$lld photos · %2$@"
           }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ảnh · %@"
+          }
         }
       }
     },
@@ -8786,6 +8792,902 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Đã phóng to"
+          }
+        }
+      }
+    },
+    "%lld accessible" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld accessible"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ảnh có thể truy cập"
+          }
+        }
+      }
+    },
+    "%lld groups" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld groups"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld nhóm"
+          }
+        }
+      }
+    },
+    "%lld photos in groups · %lld unavailable · %lld comparisons checked" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld photos in groups · %2$lld unavailable · %3$lld comparisons checked"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ảnh trong nhóm · %lld không khả dụng · đã kiểm tra %lld so sánh"
+          }
+        }
+      }
+    },
+    "Browse Your Library" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browse Your Library"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duyệt thư viện ảnh"
+          }
+        }
+      }
+    },
+    "Browse all accessible photos while the catalog becomes available." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browse all accessible photos while the catalog becomes available."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duyệt mọi ảnh có thể truy cập trong khi danh mục hoàn tất."
+          }
+        }
+      }
+    },
+    "Close photo inspection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close photo inspection"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đóng trình xem ảnh"
+          }
+        }
+      }
+    },
+    "Discover" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Discover"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Khám phá"
+          }
+        }
+      }
+    },
+    "Fit photo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fit photo"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vừa khít ảnh"
+          }
+        }
+      }
+    },
+    "Finding similar groups" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Finding similar groups"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang tìm nhóm tương tự"
+          }
+        }
+      }
+    },
+    "Group photo %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Group photo %1$lld of %2$lld"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh nhóm %lld trên tổng số %lld"
+          }
+        }
+      }
+    },
+    "Group unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Group unavailable"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm không khả dụng"
+          }
+        }
+      }
+    },
+    "Groups appear when analyzed photos contain a retake or near-copy relationship." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Groups appear when analyzed photos contain a retake or near-copy relationship."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm xuất hiện khi ảnh đã phân tích có mối quan hệ ảnh chụp lại hoặc gần giống."
+          }
+        }
+      }
+    },
+    "Library catalog unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Library catalog unavailable"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danh mục thư viện không khả dụng"
+          }
+        }
+      }
+    },
+    "Library patterns are up to date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Library patterns are up to date"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Các mẫu trong thư viện đã được cập nhật"
+          }
+        }
+      }
+    },
+    "Loading photo…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Loading photo…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang tải ảnh…"
+          }
+        }
+      }
+    },
+    "Near-copy set" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Near-copy set"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bộ ảnh gần giống"
+          }
+        }
+      }
+    },
+    "Near-copies" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Near-copies"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh gần giống"
+          }
+        }
+      }
+    },
+    "New Photos and relationships will appear after refresh." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New Photos and relationships will appear after refresh."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh mới và các mối quan hệ sẽ xuất hiện sau khi làm mới."
+          }
+        }
+      }
+    },
+    "No similar groups yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No similar groups yet"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chưa có nhóm tương tự"
+          }
+        }
+      }
+    },
+    "Opens group details." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Opens group details."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở chi tiết nhóm."
+          }
+        }
+      }
+    },
+    "Opens group discovery and all photos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Opens group discovery and all photos."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở phần khám phá nhóm và tất cả ảnh."
+          }
+        }
+      }
+    },
+    "Opens photo inspection." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Opens photo inspection."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở trình xem ảnh."
+          }
+        }
+      }
+    },
+    "Opens zoomable photo inspection." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Opens zoomable photo inspection."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mở trình xem ảnh có thể thu phóng."
+          }
+        }
+      }
+    },
+    "Photo %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photo %1$@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh %1$@"
+          }
+        }
+      }
+    },
+    "Photo %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photo %1$lld"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh %lld"
+          }
+        }
+      }
+    },
+    "Photos access is required" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photos access is required"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cần quyền truy cập Ảnh"
+          }
+        }
+      }
+    },
+    "Photos will appear here after library access and metadata loading." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Photos will appear here after library access and metadata loading."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh sẽ xuất hiện ở đây sau khi cấp quyền truy cập thư viện và tải siêu dữ liệu."
+          }
+        }
+      }
+    },
+    "Pinch to zoom. Swipe left or right to change photos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pinch to zoom. Swipe left or right to change photos."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chụm để thu phóng. Vuốt sang trái hoặc phải để chuyển ảnh."
+          }
+        }
+      }
+    },
+    "Preparing your library" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Preparing your library"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang chuẩn bị thư viện"
+          }
+        }
+      }
+    },
+    "Retake set" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Retake set"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bộ ảnh chụp lại"
+          }
+        }
+      }
+    },
+    "Retakes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Retakes"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh chụp lại"
+          }
+        }
+      }
+    },
+    "Restore Photos access to browse the catalog." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restore Photos access to browse the catalog."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Khôi phục quyền truy cập Ảnh để duyệt danh mục."
+          }
+        }
+      }
+    },
+    "Showing the last library snapshot" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Showing the last library snapshot"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang hiển thị ảnh chụp nhanh thư viện gần nhất"
+          }
+        }
+      }
+    },
+    "Some relationships may still be missing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Some relationships may still be missing"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Có thể vẫn còn thiếu một số mối quan hệ"
+          }
+        }
+      }
+    },
+    "Start with groups of near-copies and retakes, then browse every accessible photo. Nothing changes in Photos while you look around." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Start with groups of near-copies and retakes, then browse every accessible photo. Nothing changes in Photos while you look around."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bắt đầu với các nhóm ảnh gần giống và ảnh chụp lại, sau đó duyệt mọi ảnh có thể truy cập. Không có gì trong Ảnh thay đổi khi bạn xem."
+          }
+        }
+      }
+    },
+    "Start with similar groups, then inspect every photo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Start with similar groups, then inspect every photo."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bắt đầu với các nhóm tương tự, sau đó xem từng ảnh."
+          }
+        }
+      }
+    },
+    "The saved catalog could not be loaded. Pull to retry." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The saved catalog could not be loaded. Pull to retry."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể tải danh mục đã lưu. Kéo để thử lại."
+          }
+        }
+      }
+    },
+    "This group is based on %@. The comparison evidence is retained with this snapshot; no conclusion is added when evidence is unavailable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This group is based on %1$@. The comparison evidence is retained with this snapshot; no conclusion is added when evidence is unavailable."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm này dựa trên %1$@. Bằng chứng so sánh được lưu cùng ảnh chụp nhanh này; không đưa ra kết luận khi không có bằng chứng."
+          }
+        }
+      }
+    },
+    "This group changed during a library refresh." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This group changed during a library refresh."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm này đã thay đổi trong lần làm mới thư viện."
+          }
+        }
+      }
+    },
+    "This is a partial view of the library. More relationships may appear after analysis continues." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This is a partial view of the library. More relationships may appear after analysis continues."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đây là chế độ xem chưa đầy đủ của thư viện. Có thể xuất hiện thêm mối quan hệ sau khi quá trình phân tích tiếp tục."
+          }
+        }
+      }
+    },
+    "This photo isn't available right now." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This photo isn't available right now."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh này hiện không khả dụng."
+          }
+        }
+      }
+    },
+    "You can browse all accessible photos while grouping finishes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can browse all accessible photos while grouping finishes."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bạn có thể duyệt mọi ảnh có thể truy cập trong khi hoàn tất việc nhóm."
+          }
+        }
+      }
+    },
+    "Your library, with the patterns surfaced." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your library, with the patterns surfaced."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thư viện của bạn, với các mẫu được làm nổi bật."
+          }
+        }
+      }
+    },
+    ", " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : ", "
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", "
+          }
+        }
+      }
+    },
+    "%lld photos · " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld photos · "
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ảnh · "
+          }
+        }
+      }
+    },
+    ". The comparison evidence is retained with this snapshot; no conclusion is added when evidence is unavailable." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : ". The comparison evidence is retained with this snapshot; no conclusion is added when evidence is unavailable."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ". Bằng chứng so sánh được lưu cùng ảnh chụp nhanh này; không đưa ra kết luận khi không có bằng chứng."
+          }
+        }
+      }
+    },
+    "All photos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All photos"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tất cả ảnh"
+          }
+        }
+      }
+    },
+    "Patterns are still filling in" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Patterns are still filling in"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Các mẫu vẫn đang được hoàn thiện"
+          }
+        }
+      }
+    },
+    "same capture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "same capture"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cùng lần chụp"
+          }
+        }
+      }
+    },
+    "similar across dates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "similar across dates"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tương tự ở các ngày khác nhau"
+          }
+        }
+      }
+    },
+    "similar images captured on different dates" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "similar images captured on different dates"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "các ảnh tương tự được chụp vào những ngày khác nhau"
+          }
+        }
+      }
+    },
+    "similar images from the same capture" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "similar images from the same capture"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "các ảnh tương tự trong cùng lần chụp"
+          }
+        }
+      }
+    },
+    "Similar groups" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Similar groups"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm tương tự"
+          }
+        }
+      }
+    },
+    "This group is based on " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This group is based on "
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm này dựa trên "
+          }
+        }
+      }
+    },
+    "visual similarity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "visual similarity"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "độ tương đồng hình ảnh"
+          }
+        }
+      }
+    },
+    "Why these are together" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Why these are together"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vì sao các ảnh này được nhóm cùng nhau"
           }
         }
       }

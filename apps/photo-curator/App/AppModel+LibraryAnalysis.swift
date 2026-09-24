@@ -4,6 +4,57 @@ import OSLog
 // MARK: - Library analysis lifecycle
 
 extension AppModel {
+    /// Loads one coherent catalog/group read snapshot. The catalog actor pins
+    /// both reads to its published generation; a failed refresh leaves the
+    /// previously rendered snapshot untouched rather than reordering photos.
+    func loadLibrarySnapshot() async {
+        librarySnapshotGeneration += 1
+        let generation = librarySnapshotGeneration
+        librarySnapshotLoadFailed = false
+
+        let state = await container.catalogState()
+        guard generation == librarySnapshotGeneration else { return }
+
+        guard state.availability != .unavailable else {
+            librarySnapshotLoadFailed = true
+            return
+        }
+
+        guard state.availability == .available || state.availability == .stale else {
+            publishLibrarySnapshot(
+                LibrarySnapshotTuple(catalogState: state, observations: [], comparisonSnapshot: nil)
+            )
+            return
+        }
+        guard let catalogStore = container.catalogStore else {
+            librarySnapshotLoadFailed = true
+            return
+        }
+
+        do {
+            let observations = try await catalogStore.currentObservations()
+            let snapshot = try await catalogStore.currentComparisonSnapshot()
+            guard generation == librarySnapshotGeneration else { return }
+            let finalState = await container.catalogState()
+            guard finalState.currentGenerationID == state.currentGenerationID,
+                  finalState.availability == .available || finalState.availability == .stale,
+                  observations.allSatisfy({ $0.generationID == finalState.currentGenerationID }),
+                  snapshot == nil || snapshot?.catalogGenerationID == finalState.currentGenerationID
+            else { return }
+            publishLibrarySnapshot(
+                LibrarySnapshotTuple(
+                    catalogState: finalState,
+                    observations: observations,
+                    comparisonSnapshot: snapshot
+                )
+            )
+        } catch {
+            guard generation == librarySnapshotGeneration else { return }
+            librarySnapshotLoadFailed = true
+            logger.error("Library snapshot load failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     func refreshAuthorization() async {
         authorization = await container.photoLibrary.authorizationStatus()
         await container.catalogStore?.recordAuthorization(authorization)
