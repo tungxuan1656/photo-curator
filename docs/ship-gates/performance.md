@@ -10,8 +10,9 @@ Owns work bounds and resource claims for a persistent photo index.
 | Library size | Entire authorized photo scope; capacity is unmeasured, not capped by the old 100–2,000 selection target |
 | Image analysis batch | 32 assets; tune within 16–64 only with recorded reason |
 | Heavy image concurrency | At most 2 initial lanes |
+| Shared image permits | One two-permit `ImageWorkArbiter` across session, enrichment, and visible work |
 | Progress publication | At most 4 Hz |
-| Checkpoints | About 25 assets or 10 seconds, at safe commit boundaries |
+| Durable reconciliation handoff | About 25 assets or 10 seconds, at safe commit boundaries; checkpoint is a resume hint, not evidence authority |
 | Browsing | Metadata-first; no wait for complete inference |
 | Thumbnail work | Visible cells plus a bounded preheat window |
 | Detail previews | Bounded current/adjacent work; release obsolete images |
@@ -28,11 +29,23 @@ Batch cheap metadata and process images incrementally off the main actor.
 Coalesce library-change notifications into reconciliation generations.
 An edited asset invalidates affected evidence; changing filters or selection does not rerun inference.
 
+The first capability is `nativeImageFacts`. Evidence is written durably before
+the actor-guarded catalog status commit, publication, and checkpoint advance.
+Each commit checks the run token, catalog generation, asset fingerprint, and
+analysis/provider revisions. Typed `accessRequired`, `iCloudWaiting`,
+`modelUnavailable`, `revisionStale`, `cancelled`, and transient-failure reasons
+drive retry behavior; completed empty output is not a failure.
+
 Pause at safe edges on suspension or resource pressure.
 Drain cancelled work before publishing terminal state.
 Resume with revision checks, not counters alone.
 Retry unavailable analysis through explicit user action or a documented changed-condition policy; never spin on persistent failures.
 Deletion retry remains exclusively explicit under [review rules](../product-specs/review-rules.md).
+
+Lifecycle invariants: a new run invalidates its prior run token; cancellation
+drains structured tasks before terminal publication; reset invalidates the token,
+clears resumable handoff/status safely, and rejects late results. The shared
+arbiter is the only image-work permit pool and visible work takes priority.
 
 ## Scale work
 

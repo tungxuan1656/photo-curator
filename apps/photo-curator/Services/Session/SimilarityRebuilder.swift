@@ -7,6 +7,7 @@ struct SimilarityRebuilder: Sendable {
     let imageLoader: any PhotoImageLoader
     let analyzer: any ImageAnalysisService
     let laneCount: Int
+    let imageWorkArbiter: ImageWorkArbiter
 
     func rebuild(for ids: [AssetID]) async throws -> [AssetID: ImageSimilarityArtifact] {
         let lanes = max(1, laneCount)
@@ -16,13 +17,20 @@ struct SimilarityRebuilder: Sendable {
             let end = min(start + lanes, ids.count)
             await withTaskGroup(of: (AssetID, ImageSimilarityArtifact?).self) { group in
                 for id in ids[start ..< end] {
-                    group.addTask { [imageLoader, analyzer] in
-                        guard let cgImage = try? await imageLoader.analysisImage(for: id) else { return (id, nil) }
-                        let artifact = try? await analyzer.similarityArtifact(for: AnalysisInput(
-                            assetID: id,
-                            image: cgImage,
-                            isScreenshotSubtype: false
-                        ))
+                    group.addTask { [imageLoader, analyzer, imageWorkArbiter] in
+                        let artifact: ImageSimilarityArtifact? = try? await imageWorkArbiter.withPermit(
+                            priority: .session
+                        ) {
+                            guard let cgImage = try? await imageLoader.analysisImage(for: id) else {
+                                return nil
+                            }
+                            try Task.checkCancellation()
+                            return try? await analyzer.similarityArtifact(for: AnalysisInput(
+                                assetID: id,
+                                image: cgImage,
+                                isScreenshotSubtype: false
+                            ))
+                        }
                         return (id, artifact)
                     }
                 }
@@ -32,6 +40,7 @@ struct SimilarityRebuilder: Sendable {
                     }
                 }
             }
+            try Task.checkCancellation()
         }
         return artifacts
     }

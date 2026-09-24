@@ -61,6 +61,11 @@ final class AppModel {
     var lastSessionID: SessionID?
     var resumeSnapshot: ResumeSnapshot?
     var confirmingNewSession = false
+    var analysisLifecyclePermitted = true
+    var analysisResetInFlight = false
+    var libraryAnalysisHasStarted = false
+    var catalogReconciliationTask: Task<Void, Never>?
+    var catalogReconciliationRequested = false
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -69,7 +74,9 @@ final class AppModel {
     var saveFlight: (session: SessionID, task: Task<SaveOutcome, Never>)?
     let modelInstallation: ModelInstallationModel
     let processing: ProcessingModel
-    private var isRequesting = false
+    internal(set) var libraryAnalysisProgress: LibraryAnalysisProgress?
+    internal(set) var libraryAnalysisState: LibraryAnalysisCoordinatorState = .idle
+    var isRequesting = false
     private var sourceGeneration = 0
     let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "photo-curator", category: "session"
@@ -93,6 +100,7 @@ final class AppModel {
             engine: container.selectionEngine,
             config: .default,
             pressure: container.memoryPressure,
+            imageWorkArbiter: container.imageWorkArbiter,
             tierCProvider: container.tierCProvider,
             semanticJuryProvider: container.semanticJuryProvider,
             qualityRunner: QualityCurationRunner(
@@ -121,50 +129,6 @@ final class AppModel {
     func skipPermission() {
         markSeen()
         path = []
-    }
-
-    func refreshAuthorization() async {
-        authorization = await container.photoLibrary.authorizationStatus()
-        await container.catalogStore?.recordAuthorization(authorization)
-    }
-
-    func startup() async {
-        switch container.workspaceAvailability {
-        case .available:
-            if let workspaceImporter = container.workspaceImporter {
-                _ = await workspaceImporter.importIfNeeded()
-            }
-        case .unavailable:
-            logger.error(
-                "Durable workspace unavailable; legacy selection, analysis, review, and resume flow will continue."
-            )
-        }
-        await refreshAuthorization()
-        reconcileCatalog()
-        await refreshDeletionRecovery()
-        await refreshResumeSnapshot()
-    }
-
-    /// Catalog reconciliation is lifecycle work, not a discovery route. It is
-    /// queued outside startup/recovery/resume critical paths; the store owns
-    /// single-flight serialization and coalesces change notifications.
-    func reconcileCatalog() {
-        guard let catalogStore = container.catalogStore else { return }
-        let photoLibrary = container.photoLibrary
-        Task {
-            await catalogStore.enqueueReconciliation(using: photoLibrary)
-        }
-    }
-
-    func requestPermission() async {
-        guard !isRequesting else { return }
-        isRequesting = true
-        defer { isRequesting = false }
-        authorization = await container.photoLibrary.requestAuthorization()
-        await container.catalogStore?.recordAuthorization(authorization)
-        markSeen()
-        path = []
-        reconcileCatalog()
     }
 
     func presentPicker() {
@@ -541,7 +505,7 @@ extension AppModel {
     }
 
     func checkpointForBackground() async {
-        await processing.pauseForBackground()
+        await applicationDidEnterBackground()
     }
 
     /// Launch probe: remembers the newest unfinished session for the Home card.
@@ -878,23 +842,40 @@ extension AppModel {
     /// originals are untouched. Cancels in-flight work first.
     func resetAnalysis() {
         processing.cancel()
+        let finalizeTask = finalizeFlight?.task
+        finalizeTask?.cancel()
+        finalizeFlight = nil
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
         resumeSnapshot = nil
         reviewModel = nil
         path.removeAll()
+        analysisResetInFlight = true
         Task {
             await cancelSave(for: sessionID)
+            if let coordinator = container.libraryAnalysisCoordinator {
+                await coordinator.reset()
+                libraryAnalysisState = await coordinator.currentState()
+                libraryAnalysisProgress = nil
+            }
             await processing.awaitTermination()
+            if let finalizeTask {
+                await finalizeTask.value
+            }
             await container.analysisCache.reset()
             if sessionID != nil {
                 _ = await deleteSessionData(sessionID, context: "Resetting analysis")
             }
             lastSessionID = nil
+            reconcileCatalog()
+            analysisResetInFlight = false
+            if analysisLifecyclePermitted {
+                await startLibraryAnalysis(resume: true)
+            }
         }
     }
 
-    private func markSeen() {
+    func markSeen() {
         hasSeenWelcome = true
         UserDefaults.standard.set(true, forKey: Self.seenWelcomeKey)
     }

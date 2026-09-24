@@ -106,10 +106,10 @@ private final class ImageRequestState: @unchecked Sendable {
     }
 }
 
-/// Internal cause before mapping to `SelectionError`. Kept private so the
-/// three-case public error stays untouched while retry stays classifiable.
+/// Internal cause before mapping to the stable image-load error. Kept private
+/// so retry and PhotoKit request details stay out of the service contract.
 private enum AttemptError: Error {
-    case missing, cancelled, network, failed
+    case missing, cancelled, network, iCloudWaiting, accessRequired, failed
 }
 
 /// Short spelling so the request signatures fit on one line (SwiftFormat and
@@ -134,17 +134,26 @@ private extension ImageLoaderService {
                     throw SelectionError.cancelled
                 }
             } catch AttemptError.missing {
-                throw SelectionError.invalidInput
+                throw PhotoImageLoadError.assetMissing
+            } catch AttemptError.accessRequired {
+                throw PhotoImageLoadError.accessRequired
+            } catch AttemptError.iCloudWaiting {
+                throw PhotoImageLoadError.iCloudWaiting
             } catch AttemptError.cancelled {
+                // Preserve the legacy session contract. Catalog callers can
+                // normalize this with PhotoImageLoadError.classify(_:).
                 throw SelectionError.cancelled
             } catch {
-                throw SelectionError.internal
+                throw PhotoImageLoadError.transientFailure
             }
         }
-        throw SelectionError.internal
+        throw PhotoImageLoadError.transientFailure
     }
 
     func attemptRequest(for id: AssetID, targetSize: CGSize, contentMode: Mode, fast: Bool) async throws -> CGImage {
+        guard hasReadAccess else {
+            throw AttemptError.accessRequired
+        }
         guard let phAsset = PHAsset.fetchAssets(withLocalIdentifiers: [id.rawValue], options: nil).firstObject else {
             throw AttemptError.missing
         }
@@ -177,6 +186,17 @@ private extension ImageLoaderService {
         }
     }
 
+    var hasReadAccess: Bool {
+        switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
+        case .authorized, .limited:
+            true
+        case .notDetermined, .denied, .restricted:
+            false
+        @unknown default:
+            false
+        }
+    }
+
     func imageRequestOptions(for assetID: String, fast: Bool) -> PHImageRequestOptions {
         let options = PHImageRequestOptions()
         options.isSynchronous = false
@@ -193,26 +213,44 @@ private extension ImageLoaderService {
     }
 
     func completeRequest(image: UIImage?, info: [AnyHashable: Any]?, fast: Bool, state: ImageRequestState) {
-        let cancelled = (info?[PHImageCancelledKey] as? Bool) ?? false
+        let cancelled = boolValue(for: PHImageCancelledKey, in: info)
         if cancelled || Task.isCancelled {
             if let claimed = state.claim() {
                 claimed.resume(throwing: AttemptError.cancelled)
             }
             return
         }
+        let isInCloud = boolValue(for: PHImageResultIsInCloudKey, in: info)
         if let nsError = info?[PHImageErrorKey] as? NSError {
             if let claimed = state.claim() {
-                claimed.resume(throwing: isNetworkError(nsError) ? AttemptError.network : AttemptError.failed)
+                if !hasReadAccess || isAccessError(nsError) {
+                    claimed.resume(throwing: AttemptError.accessRequired)
+                } else if isCancellationError(nsError) {
+                    claimed.resume(throwing: AttemptError.cancelled)
+                } else if isMissingAssetError(nsError) {
+                    claimed.resume(throwing: AttemptError.missing)
+                } else if isInCloud || isCloudWaitingError(nsError) {
+                    claimed.resume(throwing: AttemptError.iCloudWaiting)
+                } else {
+                    claimed.resume(throwing: isNetworkError(nsError) ? AttemptError.network : AttemptError.failed)
+                }
             }
             return
         }
-        let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+        let isDegraded = boolValue(for: PHImageResultIsDegradedKey, in: info)
         if !fast, isDegraded {
+            // A degraded cloud image is an intermediate delivery. Keep the
+            // request alive for the final callback instead of reporting a
+            // failure while PhotoKit is still downloading it.
+            if image == nil, isInCloud, let claimed = state.claim() {
+                manager.cancelImageRequest(state.requestID)
+                claimed.resume(throwing: AttemptError.iCloudWaiting)
+            }
             return
         }
         guard let uiImage = image, let cg = Self.normalizedCGImage(from: uiImage) else {
             if !isDegraded, let claimed = state.claim() {
-                claimed.resume(throwing: AttemptError.failed)
+                claimed.resume(throwing: isInCloud ? AttemptError.iCloudWaiting : AttemptError.failed)
             }
             return
         }
@@ -222,6 +260,33 @@ private extension ImageLoaderService {
             }
             claimed.resume(returning: cg)
         }
+    }
+
+    func boolValue(for key: String, in info: [AnyHashable: Any]?) -> Bool {
+        guard let value = info?[key] else { return false }
+        return (value as? Bool) ?? (value as? NSNumber)?.boolValue ?? false
+    }
+
+    func isAccessError(_ error: NSError) -> Bool {
+        guard error.domain == PHPhotosErrorDomain else { return false }
+        let code = PHPhotosError.Code(rawValue: error.code)
+        return code == .accessRestricted || code == .accessUserDenied
+    }
+
+    func isCancellationError(_ error: NSError) -> Bool {
+        guard error.domain == PHPhotosErrorDomain else { return false }
+        return PHPhotosError.Code(rawValue: error.code) == .userCancelled
+    }
+
+    func isMissingAssetError(_ error: NSError) -> Bool {
+        guard error.domain == PHPhotosErrorDomain else { return false }
+        let code = PHPhotosError.Code(rawValue: error.code)
+        return code == .identifierNotFound || code == .missingResource
+    }
+
+    func isCloudWaitingError(_ error: NSError) -> Bool {
+        guard error.domain == PHPhotosErrorDomain else { return false }
+        return PHPhotosError.Code(rawValue: error.code) == .networkAccessRequired
     }
 
     /// Transient network failures eligible for the single retry: URL-session

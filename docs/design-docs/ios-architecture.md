@@ -54,6 +54,10 @@ SwiftUI discovery / label / filter / group / inspector views
                  └─ staging → PhotoDeletionService
 ```
 
+The coordinator uses one `nativeImageFacts` capability and its evidence file,
+V4 per-asset/capability work state, a durable reconciliation handoff, and a
+shared two-permit `ImageWorkArbiter`.
+
 The library index outlives any analysis job or user action.
 An analysis job enriches assets; it does not select an album or wait for all photos before publishing useful results.
 Queries read compact catalog projections instead of loading every analysis JSON file.
@@ -63,8 +67,10 @@ Photo detail consumes an asset and a scoped order, not a required `SelectionResu
 
 - Views send intents and render state. They do not call PhotoKit, Vision, or model runtimes.
 - UI models own navigation and temporary selection, not inference or mutation persistence.
-- The analysis coordinator owns scheduling, checkpointing, revision reconciliation, and publication order.
+- The analysis coordinator actor owns scheduling, run tokens, checkpointing, revision reconciliation, and publication order.
 - The catalog store owns metadata, query projections, overrides, and index generations.
+- Evidence files own immutable `nativeImageFacts`; SwiftData V4 owns current per-asset/capability status; checkpoints are durable handoff hints only.
+- `ImageWorkArbiter` owns two shared image-work permits across session analysis, catalog enrichment, and visible inspection; no lane creates a private pool.
 - Providers return evidence and availability. Label/group policies interpret evidence without writing user choices.
 - Album and deletion services retain independent operation stores and mutation gates.
 - Existing session readers remain compatibility paths until saved-work recovery is integrated.
@@ -83,7 +89,7 @@ Late results with old asset/provider generations cannot replace current evidence
 
 ### Analyze and discover
 
-Load bounded image → extract evidence → persist versioned result → update label/group projections → publish snapshot update.
+Load bounded image → extract `nativeImageFacts` → durably write evidence → guarded-commit matching V4 status → publish snapshot update → advance the reconciliation handoff/checkpoint.
 Group rebuilding is independent of album sizing and selected/rejected output.
 Background suspension checkpoints safe work and resumes on the next execution opportunity.
 
@@ -95,7 +101,10 @@ The action does not rerun analysis or consume an automatically expanding query.
 ## Concurrency
 
 Use `@MainActor` UI state and actor-isolated coordination/stores.
-Use bounded structured tasks for image work and drain tasks before closing a generation.
+Use bounded structured tasks for image work and drain tasks before closing a generation. Every evidence/status commit checks the actor-owned run token, catalog generation, asset fingerprint, and capability/provider revisions.
+New work invalidates the prior run token; cancellation drains tasks before terminal publication; reset invalidates the token, clears resumable handoff/status safely, and rejects late results.
+Unavailable and retryable outcomes use typed reasons rather than raw errors or inferred counters.
+The shared `ImageWorkArbiter` has two permits and prioritizes visible inspection without exceeding the global image-work bound.
 Prioritize visible inspection over enrichment work and release image buffers promptly.
 Resource policy belongs to [performance](../ship-gates/performance.md).
 

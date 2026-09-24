@@ -7,6 +7,8 @@ enum LibraryCatalogStoreError: Error, Sendable, Equatable {
     case duplicateAssetID
     case fetchFailed
     case incompleteGeneration
+    case analysisPageLimitExceeded
+    case analysisTransitionRejected(AnalysisCommitRejection)
     case persistenceFailed
     case reconciliationInProgress
     case unavailable
@@ -45,19 +47,23 @@ struct CatalogReconciliationResult: Sendable, Equatable {
 /// transaction; only complete generations are published through CatalogState.
 actor LibraryCatalogStore {
     static let observationBatchSize = 250
+    static let analysisPageSize = 32
+    static let commitEventBufferSize = 1
     static let retainedAbandonedGenerationCount = 2
     static let retainedSupersededGenerationCount = 2
 
     let modelContainer: ModelContainer
-    private let context: ModelContext
+    let context: ModelContext
     private var reconciliationInFlight = false
     private var reconciliationQueued = false
     private var reconciliationPending = false
+    private var commitEventContinuations: [UUID: AsyncStream<CatalogCommitEvent>.Continuation] = [:]
 
     init(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
         context = ModelContext(modelContainer)
         try? Self.recoverInterruptedGenerations(in: context)
+        try? Self.recoverOrphanedAnalysisWork(in: context)
         try? Self.pruneCatalogHistory(in: context)
     }
 
@@ -129,6 +135,25 @@ actor LibraryCatalogStore {
         ))
         .sorted { $0.assetID < $1.assetID }
         .map { CatalogAssetObservationSnapshot(generationID: generationID, asset: $0.photoAsset) }
+    }
+
+    /// Events are advisory. A consumer must re-read durable state after an
+    /// event; an event is yielded only after its catalog transaction saves.
+    func catalogCommitEvents() -> AsyncStream<CatalogCommitEvent> {
+        let streamID = UUID()
+        let (stream, continuation) = AsyncStream<CatalogCommitEvent>.makeStream(
+            bufferingPolicy: .bufferingNewest(Self.commitEventBufferSize)
+        )
+        commitEventContinuations[streamID] = continuation
+        continuation.onTermination = { [weak self] _ in
+            guard let self else { return }
+            Task { await self.removeCommitEventContinuation(streamID) }
+        }
+        return stream
+    }
+
+    func commitEvents() -> AsyncStream<CatalogCommitEvent> {
+        catalogCommitEvents()
     }
 }
 
@@ -226,6 +251,8 @@ extension LibraryCatalogStore {
                 }
             }
 
+            try reconcileAnalysisWorkStates(generationID: generationID, assets: assets)
+
             generation.status = .committed
             generation.authorizationRawValue = authorization.rawValue
             generation.completedAt = now
@@ -238,6 +265,15 @@ extension LibraryCatalogStore {
             state.updatedAt = now
             try context.save()
         }
+        emitCommitEvent(CatalogCommitEvent(
+            id: UUID(),
+            kind: .generationCommitted,
+            generationID: generationID,
+            assetID: nil,
+            capability: nil,
+            analysisResult: nil,
+            occurredAt: now
+        ))
         return changedIDs
     }
 
@@ -293,6 +329,19 @@ extension LibraryCatalogStore {
         try context.fetch(FetchDescriptor<CatalogGeneration>(
             predicate: #Predicate { $0.id == id }
         )).first
+    }
+
+    func removeCommitEventContinuation(_ id: UUID) {
+        commitEventContinuations.removeValue(forKey: id)
+    }
+
+    func emitCommitEvent(_ event: CatalogCommitEvent) {
+        for id in Array(commitEventContinuations.keys) {
+            guard let continuation = commitEventContinuations[id] else { continue }
+            if case .terminated = continuation.yield(event) {
+                commitEventContinuations.removeValue(forKey: id)
+            }
+        }
     }
 
     static func recoverInterruptedGenerations(in context: ModelContext) throws {
@@ -386,6 +435,8 @@ extension LibraryCatalogStore {
         case .duplicateAssetID: .duplicateAssetID
         case .fetchFailed: .fetchFailed
         case .incompleteGeneration: .incomplete
+        case .analysisPageLimitExceeded: .incomplete
+        case .analysisTransitionRejected: .incomplete
         case .persistenceFailed, .unavailable: .persistenceFailed
         case .reconciliationInProgress: .incomplete
         }

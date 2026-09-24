@@ -200,3 +200,152 @@ final class CatalogState {
         set { availabilityRawValue = newValue.rawValue }
     }
 }
+
+/// Current work projection for one catalog asset and capability. Analysis
+/// facts remain in the evidence boundary; this row stores only revisions,
+/// status, and a reference to matching evidence.
+@Model
+final class AnalysisWorkState {
+    @Attribute(.unique) var identity: String
+    var assetID: String
+    var capabilityRawValue: String
+    var generationID: UUID?
+
+    var requestedModificationDate: Date?
+    var requestedFingerprintIsPresent: Bool
+    var requestedAnalysisRevision: Int
+    var requestedProviderRuntimeRevision: String
+
+    var statusRawValue: String
+    var reasonRawValue: String?
+
+    var completedModificationDate: Date?
+    var completedFingerprintIsPresent: Bool
+    var completedAnalysisRevision: Int?
+    var completedProviderRuntimeRevision: String?
+    var evidenceIdentifier: String?
+
+    init(
+        assetID: String,
+        generationID: UUID?,
+        fingerprint: AssetModificationFingerprint,
+        revision: AnalysisCapabilityRevision,
+        status: AnalysisWorkStatus = .pending,
+        reason: AnalysisWorkReason? = nil
+    ) {
+        identity = AnalysisWorkState.identity(assetID: assetID, capability: revision.capability)
+        self.assetID = assetID
+        capabilityRawValue = revision.capability.rawValue
+        self.generationID = generationID
+        requestedModificationDate = fingerprint.modificationDate
+        requestedFingerprintIsPresent = fingerprint.isPresent
+        requestedAnalysisRevision = revision.analysisRevision.rawValue
+        requestedProviderRuntimeRevision = revision.providerRuntimeRevision.rawValue
+        statusRawValue = status.rawValue
+        reasonRawValue = reason?.rawValue
+        completedModificationDate = nil
+        completedFingerprintIsPresent = false
+        completedAnalysisRevision = nil
+        completedProviderRuntimeRevision = nil
+        evidenceIdentifier = nil
+    }
+
+    static func identity(assetID: String, capability: AnalysisCapability) -> String {
+        "\(capability.rawValue)::\(assetID)"
+    }
+
+    var capability: AnalysisCapability {
+        AnalysisCapability(rawValue: capabilityRawValue) ?? .nativeImageFacts
+    }
+
+    var requestedAssetFingerprint: AssetModificationFingerprint {
+        requestedFingerprintIsPresent
+            ? AssetModificationFingerprint(modificationDate: requestedModificationDate)
+            : .missing
+    }
+
+    var requestedRevision: AnalysisCapabilityRevision {
+        AnalysisCapabilityRevision(
+            capability: capability,
+            analysisRevision: requestedAnalysisRevision,
+            providerRuntimeRevision: requestedProviderRuntimeRevision
+        )
+    }
+
+    var status: AnalysisWorkStatus {
+        get { AnalysisWorkStatus(rawValue: statusRawValue) ?? .stale }
+        set { statusRawValue = newValue.rawValue }
+    }
+
+    var reason: AnalysisWorkReason? {
+        get { reasonRawValue.flatMap(AnalysisWorkReason.init(rawValue:)) }
+        set { reasonRawValue = newValue?.rawValue }
+    }
+
+    var retryEligibility: AnalysisRetryEligibility {
+        switch status {
+        case .pending, .unavailable, .stale:
+            reason?.retryEligibility ?? .automatic
+        case .running, .available:
+            .never
+        }
+    }
+
+    var retryPolicy: AnalysisRetryPolicy {
+        switch status {
+        case .pending, .unavailable, .stale:
+            reason?.retryPolicy ?? .automatic
+        case .running, .available:
+            .doNotRetry
+        }
+    }
+
+    var completedAssetFingerprint: AssetModificationFingerprint? {
+        guard completedAnalysisRevision != nil,
+              completedProviderRuntimeRevision != nil
+        else { return nil }
+        return completedFingerprintIsPresent
+            ? AssetModificationFingerprint(modificationDate: completedModificationDate)
+            : .missing
+    }
+
+    var completedRevision: AnalysisCapabilityRevision? {
+        guard let completedAnalysisRevision,
+              let completedProviderRuntimeRevision
+        else { return nil }
+        return AnalysisCapabilityRevision(
+            capability: capability,
+            analysisRevision: completedAnalysisRevision,
+            providerRuntimeRevision: completedProviderRuntimeRevision
+        )
+    }
+
+    var evidence: AnalysisEvidenceReference? {
+        guard let evidenceIdentifier,
+              let completedAssetFingerprint,
+              let completedRevision
+        else { return nil }
+        return AnalysisEvidenceReference(
+            identifier: evidenceIdentifier,
+            assetID: AssetID(rawValue: assetID),
+            capability: capability,
+            assetFingerprint: completedAssetFingerprint,
+            revision: completedRevision
+        )
+    }
+
+    func snapshot() -> AnalysisWorkStateSnapshot {
+        AnalysisWorkStateSnapshot(
+            assetID: AssetID(rawValue: assetID),
+            capability: capability,
+            generationID: generationID,
+            requestedAssetFingerprint: requestedAssetFingerprint,
+            requestedRevision: requestedRevision,
+            status: status,
+            reason: reason,
+            completedAssetFingerprint: completedAssetFingerprint,
+            completedRevision: completedRevision,
+            evidence: evidence
+        )
+    }
+}

@@ -12,6 +12,22 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-24 — feat-041
+
+**State**: done
+**Done**: Added incremental catalog-backed `nativeImageFacts` scheduling with revision-guarded evidence commits, durable checkpoints, lifecycle recovery, and shared two-permit image-work arbitration. No album selection output or user-choice writes occur.
+**Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint, and generic Simulator build; tests skipped by DEC-040.
+**Blockers**: Existing Swift 6 isolation warnings remain outside feature scope.
+**Next**: feat-042.
+
+## 2026-09-24 — feat-041
+
+**State**: active
+**Done**: Activated after feat-040 merged. The approved plan separates catalog analysis from album selection and adds revision-safe lifecycle scheduling.
+**Evidence**: Baseline `./init.sh` PASS: SwiftFormat, strict SwiftLint, generic Simulator build; tests skipped by DEC-040.
+**Blockers**: none
+**Next**: Implement the bounded catalog analysis lifecycle.
+
 ## 2026-09-24 — feat-040
 
 **State**: done

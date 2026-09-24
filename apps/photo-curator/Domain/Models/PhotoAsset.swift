@@ -13,7 +13,7 @@ enum AssetSource: String, Codable, Sendable {
 /// Stable PhotoKit-sourced revision metadata for one asset. A missing
 /// modification date is still a meaningful revision: the asset ID scopes the
 /// value, while a later non-nil date invalidates the cached facts.
-struct AssetModificationFingerprint: Codable, Hashable, Sendable {
+nonisolated struct AssetModificationFingerprint: Codable, Hashable, Sendable {
     let modificationDate: Date?
     /// False only for a PhotoAsset decoded from a legacy payload that did not
     /// contain a fingerprint. A present fingerprint with a nil date remains a

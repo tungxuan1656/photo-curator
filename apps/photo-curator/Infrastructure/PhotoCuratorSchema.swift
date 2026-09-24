@@ -40,9 +40,24 @@ enum PhotoCuratorSchemaV3: VersionedSchema {
     }
 }
 
+/// Additive analysis work state. Evidence remains outside SwiftData; this
+/// schema stores only the current per-asset/capability projection.
+enum PhotoCuratorSchemaV4: VersionedSchema {
+    static var versionIdentifier = Schema.Version(4, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        PhotoCuratorSchemaV3.models + [AnalysisWorkState.self]
+    }
+}
+
 enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [PhotoCuratorSchemaV1.self, PhotoCuratorSchemaV2.self, PhotoCuratorSchemaV3.self]
+        [
+            PhotoCuratorSchemaV1.self,
+            PhotoCuratorSchemaV2.self,
+            PhotoCuratorSchemaV3.self,
+            PhotoCuratorSchemaV4.self,
+        ]
     }
 
     static var stages: [MigrationStage] {
@@ -54,6 +69,10 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             .lightweight(
                 fromVersion: PhotoCuratorSchemaV2.self,
                 toVersion: PhotoCuratorSchemaV3.self
+            ),
+            .lightweight(
+                fromVersion: PhotoCuratorSchemaV3.self,
+                toVersion: PhotoCuratorSchemaV4.self
             ),
         ]
     }
