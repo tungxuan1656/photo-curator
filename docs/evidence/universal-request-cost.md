@@ -1,5 +1,8 @@
 # Universal-request cost benchmark (feat-018)
 
+> **Historical evidence for feat-018 only.** This record does not validate the organization pivot or current model accuracy.
+> Historical harness instructions are not permission to create proof harnesses under the current repository policy.
+
 Evidence only; no code change. Every number below is measured on this run from
 real fixture bytes with the harness sources hashed in §6 — nothing invented,
 never a device claim. Simulator execution of the new Vision requests is

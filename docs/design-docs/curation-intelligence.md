@@ -1,5 +1,9 @@
 # Curation Intelligence V2
 
+> **Historical, superseded for current architecture by DEC-055 (2026-09-23).**
+> The status and model assumptions below describe earlier planning, not current admission.
+> Current owners: [photo intelligence](photo-intelligence.md) and [runtime stack](curation-runtime-stack.md).
+
 **Status:** Accepted post-MVP quality architecture  
 **Minimum OS:** iOS 26  
 **Enhanced tier:** iOS 27 when Apple Foundation Models image input is available  

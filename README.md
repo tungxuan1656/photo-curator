@@ -1,103 +1,83 @@
 # Photos Curator
 
-On-device iPhone app for assisted photo review. Clean Up Photos and Build an Album share one workspace; the user controls every choice.
+An on-device companion to Apple Photos for finding similar shots and organizing photos with useful labels.
 
-![iOS 26](https://img.shields.io/badge/iOS-26-black) ![Swift 5](https://img.shields.io/badge/Swift-5-orange) ![SwiftUI](https://img.shields.io/badge/SwiftUI-Observation-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-green)
-
-> How much manual photo-review work can Photos Curator remove without making users feel that important memories were lost?
-
-## How it works
+## Product direction
 
 ```text
-SOURCE PHOTOS → ANALYZE → GROUP / SUGGEST → USER REVIEW
-  → SAVE ALBUM or REVIEW STAGED PHOTOS → CONFIRM ORIGINAL DELETION
+Accessible Photos library → incremental analysis
+  → similar groups + labels → combined filters → inspect / compare
+  → select photos → label / add to album / stage deletion
 ```
 
-```text
-Home → Clean Up Photos / Build an Album → Choose Photos → Analyze / Resume
-  → Shared Review Workspace → Independent Album Save / Confirmed Cleanup
-```
+Similar-photo grouping is the first priority. Labels help users find and narrow the photos they want to handle.
+Albums and cleanup are downstream actions, not required entry intents.
+The app references originals in Apple Photos instead of copying the library.
+It does not edit photos or replace everyday Photos viewing.
 
-Product guarantees:
+## Implementation status
 
-* Never deletes originals automatically. Deletion requires full Photos read-write access and exact-set user confirmation.
-* Core curation runs on-device. No photo pixels leave the device for normal curation.
-* No account, no login, no custom backend for the core flow.
-* The user approves the final album. Manual edits are never silently overwritten.
+The current code has native analysis, revision-aware caches, session-based grouping/review, durable choices, album saving, and confirmed deletion.
+The organization-first catalog, continuous analysis lifecycle, label taxonomy, and faceted discovery are planned work.
+See the [roadmap](docs/exec-plans/roadmap.md) and [feature tracker](feature_index.json) for delivery state.
+No model or image-accuracy claim is implied by the new direction.
 
-## Tech stack
+## Core constraints
 
-Swift 5 / SwiftUI + Observation, PhotoKit, Vision, Core ML, and SwiftData. One app target with Swift Package dependencies. Durable workspace choices use SwiftData; analyses, checkpoints, caches, and model artifacts remain file/cache-backed. SwiftLint + SwiftFormat.
+- Local photo processing, no account or app photo backend.
+- Limited Photos access remains useful; the app works only with accessible assets.
+- User labels and corrections survive re-analysis.
+- Original deletion requires exact-set confirmation and full read-write access under the product policy.
+- Analysis can pause and resume; completion after app suspension is not promised.
+- English/Vietnamese UI; iPhone 14+ / iOS 26+ planning baseline.
 
-The flows above describe the target product. Workspace persistence and legacy import are implemented; shared review, resilient album save, and confirmed deletion follow the [feature tracker](feature_index.json). Qwen remains unadmitted; dependencies alone do not establish model admission.
+## Development
 
-## Requirements
+Swift 5, SwiftUI + Observation, PhotoKit, Vision, SwiftData, and local runtime seams.
+The project uses SwiftLint, SwiftFormat, and one Xcode app target.
+Qwen-related source/packages remain legacy material; Qwen is not an admitted live analysis provider.
 
-* Xcode with iOS 26 SDK, iPhone running iOS 26 (see `docs/design-docs/apple-frameworks.md`).
-* No backend, no API keys, no accounts.
-
-## Quickstart
+From the repository root:
 
 ```bash
-git clone <repo-url> photo-curator
-cd photo-curator
 ./init.sh
 open apps/photo-curator.xcodeproj
 ```
 
-`./init.sh` runs format, strict lint, and a simulator build. Tests report `SKIP [test]` by policy: this repo has no test targets. A passing `./init.sh` is the automated verification evidence for behavior-changing features; do not add standalone proof files or harnesses. Manual QA (see `docs/ship-gates/manual-qa.md`) is optional non-blocking guidance per DEC-032.
+Use Xcode compatible with the project's current SDK/deployment settings.
+The scheme is `photo-curator`.
+`./init.sh` runs formatting, strict lint, and a generic iOS Simulator build.
+Tests report `SKIP [test]` under DEC-040. Do not add test targets or standalone proof harnesses.
+Build success does not establish image accuracy or iPhone performance.
 
-## Project structure
+## Repository map
 
-```text
-apps/photo-curator.xcodeproj/  Xcode project (scheme: photo-curator)
-apps/photo-curator/            App source and resources
-├── PhotoCuratorApp.swift      App entry
-├── App/                      Composition, app model, routes
-├── Features/                 Onboarding, source selection, processing, review, settings
-├── Domain/                   Models and selection logic
-├── Services/                 PhotoKit, analysis, session coordination, export, intelligence
-├── Infrastructure/           WorkspaceStore, legacy importer, files and checkpoints
-└── SharedUI/                 Shared view components
-docs/                    Product specs, design docs, ship gates, exec plans (start at docs/index.md)
-features/                Per-feat scope + acceptance + handoff (index: feature_index.json)
-```
-
-Architecture rules: views render state only; a session coordinator sequences work; services own Apple-framework contact; the engine is a UI-free facade. Detail: `docs/design-docs/ios-architecture.md`.
-
-## Docs
-
-Start at [`AGENTS.md`](AGENTS.md) → [`docs/index.md`](docs/index.md) → one owner doc per task.
-
-| Need | Read |
+| Path | Responsibility |
 |---|---|
-| Product scope and launch gates | `docs/product-specs/product.md` |
-| Screens, copy, review behavior | `docs/product-specs/ux-flows.md` |
-| Review choices and deletion safety | `docs/product-specs/review-rules.md` |
-| Facts and advisory suggestions | `docs/design-docs/photo-intelligence.md` |
-| Build order | `docs/exec-plans/roadmap.md` |
-| Execution (sequential feats, git) | `feature_index.json` + `features/feat-template.md` |
-| Privacy and retention | `docs/ship-gates/privacy.md` |
-| Manual QA | `docs/ship-gates/manual-qa.md` |
+| `apps/photo-curator/App/` | Composition, app state, routes |
+| `apps/photo-curator/Features/` | UI and presentation models |
+| `apps/photo-curator/Domain/` | Value models and image-selection/grouping logic |
+| `apps/photo-curator/Services/` | Photos, analysis, lifecycle, album/deletion boundaries |
+| `apps/photo-curator/Infrastructure/` | SwiftData stores, files, migration, checkpoints |
+| `docs/` | Canonical product and technical contracts |
+| `features/` | Feature scope, acceptance, evidence, handoff |
 
-## Build status and plan
+## Read next
 
-* Current status and dependencies: `feature_index.json`; evidence and handoff: the selected feature and latest relevant `progress.md` entry.
-* Execution: at most one active feature; dependencies must be complete before activation.
-* Success means less review work while preserving user choices across analysis, resume, album save, and cleanup.
+- [Documentation index](docs/index.md): task routes and ownership.
+- [Product](docs/product-specs/product.md): accepted direction and scope.
+- [Organization rules](docs/product-specs/organization-rules.md): labels, groups, filters.
+- [Architecture](docs/design-docs/ios-architecture.md): observed code and intended boundaries.
+- [Roadmap](docs/exec-plans/roadmap.md): transition features and dependencies.
+- [Privacy](docs/ship-gates/privacy.md): local data and retention.
+- [AGENTS.md](AGENTS.md): repository workflow and verification.
 
-## Privacy
+## Contribution flow
 
-On-device analysis. No photo pixels, face data, embeddings, GPS, or asset IDs are uploaded to Photos Curator servers. Limited Photos access is a valid state, not an error. Full policy: `docs/ship-gates/privacy.md`.
-
-## Contributing
-
-1. Obtain user approval for a `todo` feature whose dependencies are `done`, then activate it.
-2. Follow its ownership and linked plan; preserve unrelated working-tree changes.
-3. Run `./init.sh` before opening a PR into `main`.
-4. Keep scope inside the active feat; record evidence and handoff in `features/feat-<id>.md`.
-5. Never add test targets, `*Test*.swift` files, or test-only architecture.
+Obtain approval before activating a `todo` feature. Complete its dependencies first.
+Keep changes within its scope, run `./init.sh`, and record actual evidence and limitations.
+Preserve historical feature results; current owner documents define current intended behavior.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Model artifacts require their own license review.

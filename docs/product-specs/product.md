@@ -1,87 +1,89 @@
 # Product
 
-**Status:** Phase 1 pivot contract · 2026-09-21
-**Platform:** iPhone 14+ / iOS 26+
-**Languages:** English and Vietnamese
+**Status:** Accepted direction, intended product contract · 2026-09-23.
+Implementation status belongs to the [roadmap](../exec-plans/roadmap.md), not this specification.
 
-This doc owns product purpose, scope, invariants, and gates. User-visible flow
-is in [ux-flows.md](ux-flows.md), choice/deletion semantics in
-[review-rules.md](review-rules.md), and strings in [ui-copy.md](ui-copy.md).
+## Purpose
 
-## Definition
+Photos Curator is an on-device companion to Apple Photos.
+It helps users find related photos, compare similar shots, and organize their library without inspecting every photo individually.
 
-Photos Curator is an on-device iPhone assistant for reviewing a large personal
-photo set. It classifies and groups photos, records immutable analysis facts,
-and offers quality or album suggestions while the user decides what to keep,
-what belongs in an album, and what—after a separate confirmation—may be
-removed from the original library.
-
-## Product promise
-
-The app reduces repetitive review without taking authority away from the
-owner. **Clean Up Photos** and **Build an Album** are two entry intents into the
-same shared workspace. A suggestion is never a hidden action.
-
-## Scope
-
-In scope:
-
-- read authorized Photos content and analyze it on device;
-- incrementally classify and group photos with resumable progress;
-- present one shared, grouped review workspace;
-- preserve independent cleanup disposition, album membership, review progress,
-  and immutable facts/suggestions;
-- save an independently reviewed album;
-- optionally stage and, only after the deletion gate, delete exact original
-  assets through a separate operation;
-- support limited/full/denied Photos access, iCloud delays, interruption, and
-  truthful partial outcomes;
-- ship English and Vietnamese copy.
-
-Out of scope: accounts, cloud photo processing, social features, editing,
-video workflows, identity naming, automatic cleanup, automatic deletion,
-server-side inference, and a metrics dashboard. The app never silently deletes
-or modifies originals.
-
-## Invariants
-
-1. User choices are authoritative and suggestions never mutate them.
-2. Cleanup disposition, album membership, review progress, and analysis facts
-   are independent dimensions.
-3. Original deletion requires exact-set staging, review, explicit confirmation,
-   full Photos read-write access, and a persisted operation digest. Limited
-   access can review/stage but cannot begin deletion.
-4. Album save is separate from deletion and never clears workspace or cleanup
-   state.
-5. Core photo processing is on device; no photo pixels, faces, embeddings, or
-   asset IDs are uploaded to a Photos Curator server.
-6. The app does not claim immediate recovered bytes after deletion.
-7. The baseline remains iPhone 14+, iOS 26+, on-device, en/vi.
+The primary capabilities are **similar-photo grouping** and **useful labels**.
+Album creation and cleanup are downstream actions on photos the user chooses.
+The app is not a photo editor or a replacement for everyday Photos viewing.
 
 ## Core loop
 
 ```text
-Choose intent → choose source → incremental analysis/resume
-→ shared grouped workspace → independent album save or cleanup review
-→ explicit deletion confirmation (if eligible) → truthful outcome
+Authorize Photos → browse accessible library immediately
+  → incremental analysis → discover similar groups or labels
+  → combine filters → inspect / compare → select photos
+  → assign labels / add to album / stage deletion
 ```
 
-## Launch gates
+Analysis enriches the library progressively. Users do not need to choose cleanup or album intent before discovery.
+The app indexes references to Photos assets. It does not import a second copy of the original library.
 
-- A large source set can be analyzed and resumed without losing choices.
-- The shared workspace serves both intents and keeps state dimensions separate.
-- Album save and cleanup deletion report complete, partial, and failed outcomes
-  accurately.
-- Limited access cannot start deletion; full access is checked at the gate.
-- No photo data leaves the device through the app's normal flow.
-- Evidence is reproducible automated evidence plus `./init.sh`; no test target,
-  test file, test framework, or standalone proof harness is added.
+## Priority
 
-## Canonical links
+1. Find duplicates, near-duplicates, and comparable retakes without merging unrelated scenes.
+2. Assign understandable, overlapping labels that help users find photos.
+3. Explain results through accessible groups, photo detail, and combined filters.
+4. Apply explicit actions to an exact selected set.
 
-- Flow/states: [ux-flows.md](ux-flows.md)
-- Rules and deletion: [review-rules.md](review-rules.md)
-- Copy: [ui-copy.md](ui-copy.md)
-- Storage: [data-model.md](../design-docs/data-model.md)
-- Privacy: [privacy.md](../ship-gates/privacy.md)
-- Build order: [roadmap.md](../exec-plans/roadmap.md)
+Shared subject matter alone does not justify a comparison group.
+The [organization rules](organization-rules.md) own that distinction and the label/query vocabulary.
+
+## Scope
+
+Included:
+
+- The authorized photo library, including limited-access subsets.
+- Metadata-first browsing, incremental analysis, interruption recovery, and library reconciliation.
+- On-device image understanding, technical evidence, and visual similarity.
+- Multiple labels per photo, user corrections, and personal labels.
+- Faceted filtering, similar-group discovery, zoomable detail, and comparison.
+- Explicit album operations and separately confirmed original deletion.
+- English and Vietnamese UI on the iPhone 14+ / iOS 26+ planning baseline.
+
+Excluded:
+
+- Photo editing, camera capture, video analysis, cloud backup, and cross-device catalog sync.
+- Accounts, social features, cloud photo inference, and automatic deletion.
+- Automatic family identity claims, a universal beauty score, and automatic best-album generation.
+- Natural-language chat/search and persistent face identity recognition in this pivot.
+
+Labels help users find photos. They do not claim to describe every aspect of every image.
+
+## Product outcomes
+
+| User need | Expected outcome |
+|---|---|
+| Compare repeated shots | Open a useful group directly, inspect all members, and choose any number |
+| Find documents | Open the document label, select the result, and add it to a chosen album |
+| Review weak landscape shots | Combine landscape with blur/underexposure signals and inspect the result |
+| Organize selfies | Filter selfie candidates, view similar groups, then select explicit photos for an action |
+| Resume later | Recover analysis progress and user corrections without repeating valid work |
+
+Useful discovery is the success criterion. An analysis count, label count, or successful build does not establish image accuracy.
+Evidence vocabulary and quality limitations belong to [photo intelligence](../design-docs/photo-intelligence.md).
+
+## Invariants
+
+- Originals remain in Apple Photos. Analysis never mutates originals or user choices.
+- Selection means a temporary action set, not album membership or deletion intent.
+- User label corrections survive re-analysis and model updates.
+- Unknown, unavailable, and not-yet-analyzed results remain distinguishable.
+- Album and deletion operations follow [review rules](review-rules.md).
+- Local processing follows [privacy](../ship-gates/privacy.md).
+- Background completion is opportunistic, never promised after app suspension.
+
+## Contract boundaries
+
+| Question | Owner |
+|---|---|
+| What is a label, group, or filter? | [Organization rules](organization-rules.md) |
+| Where does the user go? | [UX flows](ux-flows.md) |
+| What does an action change? | [Review rules](review-rules.md) |
+| What exists today? | [Architecture](../design-docs/ios-architecture.md) |
+| What work implements this direction? | [Roadmap](../exec-plans/roadmap.md) |

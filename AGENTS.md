@@ -1,6 +1,6 @@
 # AGENTS.md
 
-photos-curator is an on-device iPhone app built around one shared cleanup/album workspace for large photo sets. Originals are never deleted automatically. Deletion eligibility follows [docs/index.md](docs/index.md) → review rules: full Photos read-write access and exact-set user confirmation.
+photos-curator is an on-device companion to Apple Photos, centered on similar-photo groups and useful overlapping labels. Album and cleanup are downstream actions. Current code and intended pivot behavior are distinguished in [docs/index.md](docs/index.md). Original deletion follows the review rules: full Photos read-write access and exact-set user confirmation.
 
 Detected stack: `Swift 5 / SwiftUI, PhotoKit, Vision, Core ML — Xcode project apps/photo-curator.xcodeproj (scheme photo-curator); SwiftLint + SwiftFormat; fastlane present but stale (ignore)`
 

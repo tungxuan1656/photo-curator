@@ -1,123 +1,130 @@
 # Data Model
 
-**Status:** Phase 1 pivot contract · durable representation owner
+**Status:** Observed persistence plus intended catalog contract · 2026-09-23.
+Owns storage, record identity, revisions, migration, and operation recovery.
+PhotoKit remains authoritative for originals. Domain behavior belongs to [organization rules](../product-specs/organization-rules.md) and [review rules](../product-specs/review-rules.md).
 
-PhotoKit remains authoritative for original assets. This document defines
-which state is durable and where it lives; policy is in
-[review-rules.md](../product-specs/review-rules.md).
+## Observed storage
 
-## Persistence boundary
+- `PhotoCuratorSchemaV1`: `ReviewScope`, `WorkspaceItem`, `WorkspaceMigrationMarker`, `AlbumSaveOperation`.
+- `PhotoCuratorSchemaV2`: V1 plus `PhotoDeletionOperation` through an additive migration.
+- `WorkspaceItem`: per-scope cleanup, album, progress, and analysis-reference dimensions.
+- `FileAnalysisCache`: schema/version/asset-revision checked `PhotoAnalysis` records.
+- Session checkpoint and result files remain compatibility inputs.
+- FeaturePrint objects are transient and rebuilt when necessary; no persisted visual search index exists.
 
-| Data | Durable location | Rule |
+## Intended persistence boundary
+
+| Data | Location | Lifetime |
 |---|---|---|
-| Review scopes and workspace state | SwiftData | product state only |
-| Cleanup/album/review choices | SwiftData | independent and user-authoritative |
-| Album-save/deletion operations | SwiftData | exact set, digest, status, outcomes; schemas introduced by feat-035/036 migrations |
-| Migration marker | SwiftData | committed only after complete import |
-| Analysis facts and suggestions | file/cache | versioned, immutable per run |
-| Thumbnails and derived groups | bounded cache | evictable/rebuildable |
-| Checkpoints | file store | compact, resumable, no pixels |
-| Models/artifacts | app support/model cache | verified local artifacts only |
-| Original bytes / `PHAsset` | Apple Photos | never copied into models |
+| Asset catalog metadata and access state | SwiftData | Durable index; reconciled with Photos |
+| Label definitions, overrides, personal labels | SwiftData | Versioned taxonomy and user-owned state |
+| Automatic label and group projections | SwiftData, compact and rebuildable | Query index referencing evidence revisions |
+| Immutable analysis facts | Existing file/cache boundary | Recomputable per asset/provider revision |
+| Analysis jobs/checkpoints | Compact file records | Resumable scheduling, no pixels |
+| Temporary action selection | UI state | One result snapshot, not durable membership |
+| Drafts, staging, operation records | SwiftData | User work and unresolved outcomes survive restart |
+| Thumbnail cache | Bounded local cache | Evictable |
+| Model artifacts | Verified local artifact storage | Versioned, removable |
+| Original images and `PHAsset` objects | Apple Photos / transient services | Never copied into domain persistence |
 
-Use SwiftData directly for these durable entities. Do not introduce a generic
-repository layer.
+Derived query projections are not user truth. Their rebuild cannot erase overrides, drafts, staging, or operation evidence.
+Use SwiftData directly for durable catalog state. No generic repository layer is required.
 
-Feature ownership is explicit: feat-033 owns only `ReviewScope`, workspace-item
-state, the migration marker, and workspace store/import infrastructure.
-`AlbumSaveOperation` and its state schema belong exclusively to feat-035 and
-are added by its explicit SwiftData schema migration. `PhotoDeletionOperation`
-and its state schema belong exclusively to feat-036 and are added by its
-explicit SwiftData schema migration. This document records their durable
-shapes; feat-033 does not create or migrate either operation entity.
+## Intended catalog records
 
-## Durable entities
+Names below are proposed implementation names. feat-040 freezes concrete schema types before migration.
 
-`ReviewScope` identifies an intent (`cleanup` or `album`), source asset IDs,
-created/updated times, and migration/schema versions. `WorkspaceItem` is keyed
-by `(scopeID, assetID)` and stores four independent values:
+| Record | Identity and required content |
+|---|---|
+| `LibraryAsset` | Asset ID; cheap metadata; modification fingerprint; access state; last observed catalog generation |
+| `AnalysisWorkState` | Asset ID + capability; requested/completed revisions; pending/running/available/unavailable/stale state; reason |
+| `LabelDefinition` | Stable label ID; facet; taxonomy revision; localization keys; supported capability |
+| `AutomaticLabelAssignment` | Asset + label + evidence revision; provider reference; confidence/evidence status |
+| `LabelOverride` | Asset + label; confirm/reject; user revision and timestamp |
+| `PersonalLabelAssignment` | Asset + user label ID; explicit user assignment |
+| `ComparisonGroupSnapshot` | Group ID/revision; relation; ordered exact members; representative; evidence refs; grouping version |
+| `CatalogGeneration` | Enumeration/projection generation and completion state; prevents partial scans becoming deletion evidence |
 
-- `cleanupDisposition`: `undecided | keep | stagedForDeletion`;
-- `albumMembership`: `unset | included | excluded`;
-- `reviewProgress`: `unseen | inProgress | reviewed`;
-- `analysisRef` plus availability/version metadata.
+Effective labels resolve user overrides over current automatic assignments.
+Unknown confidence stays absent; it cannot be invented for metadata or user labels.
+Raw provider names do not become stable label IDs.
 
-`AnalysisFact` and `Suggestion` are immutable file/cache records, not choices.
-A suggestion stores provenance, reason/evidence status, model/runtime revision,
-and candidate IDs. It cannot encode a deletion result.
+Group identity derives deterministically from relation kind and canonical member IDs.
+Membership changes produce a new group revision/identity; open comparison snapshots remain stable until explicit refresh.
+Group replacement does not transfer implicit reviewed, selected, or deletion intent.
 
-`AlbumSaveOperation` stores scope ID, exact album-member IDs, digest, status,
-per-ID outcomes, and timestamps. `PhotoDeletionOperation` stores scope ID,
-exact staged IDs, exact-set digest, confirmation time, authorization snapshot,
-status, and per-ID outcomes (`pending`, `deleted`, `accessUnknown`, `failed`,
-`unresolved`).
-A digest is computed from canonical sorted asset IDs plus the operation/schema
-version and is checked before mutation.
+## Revision and query contract
+
+Evidence references include asset modification fingerprint, analysis revision, provider/runtime revision, and mapping/grouping revision where applicable.
+Only matching current revisions populate current query projections.
+Stale projections can support a visibly stale display, but cannot silently match current label filters.
+
+A query returns distinct accessible IDs, deterministic order, snapshot revision, facet counts, and coverage counts.
+Pagination never changes the semantics of Select All.
+The selected action stores a fixed ID set and query/group revision, not a live predicate.
+
+## Durable action contexts
+
+Existing scope-bound choices remain intact.
+New action contexts reference explicit catalog IDs and a chosen draft/staging destination, not inferred `SelectionResult` picks.
+Multiple legacy scopes for one asset do not collapse into a single choice.
+
+Album operations store the exact member set, canonical digest, destination identity, status, and per-ID outcomes.
+The destination distinguishes newly created and existing writable albums.
+Retry retains the destination identity and does not reconstruct it from a display name.
+
+Deletion operations retain the existing exact set, digest, confirmation/access snapshots, timestamps, and per-ID outcomes.
+Operation outcomes never overwrite cleanup disposition by inference.
 
 ## Deletion operation state machine
 
-This is the target feat-036 schema contract, not an entity implemented by feat-033.
-
-| Operation status | Meaning and allowed transition |
+| Status | Meaning and transitions |
 |---|---|
-| `prepared` | Exact set, digest, confirmation and authorization snapshot persisted; → `executing` after fresh preflight, or `cancelled` before dispatch |
-| `executing` | Persisted before dispatch; → `completed`, `partial`, `failed`, or `needsReconciliation` |
-| `needsReconciliation` | Dispatch/result persistence uncertain; explicit read-only reconciliation → a resolved outcome or stays here |
-| `completed` | Every member has durably recorded `deleted` evidence; terminal |
-| `partial` | All outcomes resolved, with both `deleted` and `failed` members; terminal |
-| `failed` | All outcomes resolved as failed; terminal |
-| `cancelled` | No mutation dispatched; terminal |
+| `prepared` | Exact set persisted; explicit fresh preflight/confirmation → `executing`, or cancel before dispatch |
+| `executing` | Persisted before mutation; → completed, partial, failed, or needs reconciliation |
+| `needsReconciliation` | Execution/completion uncertain; explicit read-only reconciliation |
+| `completed` | Every submitted member has durable successful deletion evidence |
+| `partial` | Resolved mixture of deleted and failed members |
+| `failed` | All outcomes are known failures |
+| `cancelled` | No mutation dispatched |
 
-`pending` is pre-dispatch. `deleted` requires persisted successful PhotoKit
-completion for the recorded mutation set. `failed` requires a known failure
-or a preflight failure before dispatch. `accessUnknown` means current access
-prevents resolution. `unresolved` means execution or its result is uncertain.
-Neither `accessUnknown` nor `unresolved` is a terminal success/failure outcome.
-
-| Recovery observation | Durable result / next action |
+| Recovery observation | Result |
 |---|---|
-| Successful callback persisted | Mark only that submitted set `deleted`; never infer results for unsubmitted IDs |
-| Known failed callback persisted | Mark that submitted set `failed` |
-| Relaunch finds `prepared` | No automatic dispatch; repeat preflight and require fresh confirmation before an explicit start |
-| Relaunch finds `executing` without durable completion | `needsReconciliation`; pending submitted members become `unresolved` |
-| Access is limited/denied/restricted | Unresolved members become `accessUnknown`; preserve prior durable outcomes |
-| Full access restored, asset absent | Remain `unresolved`; absence is not successful-deletion evidence |
-| Full access restored, asset present | Remain `unresolved` without a recorded completion; offer an explicit new review |
+| Successful callback persisted | Mark only submitted members `deleted` |
+| Known failed callback persisted | Mark submitted members `failed` |
+| Relaunch finds prepared operation | No automatic dispatch; repeat preflight and confirmation |
+| Relaunch finds executing without completion | Preserve `unresolved`, require reconciliation |
+| Access prevents inspection | `accessUnknown`; keep prior known outcomes |
+| Asset absent with full access | Remains unresolved without persisted completion |
+| Asset present with full access | No inferred failure/success; offer new explicit review |
 
-Reconciliation performs reads and records evidence; it never dispatches deletion.
-A user may start a new operation only for a freshly resolved, reviewed and
-confirmed set. Do not rewrite the old uncertain operation as successful.
-Retain uncertain operations even if the user dismisses their outcome screen.
-Known successful outcomes survive later authorization loss.
+`pending` is pre-dispatch. `unresolved` and `accessUnknown` are not terminal success/failure evidence.
+Reconciliation never dispatches deletion. Dismissing an outcome never discards uncertain operation records.
 
 ## Migration
 
-The importer is one-way and idempotent. Legacy `selected` and `restored` map to
-album `included`; legacy `rejected` and `removed` map to album `excluded`. All
-legacy cleanup values map to `undecided`; all imported review progress maps to
-`unseen`. Reasons, unavailable assets, and old result status never infer
-cleanup or progress.
+1. Add catalog entities without replacing existing scope and operation schemas.
+2. Enumerate authorized assets into a generation; commit only a complete metadata reconciliation boundary.
+3. Import reusable analysis only when asset/provider revisions match.
+4. Rebuild automatic projections from valid evidence; preserve existing scope choices and operation IDs.
+5. Commit a migration marker only after required writes succeed.
+6. On interruption, repeat idempotently. Preserve source data until committed migration.
 
-Import writes the new scope/items and then a durable migration commit marker.
-Legacy rows/files are retained until that marker is committed. A crash before
-commit repeats safely; it never deletes legacy data. A committed marker makes a
-repeat a no-op.
+The earlier importer still maps selected/restored to album included and rejected/removed to album excluded.
+It maps cleanup to undecided and progress to unseen; those historical mappings do not create catalog labels.
+The new migration never unions legacy album drafts or staging sets.
 
-## Invariants
+Unknown schema or migration failure preserves existing data and offers explicit recovery.
+An old binary must not reopen an incompatible migrated store; rollback is a code route rollback against the supported schema.
 
-- IDs are `PHAsset.localIdentifier` values wrapped in domain types.
-- Missing IDs are unresolved/access-unknown, not deletion evidence.
-- No model stores pixel buffers, full photos, Vision objects, face boxes,
-  precise GPS, or feature-print blobs.
-- Missing facts are unknown, never fabricated zeroes.
-- Album save never changes cleanup disposition; deletion never changes album
-  membership.
-- Per-operation outcomes are not copied into the app-level cleanup disposition.
+## Retention and unknown access
 
-## Cache/versioning and checkpoints
+Access loss hides affected assets from actionable query results without deleting user state.
+Missing IDs mean inaccessible/unresolved unless an authoritative observation establishes otherwise.
+Analysis reset removes derived evidence/projections and requeues work. It preserves user labels, overrides, drafts, and operations.
+It never removes originals.
 
-Analysis version, grouping version, model/runtime revision, and asset fingerprint
-control reuse. A choice/config change reuses valid facts. A checkpoint stores
-scope ID, source IDs, versions, stage, completion counters, and completed work
-refs only. Full reconciliation rules and budgets belong to
-[performance.md](../ship-gates/performance.md).
+No durable entity stores original pixels, face boxes, face identities, precise GPS, or Vision objects.
+Persisted embeddings/FeaturePrint archives are not authorized by this rewrite.
+Any proposed visual retrieval artifact requires an explicit privacy/storage decision in the grouping feature before implementation.

@@ -1,71 +1,65 @@
-# Apple Frameworks
+# Apple Framework Boundaries
 
-**Status:** Phase 1 pivot contract · PhotoKit/Vision API owner
+**Status:** Existing service boundary with intended catalog integration · 2026-09-23.
+Owns framework contact points. This is a repository integration map, not a substitute for current SDK documentation.
 
-This doc owns API facts and service calls. UX wording is in
-[ux-flows.md](../product-specs/ux-flows.md) and [ui-copy.md](../product-specs/ui-copy.md);
-choice/deletion semantics are in [review-rules.md](../product-specs/review-rules.md).
+## Photos reads and reconciliation
 
-## Access and reads
+`PhotoLibraryPermissionService` owns authorization and metadata fetches.
+`PHAsset.localIdentifier` supplies domain identity within the authorized library.
+The existing `LibraryChangeTracker` posts a change notification; catalog reconciliation is planned work.
 
-Request `.readWrite` access in context. Full access supports review, album save,
-and deletion. Limited access supports review and cleanup staging but cannot
-start original deletion. Recheck authorization immediately before each write
-operation; do not loop prompts.
+The catalog enumerates accessible metadata first and reconciles new, edited, and inaccessible assets.
+Recheck access when the app returns to the foreground and before writes.
+A missing identifier does not prove deletion or successful app mutation.
 
-Use `PHAsset.localIdentifier` as the domain ID. Fetch metadata first. Resolve
-IDs again before save or deletion because Photos/iCloud state can change. A
-missing ID is unavailable/access-unknown, never evidence that deletion worked.
+The app requests read-write authorization in context because optional album/deletion actions write to Photos.
+Limited access remains useful for browsing and organization.
+Blocking deletion under limited access is a [product rule](../product-specs/review-rules.md#deletion-gate), not a claim about every possible PhotoKit API.
 
-`PHCachingImageManager` supplies bounded thumbnails and analysis images. Keep
-PhotoKit objects behind services, release decoded images, and make callbacks
-cancellation-aware. Vision receives oriented bounded images and returns compact
-facts; no Vision request or pixel buffer enters durable state.
+## Image and inference services
 
-## Album save
+`ImageLoaderService` uses `PHCachingImageManager` for bounded thumbnails, analysis images, and detail previews.
+The current protocol describes a 512-pixel analysis edge and a preview capped at 2048 pixels.
+These sizes are implementation facts, not image-quality guarantees.
+Image-loading callbacks remain cancellation-aware and expose iCloud waiting separately from failure.
 
-Album save is a separate `AlbumSaveService` using
-`PHAssetCollectionChangeRequest` and `PHPhotoLibrary.performChanges`. It writes
-only after explicit **Save Album**. Persist progress and per-ID outcomes so a
-partial or interrupted write can be reconciled and retried only by explicit
-user action. Save never calls a deletion API and never clears cleanup state.
+`VisionAnalysisService` receives oriented bounded images and returns compact facts plus transient similarity artifacts.
+Vision requests, `PHAsset`, and decoded pixel buffers remain behind services.
+Provider changes use the [runtime admission contract](curation-runtime-stack.md).
+
+## App lifecycle
+
+Analysis can continue while the app remains active without blocking browsing.
+The app checkpoints when execution time ends and resumes valid work later.
+Background execution is opportunistic; a closed app cannot promise to finish a complete library scan.
+Any new background API integration requires SDK verification and an explicit feature decision.
+
+## Album writes
+
+`AlbumSaveService` coordinates durable state with `PhotoKitAlbumExporter`.
+The exporter uses `PHAssetCollectionChangeRequest` and `PHPhotoLibrary.performChanges`.
+It can create a collision-safe album and add exact IDs to a known destination identifier.
+The user-facing existing-album chooser is planned work; exporter capability alone does not imply that UI exists.
+
+Resolve current destination/asset access before mutation.
+Persist destination identity and per-ID outcomes for reconciliation.
+An album write never calls the deletion service.
 
 ## Original deletion
 
-Original deletion is exclusively a `PhotoDeletionService`. Before
-`performChanges`, it requires:
+`PhotoDeletionService` owns the separate mutation path.
+Require full current authorization, exact staged IDs, explicit confirmation, and durable digest before dispatch.
+Re-resolve IDs and record pending/executing state before `performChanges`.
+No automatic retry occurs after interruption.
 
-1. current full read-write authorization;
-2. a user-reviewed exact staged set;
-3. explicit confirmation; and
-4. a persisted canonical exact-set digest and operation state.
+Successful completion must be persisted for the submitted set before reporting deleted assets.
+Lost callback/persistence evidence remains uncertain.
+Follow [operation recovery](data-model.md#deletion-operation-state-machine); reconciliation never dispatches a mutation.
+Disclose iCloud synchronization and Recently Deleted without promising immediate recovered storage.
 
-Resolve every ID again and persist the pending/per-ID operation state before
-mutation. Limited authorization is a hard stop, not a partial deletion mode.
-There is no automatic retry. An interruption reconciles authorization, exact ID
-resolution, and recorded outcomes, then asks for an explicit next action.
+## Error boundary
 
-Persist successful completion for the submitted mutation set before reporting
-`deleted`. If the callback or persistence result is lost, retain uncertainty.
-Re-fetching an absent asset is not proof of successful deletion. Follow the
-[operation recovery table](data-model.md#deletion-operation-state-machine);
-reconciliation never issues another mutation automatically.
-
-PhotoKit deletion can synchronize through iCloud and can place items in
-Recently Deleted. The app must not promise immediate recovered bytes or infer
-storage change from asset file-size estimates.
-
-## Errors and privacy
-
-Map authorization, missing asset, iCloud, cancellation, album, and deletion
-errors to stable app states. Never show raw framework errors. Keep IDs, faces,
-location, pixels, and model outputs out of logs and network paths. No cloud
-inference is part of the core flow.
-
-## Acceptance
-
-- Full/limited/denied/restricted paths are distinct and stable.
-- Album save and deletion use separate services and PhotoKit mutation paths.
-- Exact-set digest and per-ID outcomes survive interruption.
-- No full-resolution batch retention, pixel persistence, or automatic deletion
-  retry exists.
+Map access, missing asset, iCloud, cancellation, persistence, and mutation failures to stable app states.
+Keep raw framework errors and photo-linked data out of UI copy, logs, and network paths.
+Views use service/model intents, not framework calls.

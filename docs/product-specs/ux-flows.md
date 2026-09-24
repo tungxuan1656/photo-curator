@@ -1,98 +1,96 @@
 # UX Flows
 
-**Status:** Phase 1 pivot contract · 2026-09-21
+**Status:** Intended organization-first UX · 2026-09-23.
+Owns navigation, visible states, inspection, and accessibility.
+Current code remains session-oriented until the [pivot features](../exec-plans/roadmap.md) land.
 
-This doc owns screens, navigation, visible states, accessibility, and recovery
-flow. [ui-copy.md](ui-copy.md) owns all strings. [review-rules.md](review-rules.md)
-owns what actions mean; this document does not duplicate those rules.
-
-## Entry and shared workspace
+## Primary navigation
 
 ```text
-Home
- ├─ Clean Up Photos ─┐
- └─ Build an Album ──┴→ Choose Photos → Analyze / Resume → Review Photos
-                                         ├→ Group / Compare / Needs Review
-                                         ├→ Save Album
-                                         └→ Cleanup review → Confirm deletion (eligible only)
+Access education → Library / Discover
+  ├─ Similar groups → Group → Compare / Photo detail
+  ├─ Labels → Filtered photos ↔ Matching groups
+  ├─ All photos → Photo detail
+  ├─ Analysis status → Pause / Resume / Retry unavailable work
+  └─ Saved work → Album drafts / Staged deletion / Operation outcomes
+
+Any result → Select photos → Label / Add to album / Stage deletion
+Staged deletion → Exact-set review → Confirmation → Outcome
 ```
 
-Both intents use one photo-first workspace: a compact intent/progress/filter
-header, one grid, group cards, compare route, and selection-only action tray.
-There is no separate cleanup workflow and no metrics dashboard.
+Discovery opens without a cleanup/album intent choice.
+Similar groups receive the primary discovery entry. Label shortcuts and All Photos remain directly reachable.
+Group cards never appear only after the complete photo grid.
+The exact visual layout is implementation work; these routes are required behavior.
 
-## Screen/state inventory
+## Browsing before analysis
 
-| Screen | Normal | Loading/paused | Empty/recovery |
+Show accessible photos after metadata loading, before all analysis completes.
+Keep browsing active while bounded analysis enriches the catalog.
+Show separate photo-analysis and grouping coverage, with pause/resume and iCloud states.
+Do not describe a partial catalog as a fully analyzed phone library.
+
+## Screen states
+
+| Surface | Normal | Incomplete or unavailable | Empty |
 |---|---|---|---|
-| Home | Two entry intents and resume card | Restoring workspace | No accessible photos / access guidance |
-| Choose Photos | Source count and access state | Fetching metadata | No photos; Continue disabled |
-| Analyze | Stable incremental progress | iCloud wait, pause, resume | Recoverable asset/session failure |
-| Review Photos | One grouped grid and filters | Thumbnail/analysis availability | Nothing needs review |
-| Group / Compare | Alternatives and suggestion provenance | Loading bounded previews | No comparable group |
-| Needs Review | Bounded uncertain queue | Refreshing suggestions | Queue clear |
-| Album Draft | Membership and save action | Preparing save | No album members |
-| Save Album | Progress and outcome | Interrupted/partial recovery | Explicit retry or finish |
-| Cleanup Review | Reversible staged set | Access recheck | Nothing staged |
-| Delete Confirmation | Exact count/set and disclosures | Authorization check | Limited access blocks start |
-| Deletion Outcome | Per-asset result | Reconciliation | Partial/failure outcome |
-| Settings / Access | Full, limited, denied guidance | Reading permission | Settings recovery |
+| Library / Discover | Groups, label shortcuts, All Photos | Index loading, partial access, paused analysis | No accessible photos |
+| Similar groups | Cards with representative, count, relation | Grouping pending or stale | No similar groups found in analyzed photos |
+| Label browser | Supported facets and contextual counts | Unsupported labels absent; coverage visible | No supported labels found yet |
+| Filter result | Active chips, count, Photos/Groups view | Partial analysis, refreshing snapshot | No matches; clear filters action |
+| Group | All members and relation reason | Missing member or revised group | Group no longer available |
+| Detail / Compare | Bounded zoomable image, labels, evidence | Loading, iCloud wait, preview failure with retry | Asset no longer accessible |
+| Label editor | Automatic labels and user overrides | Save failure retains committed state | Add personal label |
+| Action selection | Exact selected count and named actions | Stale set requires review | Actions disabled |
+| Album destination | New album or supported writable existing album | Access/load/save failure | No writable albums; new-album path |
+| Deletion review | Exact staged assets | Limited access blocks start | Nothing staged |
+| Operation outcome | Per-asset result and explicit recovery | Partial or unresolved | No work dispatched |
 
-Normal, loading, empty, and recoverable-error states are distinct. A missing
-analysis is shown as unavailable, not as a zero score. A single missing
-thumbnail never blocks the workspace.
+## Photo interaction contract
 
-## Navigation and resume
+- Tapping a photo opens detail on every surface, including suggestion and group thumbnails.
+- A distinct selection control toggles the temporary action set.
+- Opening detail does not add the photo to an album or stage it for deletion.
+- Detail supports zoom, scoped previous/next, and a direct return to the originating result.
+- Comparison exposes evidence beside the relevant photos, rather than only a numerical score.
+- Explain unavailable evidence and omit unsupported conclusions.
+- Preserve the active photo and viewport when new analysis arrives.
 
-Home routes either intent to the same workspace. Leaving after analysis begins
-preserves a resumable scope. Relaunch restores the last safe state and the
-same user choices. Analysis never silently resets or reorders reviewed content;
-new or revised groups appear in Needs Review.
+The existing `PhotoDetail`, `PhotoInspectionCanvas`, and bounded image loader are reuse candidates.
+Their session/album coupling must not define the new interaction semantics.
 
-The workspace exposes album membership, cleanup disposition, review progress,
-and analysis availability separately. Suggestions show their advisory nature
-and offer an explicit choice; opening a suggestion never changes state.
+## Filters and groups
 
-Detail/compare opening and Mark Reviewed follow the
-[action transition table](review-rules.md#review-action-transitions).
-Use Suggestion opens a preview showing exact photos, target dimension and
-proposed values. Confirmation applies only that proposal; cancellation preserves choices.
-Album and cleanup actions use distinct labels even when both act on two photos.
+Show facet choices, readable AND/OR meaning, result count, and Clear Filters.
+Photos and Matching Groups are views of the same query.
+Full-group expansion marks members outside the filter and follows [organization rules](organization-rules.md#groups-inside-a-filtered-result).
 
-If saving a choice fails, retain the last committed state, identify the failed
-action, and offer Retry. Do not show “choices are saved” on this path.
+New analysis shows an update indicator. Applying an update never silently enlarges selection.
+Changing the query exits selection mode.
+Select All names the complete current result count, not only loaded thumbnails.
 
-## Access and destructive flow
+## Actions and recovery
 
-Limited Photos access remains useful for review and staging. The cleanup
-confirmation route is disabled for deletion and offers **Get Full Photos
-Access to Delete**. Full read-write access is rechecked immediately before an
-operation starts. Denied/restricted states provide recovery without prompt
-loops.
+Only selection mode exposes bulk action controls.
+Album selection is a destination choice after photo selection, not a permanent checkbox on every photo.
+An operation preview names exact photos and the action. Rules belong to [review rules](review-rules.md).
 
-Deletion confirmation shows the exact staged set and the iCloud/Recently
-Deleted disclosure. It is never bundled with Save Album. Outcome screens
-separate resolved assets from unresolved or failed assets and never claim
-immediate storage recovery.
+Saved album drafts, staged deletion, and unresolved operations remain reachable across app launches.
+Their recovery does not require the old discovery query to still match.
+Storage failure shows the last committed state and explicit retry.
+Opening a result or accepting a suggested comparison never dispatches a Photos mutation.
 
-## Accessibility and recovery
+## Accessibility and language
 
-Every photo action has a text and VoiceOver path. Labels expose position,
-album membership, cleanup disposition, review progress, and suggestion state;
-color is never the only signal. Dynamic Type, 44-point controls, and Reduce
-Motion are required.
-
-Recoverable errors preserve the workspace and choices. Retry is explicit and
-operation-specific; deletion has no automatic retry. Partial album or deletion
-outcomes remain visible until the user dismisses them.
-
-Dismissal does not erase unresolved operation records. Reconciliation shows
-unresolved/access-unknown outcomes separately from confirmed deletion. A changed
-pre-start set returns to exact-set review and requires fresh confirmation.
+Use text and VoiceOver paths for every photo action.
+Expose photo position, selection state, relevant labels, relation, and available actions without relying on color.
+Support Dynamic Type, 44-point controls, Reduce Motion, and English/Vietnamese copy.
+Strings and plural forms belong to [ui-copy.md](ui-copy.md).
 
 ## Acceptance
 
-- Both intents reach the same workspace and shared state source.
-- Every state in the table has an en/vi owner string in [ui-copy.md](ui-copy.md).
-- Limited access can review/stage but cannot begin deletion.
-- Save and deletion have separate routes, progress, and outcomes.
+- A user reaches groups or labels without starting a selection session.
+- Every displayed photo has a working inspection path.
+- A user can browse while analysis remains partial.
+- Filters and group expansion preserve exact action scope.
+- Album and deletion outcomes remain independently recoverable.

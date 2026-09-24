@@ -42,7 +42,16 @@
     "feat-035",
     "feat-036",
     "feat-037",
-    "feat-038"
+    "feat-038",
+    "feat-039",
+    "feat-040",
+    "feat-041",
+    "feat-042",
+    "feat-043",
+    "feat-044",
+    "feat-045",
+    "feat-046",
+    "feat-047"
   ],
   "features": [
     {
@@ -319,7 +328,7 @@
         "feat-028",
         "feat-030"
       ],
-      "gate": "Qwen evidence and admission remain incomplete; preserve the record while the review pivot proceeds through feat-032.",
+      "gate": "Qwen evidence and admission remain incomplete; preserved history, not a dependency of the organization pivot in feat-039–047.",
       "id": "feat-031",
       "status": "blocked",
       "title": "Quality-first on-device Qwen curation"
@@ -382,6 +391,69 @@
       "id": "feat-038",
       "status": "done",
       "title": "Native analysis + actionable review repair"
+    },
+    {
+      "depends_on": ["feat-038"],
+      "gate": "Organization owner docs, code-grounded feature plans, links and tracker agree; ./init.sh passes",
+      "id": "feat-039",
+      "status": "done",
+      "title": "Photo organization pivot contracts"
+    },
+    {
+      "depends_on": ["feat-039"],
+      "gate": "Durable asset catalog, revision/access reconciliation, additive migration and legacy operation preservation; ./init.sh passes",
+      "id": "feat-040",
+      "status": "todo",
+      "title": "Persistent photo catalog foundation"
+    },
+    {
+      "depends_on": ["feat-040"],
+      "gate": "Incremental capability evidence, bounded jobs, cache recovery, pause/resume and metadata-first browsing without album-result dependency; ./init.sh passes",
+      "id": "feat-041",
+      "status": "todo",
+      "title": "Incremental library analysis lifecycle"
+    },
+    {
+      "depends_on": ["feat-041"],
+      "gate": "Bounded retake/cross-date retrieval, coherent image-backed group snapshots and honest coverage independent of album picks; ./init.sh passes",
+      "id": "feat-042",
+      "status": "todo",
+      "title": "Library-wide comparison groups"
+    },
+    {
+      "depends_on": ["feat-042"],
+      "gate": "Direct group discovery, catalog browsing and accessible scoped inspection for every displayed photo; en/vi and ./init.sh pass",
+      "id": "feat-043",
+      "status": "todo",
+      "title": "Group-first discovery and photo inspection"
+    },
+    {
+      "depends_on": ["feat-041"],
+      "gate": "Recorded provider admission and supported taxonomy, versioned multi-label evidence, durable correction precedence and explicit unknown states; ./init.sh passes",
+      "id": "feat-044",
+      "status": "todo",
+      "title": "Useful AI labels and durable corrections"
+    },
+    {
+      "depends_on": ["feat-043", "feat-044"],
+      "gate": "AND/OR faceted queries, contextual counts, editable labels, filtered groups and exact snapshot selection; en/vi and ./init.sh pass",
+      "id": "feat-045",
+      "status": "todo",
+      "title": "Faceted discovery and label editing"
+    },
+    {
+      "depends_on": ["feat-045"],
+      "gate": "Exact selection actions, stable album destination and retry, independent staging/deletion safeguards and durable recovery; ./init.sh passes",
+      "id": "feat-046",
+      "status": "todo",
+      "title": "Exact-set organization actions"
+    },
+    {
+      "depends_on": ["feat-046"],
+      "gate": "Default catalog cutover, legacy saved-work recovery, bounded lifecycle/reset behavior and truthful current documentation; ./init.sh passes",
+      "id": "feat-047",
+      "status": "todo",
+      "title": "Catalog cutover and lifecycle hardening"
     }
   ],
   "rule": "One feature may be active at a time. A feature starts only after all dependencies are done, owns its complete implementation and verification, and closes only after its acceptance criteria and ./init.sh pass."

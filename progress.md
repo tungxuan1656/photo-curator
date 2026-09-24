@@ -1139,3 +1139,12 @@ Validation is parent-owned.
 run; compilation does not calibrate visual thresholds.
 **Blockers**: none
 **Next**: none.
+
+## 2026-09-23 — feat-039 organization pivot documentation
+
+**State**: done
+**Done**: Rewrote current product/technical owners around a similarity-first Photos companion. Added organization rules and DEC-055, separated observed code from intended behavior, and recorded feat-040–047 with dependencies and linked readiness plans. Updated navigation and labeled superseded material as historical.
+**Evidence**: Baseline and final `./init.sh` PASS: zero formatting changes, strict lint zero violations, Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. Validated 47 tracker records and 368 local links across 107 documents, with zero broken targets/anchors. `git diff --check` PASS.
+**Limitations**: Documentation-only; no new model admission, image-quality evidence, or application behavior change. Implementation features remain `todo`.
+**Blockers**: none for documentation. Provider/taxonomy and bounded retrieval decisions belong to their planned features.
+**Next**: User reviews the product/organization contracts and approves feat-040 activation.

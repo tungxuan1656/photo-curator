@@ -1,94 +1,105 @@
-# Photo Intelligence (facts and suggestions owner)
+# Photo Intelligence
 
-**Status:** Phase 1 contract · research-informed, no new model admitted
+**Status:** Intended evidence contract with observed native baseline · 2026-09-23.
+Owns evidence production, label/group interpretation boundaries, and quality claims.
+Concrete provider candidates belong to [runtime stack](curation-runtime-stack.md).
 
-This document owns the boundary between immutable photo facts and advisory
-candidate suggestions. `review-rules.md` owns user choice semantics;
-`curation-runtime-stack.md` owns concrete runtime candidates and licenses.
+## Flow
 
-## Contract
+```text
+Photo metadata + bounded oriented pixels
+  → independent evidence capabilities
+  ├─ visual similarity → comparison groups
+  ├─ content classification → versioned label mapping
+  └─ technical evidence → technical labels / comparative explanation
+  → immutable evidence → rebuildable catalog projections
+  → user discovery and explicit decisions
+```
 
-Analysis produces immutable, versioned facts: technical signals, grouping
-evidence, content aggregates, and availability. A separate suggestion record
-may reference those facts and propose a classification, group relationship,
-or album candidate. Suggestions carry provenance, runtime/model revision, and
-evidence status. They never write cleanup disposition, album membership, or
-review progress.
+Grouping is the primary capability. Labels improve discovery and filtering.
+Album target counts, diversity quotas, and selected/rejected decisions do not constrain catalog coverage.
 
-Current `NativeDerivedEmbeddingProvider` is **not a learned pixel embedding**.
-It derives an 8-scalar vector from already persisted facts (sharpness,
-exposure, resolution, aesthetic/horizon/balance fallbacks, face count, and text
-signal). It is transient scalar math, not a model and not pixel understanding.
-Vision FeaturePrint remains a separate perceptual-nearness signal.
+## Observed native baseline
 
-Qwen is frozen and unadmitted. No Qwen result may be described as production
-quality behavior until image-sensitive evidence, runtime/lifecycle evidence,
-license review, and device/resource evidence exist. MobileCLIP and FastVLM
-current weights are research-only because their model licenses restrict
-product development. IQA-PyTorch is noncommercial under PolyForm
-Noncommercial; an upstream code license must not be treated as a commercial
-weight or derivative license.
+- `VisionAnalysisService` supplies native image evidence and transient FeaturePrint artifacts.
+- `UniversalFactAdapter` maps classification output and records classification/aesthetic availability and a semantic mapping revision.
+- `PhotoAnalysis.content` contains a scene type and confidence-bearing tags, not a complete user-facing taxonomy.
+- `DuplicateResolver` builds time-bounded candidates, checks visual edges and variant consistency, and produces deterministic membership IDs.
+- `NativeDerivedEmbeddingProvider` derives eight scalars from existing facts. It is not a learned pixel embedding or semantic image model.
+- Session selection still produces representative/album advice around those facts.
+
+This foundation does not establish whole-library duplicate recall, reliable selfie classification, or calibrated beauty judgments.
+
+## Capability boundary
+
+| Capability | Input and output | Forbidden inference |
+|---|---|---|
+| Metadata | Native asset facts → kind/date/resolution evidence | Guessing known metadata through a language model |
+| Visual similarity | Image-derived evidence → candidate edges and coherent groups | Same label or timestamp alone means duplicate |
+| Content labels | Image-sensitive AI output → supported taxonomy IDs | Face count alone means selfie or personal identity |
+| Technical condition | Pixel/metadata evidence → qualified defect signals | Dark means bad; low resolution means blurred |
+| Comparative advice | Same-group evidence → supported reasons or abstention | Representative means mandatory keeper |
+
+Native Vision is an AI provider where it performs image classification.
+A new external model is not required merely to use the word AI.
+Semantic labels require image-sensitive evidence; scalar similarity and filename rules cannot masquerade as semantic understanding.
+
+## Label production
+
+Each assignment references a stable taxonomy ID, facet, asset revision, provider revision, mapping revision, and evidence state.
+Apply label-specific admission thresholds only after evaluating their behavior.
+Model scores are not automatically calibrated probabilities and must not be displayed as certainty percentages.
+
+Keep automatic evidence immutable. User corrections live separately and override effective assignments.
+Re-analysis can replace automatic evidence, but cannot erase a user confirmation or rejection.
+Unsupported labels remain unavailable; empty successful output differs from unavailable inference.
+
+The taxonomy must define positive meaning, exclusions, compatible labels, localization, and source for each enabled label.
+Personal relationships are user labels. The app never infers “my children” from a child detector.
+
+## Group production
+
+Maintain separate candidate retrieval for time-local retakes and cross-date near-copies.
+Validate candidates with image evidence before exposing a group.
+Do not run unbounded library-wide all-pairs comparisons.
+A consistency check prevents a chain of locally similar edges from merging unrelated endpoints.
+
+Group output records exact members, relation, evidence reason, grouping revision, and source asset revisions.
+Changing a filter does not rerun or redefine grouping.
+Missing evidence leaves a photo outside groups with an explicit coverage state.
+Exact duplicate wording requires exactness evidence; approximate visual distance supports only near-duplicate wording.
+
+Thresholds and retrieval algorithms are implementation decisions for feat-042, not claims in this contract.
+Persisted visual artifacts need the explicit decision described in [data model](data-model.md).
 
 ## Shared review input contract
 
-feat-034 owns the minimum review-facing suggestion contract and an adapter over
-existing native analysis/grouping outputs. feat-037 extends producers and retires
-the legacy adapter; feat-034 does not depend on feat-037 to render or accept suggestions.
+Compatibility suggestions retain stable IDs, exact candidates, source revisions, provenance, evidence status, and a named optional proposal.
+Opening a suggestion never changes state.
+The new catalog exposes groups and labels directly rather than requiring album suggestions for discovery.
+Stale or incomplete proposals cannot enable an apply action.
+All choice semantics belong to [review rules](../product-specs/review-rules.md).
 
-Each immutable record contains:
+## Evidence and quality
 
-- Stable suggestion ID and scope ID.
-- Exact candidate asset IDs and source group identity, when available.
-- Analysis/grouping version and source revision used to produce the record.
-- Provenance: native provider or legacy-native adapter; model revision only when applicable.
-- Evidence status: available, insufficient, or unavailable; reason codes with localized display copy.
-- Optional explicit proposal: one choice dimension and its per-asset values, never deletion staging.
-
-Derive identity deterministically from source identity, revisions and the exact
-proposal. A changed proposal creates a new record. Missing provenance/version
-must remain unknown; it cannot be invented or presented as model-backed evidence.
-Records lacking a stable revision or complete proposal can be displayed as
-unavailable/insufficient but cannot enable Use Suggestion.
-
-feat-034 adapts existing native facts only; legacy selected/rejected output is
-not applied automatically as a new user choice. An empty native suggestion set
-is valid and uses the empty Needs Review state. Acceptance follows the preview
-and independent-mutation rules in [review-rules.md](../product-specs/review-rules.md#review-action-transitions).
-feat-037 must preserve this consumer contract or migrate its records explicitly.
-
-## Evidence vocabulary
-
-`research-only` means a candidate can be investigated but is not shipped;
-`unverified` means no app-specific benchmark or device-fit claim exists;
-`admitted` requires a separate decision with quality, privacy, license,
-runtime, and performance evidence. No benchmark or device fit is claimed by
-this document.
-
-## Candidate register
-
-| Candidate/capability | License/source note | Runtime/evidence status |
+| Evidence kind | What it establishes | What it does not establish |
 |---|---|---|
-| SigLIP2 Base | Apache-2.0 model card | research-only; runtime, size, and device fit unverified |
-| TinyCLIP | MIT repository/model-card candidate | research-only; conversion and device fit unverified |
-| LAR-IQA | MIT repository; weights/conversion pending | research-only; artifact/license audit pending |
-| LIQE | MIT upstream; artifact audit pending | research-only; weights and device fit unverified |
-| PP-OCRv5 Latin | PaddleOCR documentation lists Vietnamese support | research-only; product artifact/license/runtime review pending |
-| SmolVLM 256M/500M | Apache-2.0 candidate artifacts | research-only; runtime and device fit unverified |
-| LFM2.5-VL-450M | LFM license has a revenue condition; Vietnamese is not listed | research-only; legal/runtime/device review pending |
-| Qwen3.5 0.8B/2B | Artifact/runtime/license review required | frozen, unadmitted; no quality or device claim |
-| MobileCLIP current weights | `LICENSE_MODELS` restricts use | research-only; not product-admissible as currently licensed |
-| FastVLM current weights | `LICENSE_MODEL` restricts use | research-only; not product-admissible as currently licensed |
-| IQA-PyTorch | PolyForm Noncommercial repository license | research-only; not a commercial production dependency |
+| `./init.sh` | Format, strict lint, Simulator compilation | Label accuracy, grouping quality, device fit |
+| Source/contract review | Wiring, state boundaries, explicit failure behavior | Image-sensitive correctness |
+| Recorded provider/image evaluation, when available | Behavior on the named inputs and revision | Universal accuracy or unseen library performance |
+| Device measurement, when available | Named device/resource observations | All-device performance |
 
-Sources and research date are recorded in the authoritative deepwork brief:
-research performed 2026-09-21; no app-specific benchmark was performed.
+Use group coherence, false merges, missed near-copies, per-label precision/recall, abstention, and correction behavior to describe quality.
+Report denominators, provider revisions, input provenance, and unknown coverage with any measured result.
+No numeric quality threshold is accepted by this rewrite.
 
-## Safety and admission
+Repository policy prohibits new test targets and standalone proof/benchmark harnesses.
+Manual QA remains optional. Missing quality measurements must remain explicit, not replaced with compile evidence.
+If admission needs an unavailable evaluation method, record the gap and obtain a decision before claiming admission.
 
-- Missing facts remain unknown, never a fabricated zero.
-- Suggestions are bounded and explainable; abstention is valid.
-- New models require an owner-doc update, artifact checksum/license record,
-  local-only execution path, fallback, cancellation/unload behavior, and
-  reproducible automated evidence plus `./init.sh`.
-- iPhone 14+ and iOS 26+ remain the planning baseline. Simulator or host
-  results do not establish iPhone latency, memory, thermal, or quality claims.
+## Admission and fallback
+
+Provider admission records artifact/license provenance, image-sensitive evidence, supported labels, resource behavior, cancellation, and fallback.
+The feature must not report complete semantic labeling when no provider satisfies the supported taxonomy.
+Fallback exposes supported native facts and unknown capabilities; it never fabricates labels.
+Qwen remains frozen and unadmitted. Model selection is a separate recorded decision, not implied by this pivot.
