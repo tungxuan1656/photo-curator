@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: `todo`
+- Status: `active`
 - Depends on: `feat-040`.
 
 ## Goal
@@ -34,6 +34,6 @@ See [plan](../docs/plans/feat-041.md).
 
 ## Evidence and handoff
 
-- Implementation and feature verification not started.
+- Activated after feat-040 merged. The existing plan is approved: catalog-backed incremental analysis, revision-safe cache/checkpoints, lifecycle pause/resume, and no album-selection coupling.
 - No tests/proof harnesses or mandatory manual QA.
-- Next: complete feat-040 and obtain activation approval.
+- Next: implement the bounded catalog analysis lifecycle.

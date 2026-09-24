@@ -410,7 +410,7 @@
       "depends_on": ["feat-040"],
       "gate": "Incremental capability evidence, bounded jobs, cache recovery, pause/resume and metadata-first browsing without album-result dependency; ./init.sh passes",
       "id": "feat-041",
-      "status": "todo",
+      "status": "active",
       "title": "Incremental library analysis lifecycle"
     },
     {

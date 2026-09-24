@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-24 — feat-041
+
+**State**: active
+**Done**: Activated after feat-040 merged. The approved plan separates catalog analysis from album selection and adds revision-safe lifecycle scheduling.
+**Evidence**: Baseline `./init.sh` PASS: SwiftFormat, strict SwiftLint, generic Simulator build; tests skipped by DEC-040.
+**Blockers**: none
+**Next**: Implement the bounded catalog analysis lifecycle.
+
 ## 2026-09-24 — feat-040
 
 **State**: done
