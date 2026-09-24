@@ -24,6 +24,39 @@ struct RootView: View {
                     PermissionEducationView()
                 case .home:
                     HomeView()
+                case .libraryDiscovery:
+                    LibraryDiscoveryView(
+                        snapshot: appModel.libraryComparisonSnapshot,
+                        observations: appModel.libraryObservations,
+                        catalogState: appModel.libraryCatalogState,
+                        loadFailed: appModel.librarySnapshotLoadFailed,
+                        onRefresh: { await appModel.loadLibrarySnapshot() },
+                        onOpenGroup: { appModel.openLibraryGroup($0) },
+                        onOpenPhoto: { appModel.openLibraryPhoto(assetID: $0, pagerIDs: $1) }
+                    )
+                    .task { await appModel.loadLibrarySnapshot() }
+                case let .libraryGroup(groupID):
+                    if let context = appModel.libraryGroupContext(for: groupID) {
+                        LibraryGroupDetailView(
+                            group: context.group,
+                            coverage: context.coverage,
+                            onOpenPhoto: { appModel.openLibraryPhoto(assetID: $0, pagerIDs: $1) }
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "Group unavailable",
+                            systemImage: "square.stack.3d.up.slash",
+                            description: Text("This group changed during a library refresh.")
+                        )
+                    }
+                case let .libraryPhoto(assetID, pagerIDs):
+                    LibraryPhotoInspector(
+                        assetID: assetID,
+                        pagerIDs: pagerIDs,
+                        imageLoader: appModel.container.visibleImageLoader,
+                        onDismiss: { appModel.dismissLibraryPhoto() }
+                    )
+                    .toolbar(.hidden, for: .navigationBar)
                 case .sourceSelection:
                     SourceSelectionView()
                 case .summary:

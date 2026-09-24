@@ -1,6 +1,7 @@
-/// Typed navigation routes for the G1 skeleton. Full route set grows in later stages.
-/// Only `.permissionEducation` is pushed in G1; `.welcome` and `.home` are reserved
-/// for later stages (do not treat them as dead code).
+import Foundation
+
+/// Typed navigation routes for the app. Legacy selection/review routes remain
+/// session-scoped; library routes are independent of a curation session.
 enum AppRoute: Hashable, Sendable {
     /// Reserved: first-run entry, shown as root (never pushed) in G1.
     case welcome
@@ -8,6 +9,9 @@ enum AppRoute: Hashable, Sendable {
     case permissionEducation
     /// Reserved: Home is the root (never pushed) in G1; later stages push it.
     case home
+    case libraryDiscovery
+    case libraryGroup(groupID: UUID)
+    case libraryPhoto(assetID: AssetID, pagerIDs: [AssetID])
     case sourceSelection
     case summary
     case processing(sessionID: SessionID)

@@ -12,6 +12,22 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-24 — feat-043 completion
+
+**State**: done
+**Done**: Completed group-first discovery and All Photos browsing, immutable comparison-group detail, scoped zoomable inspection with loading/failure/retry states, coverage/evidence messaging, refresh-generation guards, preserved legacy saved-work routes, and complete English/Vietnamese localization for discovery, group, inspector, and accessibility copy. Oracle review findings were resolved.
+**Evidence**: Final `./init.sh` PASS after review fixes: SwiftFormat, strict SwiftLint with 0 violations, generic Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. `git diff --check` PASS. Parent owns final diff validation.
+**Blockers**: none
+**Next**: feat-044 — Useful AI labels and durable corrections.
+
+## 2026-09-24 — feat-043 implementation checkpoint
+
+**State**: active
+**Done**: Recorded the implemented group-first catalog entry, direct All Photos browsing, immutable comparison-group detail, scoped zoomable photo inspection with loading/failure/retry states, coverage/evidence messaging, refresh-generation guards, and preserved legacy saved-work routes. The first five acceptance items are supported; feat-043 is not marked done because the new catalog copy still lacks complete en/vi String Catalog coverage.
+**Evidence**: `./init.sh` PASS in this session: SwiftFormat, strict SwiftLint with 0 violations, generic Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. Parent owns final diff validation.
+**Blockers**: Complete en/vi localization coverage for the new catalog surfaces.
+**Next**: Add the missing en/vi catalog entries, rerun `./init.sh`, and close feat-043 only if all acceptance criteria are then supported.
+
 ## 2026-09-24 — feat-042
 
 **State**: done

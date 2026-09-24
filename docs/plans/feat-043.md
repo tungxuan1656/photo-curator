@@ -14,6 +14,14 @@
 - Opening a photo never changes album membership or deletion staging.
 - Run `./init.sh`; no tests/proof harnesses. Manual QA is not a gate.
 
+## User-approved localization design
+
+- All new discovery, group, and inspector strings belong in
+  `apps/photo-curator/Localizable.xcstrings` and must include Vietnamese
+  translations.
+- Preserve the current layout and behavior across localization; do not add
+  locale-specific layout or interaction branches.
+
 ## Inputs and outputs
 
 Consumes catalog metadata, group snapshots, and analysis coverage from feat-040–042.
@@ -47,6 +55,7 @@ Existing: `apps/photo-curator/SharedUI/AsyncPhotoThumbnail.swift`, `Localizable.
 
 - [ ] Add empty, pending, unavailable, changed-group, and access-loss states from the copy owner.
 - [ ] Preserve VoiceOver inspection and navigation paths independently of selection controls.
+- [ ] Add every new discovery/group/inspector string to `Localizable.xcstrings` with Vietnamese translations without changing layout or behavior.
 - [ ] Update current owner docs with actual route/type names after integration.
 
 ## Verification

@@ -21,6 +21,15 @@ struct ResumeSnapshot: Sendable, Equatable {
     }
 }
 
+/// The catalog UI only publishes a state, its observations, and its comparison
+/// projection as one generation-pinned read. A failed or superseded read never
+/// partially replaces the tuple currently rendered by the library surfaces.
+struct LibrarySnapshotTuple: Sendable, Equatable {
+    let catalogState: CatalogStateSnapshot
+    let observations: [CatalogAssetObservationSnapshot]
+    let comparisonSnapshot: ComparisonSnapshot?
+}
+
 /// G1 skeleton session state. Runs on the `PhotoLibraryService` protocol (Noop in G1);
 /// real permission wiring landed in feat-002.
 @MainActor
@@ -66,6 +75,20 @@ final class AppModel {
     var libraryAnalysisHasStarted = false
     var catalogReconciliationTask: Task<Void, Never>?
     var catalogReconciliationRequested = false
+    /// Read-only catalog state for the group-first library entry. These values
+    /// are snapshots and never participate in legacy selection or save state.
+    private(set) var librarySnapshotTuple = LibrarySnapshotTuple(
+        catalogState: CatalogStateSnapshot(
+            currentGenerationID: nil,
+            latestAttemptID: nil,
+            availability: .unavailable,
+            updatedAt: nil
+        ),
+        observations: [],
+        comparisonSnapshot: nil
+    )
+    var librarySnapshotLoadFailed = false
+    var librarySnapshotGeneration = 0
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -83,6 +106,22 @@ final class AppModel {
     )
 
     let container: AppContainer
+
+    var libraryComparisonSnapshot: ComparisonSnapshot? {
+        librarySnapshotTuple.comparisonSnapshot
+    }
+
+    var libraryObservations: [CatalogAssetObservationSnapshot] {
+        librarySnapshotTuple.observations
+    }
+
+    var libraryCatalogState: CatalogStateSnapshot {
+        librarySnapshotTuple.catalogState
+    }
+
+    func publishLibrarySnapshot(_ tuple: LibrarySnapshotTuple) {
+        librarySnapshotTuple = tuple
+    }
 
     init(container: AppContainer) {
         self.container = container
@@ -708,6 +747,37 @@ extension AppModel {
 
     func openSettings() {
         path.append(.settings)
+    }
+
+    /// Opens the session-independent, group-first catalog. Loading is explicit
+    /// so the Home screen remains useful even when catalog storage is unavailable.
+    func openLibraryDiscovery() {
+        if path.last != .libraryDiscovery {
+            path.append(.libraryDiscovery)
+        }
+        Task { await loadLibrarySnapshot() }
+    }
+
+    func openLibraryGroup(_ group: ComparisonGroupSnapshot) {
+        path.append(.libraryGroup(groupID: group.id))
+    }
+
+    func libraryGroupContext(
+        for groupID: UUID
+    ) -> (group: ComparisonGroupSnapshot, coverage: ComparisonCoverage)? {
+        guard let snapshot = libraryComparisonSnapshot,
+              let group = snapshot.groups.first(where: { $0.id == groupID })
+        else { return nil }
+        return (group: group, coverage: snapshot.coverage)
+    }
+
+    func openLibraryPhoto(assetID: AssetID, pagerIDs: [AssetID]) {
+        path.append(.libraryPhoto(assetID: assetID, pagerIDs: pagerIDs))
+    }
+
+    func dismissLibraryPhoto() {
+        guard case .libraryPhoto = path.last else { return }
+        path.removeLast()
     }
 
     /// System Settings URL intent (Task 4 caller alongside the `openSettings()` route).
