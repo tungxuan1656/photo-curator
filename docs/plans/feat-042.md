@@ -27,30 +27,30 @@ Groups remain independent of `selectedAssetIDs`, album target count, and filter 
 
 Inspect `apps/photo-curator/Domain/Selection/DuplicateResolver.swift`, `Services/Analysis/ImageSimilarityArtifact.swift`, `Services/Session/SimilarityRebuilder.swift`.
 
-- [ ] Document the current time-window recall limit and unknown-date behavior.
-- [ ] Compare bounded candidate approaches for cross-date near-copies and same-capture retakes.
-- [ ] Choose an approach with explicit candidate/memory bounds and documented missed-match tradeoffs.
-- [ ] If it requires persisted visual artifacts, obtain an explicit data/privacy decision before adding storage.
-- [ ] Record evidence and unresolved quality limits in the runtime/intelligence owners; do not invent an accuracy threshold.
+- [x] Document the current time-window recall limit and unknown-date behavior.
+- [x] Compare bounded candidate approaches for cross-date near-copies and same-capture retakes.
+- [x] Choose bounded chronological neighbors for retakes and transient in-memory hash buckets for cross-date candidates. Validate every retained candidate with Vision evidence.
+- [x] Keep visual hashes, FeaturePrints, vectors, decoded images, and bucket contents transient. Persist only validated group projections and revision references.
+- [x] Record candidate/bucket overflow as incomplete coverage and leave missed-match quality unmeasured.
 
 ### 2. Produce coherent groups
 
 Existing: `apps/photo-curator/Domain/Models/SelectionGrouping.swift`, `Domain/Selection/QualityGroupBuilder.swift`, `Domain/Selection/DuplicateResolver.swift`.
 Proposed new: `apps/photo-curator/Domain/Organization/ComparisonGroupBuilder.swift`.
 
-- [ ] Separate group construction from representative album selection.
-- [ ] Validate candidate edges with image evidence and prevent unrelated endpoint merges through transitive chains.
-- [ ] Distinguish near-copy and retake relation wording; reserve exact-duplicate wording for exactness evidence.
-- [ ] Produce deterministic membership identities/revisions and an optional representative without automatic keeper authority.
-- [ ] Keep unsupported/unavailable assets browseable outside groups.
+- [x] Separate group construction from representative album selection.
+- [x] Validate candidate edges with image evidence and prevent unrelated endpoint merges through transitive chains.
+- [x] Distinguish near-copy and retake relation wording; reserve exact-duplicate wording for exactness evidence.
+- [x] Produce deterministic membership identities/revisions and an optional representative without automatic keeper authority.
+- [x] Keep unsupported/unavailable assets browseable outside groups.
 
 ### 3. Publish incremental snapshots
 
 Integrate feat-040 `LibraryCatalogStore` and feat-041 `LibraryAnalysisCoordinator` at their confirmed paths.
 
-- [ ] Invalidate groups affected by revised, added, or inaccessible assets.
-- [ ] Atomically replace derived projections without changing user labels, drafts, or staging.
-- [ ] Preserve open comparison snapshots and publish an explicit update indication.
+- [x] Invalidate groups affected by revised, added, or inaccessible assets.
+- [x] Atomically replace derived projections without changing user labels, drafts, or staging.
+- [x] Preserve open comparison snapshots and publish an explicit update indication.
 
 ## Verification
 
