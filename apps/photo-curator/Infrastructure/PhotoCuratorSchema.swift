@@ -25,9 +25,24 @@ enum PhotoCuratorSchemaV2: VersionedSchema {
     }
 }
 
+/// Additive catalog schema. Existing workspace and operation declarations stay
+/// in V1/V2 so their migration history remains unchanged.
+enum PhotoCuratorSchemaV3: VersionedSchema {
+    static var versionIdentifier = Schema.Version(3, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        PhotoCuratorSchemaV2.models + [
+            LibraryAsset.self,
+            CatalogAssetObservation.self,
+            CatalogGeneration.self,
+            CatalogState.self,
+        ]
+    }
+}
+
 enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [PhotoCuratorSchemaV1.self, PhotoCuratorSchemaV2.self]
+        [PhotoCuratorSchemaV1.self, PhotoCuratorSchemaV2.self, PhotoCuratorSchemaV3.self]
     }
 
     static var stages: [MigrationStage] {
@@ -35,6 +50,10 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             .lightweight(
                 fromVersion: PhotoCuratorSchemaV1.self,
                 toVersion: PhotoCuratorSchemaV2.self
+            ),
+            .lightweight(
+                fromVersion: PhotoCuratorSchemaV2.self,
+                toVersion: PhotoCuratorSchemaV3.self
             ),
         ]
     }

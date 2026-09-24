@@ -139,8 +139,31 @@ final class AppModel {
             )
         }
         await refreshAuthorization()
+        await reconcileCatalog()
         await refreshDeletionRecovery()
         await refreshResumeSnapshot()
+    }
+
+    /// Catalog reconciliation is lifecycle work, not a discovery route. The
+    /// store owns single-flight serialization and publishes availability from
+    /// its durable CatalogState.
+    func reconcileCatalog() async {
+        guard let catalogStore = container.catalogStore else { return }
+        do {
+            _ = try await catalogStore.reconcileBounded(using: container.photoLibrary)
+        } catch let error as LibraryCatalogStoreError {
+            switch error {
+            case .reconciliationInProgress:
+                break
+            default:
+                logger.debug("Catalog reconciliation did not publish a generation.")
+            }
+        } catch is CancellationError {
+            // The store records the abandoned attempt while retaining its
+            // prior committed pointer.
+        } catch {
+            logger.debug("Catalog reconciliation did not publish a generation.")
+        }
     }
 
     func requestPermission() async {
@@ -150,6 +173,7 @@ final class AppModel {
         authorization = await container.photoLibrary.requestAuthorization()
         markSeen()
         path = []
+        await reconcileCatalog()
     }
 
     func presentPicker() {
