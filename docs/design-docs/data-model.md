@@ -9,9 +9,11 @@ PhotoKit remains authoritative for originals. Domain behavior belongs to [organi
 - `PhotoCuratorSchemaV1`: `ReviewScope`, `WorkspaceItem`, `WorkspaceMigrationMarker`, `AlbumSaveOperation`.
 - `PhotoCuratorSchemaV2`: V1 plus `PhotoDeletionOperation` through an additive migration.
 - `PhotoCuratorSchemaV3`: V2 plus `LibraryAsset`, `CatalogAssetObservation`, `CatalogGeneration`, and `CatalogState` through an additive migration.
+- `PhotoCuratorSchemaV4`: V3 plus additive per-asset/capability `AnalysisWorkState` through a lightweight migration.
 - `WorkspaceItem`: per-scope cleanup, album, progress, and analysis-reference dimensions.
-- `FileAnalysisCache`: schema/version/asset-revision checked `PhotoAnalysis` records.
-- Session checkpoint and result files remain compatibility inputs.
+- `FileAnalysisCache`: authoritative schema/version/asset-revision checked `nativeImageFacts` evidence records.
+- `AnalysisWorkState`: current SwiftData status for one asset/capability; it never replaces evidence-file authority.
+- Session checkpoint and result files remain compatibility inputs; the analysis checkpoint is a durable reconciliation handoff and resume hint, not completion evidence.
 - FeaturePrint objects are transient and rebuilt when necessary; no persisted visual search index exists.
 - Catalog observations are immutable per generation. `CatalogState.currentGenerationID` is the only browseable snapshot pointer.
 
@@ -19,11 +21,12 @@ PhotoKit remains authoritative for originals. Domain behavior belongs to [organi
 
 | Data | Location | Lifetime |
 |---|---|---|
-| Asset catalog metadata and access state | SwiftData | Durable index; reconciled with Photos |
+| Asset catalog metadata and committed access membership | SwiftData | Durable index; reconciled with Photos |
 | Label definitions, overrides, personal labels | SwiftData | Versioned taxonomy and user-owned state |
 | Automatic label and group projections | SwiftData, compact and rebuildable | Query index referencing evidence revisions |
-| Immutable analysis facts | Existing file/cache boundary | Recomputable per asset/provider revision |
-| Analysis jobs/checkpoints | Compact file records | Resumable scheduling, no pixels |
+| Immutable analysis facts | Evidence file/cache boundary | Authoritative, atomically written per asset/fingerprint/analysis/provider revision |
+| Current analysis status | SwiftData V4 `AnalysisWorkState` | Queryable pending/running/available/unavailable/stale state for `nativeImageFacts` |
+| Analysis handoff/checkpoint | Compact durable file record | Resume hint only; never proof that evidence or status committed |
 | Temporary action selection | UI state | One result snapshot, not durable membership |
 | Drafts, staging, operation records | SwiftData | User work and unresolved outcomes survive restart |
 | Thumbnail cache | Bounded local cache | Evictable |
@@ -35,12 +38,12 @@ Use SwiftData directly for durable catalog state. No generic repository layer is
 
 ## Intended catalog records
 
-`LibraryAsset`, `CatalogAssetObservation`, `CatalogGeneration`, and `CatalogState` ship in V3. The remaining names are feature-owned proposals.
+`LibraryAsset`, `CatalogAssetObservation`, `CatalogGeneration`, and `CatalogState` ship in V3. V4 adds only `AnalysisWorkState`; the remaining names are feature-owned proposals.
 
 | Record | Identity and required content |
 |---|---|
 | `LibraryAsset` | Asset ID; stable catalog attachment point; last observed generation |
-| `AnalysisWorkState` | Asset ID + capability; requested/completed revisions; pending/running/available/unavailable/stale state; reason |
+| `AnalysisWorkState` | Asset ID + `nativeImageFacts` capability; requested/completed asset, analysis, and provider/runtime revisions; pending/running/available/unavailable/stale state; typed reason |
 | `LabelDefinition` | Stable label ID; facet; taxonomy revision; localization keys; supported capability |
 | `AutomaticLabelAssignment` | Asset + label + evidence revision; provider reference; confidence/evidence status |
 | `LabelOverride` | Asset + label; confirm/reject; user revision and timestamp |
@@ -58,9 +61,14 @@ Group replacement does not transfer implicit reviewed, selected, or deletion int
 
 ## Revision and query contract
 
+The first analysis capability is `nativeImageFacts`; its evidence identity includes the asset modification fingerprint, analysis revision, and provider/runtime revision. Later capabilities add records rather than widening this contract implicitly.
 Evidence references include asset modification fingerprint, analysis revision, provider/runtime revision, and mapping/grouping revision where applicable.
 Only matching current revisions populate current query projections.
 Stale projections can support a visibly stale display, but cannot silently match current label filters.
+
+Analysis publication is ordered and durable: (1) atomically write authoritative evidence, (2) guarded-commit the matching catalog status, (3) publish the new query snapshot, and (4) advance the reconciliation checkpoint. A later step never makes an earlier missing step appear complete.
+
+`AnalysisWorkState.reason` is typed. Minimum reasons are `accessRequired`, `iCloudWaiting`, `modelUnavailable`, `revisionStale`, `cancelled`, `transientFailure`, and `unsupported`; `completedEmpty` is a successful result, not an unavailable reason. Retry policy is derived from the reason, never from a counter alone.
 
 A query returns distinct accessible IDs, deterministic order, snapshot revision, facet counts, and coverage counts.
 Pagination never changes the semantics of Select All.
@@ -108,10 +116,11 @@ Reconciliation never dispatches deletion. Dismissing an outcome never discards u
 
 1. V3 adds catalog entities without replacing existing scope and operation schemas.
 2. Enumerate authorized assets into a generation; commit only a complete metadata reconciliation boundary.
-3. Import reusable analysis only when asset/provider revisions match.
-4. Rebuild automatic projections from valid evidence; preserve existing scope choices and operation IDs.
-5. Commit a migration marker only after required writes succeed.
-6. On interruption, repeat idempotently. Preserve source data until committed migration.
+3. V4 adds per-asset/capability work state without moving `nativeImageFacts` evidence out of its file authority.
+4. Import reusable analysis only when asset/provider revisions match.
+5. Rebuild automatic projections from valid evidence; preserve existing scope choices and operation IDs.
+6. Commit a migration marker only after required writes succeed.
+7. On interruption, repeat idempotently. Preserve source data until committed migration.
 
 The earlier importer still maps selected/restored to album included and rejected/removed to album excluded.
 It maps cleanup to undecided and progress to unseen; those historical mappings do not create catalog labels.

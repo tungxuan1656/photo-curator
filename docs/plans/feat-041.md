@@ -1,10 +1,10 @@
 # Incremental Library Analysis Lifecycle Implementation Plan
 
-> **Execution:** Follow the repository's implementation and verification rules. Activation requires user approval after feat-040.
+> **Execution:** Follow the repository's implementation and verification rules.
 
 **Goal:** Enrich library assets without an album-selection run or blocking browsing.
 
-**Architecture:** Adapt the bounded image-analysis pipeline behind a catalog job coordinator. Publish revisioned capability results and resume only invalid/missing work.
+**Architecture:** Adapt the bounded image-analysis pipeline behind an actor-isolated catalog job coordinator. Publish one revisioned `nativeImageFacts` capability and resume only invalid/missing work.
 
 **Tech Stack:** Swift concurrency, Vision, PhotoKit, SwiftData catalog projections, file checkpoints.
 
@@ -28,36 +28,42 @@ Existing: `apps/photo-curator/Services/Photos/BatchPipeline.swift`, `Services/Se
 Proposed new: `apps/photo-curator/Services/Library/LibraryAnalysisCoordinator.swift`.
 
 - [ ] Extract the reusable analysis lifecycle without invoking album sizing, diversity selection, or final album building.
-- [ ] Retain session compatibility entry points while catalog jobs use asset/capability revisions.
-- [ ] Establish bounded queues with visible-photo requests taking priority over enrichment.
+- [ ] Define the minimal capability contract as `nativeImageFacts` with asset-fingerprint, analysis, and provider/runtime revisions.
+- [ ] Retain session compatibility entry points while catalog jobs use asset/capability revisions and the same shared two-permit `ImageWorkArbiter`.
+- [ ] Establish bounded queues with visible-photo requests taking priority over session and enrichment work.
 
 ### 2. Persist safe progress
 
 Existing: `apps/photo-curator/Infrastructure/FileAnalysisCache.swift`, `SessionCheckpointStore.swift`.
 Proposed new: `apps/photo-curator/Infrastructure/LibraryAnalysisCheckpointStore.swift`.
 
-- [ ] Check asset and provider revisions before reuse and before result commit.
+- [ ] Add the additive V4 per-asset/capability work-state record without moving evidence facts into SwiftData.
+- [ ] Treat the evidence file as authoritative; use SwiftData for current status and a checkpoint only as a resume hint.
+- [ ] Check asset, analysis, and provider/runtime revisions before reuse and before result commit.
+- [ ] Commit in order: durable evidence → guarded catalog commit → publish → durable reconciliation checkpoint.
 - [ ] Requeue stale or missing cache work even when old counters report completion.
-- [ ] Preserve explicit unavailable reasons and distinguish completed empty output from failed capability output.
+- [ ] Preserve typed unavailable/retry reasons and distinguish completed empty output from failed capability output.
 - [ ] Publish progress only after the corresponding result/checkpoint boundary is safe.
 
 ### 3. Integrate lifecycle
 
 Existing: `apps/photo-curator/App/AppContainer.swift`, `AppModel.swift`, `PhotoCuratorApp.swift`, `Infrastructure/MemoryPressureObserver.swift`.
 
-- [ ] Coalesce library changes and invalidate obsolete generations.
-- [ ] Pause/cancel at safe boundaries, drain structured tasks, and reject late publications.
-- [ ] Resume on app execution opportunity with explicit status; expose iCloud waiting and retry separately.
+- [ ] Coalesce library changes and invalidate obsolete generations through a durable reconciliation handoff.
+- [ ] Keep generation, fingerprint, revision, and commit guards actor-isolated; reject late publications.
+- [ ] Use a run token: new runs invalidate older work, cancellation drains tasks before terminal publication, and reset invalidates the token and clears resumable work safely.
+- [ ] Pause/cancel at safe boundaries and share the two-permit `ImageWorkArbiter` across session, enrichment, and visible image work.
+- [ ] Resume on app execution opportunity with explicit status; expose typed iCloud waiting, access, model, and transient retry reasons separately.
 - [ ] Provide capability coverage to feat-043 without a full-result barrier.
 
 ## Verification
 
 Run baseline/final `./init.sh` and `git diff --check`.
-Inspect cancellation before/after load, revision changes during inference, cache loss, interrupted checkpoint, access revocation, and unavailable retry paths.
+Inspect cancellation before/after load, revision changes during inference, cache loss, interrupted durable handoff, access revocation, run-token reset, arbiter contention, and typed unavailable/retry paths.
 Record actual evidence and limits without adding a proof program.
 
 ## Rollback and handoff
 
-Pause the new scheduler while retaining completed evidence and user state.
+Pause the new scheduler while retaining completed evidence, current work state, durable reconciliation handoff, and user state.
 The previous session reader remains usable for saved work.
-Document coordinator inputs, status publication, and revision rejection for feat-042/044.
+Document coordinator inputs, ordered evidence/status/checkpoint publication, run-token invariants, arbiter ownership, and revision rejection for feat-042/044.
