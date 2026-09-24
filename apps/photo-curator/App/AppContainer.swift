@@ -29,10 +29,14 @@ struct AppContainer: Sendable {
     let workspaceStore: WorkspaceStore?
     let workspaceImporter: LegacyWorkspaceImporter?
     let workspaceAvailability: WorkspaceAvailability
-    /// Nil means the V3 durable container did not open. A non-nil store can
+    /// Nil means the V4 durable container did not open. A non-nil store can
     /// independently report access/reconciliation availability through state().
     let catalogStore: LibraryCatalogStore?
     let catalogStorageAvailability: CatalogStorageAvailability
+    /// One arbiter is shared by the legacy session lane and catalog enrichment.
+    let imageWorkArbiter: ImageWorkArbiter
+    /// Nil only when the durable catalog container could not be opened.
+    let libraryAnalysisCoordinator: LibraryAnalysisCoordinator?
     let selectionEngine: SelectionEngine
     /// Tier-C visual-embedding provider (feat-024, DEC-035): native derived
     /// by default, injected into `SelectionSessionCoordinator` for both
@@ -80,7 +84,9 @@ struct AppContainer: Sendable {
         modelInstallation: ModelInstallationService,
         qwenJudge: QwenPairJudge? = nil,
         catalogStore: LibraryCatalogStore? = nil,
-        catalogStorageAvailability: CatalogStorageAvailability = .unavailable
+        catalogStorageAvailability: CatalogStorageAvailability = .unavailable,
+        imageWorkArbiter: ImageWorkArbiter = ImageWorkArbiter(),
+        libraryAnalysisCoordinator: LibraryAnalysisCoordinator? = nil
     ) {
         self.photoLibrary = photoLibrary
         self.imageLoader = imageLoader
@@ -93,6 +99,8 @@ struct AppContainer: Sendable {
         self.workspaceAvailability = workspaceAvailability
         self.catalogStore = catalogStore
         self.catalogStorageAvailability = catalogStorageAvailability
+        self.imageWorkArbiter = imageWorkArbiter
+        self.libraryAnalysisCoordinator = libraryAnalysisCoordinator
         self.selectionEngine = selectionEngine
         self.tierCProvider = tierCProvider
         self.semanticJuryProvider = semanticJuryProvider
@@ -145,10 +153,22 @@ struct AppContainer: Sendable {
         let checkpointStore = SessionCheckpointStore(files: files)
         let workspace = makeWorkspaceSetup(root: root, checkpointStore: checkpointStore)
         let imageLoader = ImageLoaderService()
+        let analyzer = VisionAnalysisService()
+        let imageWorkArbiter = ImageWorkArbiter()
+        let libraryAnalysisCoordinator = workspace.catalogStore.map {
+            LibraryAnalysisCoordinator(
+                catalogStore: $0,
+                evidenceStore: LibraryAnalysisEvidenceStore(files: files),
+                checkpointStore: LibraryAnalysisCheckpointStore(files: files),
+                imageLoader: imageLoader,
+                analyzer: analyzer,
+                imageWorkArbiter: imageWorkArbiter
+            )
+        }
         return Self(
             photoLibrary: workspace.photoLibrary,
             imageLoader: imageLoader,
-            analyzer: VisionAnalysisService(),
+            analyzer: analyzer,
             analysisCache: FileAnalysisCache(
                 files: files,
                 analysisVersion: AppConfiguration.default.analysis.analysisVersion
@@ -173,11 +193,13 @@ struct AppContainer: Sendable {
             ),
             qwenJudge: QwenPairJudge(imageLoader: imageLoader),
             catalogStore: workspace.catalogStore,
-            catalogStorageAvailability: workspace.catalogStorageAvailability
+            catalogStorageAvailability: workspace.catalogStorageAvailability,
+            imageWorkArbiter: imageWorkArbiter,
+            libraryAnalysisCoordinator: libraryAnalysisCoordinator
         )
     }
 
-    /// Opens the V3 workspace/catalog schema exactly once. A failed migration
+    /// Opens the V4 workspace/catalog schema exactly once. A failed migration
     /// is reported as unavailable; reopening the same store through V2 would
     /// risk hiding or misinterpreting the additive catalog migration.
     private static func makeWorkspaceSetup(
@@ -187,7 +209,7 @@ struct AppContainer: Sendable {
         let workspaceURL = root.appendingPathComponent("workspace.store")
         do {
             let modelContainer = try ModelContainer(
-                for: Schema(versionedSchema: PhotoCuratorSchemaV3.self),
+                for: Schema(versionedSchema: PhotoCuratorSchemaV4.self),
                 migrationPlan: PhotoCuratorMigrationPlan.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )

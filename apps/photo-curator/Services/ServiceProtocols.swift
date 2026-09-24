@@ -6,6 +6,33 @@ enum PhotoLibraryAuthorization: Sendable {
     case notDetermined, limited, authorized, denied, restricted
 }
 
+/// Stable image-load failures for catalog work. The loader keeps the existing
+/// throwing image APIs, while coordinators can classify a failure without
+/// depending on PhotoKit's NSError domains or messages.
+enum PhotoImageLoadError: Error, Equatable, Sendable {
+    case accessRequired
+    case assetMissing
+    case iCloudWaiting
+    case transientFailure
+    case cancelled
+
+    /// Normalizes legacy session cancellation alongside the typed catalog
+    /// failures. Session callers continue to receive `SelectionError.cancelled`;
+    /// catalog callers can use this seam when handling a caught `Error`.
+    static func classify(_ error: Error) -> Self {
+        if let typed = error as? Self {
+            return typed
+        }
+        if error is CancellationError {
+            return .cancelled
+        }
+        if case SelectionError.cancelled = error {
+            return .cancelled
+        }
+        return .transientFailure
+    }
+}
+
 /// Aggregate-only analytics event. Never carries image pixels or face data (DEC-018).
 /// Typed per-event cases arrive with feat-009; G0 tracks by name.
 struct AnalyticsEvent: Sendable {

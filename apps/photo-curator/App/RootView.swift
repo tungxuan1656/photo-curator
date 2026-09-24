@@ -90,14 +90,10 @@ struct RootView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {
-                Task { await appModel.checkpointForBackground() }
+                Task { await appModel.applicationDidEnterBackground() }
             }
             if newPhase == .active {
-                Task {
-                    await appModel.refreshAuthorization()
-                    appModel.reconcileCatalog()
-                    await appModel.resumeIfPaused()
-                }
+                Task { await appModel.applicationDidBecomeActive() }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .photoLibraryDidChange)) { _ in

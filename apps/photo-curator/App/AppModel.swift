@@ -61,6 +61,9 @@ final class AppModel {
     var lastSessionID: SessionID?
     var resumeSnapshot: ResumeSnapshot?
     var confirmingNewSession = false
+    private var analysisLifecyclePermitted = true
+    private var analysisResetInFlight = false
+    private var libraryAnalysisHasStarted = false
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -69,6 +72,8 @@ final class AppModel {
     var saveFlight: (session: SessionID, task: Task<SaveOutcome, Never>)?
     let modelInstallation: ModelInstallationModel
     let processing: ProcessingModel
+    private(set) var libraryAnalysisProgress: LibraryAnalysisProgress?
+    private(set) var libraryAnalysisState: LibraryAnalysisCoordinatorState = .idle
     private var isRequesting = false
     private var sourceGeneration = 0
     let logger = Logger(
@@ -93,6 +98,7 @@ final class AppModel {
             engine: container.selectionEngine,
             config: .default,
             pressure: container.memoryPressure,
+            imageWorkArbiter: container.imageWorkArbiter,
             tierCProvider: container.tierCProvider,
             semanticJuryProvider: container.semanticJuryProvider,
             qualityRunner: QualityCurationRunner(
@@ -129,6 +135,7 @@ final class AppModel {
     }
 
     func startup() async {
+        analysisLifecyclePermitted = true
         switch container.workspaceAvailability {
         case .available:
             if let workspaceImporter = container.workspaceImporter {
@@ -143,6 +150,7 @@ final class AppModel {
         reconcileCatalog()
         await refreshDeletionRecovery()
         await refreshResumeSnapshot()
+        await startLibraryAnalysis(resume: false)
     }
 
     /// Catalog reconciliation is lifecycle work, not a discovery route. It is
@@ -156,6 +164,61 @@ final class AppModel {
         }
     }
 
+    /// Starts or resumes catalog enrichment as lifecycle work. The coordinator
+    /// owns its root task, so awaiting this method does not wait for the library
+    /// scan and never blocks the browsing routes.
+    func startLibraryAnalysis(resume: Bool) async {
+        guard analysisLifecyclePermitted, !analysisResetInFlight,
+              authorization == .authorized || authorization == .limited,
+              let coordinator = container.libraryAnalysisCoordinator
+        else { return }
+
+        if resume, libraryAnalysisHasStarted {
+            let currentState = await coordinator.currentState()
+            if currentState == .running {
+                libraryAnalysisState = currentState
+                return
+            }
+        }
+        libraryAnalysisHasStarted = true
+
+        let onProgress: @Sendable (LibraryAnalysisProgress) async -> Void = { [weak self] progress in
+            await self?.applyLibraryAnalysisProgress(progress)
+        }
+        if resume {
+            await coordinator.resume(onProgress: onProgress)
+        } else {
+            await coordinator.start(onProgress: onProgress)
+        }
+        libraryAnalysisState = await coordinator.currentState()
+    }
+
+    /// Scene foreground lifecycle: authorization and catalog reconciliation are
+    /// refreshed before resumable enrichment and legacy session work continue.
+    func applicationDidBecomeActive() async {
+        analysisLifecyclePermitted = true
+        await refreshAuthorization()
+        reconcileCatalog()
+        await startLibraryAnalysis(resume: true)
+        await resumeIfPaused()
+    }
+
+    /// Scene background lifecycle: prevent new catalog work, drain it, then use
+    /// the existing session checkpoint path for legacy selection work.
+    func applicationDidEnterBackground() async {
+        analysisLifecyclePermitted = false
+        if let coordinator = container.libraryAnalysisCoordinator {
+            await coordinator.pause()
+            libraryAnalysisState = await coordinator.currentState()
+        }
+        await processing.pauseForBackground()
+    }
+
+    private func applyLibraryAnalysisProgress(_ progress: LibraryAnalysisProgress) {
+        libraryAnalysisProgress = progress
+        libraryAnalysisState = progress.state
+    }
+
     func requestPermission() async {
         guard !isRequesting else { return }
         isRequesting = true
@@ -165,6 +228,7 @@ final class AppModel {
         markSeen()
         path = []
         reconcileCatalog()
+        await startLibraryAnalysis(resume: true)
     }
 
     func presentPicker() {
@@ -541,7 +605,7 @@ extension AppModel {
     }
 
     func checkpointForBackground() async {
-        await processing.pauseForBackground()
+        await applicationDidEnterBackground()
     }
 
     /// Launch probe: remembers the newest unfinished session for the Home card.
@@ -878,19 +942,36 @@ extension AppModel {
     /// originals are untouched. Cancels in-flight work first.
     func resetAnalysis() {
         processing.cancel()
+        let finalizeTask = finalizeFlight?.task
+        finalizeTask?.cancel()
+        finalizeFlight = nil
         let sessionID = activeSessionID ?? lastSessionID
         activeSessionID = nil
         resumeSnapshot = nil
         reviewModel = nil
         path.removeAll()
+        analysisResetInFlight = true
         Task {
             await cancelSave(for: sessionID)
+            if let coordinator = container.libraryAnalysisCoordinator {
+                await coordinator.reset()
+                libraryAnalysisState = await coordinator.currentState()
+                libraryAnalysisProgress = nil
+            }
             await processing.awaitTermination()
+            if let finalizeTask {
+                await finalizeTask.value
+            }
             await container.analysisCache.reset()
             if sessionID != nil {
                 _ = await deleteSessionData(sessionID, context: "Resetting analysis")
             }
             lastSessionID = nil
+            reconcileCatalog()
+            analysisResetInFlight = false
+            if analysisLifecyclePermitted {
+                await startLibraryAnalysis(resume: true)
+            }
         }
     }
 

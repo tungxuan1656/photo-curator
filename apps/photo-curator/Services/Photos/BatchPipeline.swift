@@ -51,6 +51,7 @@ final class BatchPipeline: Sendable {
     private let checkpoints: SessionCheckpointStore
     private let config: AppConfiguration
     private let pressure: MemoryPressureObserver?
+    private let imageWorkArbiter: ImageWorkArbiter
 
     init(
         imageLoader: any PhotoImageLoader,
@@ -58,7 +59,8 @@ final class BatchPipeline: Sendable {
         cache: any AnalysisCache,
         checkpoints: SessionCheckpointStore,
         config: AppConfiguration = .default,
-        pressure: MemoryPressureObserver? = nil
+        pressure: MemoryPressureObserver? = nil,
+        imageWorkArbiter: ImageWorkArbiter = ImageWorkArbiter()
     ) {
         self.imageLoader = imageLoader
         self.analyzer = analyzer
@@ -66,6 +68,7 @@ final class BatchPipeline: Sendable {
         self.checkpoints = checkpoints
         self.config = config
         self.pressure = pressure
+        self.imageWorkArbiter = imageWorkArbiter
     }
 
     // swiftlint:disable:next function_body_length
@@ -251,16 +254,20 @@ final class BatchPipeline: Sendable {
             let end = min(start + laneCount, assets.count)
             await withTaskGroup(of: (AssetID, ImageSimilarityArtifact?).self) { group in
                 for asset in assets[start ..< end] {
-                    group.addTask { [imageLoader, analyzer] in
-                        guard let cgImage = try? await imageLoader.analysisImage(for: asset.id) else { return (
-                            asset.id,
-                            nil
-                        ) }
-                        let artifact = try? await analyzer.similarityArtifact(for: AnalysisInput(
-                            assetID: asset.id,
-                            image: cgImage,
-                            isScreenshotSubtype: false
-                        ))
+                    group.addTask { [imageLoader, analyzer, imageWorkArbiter] in
+                        let artifact: ImageSimilarityArtifact? = try? await imageWorkArbiter.withPermit(
+                            priority: .session
+                        ) {
+                            guard let cgImage = try? await imageLoader.analysisImage(for: asset.id) else {
+                                return nil
+                            }
+                            try Task.checkCancellation()
+                            return try? await analyzer.similarityArtifact(for: AnalysisInput(
+                                assetID: asset.id,
+                                image: cgImage,
+                                isScreenshotSubtype: false
+                            ))
+                        }
                         return (asset.id, artifact)
                     }
                 }
@@ -398,29 +405,20 @@ final class BatchPipeline: Sendable {
 
     private func processOne(_ asset: PhotoAsset) async throws -> AssetOutcome {
         try Task.checkCancellation()
-        let cgImage: CGImage
         do {
-            cgImage = try await imageLoader.analysisImage(for: asset.id)
-        } catch SelectionError.cancelled {
-            throw SelectionError.cancelled
-        } catch is CancellationError {
-            throw SelectionError.cancelled
-        } catch {
-            // Loader .invalidInput/.internal (missing ID, iCloud unavailable,
-            // transient I/O): counts as unavailable, never fails the batch.
-            return .unavailable(asset.id)
-        }
-        try Task.checkCancellation()
-        // The synchronous Vision work with its autoreleasepool lives inside the
-        // analyzer — never autoreleasepool { await … } here. The image releases
-        // by scope exit: no stored CGImage outlives this call.
-        let input = AnalysisInput(
-            assetID: asset.id,
-            image: cgImage,
-            isScreenshotSubtype: asset.mediaSubtype == .screenshot
-        )
-        do {
-            let output = try await analyzer.analyze(input)
+            let output = try await imageWorkArbiter.withPermit(priority: .session) {
+                let cgImage = try await imageLoader.analysisImage(for: asset.id)
+                try Task.checkCancellation()
+                // The synchronous Vision work with its autoreleasepool lives inside
+                // the analyzer — never autoreleasepool { await … } here. The image
+                // releases by scope exit: no stored CGImage outlives this call.
+                let input = AnalysisInput(
+                    assetID: asset.id,
+                    image: cgImage,
+                    isScreenshotSubtype: asset.mediaSubtype == .screenshot
+                )
+                return try await analyzer.analyze(input)
+            }
             // Post-analysis cancel check: a cancel landing during Vision work
             // must not record as success — route through .cancelled.
             try Task.checkCancellation()
@@ -430,7 +428,8 @@ final class BatchPipeline: Sendable {
         } catch is CancellationError {
             throw SelectionError.cancelled
         } catch {
-            // Whole-decode .internal for this asset: unavailable, batch continues.
+            // Loader/analyzer failures for this asset count as unavailable,
+            // never fail the batch.
             return .unavailable(asset.id)
         }
     }
