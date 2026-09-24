@@ -30,6 +30,45 @@ Album target counts, diversity quotas, and selected/rejected decisions do not co
 
 This foundation does not establish whole-library duplicate recall, reliable selfie classification, or calibrated beauty judgments.
 
+## Feat-044 approved native label admission
+
+The approved autonomous decision admits only the existing on-device Vision
+built-in classifier. `VNClassifyImageRequest` is image-sensitive evidence on
+the bounded oriented analysis image; no new model, Qwen path, cloud inference,
+or Photos private semantic API is admitted. The researched native classify
+request leaves the SDK revision unpinned because the supported API exposes the
+OS-selected default; the mapper freezes an explicit raw-identifier-to-app-label
+mapping with `vision-scene-map-v2`.
+
+The durable contract identifiers are:
+
+| Revision | Value |
+|---|---|
+| Source | `vision-classification-observation-v1` |
+| Provider | `vision-classify-sdk-default-unpinned` |
+| Runtime | `vision-ios26-native-v1` |
+| Mapping | `vision-scene-map-v2` |
+| Taxonomy | `vision-scene-taxonomy-v1` |
+| Durable label layer | `catalog-labels-v7` |
+
+The exact admitted scene IDs are `people`, `group`, `landscape`,
+`architecture`, `food`, `animal`, `indoor`, `outdoor`, `document`, and
+`screenshot`. No other raw Vision identifier is silently promoted. The
+existing mapper's `0.75` confidence floor and `0.10` lead over a competing
+supported scene remain the policy; unsupported, tied, or ambiguous output is
+unknown. This is not a claim that the full Vision taxonomy is useful or that
+the ten labels are calibrated for every library.
+
+V7 makes automatic assignments immutable evidence rows and keeps user state
+separate: confirm/reject/restore-automatic overrides are asset-and-label
+scoped, personal labels are explicit stable user assignments, and the
+effective projection is rebuildable with corrections taking precedence over
+current automatic rows. Re-analysis can replace automatic evidence but cannot
+erase overrides or personal labels. Pending, unsupported, unavailable, stale,
+successful-empty, and successful assignments remain distinct. Metadata facts
+retain metadata attribution; personal relationships and family identity are
+never inferred.
+
 ## Capability boundary
 
 | Capability | Input and output | Forbidden inference |

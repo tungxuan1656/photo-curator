@@ -83,6 +83,7 @@ extension LibraryCatalogStore {
                 state.reason = .cancelled
                 clearCompletedEvidence(from: state)
             }
+            try resetLabelAnalysisStates()
             try context.save()
         }
     }
@@ -187,6 +188,12 @@ extension LibraryCatalogStore {
             clearCompletedEvidence(from: state)
             try context.save()
         }
+        try recordLabelAnalysisState(
+            for: asset.id,
+            assetRevision: asset.modificationFingerprint,
+            state: .pending,
+            generationID: generationID
+        )
         return state.snapshot()
     }
 
@@ -236,6 +243,7 @@ extension LibraryCatalogStore {
         return state.snapshot()
     }
 
+    // swiftlint:disable function_body_length
     /// Commits only the reference to evidence already durably written by the
     /// evidence boundary. Every guard is evaluated while actor-isolated and
     /// before the SwiftData transaction is saved.
@@ -284,12 +292,30 @@ extension LibraryCatalogStore {
             state.evidenceIdentifier = candidate.evidence.identifier
             state.status = .available
             state.reason = candidate.outcome == .completedEmpty ? .completedEmpty : nil
+
+            let labelState = try upsertLabelAnalysisState(
+                assetID: candidate.assetID,
+                assetRevision: candidate.assetFingerprint,
+                outcome: .pending,
+                generationID: candidate.generationID,
+                evidenceReferenceID: candidate.evidence.identifier,
+                analysisRevision: candidate.revision.analysisRevision.rawValue,
+                confidenceFloor: PhotoLabelTaxonomy.confidenceFloor,
+                ambiguityMargin: PhotoLabelTaxonomy.ambiguityMargin
+            )
+            labelState.publicationPending = true
+            if labelState.modelContext == nil {
+                context.insert(labelState)
+            }
+            try rebuildEffectiveLabelProjection(assetID: candidate.assetID)
             try context.save()
         }
 
         let snapshot = state.snapshot()
         return .committed(snapshot)
     }
+
+    // swiftlint:enable function_body_length
 
     func commitEvidence(_ candidate: AnalysisCommitCandidate) throws -> AnalysisCommitResult {
         try commitAnalysis(candidate)
@@ -303,13 +329,13 @@ extension LibraryCatalogStore {
         state.evidenceIdentifier = nil
     }
 
-    private func isCurrentGeneration(_ generationID: UUID) throws -> Bool {
+    func isCurrentGeneration(_ generationID: UUID) throws -> Bool {
         guard let state = try fetchState() else { return false }
         return state.currentGenerationID == generationID
             && (state.availability == .available || state.availability == .stale)
     }
 
-    private func fetchObservation(assetID: String, generationID: UUID) throws -> CatalogAssetObservation? {
+    func fetchObservation(assetID: String, generationID: UUID) throws -> CatalogAssetObservation? {
         let identity = CatalogAssetObservation.identity(generationID: generationID, assetID: assetID)
         return try context.fetch(FetchDescriptor<CatalogAssetObservation>(
             predicate: #Predicate { $0.identity == identity }
@@ -350,6 +376,7 @@ extension LibraryCatalogStore {
         return state
     }
 
+    // swiftlint:disable function_body_length
     /// Reconciliation changes the work projection only after a complete
     /// generation has been staged. Work for changed or removed assets is made
     /// stale, while matching completed work is retained for reuse.
@@ -390,15 +417,36 @@ extension LibraryCatalogStore {
                 state.status = .stale
                 state.reason = .revisionStale
                 clearCompletedEvidence(from: state)
+                try transitionLabelAnalysisState(
+                    assetID: asset.id,
+                    assetRevision: asset.modificationFingerprint,
+                    outcome: .stale,
+                    generationID: generationID,
+                    analysisRevision: revision.analysisRevision.rawValue
+                )
             } else if state.status == .running {
                 // A new generation invalidates the old in-flight token. The
                 // same revision/fingerprint can be resumed from pending.
                 state.status = .pending
                 state.reason = .cancelled
+                try transitionLabelAnalysisState(
+                    assetID: asset.id,
+                    assetRevision: asset.modificationFingerprint,
+                    outcome: .pending,
+                    generationID: generationID,
+                    analysisRevision: revision.analysisRevision.rawValue
+                )
             } else if state.status == .available, state.evidence == nil {
                 // Evidence loss is a cache miss, never successful completion.
                 state.status = .pending
                 state.reason = nil
+                try transitionLabelAnalysisState(
+                    assetID: asset.id,
+                    assetRevision: asset.modificationFingerprint,
+                    outcome: .pending,
+                    generationID: generationID,
+                    analysisRevision: revision.analysisRevision.rawValue
+                )
             }
         }
 
@@ -406,6 +454,14 @@ extension LibraryCatalogStore {
             state.generationID = generationID
             state.status = .stale
             state.reason = .revisionStale
+            try transitionLabelAnalysisState(
+                assetID: AssetID(rawValue: state.assetID),
+                assetRevision: .missing,
+                outcome: .stale,
+                generationID: generationID,
+                analysisRevision: revision.analysisRevision.rawValue
+            )
         }
     }
+    // swiftlint:enable function_body_length
 }

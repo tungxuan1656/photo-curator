@@ -128,13 +128,13 @@ actor LibraryAnalysisCoordinator {
 
     /// Invalidate and drain first, then clear checkpoint, evidence, and V4
     /// catalog work state so no old result can reappear after reset.
-    func reset() async {
+    func reset() async throws {
         runToken += 1
         await drainRootTask()
         progressHandler = nil
         await checkpointStore.reset()
         await evidenceStore.reset()
-        try? await catalogStore.resetAnalysisWork()
+        try await catalogStore.resetAnalysisWork()
         state = .reset
         clearRunBookkeeping()
     }
@@ -153,6 +153,13 @@ actor LibraryAnalysisCoordinator {
         progressHandler = onProgress
         clearRunBookkeeping()
         state = .running
+        do {
+            _ = try await catalogStore.reconcilePendingLabelPublications()
+        } catch {
+            state = .failed
+            await publish(token: token, currentAssetID: nil, force: true)
+            return
+        }
         rootTask = Task { [weak self] in
             guard let self else { return }
             await self.runRoot(token: token, schedule: schedule)

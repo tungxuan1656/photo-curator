@@ -22,7 +22,7 @@ enum UniversalFactAdapter {
     /// Durable revision for the exact identifier allowlist and confidence
     /// policy. Changing either requires a new value so cached facts do not
     /// masquerade as facts produced by the current mapper.
-    static let semanticMappingRevision = "vision-scene-map-v1"
+    static let semanticMappingRevision = "vision-scene-map-v2"
 
     /// Phase-1 snapshot of the two new observations. Pure data: nil/empty
     /// marks the frozen unavailable arms, never a fabricated value.
