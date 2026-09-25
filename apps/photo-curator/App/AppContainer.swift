@@ -16,6 +16,7 @@ struct AppContainer: Sendable {
         let albumSaveService: AlbumSaveService?
         let deletionOperations: DeletionOperationStore?
         let deletionService: PhotoDeletionService?
+        let actionContexts: LibraryActionContextStore?
         let photoLibrary: any PhotoLibraryService
         let exporter: any AlbumExportService
     }
@@ -60,6 +61,8 @@ struct AppContainer: Sendable {
     let deletionOperations: DeletionOperationStore?
     /// The only original-deletion PhotoKit mutation boundary.
     let deletionService: PhotoDeletionService?
+    /// Durable exact-set action contexts, independent from legacy workspaces.
+    let actionContexts: LibraryActionContextStore?
     let analytics: any AnalyticsService
     let memoryPressure: MemoryPressureObserver
     let modelInstallation: ModelInstallationService
@@ -82,6 +85,7 @@ struct AppContainer: Sendable {
         albumSaveService: AlbumSaveService? = nil,
         deletionOperations: DeletionOperationStore? = nil,
         deletionService: PhotoDeletionService? = nil,
+        actionContexts: LibraryActionContextStore? = nil,
         analytics: any AnalyticsService,
         memoryPressure: MemoryPressureObserver,
         modelInstallation: ModelInstallationService,
@@ -117,6 +121,7 @@ struct AppContainer: Sendable {
         self.albumSaveService = albumSaveService
         self.deletionOperations = deletionOperations
         self.deletionService = deletionService
+        self.actionContexts = actionContexts
         self.analytics = analytics
         self.memoryPressure = memoryPressure
         self.modelInstallation = modelInstallation
@@ -229,7 +234,7 @@ struct AppContainer: Sendable {
         let workspaceURL = root.appendingPathComponent("workspace.store")
         do {
             let modelContainer = try ModelContainer(
-                for: Schema(versionedSchema: PhotoCuratorSchemaV8.self),
+                for: Schema(versionedSchema: PhotoCuratorSchemaV9.self),
                 migrationPlan: PhotoCuratorMigrationPlan.self,
                 configurations: ModelConfiguration(url: workspaceURL)
             )
@@ -258,6 +263,7 @@ struct AppContainer: Sendable {
                 albumSaveService: nil,
                 deletionOperations: nil,
                 deletionService: nil,
+                actionContexts: nil,
                 photoLibrary: PhotoLibraryPermissionService(),
                 exporter: PhotoKitAlbumExporter()
             )
@@ -282,6 +288,7 @@ struct AppContainer: Sendable {
         let deletionService = deletionOperations.map {
             PhotoDeletionService(operations: $0, photoLibrary: photoLibrary)
         }
+        let actionContexts = LibraryActionContextStore(modelContainer: modelContainer)
         return WorkspaceSetup(
             modelContainer: modelContainer,
             store: store,
@@ -293,6 +300,7 @@ struct AppContainer: Sendable {
             albumSaveService: albumSaveService,
             deletionOperations: deletionOperations,
             deletionService: deletionService,
+            actionContexts: actionContexts,
             photoLibrary: photoLibrary,
             exporter: exporter
         )

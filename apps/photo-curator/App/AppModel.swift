@@ -107,6 +107,12 @@ final class AppModel {
     var libraryLabelEditorLoadFailed = false
     var libraryQueryGeneration = 0
     var libraryLabelEditorGeneration = 0
+    var libraryActionSelection: LibraryQuerySelectionSnapshot?
+    var libraryActionContext: LibraryActionContextSnapshot?
+    var libraryActionContexts: [LibraryActionContextSnapshot] = []
+    var libraryAlbumDestinations: [LibraryAlbumDestination] = []
+    var libraryActionError: String?
+    var libraryActionBusy = false
     /// In-flight partial finalization (Continue Without Them), scoped per
     /// session: first tap owns it, repeat taps join it.
     private var finalizeFlight: (session: SessionID, task: Task<Void, Never>)?
@@ -812,6 +818,34 @@ extension AppModel {
         libraryLabelEditorLoadFailed = false
         path.append(.libraryLabelEditor(assetID: assetID))
         Task { await loadLibraryLabelEditor(assetID: assetID) }
+    }
+
+    func openLibraryActionPreview(selection: LibraryQuerySelectionSnapshot) {
+        guard let result = libraryQueryResult,
+              selection.catalogGenerationID == result.catalogGenerationID,
+              selection.labelProjectionRevision == result.labelProjectionRevision,
+              selection.queryIdentity == result.query.identity,
+              !selection.selectedAssetIDs.isEmpty,
+              Set(selection.selectedAssetIDs).isSubset(of: result.completeAssetIDs)
+        else { return }
+        libraryActionSelection = selection
+        if let context = libraryActionContext {
+            let unfinished = context.status == .prepared || context.status == .staged
+                || context.status == .executing || context.status == .partial
+                || context.status == .needsReconciliation
+            let sameSet = context.assetIDs == selection.selectedAssetIDs.map(\.rawValue)
+                && context.queryIdentity == selection.queryIdentity
+                && context.catalogGenerationID == selection.catalogGenerationID
+                && context.labelProjectionRevision == selection.labelProjectionRevision
+            if !unfinished || !sameSet {
+                libraryActionContext = nil
+            }
+        }
+        libraryActionError = nil
+        if path.last != .libraryActionPreview {
+            path.append(.libraryActionPreview)
+        }
+        Task { await loadLibraryAlbumDestinations() }
     }
 
     func dismissLibraryPhoto() {

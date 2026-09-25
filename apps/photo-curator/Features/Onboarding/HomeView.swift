@@ -45,8 +45,24 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
     private func actionArea(appModel: AppModel) -> some View {
+        VStack(spacing: 16) {
+            if !appModel.libraryActionContexts.isEmpty {
+                Button {
+                    appModel.openLibrarySavedWork()
+                } label: {
+                    Label(String(localized: "library.savedWork.title"), systemImage: "tray.full")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .padding(.horizontal)
+            }
+            authorizationActionArea(appModel: appModel)
+        }
+    }
+
+    @ViewBuilder
+    private func authorizationActionArea(appModel: AppModel) -> some View {
         switch appModel.authorization {
         case .authorized, .limited:
             if let snapshot = appModel.resumeSnapshot {

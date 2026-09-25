@@ -12,6 +12,14 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-25 — feat-046 completion
+
+**State**: done
+**Done**: Completed exact-set action contexts, stable album destination/retry, exact deletion safeguards/recovery, and en/vi/a11y/migration coverage.
+**Evidence**: Exact-set action contexts; stable album destination/retry; exact deletion safeguards/recovery; en/vi/a11y/migration. `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations, generic iOS Simulator `BUILD SUCCEEDED`; tests skipped DEC-040). `git diff --check` PASS.
+**Blockers**: none
+**Next**: feat-047
+
 ## 2026-09-24 — feat-045 completion
 
 **State**: done
@@ -19,6 +27,14 @@
 **Evidence**: `./init.sh` PASS: SwiftFormat, strict SwiftLint with 0 violations, generic iOS Simulator `BUILD SUCCEEDED`; tests skipped under DEC-040. `git diff --check` PASS.
 **Blockers**: none
 **Next**: feat-046 — action integration.
+
+## 2026-09-24 — feat-046 activation
+
+**State**: active
+**Done**: Activated feat-046 after feat-045 completion. Recorded the approved exact-set architecture: independent durable action contexts keyed by frozen selection IDs and catalog/label revisions; no legacy `ReviewModel` selection authority; preflight rejection for changed or access-mismatched sets; stable album destination identity; and preservation of existing deletion confirmation, full-access, durable-digest, immutable-executing-set, recovery, and no-automatic-retry safeguards.
+**Evidence**: Documentation/tracker activation only; no source edits and no implementation or quality claim. Parent owns validation.
+**Blockers**: Durable action-context bridge, destination persistence/retry, and exact-set staging/deletion integration remain open.
+**Next**: Bridge feat-045 frozen selection to independent durable action contexts, then implement stable album destinations and deletion recovery.
 
 ## 2026-09-24 — feat-044 residual Oracle closure
 

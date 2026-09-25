@@ -49,7 +49,8 @@ struct RootView: View {
                                 onManagePersonalLabels: {
                                     Task { await appModel.refreshLibraryPersonalLabels() }
                                 },
-                                onSelectionChanged: { appModel.updateLibrarySelection($0) }
+                                onSelectionChanged: { appModel.updateLibrarySelection($0) },
+                                onOpenActions: { appModel.openLibraryActionPreview(selection: $0) }
                             )
                         } else {
                             LibraryDiscoveryView(
@@ -71,6 +72,51 @@ struct RootView: View {
                         }
                     }
                     .task { await appModel.loadLibraryFacetedBrowsing() }
+                case .libraryActionPreview:
+                    if let selection = appModel.libraryActionSelection {
+                        LibraryActionTray(
+                            selectedAssetIDs: selection.selectedAssetIDs,
+                            context: appModel.libraryActionContext,
+                            destinations: appModel.libraryAlbumDestinations,
+                            busy: appModel.libraryActionBusy,
+                            error: appModel.libraryActionError,
+                            onReloadDestinations: {
+                                Task { await appModel.loadLibraryAlbumDestinations() }
+                            },
+                            onAlbum: { destination in
+                                try await appModel.runLibraryAlbumAction(destination: destination)
+                            },
+                            onRetryAlbum: {
+                                try await appModel.retryLibraryAlbumAction()
+                            },
+                            onStageDeletion: {
+                                try await appModel.stageLibraryDeletion()
+                            },
+                            onConfirmDeletion: {
+                                try await appModel.confirmLibraryDeletion()
+                            },
+                            onCancelDeletion: {
+                                try await appModel.cancelLibraryDeletionStage()
+                            },
+                            onReconcileDeletion: {
+                                try await appModel.reconcileLibraryDeletion()
+                            }
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            String(localized: "library.actions.selectionUnavailable"),
+                            systemImage: "checkmark.circle.trianglebadge.exclamationmark",
+                            description: Text(
+                                String(localized: "library.actions.selectionChanged")
+                            )
+                        )
+                    }
+                case .librarySavedWork:
+                    LibrarySavedWorkView(
+                        contexts: appModel.libraryActionContexts,
+                        onOpen: { appModel.openLibrarySavedAction($0) }
+                    )
+                    .task { await appModel.refreshLibraryActionRecovery() }
                 case let .libraryGroup(groupID):
                     if let context = appModel.libraryGroupContext(for: groupID) {
                         LibraryGroupDetailView(

@@ -1,6 +1,8 @@
 import Foundation
 import Photos
 
+// swiftlint:disable type_body_length
+
 /// Independent album-save boundary (feat-035 owner).
 ///
 /// Owns `AlbumSaveOperation` reconciliation and is the only caller of album
@@ -16,6 +18,7 @@ import Photos
 actor AlbumSaveService {
     enum SaveIntent: Sendable {
         case fresh(draftIDs: [AssetID], albumName: String)
+        case freshDestination(draftIDs: [AssetID], destination: LibraryAlbumDestination)
         case retryRemaining
     }
 
@@ -83,6 +86,10 @@ actor AlbumSaveService {
         return operation
     }
 
+    func operation(sessionID: SessionID) async -> AlbumSaveOperationSnapshot? {
+        await operations.load(sessionID: sessionID.rawValue)
+    }
+
     /// Display state for `Saving`/`Completion`: durable operation first, then
     /// the file `SaveState` legacy handoff when SwiftData is unavailable.
     func displayState(
@@ -131,6 +138,9 @@ actor AlbumSaveService {
             return try await resumeOperation(existing, albumID: albumID, sessionID: sessionID)
         }
         await operations.upsert(draft.prepared)
+        if let albumID = draft.prepared.albumLocalIdentifier {
+            return try await resumeOperation(draft.prepared, albumID: albumID, sessionID: sessionID)
+        }
         return try await createAndFill(
             sessionID: sessionID, albumName: draft.albumName, ordered: draft.ordered
         )
@@ -153,14 +163,21 @@ actor AlbumSaveService {
     ) async throws -> FreshDraft {
         let draft: [AssetID]
         let albumName: String
+        let albumLocalIdentifier: String?
         switch intent {
         case let .fresh(ids, name):
             draft = ids
             albumName = name
+            albumLocalIdentifier = nil
+        case let .freshDestination(ids, destination):
+            draft = ids
+            albumName = destination.title
+            albumLocalIdentifier = destination.localIdentifier
         case .retryRemaining:
             if let existing = await operations.load(sessionID: sessionID.rawValue) {
                 draft = existing.draftIDs.map { AssetID(rawValue: $0) }
                 albumName = existing.albumTitle
+                albumLocalIdentifier = existing.albumLocalIdentifier
             } else {
                 throw ExportError.assetsUnavailable
             }
@@ -176,7 +193,7 @@ actor AlbumSaveService {
             draftIDs: rawIDs,
             digest: AlbumSaveOperation.digest(for: rawIDs),
             statusRawValue: AlbumSaveStatus.prepared.rawValue,
-            albumLocalIdentifier: nil,
+            albumLocalIdentifier: albumLocalIdentifier,
             albumTitle: albumName,
             addedIDs: [],
             missingIDs: [],
@@ -321,6 +338,16 @@ actor AlbumSaveService {
                 addedIDs: [],
                 missingIDs: []
             )
+        case let .freshDestination(ids, destination):
+            let ordered = canonicalOrder(resolveDraft(ids))
+            return SaveState(
+                sessionID: sessionID,
+                albumLocalIdentifier: destination.localIdentifier ?? "",
+                albumTitle: destination.title,
+                requestedIDs: ordered,
+                addedIDs: [],
+                missingIDs: []
+            )
         case .retryRemaining:
             return SaveState(
                 sessionID: sessionID,
@@ -358,3 +385,5 @@ private func mapped(_ error: ExportError) -> SaveOutcome {
         .failed(.assetsUnavailable)
     }
 }
+
+// swiftlint:enable type_body_length
