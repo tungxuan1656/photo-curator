@@ -8,6 +8,31 @@ import Photos
 /// collision-safe album (`name`, `name 2`, …); retries reuse the persisted
 /// album identity. Only called after the user taps Save.
 struct PhotoKitAlbumExporter: AlbumExportService, Sendable {
+    func writableAlbums() async throws -> [LibraryAlbumDestination] {
+        try Task.checkCancellation()
+        guard await Self.isAuthorized() else { throw ExportError.permissionLost }
+        let collections = PHAssetCollection.fetchAssetCollections(
+            with: .album, subtype: .any, options: nil
+        )
+        var destinations: [LibraryAlbumDestination] = []
+        collections.enumerateObjects { collection, _, _ in
+            guard collection.canPerform(.addContent),
+                  let title = collection.localizedTitle,
+                  !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else { return }
+            destinations.append(LibraryAlbumDestination(
+                localIdentifier: collection.localIdentifier,
+                title: title
+            ))
+        }
+        return destinations.sorted {
+            if $0.title != $1.title {
+                return $0.title.localizedStandardCompare($1.title) == .orderedAscending
+            }
+            return $0.id < $1.id
+        }
+    }
+
     func createAlbum(name: String) async throws -> CreatedAlbum {
         try Task.checkCancellation()
         guard await Self.isAuthorized() else { throw ExportError.permissionLost }

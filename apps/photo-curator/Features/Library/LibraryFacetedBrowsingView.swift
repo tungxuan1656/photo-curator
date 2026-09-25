@@ -14,6 +14,7 @@ struct LibraryFacetedBrowsingView: View {
     let onEditLabels: (AssetID) -> Void
     let onManagePersonalLabels: () -> Void
     let onSelectionChanged: (LibraryQuerySelectionSnapshot) -> Void
+    let onOpenActions: (LibraryQuerySelectionSnapshot) -> Void
 
     @State private var mode: LibraryResultMode = .photos
     @State private var showingFilters = false
@@ -30,7 +31,8 @@ struct LibraryFacetedBrowsingView: View {
         onOpenGroup: @escaping (LibraryQueryGroupContext) -> Void,
         onEditLabels: @escaping (AssetID) -> Void,
         onManagePersonalLabels: @escaping () -> Void,
-        onSelectionChanged: @escaping (LibraryQuerySelectionSnapshot) -> Void = { _ in }
+        onSelectionChanged: @escaping (LibraryQuerySelectionSnapshot) -> Void = { _ in },
+        onOpenActions: @escaping (LibraryQuerySelectionSnapshot) -> Void = { _ in }
     ) {
         self.result = result
         self.observations = observations
@@ -41,6 +43,7 @@ struct LibraryFacetedBrowsingView: View {
         self.onEditLabels = onEditLabels
         self.onManagePersonalLabels = onManagePersonalLabels
         self.onSelectionChanged = onSelectionChanged
+        self.onOpenActions = onOpenActions
         _query = State(initialValue: result.query)
         _selection = State(initialValue: LibrarySelectionState(snapshot: result.selection))
     }
@@ -293,6 +296,12 @@ struct LibraryFacetedBrowsingView: View {
                 publishSelection()
             }
             .font(.subheadline.weight(.semibold))
+            if !selection.isEmpty {
+                Button("library.browse.actions") {
+                    onOpenActions(selection.snapshot)
+                }
+                .font(.subheadline.weight(.semibold))
+            }
             if selectionInvalidated {
                 Text("library.browse.selectionCleared")
                     .font(.caption).foregroundStyle(.secondary)

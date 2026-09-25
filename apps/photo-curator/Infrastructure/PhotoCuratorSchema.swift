@@ -100,6 +100,16 @@ enum PhotoCuratorSchemaV8: VersionedSchema {
     }
 }
 
+/// Additive durable catalog action contexts. Action state is independent from
+/// review workspaces, album membership, and deletion operations.
+enum PhotoCuratorSchemaV9: VersionedSchema {
+    static var versionIdentifier = Schema.Version(9, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
+        PhotoCuratorSchemaV8.models + [LibraryActionContext.self]
+    }
+}
+
 enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [
@@ -111,6 +121,7 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             PhotoCuratorSchemaV6.self,
             PhotoCuratorSchemaV7.self,
             PhotoCuratorSchemaV8.self,
+            PhotoCuratorSchemaV9.self,
         ]
     }
 
@@ -143,6 +154,10 @@ enum PhotoCuratorMigrationPlan: SchemaMigrationPlan {
             .lightweight(
                 fromVersion: PhotoCuratorSchemaV7.self,
                 toVersion: PhotoCuratorSchemaV8.self
+            ),
+            .lightweight(
+                fromVersion: PhotoCuratorSchemaV8.self,
+                toVersion: PhotoCuratorSchemaV9.self
             ),
         ]
     }

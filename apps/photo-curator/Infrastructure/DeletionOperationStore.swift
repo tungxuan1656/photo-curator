@@ -87,6 +87,31 @@ actor DeletionOperationStore {
         try save()
     }
 
+    /// Reopens a cancelled, pre-dispatch row for a new explicit confirmation
+    /// of the same exact set. Executing or outcome-bearing rows are never
+    /// reusable.
+    func resetCancelledToPrepared(_ snapshot: PhotoDeletionOperationSnapshot) throws -> Bool {
+        guard let operation = try fetch(operationID: snapshot.operationID) else { return false }
+        guard operation.statusRawValue == PhotoDeletionStatus.cancelled.rawValue,
+              operation.scopeID == snapshot.scopeID,
+              operation.stagedIDs == snapshot.stagedIDs,
+              operation.digest == snapshot.digest,
+              operation.schemaVersion == snapshot.schemaVersion,
+              operation.submittedIDs.isEmpty,
+              operation.deletedIDs.isEmpty,
+              operation.accessUnknownIDs.isEmpty,
+              operation.failedIDs.isEmpty,
+              operation.unresolvedIDs.isEmpty
+        else { throw DeletionOperationStoreError.transitionConflict }
+        operation.confirmedAt = snapshot.confirmedAt
+        operation.createdAt = snapshot.createdAt
+        operation.pendingIDs = snapshot.stagedIDs
+        operation.statusRawValue = PhotoDeletionStatus.prepared.rawValue
+        operation.updatedAt = Date()
+        try save()
+        return true
+    }
+
     /// Compare-and-set for the only mutation-dispatch transition. The row
     /// must still be the exact prepared identity supplied by the caller.
     @discardableResult

@@ -234,6 +234,7 @@ extension AppModel {
         await refreshAuthorization()
         await refreshDeletionRecovery()
         await refreshResumeSnapshot()
+        await refreshLibraryActionRecovery()
         await awaitCatalogReconciliation()
         await reconcileLibraryComparison()
         await startLibraryAnalysis(resume: false)

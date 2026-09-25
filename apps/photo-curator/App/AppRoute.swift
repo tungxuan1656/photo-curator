@@ -11,6 +11,8 @@ enum AppRoute: Hashable, Sendable {
     case home
     case libraryDiscovery
     case libraryFacetedBrowsing
+    case libraryActionPreview
+    case librarySavedWork
     case libraryGroup(groupID: UUID)
     case libraryPhoto(assetID: AssetID, pagerIDs: [AssetID])
     case libraryLabelEditor(assetID: AssetID)

@@ -35,6 +35,7 @@ enum PhotoDeletionServiceError: Error, Sendable, Equatable {
     case fullReadWriteAccessRequired
     case invalidExactSet
     case invalidConfirmation
+    case exactSetChanged
     case operationAlreadyExists
     case operationMissing
     case transitionConflict
@@ -103,7 +104,9 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
         )
 
         do {
-            try await operations.insertIfAbsent(prepared)
+            if try await operations.resetCancelledToPrepared(prepared) == false {
+                try await operations.insertIfAbsent(prepared)
+            }
         } catch {
             Self.logCriticalWriteFailure()
             throw Self.mapStoreError(error)
@@ -120,17 +123,18 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
                 throw PhotoDeletionServiceError.fullReadWriteAccessRequired
             }
 
-            if resolved.foundIDs.isEmpty {
-                do {
-                    try await operations.update(operationID: request.operationID) { operation in
-                        Self.setOutcome(.unresolved, for: resolved.missingIDs, on: operation)
-                        operation.statusRawValue = PhotoDeletionStatus.needsReconciliation.rawValue
-                    }
-                } catch {
-                    Self.logCriticalWriteFailure()
-                    throw Self.mapStoreError(error)
-                }
-                return try await requiredResult(operationID: request.operationID)
+            // PhotoKit can change between the initial resolution and the
+            // mutation boundary. Resolve the complete canonical set again
+            // immediately before transitioning to executing; any difference
+            // aborts without dispatching deletion or shrinking the set.
+            try Task.checkCancellation()
+            let dispatchResolution = Self.resolve(orderedIDs)
+            guard dispatchResolution.foundIDs == resolved.foundIDs,
+                  dispatchResolution.missingIDs == resolved.missingIDs,
+                  dispatchResolution.foundIDs == orderedIDs,
+                  dispatchResolution.missingIDs.isEmpty
+            else {
+                throw PhotoDeletionServiceError.exactSetChanged
             }
 
             try Task.checkCancellation()
@@ -186,6 +190,10 @@ actor PhotoDeletionService: PhotoDeletionServiceProtocol {
             throw CancellationError()
         } catch let error as PhotoDeletionServiceError {
             if error == .fullReadWriteAccessRequired, !executing {
+                throw error
+            }
+            if error == .exactSetChanged, !executing {
+                await markCancelled(operationID: request.operationID, expected: prepared)
                 throw error
             }
             if executing {

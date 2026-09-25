@@ -99,6 +99,35 @@ extension LibraryCatalogStore {
         )
     }
 
+    /// Validates an action's frozen IDs against the currently published
+    /// generation and label projection without changing either catalog state
+    /// or the action selection.
+    func validateFrozenSelection(_ selection: LibraryQuerySelectionSnapshot) throws {
+        guard let state = try fetchState(),
+              let generationID = state.currentGenerationID,
+              state.availability == .available || state.availability == .stale
+        else {
+            throw LibraryCatalogStoreError.unavailable
+        }
+        guard generationID == selection.catalogGenerationID,
+              state.labelProjectionRevision == selection.labelProjectionRevision
+        else {
+            throw LibraryCatalogStoreError.actionSelectionRevisionMismatch
+        }
+        let selected = selection.selectedAssetIDs
+        let canonical = Array(Set(selected)).sorted { $0.rawValue < $1.rawValue }
+        guard !selected.isEmpty, selected == canonical else {
+            throw LibraryCatalogStoreError.actionSelectionUnavailable
+        }
+        let observations = try context.fetch(FetchDescriptor<CatalogAssetObservation>(
+            predicate: #Predicate { $0.generationID == generationID }
+        ))
+        let availableIDs = Set(observations.map { AssetID(rawValue: $0.assetID) })
+        guard Set(selected).isSubset(of: availableIDs) else {
+            throw LibraryCatalogStoreError.actionSelectionUnavailable
+        }
+    }
+
     private func validate(_ query: LibraryQuery) throws {
         let admitted = Dictionary(uniqueKeysWithValues: PhotoLabelTaxonomy.supportedLabels.map { ($0.id, $0) })
         let personalIDs = try Set(context.fetch(FetchDescriptor<CatalogPersonalLabelDefinition>()).map(\.id))

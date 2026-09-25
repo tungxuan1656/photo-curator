@@ -95,6 +95,8 @@ extension AnalysisCache {
 
 /// Creates a new collision-safe album from existing assets. Never modifies or deletes originals.
 protocol AlbumExportService: Sendable {
+    /// Existing user-owned albums that can accept photo assets.
+    func writableAlbums() async throws -> [LibraryAlbumDestination]
     /// Creates a new collision-safe album (`name`, `name 2`, …). Never reuses
     /// a pre-existing album. Throws `permissionLost` / `creationFailed`.
     func createAlbum(name: String) async throws -> CreatedAlbum

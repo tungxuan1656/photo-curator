@@ -438,14 +438,14 @@
       "depends_on": ["feat-043", "feat-044"],
       "gate": "AND/OR faceted queries, contextual counts, editable labels, filtered groups and exact snapshot selection; en/vi and ./init.sh pass",
       "id": "feat-045",
-      "status": "active",
+      "status": "done",
       "title": "Faceted discovery and label editing"
     },
     {
       "depends_on": ["feat-045"],
       "gate": "Exact selection actions, stable album destination and retry, independent staging/deletion safeguards and durable recovery; ./init.sh passes",
       "id": "feat-046",
-      "status": "todo",
+      "status": "done",
       "title": "Exact-set organization actions"
     },
     {
