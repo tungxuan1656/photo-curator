@@ -1,7 +1,7 @@
 import Foundation
 
-/// Typed navigation routes for the app. Legacy selection/review routes remain
-/// session-scoped; library routes are independent of a curation session.
+/// Typed navigation routes for the app. Catalog routes are the primary entry;
+/// legacy session routes remain reachable only from matching saved work/recovery.
 enum AppRoute: Hashable, Sendable {
     /// Reserved: first-run entry, shown as root (never pushed) in G1.
     case welcome

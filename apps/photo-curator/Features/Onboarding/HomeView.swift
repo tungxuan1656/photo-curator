@@ -1,8 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// S04 Home skeleton. Copy owned by ux-flows §6.1. Denied/restricted replace the CTA
-/// with the access-required card (never a dead Curate Photos button).
+/// Catalog-first home. Legacy session routes remain reachable only through their
+/// matching saved-work or recovery surfaces.
 struct HomeView: View {
     @Environment(AppModel.self) private var appModel
     @State private var showsAccessGuidance = false
@@ -30,16 +30,6 @@ struct HomeView: View {
                 }
             }
         }
-        .confirmationDialog(
-            "Discard this curation?",
-            isPresented: $appModel.confirmingNewSession,
-            titleVisibility: .visible
-        ) {
-            Button("Discard Curation", role: .destructive) { appModel.startNewSession(confirmed: true) }
-            Button("Keep Curation", role: .cancel) { appModel.startNewSession(confirmed: false) }
-        } message: {
-            Text("Your original photos will stay unchanged. The current analysis and selection will be removed.")
-        }
         .sheet(isPresented: $showsAccessGuidance) {
             AccessGuidanceSheet()
         }
@@ -57,6 +47,19 @@ struct HomeView: View {
                 .buttonStyle(.bordered)
                 .padding(.horizontal)
             }
+            if !appModel.deletionRecoveryOperations.isEmpty {
+                Button {
+                    if appModel.path.last != .deletionRecovery {
+                        appModel.path.append(.deletionRecovery)
+                    }
+                } label: {
+                    Label(String(localized: "home.recovery.title"), systemImage: "exclamationmark.arrow.circlepath")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .padding(.horizontal)
+                .accessibilityHint(String(localized: "home.recovery.hint"))
+            }
             authorizationActionArea(appModel: appModel)
         }
     }
@@ -65,12 +68,6 @@ struct HomeView: View {
     private func authorizationActionArea(appModel: AppModel) -> some View {
         switch appModel.authorization {
         case .authorized, .limited:
-            if let snapshot = appModel.resumeSnapshot {
-                resumeCard(snapshot: snapshot, appModel: appModel)
-            } else {
-                startCurationCard(appModel: appModel)
-            }
-
             if appModel.authorization == .limited {
                 limitedAccessBanner
             }
@@ -108,83 +105,6 @@ struct HomeView: View {
         }
     }
 
-    private func resumeCard(snapshot: ResumeSnapshot, appModel: AppModel) -> some View {
-        let stage = snapshot.processingStage?.localizedTitle ?? "In progress"
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("Unfinished Curation", systemImage: "clock.arrow.circlepath")
-                    .font(.caption.bold())
-                    .foregroundStyle(Color.accentColor)
-                Spacer()
-                Text(snapshot.updatedAt, style: .relative)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text("Continue Curation")
-                .font(.headline)
-
-            Text(
-                "\(snapshot.sourceCount) photos · \(stage) · \(snapshot.updatedAt, style: .relative)"
-            )
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-
-            HStack(spacing: 10) {
-                Button("Continue") { appModel.continueResumedSession() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-
-                Button("Start New") { appModel.requestNewSession() }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-        .padding(.horizontal)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(
-            "Continue curation, \(snapshot.sourceCount) photos, \(stage)"
-        )
-    }
-
-    private func startCurationCard(appModel: AppModel) -> some View {
-        VStack(spacing: 10) {
-            Button {
-                appModel.startCleanupReview()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "trash")
-                    Text("Clean Up Photos")
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-
-            Button {
-                appModel.startAlbumReview()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                    Text("Build an Album")
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-
-            Text("Select photos to begin · Originals remain unchanged")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal)
-    }
-
     private func libraryEntryCard(appModel: AppModel) -> some View {
         Button {
             appModel.openLibraryDiscovery()
@@ -194,9 +114,9 @@ struct HomeView: View {
                     .font(.title2)
                     .foregroundStyle(Color.curatorAccent)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Browse Your Library")
+                    Text("home.library.title")
                         .font(.headline)
-                    Text("Start with similar groups, then inspect every photo.")
+                    Text("home.library.subtitle")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
@@ -211,7 +131,7 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal)
-        .accessibilityHint("Opens group discovery and all photos.")
+        .accessibilityHint(String(localized: "home.library.hint"))
     }
 
     private var limitedAccessBanner: some View {
@@ -289,13 +209,12 @@ private struct HomeHeroBanner: View {
             .padding(.top, 4)
 
             VStack(spacing: 6) {
-                Text("Turn photo clutter into curated stories")
+                Text("home.hero.title")
                     .font(.title3.bold())
                     .multilineTextAlignment(.center)
 
                 Text(
-                    // swiftlint:disable:next line_length
-                    "Pick a trip, event, or batch of photos. Photos Curator will find the strongest set for you to review."
+                    "home.hero.subtitle"
                 )
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -309,27 +228,27 @@ private struct HomeHeroBanner: View {
 private struct HomeHowItWorksSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("How It Works")
+            Text("home.howItWorks")
                 .font(.headline)
                 .padding(.horizontal)
 
             VStack(spacing: 12) {
                 stepRow(
                     number: "1",
-                    title: "Select Source Photos",
-                    subtitle: "Recommended: 50–500 photos from a trip, event, or album."
+                    title: "home.steps.library.title",
+                    subtitle: "home.steps.library.subtitle"
                 )
                 Divider().padding(.leading, 46)
                 stepRow(
                     number: "2",
-                    title: "On-Device AI Curation",
-                    subtitle: "Evaluates sharpness, expressions, and groups similar angles."
+                    title: "home.steps.inspect.title",
+                    subtitle: "home.steps.inspect.subtitle"
                 )
                 Divider().padding(.leading, 46)
                 stepRow(
                     number: "3",
-                    title: "Review & Save Album",
-                    subtitle: "Inspect the proposed album and export back to Apple Photos."
+                    title: "home.steps.action.title",
+                    subtitle: "home.steps.action.subtitle"
                 )
             }
             .padding(16)
@@ -367,32 +286,18 @@ private struct HomeFeatureHighlights: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 10) {
             card(
-                icon: "sparkles",
-                iconColor: Color.curatorSunsetCoral,
-                title: "Quality First",
-                headline: "Best Smiles & Focus",
-                subtext: "Filters blurs, closed eyes, and bad lighting."
-            )
-            card(
-                icon: "square.2.layers.3d",
-                iconColor: Color.curatorAccent,
-                title: "Clustering",
-                headline: "Prunes Duplicates",
-                subtext: "Recommends the single top shot per moment."
-            )
-            card(
                 icon: "lock.shield",
                 iconColor: .green,
-                title: "Private",
-                headline: "100% On-Device",
-                subtext: "Photos never leave your iPhone."
+                title: "home.feature.private.title",
+                headline: "home.feature.private.headline",
+                subtext: "home.feature.private.subtitle"
             )
             card(
-                icon: "arrow.triangle.2.circlepath",
+                icon: "checkmark.shield",
                 iconColor: .green,
-                title: "Safe",
-                headline: "Never Deletes",
-                subtext: "Original library stays completely intact."
+                title: "home.feature.actions.title",
+                headline: "home.feature.actions.headline",
+                subtext: "home.feature.actions.subtitle"
             )
         }
         .padding(.horizontal)

@@ -1,6 +1,6 @@
 # Performance and Lifecycle
 
-**Status:** Intended catalog budgets, not device measurements · 2026-09-23.
+**Status:** Catalog budgets, not device measurements · 2026-09-25.
 Owns work bounds and resource claims for a persistent photo index.
 
 ## Planning budgets
@@ -8,7 +8,8 @@ Owns work bounds and resource claims for a persistent photo index.
 | Work | Starting constraint |
 |---|---|
 | Library size | Entire authorized photo scope; capacity is unmeasured, not capped by the old 100–2,000 selection target |
-| Image analysis batch | 32 assets; tune within 16–64 only with recorded reason |
+| Analysis page | 32 assets; tune within 16–64 only with recorded reason |
+| Comparison image batch | 2 images |
 | Heavy image concurrency | At most 2 initial lanes |
 | Shared image permits | One two-permit `ImageWorkArbiter` across session, enrichment, and visible work |
 | Progress publication | At most 4 Hz |
@@ -16,6 +17,7 @@ Owns work bounds and resource claims for a persistent photo index.
 | Browsing | Metadata-first; no wait for complete inference |
 | Thumbnail work | Visible cells plus a bounded preheat window |
 | Detail previews | Bounded current/adjacent work; release obsolete images |
+| Image lifetime | Scoped to the active analysis/comparison/inspection operation; release after use |
 | Similarity candidates | Bounded retrieval; no library-wide all-pairs image comparison |
 | Query execution | Compact indexed projections; no per-query scan of every analysis JSON |
 | Mutations | Serialized operation ownership with fixed exact sets |
@@ -43,8 +45,9 @@ Retry unavailable analysis through explicit user action or a documented changed-
 Deletion retry remains exclusively explicit under [review rules](../product-specs/review-rules.md).
 
 Lifecycle invariants: a new run invalidates its prior run token; cancellation
-drains structured tasks before terminal publication; reset invalidates the token,
-clears resumable handoff/status safely, and rejects late results. The shared
+drains structured tasks before terminal publication; reset cancels and drains catalog
+plus legacy workers, invalidates the token, clears derived cache/evidence/projections,
+status, and checkpoints safely, and rejects late results. The shared
 arbiter is the only image-work permit pool and visible work takes priority.
 
 ## Scale work

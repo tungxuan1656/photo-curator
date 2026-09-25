@@ -1,6 +1,6 @@
 # UI Copy — English / Vietnamese
 
-**Status:** Target copy contract · 2026-09-23. Catalog integration belongs to each UI feature.
+**Status:** Target copy contract · 2026-09-25. Catalog integration belongs to each UI feature.
 Owns user-facing vocabulary, state messages, and accessibility composition.
 [UX flows](ux-flows.md) own placement; [review rules](review-rules.md) own effects.
 
@@ -122,6 +122,8 @@ The table does not promise that all candidate labels ship together.
 | Unresolved | We could not confirm the deletion outcome. No automatic retry will occur. | Chưa thể xác nhận kết quả xóa. Ứng dụng sẽ không tự động thử lại. |
 | Reconcile | Check Outcomes | Kiểm tra kết quả |
 | Saved work | Saved Work | Công việc đã lưu |
+| Saved work contents | Catalog actions · Workspace scopes · Album operations · Deletion operations · Legacy artifacts | Hành động danh mục · Phạm vi không gian làm việc · Thao tác album · Thao tác xóa · Thành phần cũ |
+| Recovery behavior | Opening recovery does not retry or dispatch work | Mở phục hồi không thử lại hoặc thực hiện công việc |
 | Local save failure | Could not save this change. Your previous choices are unchanged. | Không thể lưu thay đổi này. Các lựa chọn trước đó vẫn được giữ nguyên. |
 | Catalog unavailable | Could not open the photo index. Your saved data has been kept. | Không thể mở chỉ mục ảnh. Dữ liệu đã lưu vẫn được giữ nguyên. |
 | Access states | Full access / Limited access / Access denied / Access restricted | Quyền đầy đủ / Quyền có giới hạn / Đã từ chối quyền / Quyền bị hạn chế |
@@ -146,4 +148,4 @@ Use String Catalog plural variants and identical argument names in both language
 VoiceOver labels compose position, action-selection state, relevant labels, and named actions.
 Group controls expose relation and count. Color never carries the only state signal.
 Never translate raw provider identifiers as user labels without taxonomy mapping.
-Retain legacy catalog strings while compatibility screens still reference them.
+Historical session strings remain only on compatibility/recovery surfaces; do not present them as current catalog entry copy.

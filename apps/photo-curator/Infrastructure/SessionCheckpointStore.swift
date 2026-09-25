@@ -303,13 +303,13 @@ actor SessionCheckpointStore {
         let hasSaveState: Bool
     }
 
-    enum LegacyArtifactKind: String, Sendable {
+    enum LegacyArtifactKind: String, Sendable, Hashable {
         case checkpoint
         case result
         case feedback
     }
 
-    enum LegacyArtifactState: Sendable {
+    enum LegacyArtifactState: Sendable, Hashable {
         case decoded
         case unreadable
 
@@ -346,13 +346,28 @@ actor SessionCheckpointStore {
         }
     }
 
+    struct LegacySessionArtifactsListing: Sendable {
+        let artifacts: [LegacySessionArtifacts]
+        let isAvailable: Bool
+    }
+
     /// Discovers every UUID-named JSON artifact in the legacy checkpoint,
     /// result, and feedback directories. A present decode failure is retained
     /// as `.unreadable` so migration cannot skip it.
     func legacySessionArtifacts() async -> [LegacySessionArtifacts] {
-        let checkpointIDs = await files.listJSONFiles(under: directory)
-        let resultIDs = await files.listJSONFiles(under: resultsDirectory)
-        let feedbackIDs = await files.listJSONFiles(under: "feedback")
+        await legacySessionArtifactsWithAvailability().artifacts
+    }
+
+    /// Recovery-aware variant of `legacySessionArtifacts()`. Listing failure
+    /// is distinct from an empty/missing legacy directory and is never
+    /// converted into a successful empty inventory.
+    func legacySessionArtifactsWithAvailability() async -> LegacySessionArtifactsListing {
+        let checkpointListing = await files.listJSONFilesWithAvailability(under: directory)
+        let resultListing = await files.listJSONFilesWithAvailability(under: resultsDirectory)
+        let feedbackListing = await files.listJSONFilesWithAvailability(under: "feedback")
+        let checkpointIDs = checkpointListing.files
+        let resultIDs = resultListing.files
+        let feedbackIDs = feedbackListing.files
         let checkpointSet = Set(checkpointIDs)
         let resultSet = Set(resultIDs)
         let feedbackSet = Set(feedbackIDs)
@@ -396,7 +411,12 @@ actor SessionCheckpointStore {
                 decodedFeedback: feedback?.value
             ))
         }
-        return artifacts.sorted { $0.sessionID.rawValue.uuidString < $1.sessionID.rawValue.uuidString }
+        return LegacySessionArtifactsListing(
+            artifacts: artifacts.sorted { $0.sessionID.rawValue.uuidString < $1.sessionID.rawValue.uuidString },
+            isAvailable: checkpointListing.isAvailable
+                && resultListing.isAvailable
+                && feedbackListing.isAvailable
+        )
     }
 
     private func decodeLegacyArtifact<Value: Codable>(

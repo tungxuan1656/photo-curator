@@ -5,6 +5,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.scenePhase) private var scenePhase
+    @State private var savedWorkRecovery: SavedWorkRecoverySnapshot?
 
     var body: some View {
         @Bindable var appModel = appModel
@@ -112,11 +113,19 @@ struct RootView: View {
                         )
                     }
                 case .librarySavedWork:
-                    LibrarySavedWorkView(
-                        contexts: appModel.libraryActionContexts,
-                        onOpen: { appModel.openLibrarySavedAction($0) }
-                    )
-                    .task { await appModel.refreshLibraryActionRecovery() }
+                    Group {
+                        if let savedWorkRecovery {
+                            LibrarySavedWorkView(
+                                snapshot: savedWorkRecovery,
+                                onOpen: { item in
+                                    await appModel.openLibrarySavedWork(item)
+                                }
+                            )
+                        } else {
+                            ProgressView("library.savedWork.loading")
+                        }
+                    }
+                    .task { savedWorkRecovery = await appModel.loadSavedWorkRecovery() }
                 case let .libraryGroup(groupID):
                     if let context = appModel.libraryGroupContext(for: groupID) {
                         LibraryGroupDetailView(
@@ -265,7 +274,7 @@ struct RootView: View {
                     appModel.path.append(.deletionRecovery)
                 } label: {
                     Label(
-                        "Deletion needs your attention",
+                        String(localized: "home.recovery.title"),
                         systemImage: "exclamationmark.arrow.circlepath"
                     )
                     .frame(maxWidth: .infinity, minHeight: 44)
@@ -273,7 +282,7 @@ struct RootView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
                 .padding(.horizontal)
-                .accessibilityHint("Review saved deletion outcomes; no deletion will restart automatically")
+                .accessibilityHint(String(localized: "home.recovery.hint"))
             }
         }
     }

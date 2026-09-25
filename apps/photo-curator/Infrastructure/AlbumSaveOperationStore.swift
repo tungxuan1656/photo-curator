@@ -21,6 +21,19 @@ actor AlbumSaveOperationStore {
         return operation.snapshot()
     }
 
+    /// Returns operation rows that still have work an explicit retry can
+    /// reconcile. This is read-only and does not claim a save or touch
+    /// PhotoKit. Terminal rows with no remaining IDs are intentionally omitted.
+    func recoverableOperations() -> [AlbumSaveOperationSnapshot] {
+        guard let rows = try? context.fetch(FetchDescriptor<AlbumSaveOperation>()) else {
+            return []
+        }
+        return rows
+            .map { $0.snapshot() }
+            .filter { !$0.remainingIDs.isEmpty }
+            .sorted { $0.updatedAt > $1.updatedAt }
+    }
+
     /// Inserts or replaces the session row. Digest/status/outcomes are owned
     /// by `AlbumSaveService`; this store never invents them.
     func upsert(_ snapshot: AlbumSaveOperationSnapshot) {

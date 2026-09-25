@@ -5,9 +5,10 @@ An on-device companion to Apple Photos for finding similar shots and organizing 
 ## Product direction
 
 ```text
-Accessible Photos library → incremental analysis
+Authorized Photos access → catalog faceted discovery → incremental analysis
   → similar groups + labels → combined filters → inspect / compare
   → select photos → label / add to album / stage deletion
+  → Saved Work recovery
 ```
 
 Similar-photo grouping is the first priority. Labels help users find and narrow the photos they want to handle.
@@ -17,8 +18,9 @@ It does not edit photos or replace everyday Photos viewing.
 
 ## Implementation status
 
-The current code has native analysis, revision-aware caches, session-based grouping/review, durable choices, album saving, and confirmed deletion.
-The organization-first catalog, continuous analysis lifecycle, label taxonomy, and faceted discovery are planned work.
+The current code has catalog discovery, native analysis, revision-aware caches, durable action contexts,
+Saved Work recovery, and separate album/deletion operations. Legacy session flows are retained as
+recovery-only compatibility paths; they are not new entry routes.
 See the [roadmap](docs/exec-plans/roadmap.md) and [feature tracker](feature_index.json) for delivery state.
 No model or image-accuracy claim is implied by the new direction.
 

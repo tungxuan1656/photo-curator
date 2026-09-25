@@ -1,17 +1,17 @@
 # Apple Framework Boundaries
 
-**Status:** Existing service boundary with intended catalog integration · 2026-09-23.
+**Status:** Existing service boundary with catalog integration · 2026-09-25.
 Owns framework contact points. This is a repository integration map, not a substitute for current SDK documentation.
 
 ## Photos reads and reconciliation
 
 `PhotoLibraryPermissionService` owns authorization and metadata fetches.
 `PHAsset.localIdentifier` supplies domain identity within the authorized library.
-The existing `LibraryChangeTracker` posts a change notification; catalog reconciliation is planned work.
+The existing `LibraryChangeTracker` posts a change notification for durable catalog reconciliation.
 
 The catalog enumerates accessible metadata first and reconciles new, edited, and inaccessible assets.
 Recheck access when the app returns to the foreground and before writes.
-A missing identifier does not prove deletion or successful app mutation.
+Unreadable or missing data remains unavailable/unresolved; a missing identifier does not prove deletion or successful app mutation.
 
 The app requests read-write authorization in context because optional album/deletion actions write to Photos.
 Limited access remains useful for browsing and organization.
@@ -23,6 +23,8 @@ Blocking deletion under limited access is a [product rule](../product-specs/revi
 The current protocol describes a 512-pixel analysis edge and a preview capped at 2048 pixels.
 These sizes are implementation facts, not image-quality guarantees.
 Image-loading callbacks remain cancellation-aware and expose iCloud waiting separately from failure.
+Decoded image lifetime is scoped to the current analysis, comparison, or inspection operation and is
+released when that operation ends.
 
 `VisionAnalysisService` receives oriented bounded images and returns compact facts plus transient similarity artifacts.
 Vision requests, `PHAsset`, and decoded pixel buffers remain behind services.
@@ -56,6 +58,7 @@ No automatic retry occurs after interruption.
 Successful completion must be persisted for the submitted set before reporting deleted assets.
 Lost callback/persistence evidence remains uncertain.
 Follow [operation recovery](data-model.md#deletion-operation-state-machine); reconciliation never dispatches a mutation.
+Opening Saved Work recovery is also read-only: it never retries work or dispatches a Photos mutation.
 Disclose iCloud synchronization and Recently Deleted without promising immediate recovered storage.
 
 ## Error boundary

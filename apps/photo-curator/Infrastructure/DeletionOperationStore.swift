@@ -34,7 +34,7 @@ actor DeletionOperationStore {
         try context.fetch(FetchDescriptor<PhotoDeletionOperation>())
             .compactMap { operation in
                 switch PhotoDeletionStatus(rawValue: operation.statusRawValue) {
-                case .prepared, .executing, .needsReconciliation:
+                case .prepared, .executing, .partial, .needsReconciliation:
                     operation.snapshot()
                 default:
                     nil

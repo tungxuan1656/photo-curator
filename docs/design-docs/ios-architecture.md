@@ -1,6 +1,6 @@
 # iOS Architecture
 
-**Status:** Observed baseline and intended organization architecture · 2026-09-23.
+**Status:** Observed catalog architecture and legacy recovery boundaries · 2026-09-25.
 Owns topology, orchestration, code navigation, and concurrency boundaries.
 
 ## Observed implementation
@@ -18,10 +18,10 @@ AppContainer.live → AppModel / ProcessingModel / ReviewModel
 
 | Area under `apps/photo-curator/` | Existing responsibility |
 |---|---|
-| `App/AppContainer.swift`, `AppModel.swift`, `AppRoute.swift`, `RootView.swift` | Composition, startup, session navigation |
+| `App/AppContainer.swift`, `AppModel.swift`, `AppRoute.swift`, `RootView.swift` | Composition, startup, catalog and recovery navigation |
 | `Services/Photos/PhotoLibraryPermissionService.swift` | Authorization, asset metadata, library-change notification |
 | `Services/Photos/ImageLoaderService.swift` | Bounded thumbnails, oriented analysis images, previews, iCloud handling |
-| `Services/Photos/BatchPipeline.swift`, `Services/Session/SelectionSessionCoordinator.swift` | Batches, cancellation, session checkpoints, results |
+| `Services/Photos/BatchPipeline.swift`, `Services/Session/SelectionSessionCoordinator.swift` | Legacy session batches, cancellation, checkpoints, and results |
 | `Services/Analysis/` | Native image facts and transient FeaturePrint evidence |
 | `Domain/Selection/DuplicateResolver.swift`, `Domain/Models/SelectionGrouping.swift` | Candidate/group logic and canonical group representation |
 | `Infrastructure/FileAnalysisCache.swift` | Revision-aware recomputable analysis rows |
@@ -29,14 +29,15 @@ AppContainer.live → AppModel / ProcessingModel / ReviewModel
 | `Features/Review/` | Shared session review, suggestions, detail, group views |
 | `Services/Export/`, `Services/Deletion/` | Separate durable Photos mutation services |
 
-`AppContainer.live` wires native analysis. Qwen source and package dependencies remain, but do not establish an active admitted model.
-The change observer currently publishes a notification; it is not a durable incremental catalog.
-`SelectionResult` still couples analysis/grouping to album selection output.
+`AppContainer.live` wires native analysis and injects the durable `actionContexts` store.
+Qwen source and package dependencies remain historical material, but do not establish an active admitted model.
+Catalog reconciliation is durable; legacy session navigation/readers remain recovery-only compatibility paths.
+Legacy `SelectionResult` still couples the historical session analysis/grouping path to album selection output;
+catalog discovery and action contexts do not depend on it.
 
 ## Intended topology
 
-The following names describe planned responsibilities, not implemented symbols.
-Feature plans own exact type introduction and integration.
+The following names describe catalog/action responsibilities; feature plans own exact type integration.
 
 ```text
 SwiftUI discovery / label / filter / group / inspector views
@@ -55,8 +56,8 @@ SwiftUI discovery / label / filter / group / inspector views
 ```
 
 The coordinator uses one `nativeImageFacts` capability and its evidence file,
-V4 per-asset/capability work state, a durable reconciliation handoff, and a
-shared two-permit `ImageWorkArbiter`.
+V4 per-asset/capability work state, a durable reconciliation handoff, a two-image
+comparison batch, and a shared two-permit `ImageWorkArbiter`.
 
 The library index outlives any analysis job or user action.
 An analysis job enriches assets; it does not select an album or wait for all photos before publishing useful results.
@@ -73,7 +74,8 @@ Photo detail consumes an asset and a scoped order, not a required `SelectionResu
 - `ImageWorkArbiter` owns two shared image-work permits across session analysis, catalog enrichment, and visible inspection; no lane creates a private pool.
 - Providers return evidence and availability. Label/group policies interpret evidence without writing user choices.
 - Album and deletion services retain independent operation stores and mutation gates.
-- Existing session readers remain compatibility paths until saved-work recovery is integrated.
+- Existing session readers are historical compatibility paths surfaced through Saved Work recovery;
+  they are not new entry routes.
 
 Use concrete stores rather than a generic repository abstraction.
 Keep dependency seams at Apple/runtime boundaries and between independently versioned evidence producers.
@@ -102,9 +104,14 @@ The action does not rerun analysis or consume an automatically expanding query.
 
 Use `@MainActor` UI state and actor-isolated coordination/stores.
 Use bounded structured tasks for image work and drain tasks before closing a generation. Every evidence/status commit checks the actor-owned run token, catalog generation, asset fingerprint, and capability/provider revisions.
-New work invalidates the prior run token; cancellation drains tasks before terminal publication; reset invalidates the token, clears resumable handoff/status safely, and rejects late results.
+New work invalidates the prior run token; cancellation drains tasks before terminal publication.
+Reset cancels and drains catalog plus legacy workers, invalidates the token, clears derived
+cache/evidence/projections/status/checkpoints safely, preserves labels/overrides, workspace
+choices, action contexts, staged drafts, and mutation records, and rejects late results.
 Unavailable and retryable outcomes use typed reasons rather than raw errors or inferred counters.
-The shared `ImageWorkArbiter` has two permits and prioritizes visible inspection without exceeding the global image-work bound.
+The shared `ImageWorkArbiter` has two permits and prioritizes visible inspection without exceeding
+the global image-work bound. Image loading is scoped to each analysis/comparison/inspection
+operation and released rather than retained as a library-wide decoded set.
 Prioritize visible inspection over enrichment work and release image buffers promptly.
 Resource policy belongs to [performance](../ship-gates/performance.md).
 
@@ -112,7 +119,7 @@ Resource policy belongs to [performance](../ship-gates/performance.md).
 
 Preserve the current SwiftData V1→V2 history and add an explicit catalog migration.
 Do not reinterpret existing scope choices as catalog-wide labels or choices.
-Cutover follows the [roadmap](../exec-plans/roadmap.md), with legacy recovery retained until the final integration feature.
+Catalog entry follows the [roadmap](../exec-plans/roadmap.md); legacy recovery remains available through Saved Work.
 
 Run `./init.sh` for every behavior-changing feature.
 Compilation establishes neither image accuracy nor whole-library device capacity.
