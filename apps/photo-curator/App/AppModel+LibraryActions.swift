@@ -1,3 +1,4 @@
+// swiftlint:disable file_length - Saved Work recovery actions share this lane with catalog actions.
 import Foundation
 
 enum LibraryActionError: Error, Sendable, Equatable {
@@ -14,6 +15,166 @@ enum LibraryActionError: Error, Sendable, Equatable {
 // MARK: - feat-046 exact-set catalog actions
 
 extension AppModel {
+    /// Reads every Saved Work source without creating migrations or changing
+    /// any persisted state. Each source remains independent so old workspace
+    /// choices cannot become catalog actions or inferred deletion sets.
+    func refreshSavedWorkRecovery() async -> SavedWorkRecoverySnapshot {
+        var items: [SavedWorkRecoveryItem] = []
+        var storage: [SavedWorkStorageStatus] = []
+
+        // SwiftFormat wraps multi-clause conditions before the brace.
+        // swiftlint:disable opening_brace
+        if let actionContexts = container.actionContexts,
+           let contexts = try? await actionContexts.listAll()
+        {
+            storage.append(.init(storage: .catalogActions, isAvailable: true))
+            items.append(contentsOf: contexts.map(SavedWorkRecoveryItem.catalogAction))
+        } else {
+            storage.append(.init(storage: .catalogActions, isAvailable: false))
+        }
+
+        if let workspaceStore = container.workspaceStore,
+           let scopes = try? await workspaceStore.listScopes()
+        {
+            storage.append(.init(storage: .workspaceScopes, isAvailable: true))
+            items.append(contentsOf: scopes.map(SavedWorkRecoveryItem.workspaceScope))
+        } else {
+            storage.append(.init(storage: .workspaceScopes, isAvailable: false))
+        }
+
+        if let albumOperations = container.albumOperations {
+            storage.append(.init(storage: .albumSaves, isAvailable: true))
+            let operations = await albumOperations.recoverableOperations()
+            items.append(contentsOf: operations.map(SavedWorkRecoveryItem.albumSave))
+        } else {
+            storage.append(.init(storage: .albumSaves, isAvailable: false))
+        }
+
+        if let deletionOperations = container.deletionOperations,
+           let operations = try? await deletionOperations.recoverableOperations()
+        {
+            storage.append(.init(storage: .deletions, isAvailable: true))
+            items.append(contentsOf: operations.map(SavedWorkRecoveryItem.deletion))
+        } else {
+            storage.append(.init(storage: .deletions, isAvailable: false))
+        }
+        // swiftlint:enable opening_brace
+
+        let legacy = await container.checkpointStore.legacySessionArtifactsWithAvailability()
+        storage.append(.init(storage: .legacyCheckpoints, isAvailable: legacy.isAvailable))
+        if legacy.isAvailable == false {
+            items.append(.unavailableLegacyStorage(.legacyCheckpoints))
+        }
+        items.append(contentsOf: legacySavedWorkItems(from: legacy.artifacts))
+        return SavedWorkRecoverySnapshot(items: items, storage: storage)
+    }
+
+    private func legacySavedWorkItems(
+        from artifacts: [SessionCheckpointStore.LegacySessionArtifacts]
+    ) -> [SavedWorkRecoveryItem] {
+        var items: [SavedWorkRecoveryItem] = []
+        for session in artifacts {
+            if let record = session.checkpoint {
+                items.append(.legacy(SavedWorkLegacyArtifact(
+                    sessionID: session.sessionID, kind: record.kind, state: record.state,
+                    checkpoint: session.decodedCheckpoint, result: nil, feedback: nil
+                )))
+            }
+            if let record = session.result {
+                items.append(.legacy(SavedWorkLegacyArtifact(
+                    sessionID: session.sessionID, kind: record.kind, state: record.state,
+                    checkpoint: nil, result: session.decodedResult, feedback: nil
+                )))
+            }
+            if let record = session.feedback {
+                items.append(.legacy(SavedWorkLegacyArtifact(
+                    sessionID: session.sessionID, kind: record.kind, state: record.state,
+                    checkpoint: nil, result: nil, feedback: session.decodedFeedback
+                )))
+            }
+        }
+        return items
+    }
+
+    /// Alias for callers that treat Saved Work as a read operation rather
+    /// than a refresh. Both paths use the same non-persistent aggregation.
+    func loadSavedWorkRecovery() async -> SavedWorkRecoverySnapshot {
+        await refreshSavedWorkRecovery()
+    }
+
+    /// Opens an item through the existing recovery entry points. No query is
+    /// rerun, no operation is dispatched, and a legacy payload is never
+    /// translated into a catalog action or a deletion request.
+    @discardableResult
+    func openLibrarySavedWork(_ item: SavedWorkRecoveryItem) async -> Bool {
+        guard item.availability.isAvailable else { return false }
+        switch item {
+        case let .catalogAction(context):
+            openLibrarySavedAction(context)
+            return true
+        case let .workspaceScope(scope):
+            pendingReviewIntent = scope.intent
+            return await openSavedReviewSession(scope.id)
+        case let .albumSave(operation):
+            return await openSavedReviewSession(operation.sessionID)
+        case let .deletion(operation):
+            deletionOperation = operation
+            if operation.status == .prepared {
+                await openPreparedDeletionReview(operation)
+            } else {
+                await checkDeletionOutcomes(operationID: operation.operationID)
+            }
+            return true
+        case let .legacy(artifact):
+            return await openSavedReviewSession(artifact.sessionID.rawValue)
+        }
+    }
+
+    private func openSavedReviewSession(_ sessionID: UUID) async -> Bool {
+        let session = SessionID(rawValue: sessionID)
+        activeSessionID = session
+        lastSessionID = session
+        return await beginReview(for: session)
+    }
+
+    /// Enters S15 without turning a recovered album operation into an
+    /// implicit PhotoKit retry. A fresh Final Review entry has no persisted
+    /// operation and retains the normal explicit Save Album behavior; a saved
+    /// operation is inspected until the user taps its existing retry action.
+    func loadAlbumSaveEntry(for sessionID: SessionID) async -> SaveOutcome {
+        if let flight = saveFlight, flight.session == sessionID {
+            return await flight.task.value
+        }
+        let operation = await container.albumOperations?.load(sessionID: sessionID.rawValue)
+        let hasLegacyState = await container.checkpointStore.loadSaveState(sessionID: sessionID) != nil
+        guard operation != nil || hasLegacyState else {
+            return .failed(.assetsUnavailable)
+        }
+        let state: SaveState?
+        if let operation {
+            state = SaveState(
+                sessionID: SessionID(rawValue: operation.sessionID),
+                albumLocalIdentifier: operation.albumLocalIdentifier ?? "",
+                albumTitle: operation.albumTitle,
+                requestedIDs: operation.draftIDs.map(AssetID.init(rawValue:)),
+                addedIDs: operation.addedIDs.map(AssetID.init(rawValue:)),
+                missingIDs: operation.missingIDs.map(AssetID.init(rawValue:))
+            )
+        } else {
+            state = await savedAlbum(for: sessionID)
+        }
+        guard let state else {
+            return .failed(.assetsUnavailable)
+        }
+        if !state.addedIDs.isEmpty, state.remainingIDs.isEmpty, state.missingIDs.isEmpty {
+            return .saved(state: state)
+        }
+        if !state.addedIDs.isEmpty {
+            return .partial(state: state)
+        }
+        return .failed(.assetsUnavailable)
+    }
+
     func refreshLibraryActionRecovery() async {
         guard let actionContexts = container.actionContexts,
               var contexts = try? await actionContexts.listAll()

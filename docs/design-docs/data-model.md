@@ -1,6 +1,6 @@
 # Data Model
 
-**Status:** Observed persistence plus intended catalog contract · 2026-09-23.
+**Status:** Observed persistence plus catalog contract · 2026-09-25.
 Owns storage, record identity, revisions, migration, and operation recovery.
 PhotoKit remains authoritative for originals. Domain behavior belongs to [organization rules](../product-specs/organization-rules.md) and [review rules](../product-specs/review-rules.md).
 
@@ -80,6 +80,10 @@ Existing scope-bound choices remain intact.
 New action contexts reference explicit catalog IDs and a chosen draft/staging destination, not inferred `SelectionResult` picks.
 Multiple legacy scopes for one asset do not collapse into a single choice.
 
+Saved Work is an aggregate recovery projection over catalog action contexts, workspace scopes,
+album operations, deletion operations, and legacy artifacts. If a source is unreadable or missing,
+its work remains unavailable or unresolved rather than becoming inferred success.
+
 Album operations store the exact member set, canonical digest, destination identity, status, and per-ID outcomes.
 The destination distinguishes newly created and existing writable albums.
 Retry retains the destination identity and does not reconstruct it from a display name.
@@ -122,7 +126,7 @@ Reconciliation never dispatches deletion. Dismissing an outcome never discards u
 6. Commit a migration marker only after required writes succeed.
 7. On interruption, repeat idempotently. Preserve source data until committed migration.
 
-The earlier importer still maps selected/restored to album included and rejected/removed to album excluded.
+Historical migration behavior: the earlier importer maps selected/restored to album included and rejected/removed to album excluded.
 It maps cleanup to undecided and progress to unseen; those historical mappings do not create catalog labels.
 The new migration never unions legacy album drafts or staging sets.
 
@@ -132,8 +136,10 @@ An old binary must not reopen an incompatible migrated store; rollback is a code
 ## Retention and unknown access
 
 Access loss hides affected assets from actionable query results without deleting user state.
-Missing IDs mean inaccessible/unresolved unless an authoritative observation establishes otherwise.
-Analysis reset removes derived evidence/projections and requeues work. It preserves user labels, overrides, drafts, and operations.
+Unreadable or missing data remains unavailable/unresolved unless an authoritative observation establishes otherwise.
+Analysis reset cancels and drains catalog plus legacy workers, then removes derived cache/evidence,
+projections, analysis status, and checkpoints before requeueing work. It preserves user labels,
+overrides, workspace choices, action contexts, staged drafts, and mutation records.
 It never removes originals.
 
 No durable entity stores original pixels, face boxes, face identities, precise GPS, or Vision objects.

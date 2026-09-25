@@ -979,48 +979,46 @@ extension AppModel {
         }
     }
 
-    /// Reset Analysis (Settings → retention): clears the derived-analysis
-    /// cache plus every persisted session artifact (checkpoints, results,
-    /// feedback, save states) for the current session. Apple Photos
-    /// originals are untouched. Cancels in-flight work first.
+    /// Reset Analysis (Settings → retention): drains catalog analysis work,
+    /// then clears only its recomputable evidence, projections, status, and
+    /// scheduling handoff. Legacy session state and mutation work are not part
+    /// of this reset. Apple Photos originals are untouched.
     func resetAnalysis() {
+        guard !analysisResetInFlight else { return }
+        // BatchPipeline shares the derived analysis cache. Cancel before
+        // starting the async reset so no new cache write can be admitted.
         processing.cancel()
-        let finalizeTask = finalizeFlight?.task
-        finalizeTask?.cancel()
-        finalizeFlight = nil
-        let sessionID = activeSessionID ?? lastSessionID
-        activeSessionID = nil
-        resumeSnapshot = nil
-        reviewModel = nil
-        path.removeAll()
         analysisResetInFlight = true
+        librarySnapshotGeneration += 1
+        libraryQueryGeneration += 1
+        libraryLabelEditorGeneration += 1
+        libraryAnalysisProgress = nil
         Task {
-            await cancelSave(for: sessionID)
+            // Comparison work publishes a catalog projection independently of
+            // the label-analysis coordinator. Drain it before the shared
+            // derived-state reset so a late publish cannot resurrect groups.
+            await container.libraryComparisonCoordinator?.pause()
             if let coordinator = container.libraryAnalysisCoordinator {
+                await coordinator.invalidateAndDrain()
+                await processing.awaitTermination()
+                await container.analysisCache.reset()
                 do {
-                    try await coordinator.reset()
+                    try await coordinator.clearDerivedState()
                 } catch {
                     libraryAnalysisState = .failed
                     analysisResetInFlight = false
                     return
                 }
                 libraryAnalysisState = await coordinator.currentState()
-                libraryAnalysisProgress = nil
+            } else {
+                await processing.awaitTermination()
+                await container.analysisCache.reset()
             }
-            await processing.awaitTermination()
-            if let finalizeTask {
-                await finalizeTask.value
-            }
-            await container.analysisCache.reset()
-            if sessionID != nil {
-                _ = await deleteSessionData(sessionID, context: "Resetting analysis")
-            }
-            lastSessionID = nil
+            // Deliberately do not cancel or delete legacy session work here:
+            // SessionCheckpointStore, workspace scopes, action contexts,
+            // staging, album operations, and deletion operations are retained.
             reconcileCatalog()
             analysisResetInFlight = false
-            if analysisLifecyclePermitted {
-                await startLibraryAnalysis(resume: true)
-            }
         }
     }
 

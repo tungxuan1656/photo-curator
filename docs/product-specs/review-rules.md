@@ -1,6 +1,6 @@
 # Review and Action Rules
 
-**Status:** Intended action-selection contract with existing deletion safeguards · 2026-09-23.
+**Status:** Action-selection contract with existing deletion safeguards · 2026-09-25.
 Owns the meaning of user actions and mutation gates.
 [Organization rules](organization-rules.md) own queries and groups; [data model](../design-docs/data-model.md) owns persistence.
 
@@ -51,8 +51,9 @@ It does not select future matches or hidden full-group context.
 | Select suggested candidates | Preview exact candidates, then update temporary selection on confirmation | All durable choices |
 
 Opening or scrolling a grid never marks all visible photos reviewed.
-An existing legacy suggestion can still update its named draft dimension after explicit preview.
-It cannot stage deletion or acquire authority over the new catalog selection.
+Historical session suggestions remain compatibility artifacts. Recovery can expose their persisted
+state, but opening recovery never retries work or dispatches a mutation. They cannot stage deletion
+or acquire authority over the catalog selection.
 
 ## Album operations
 
@@ -94,6 +95,7 @@ Never claim immediate recovered bytes.
 ## Recovery and migration
 
 Partial and unresolved outcomes remain distinct from success.
+Unreadable or missing data remains unavailable or unresolved; it never becomes inferred success.
 Dismissal does not erase unresolved operations.
 An access change cannot rewrite an earlier known success as unknown.
 Persistent save failures never display a saved-choice claim.

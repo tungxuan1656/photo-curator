@@ -246,8 +246,11 @@ extension AppModel {
     func reconcileCatalog() {
         Task { [weak self] in
             guard let self else { return }
+            guard !self.analysisResetInFlight else { return }
             await self.awaitCatalogReconciliation()
+            guard !self.analysisResetInFlight else { return }
             await self.reconcileLibraryComparison()
+            guard !self.analysisResetInFlight else { return }
             await self.startLibraryAnalysis(resume: true)
         }
     }
@@ -354,7 +357,7 @@ extension AppModel {
     }
 
     private func reconcileLibraryComparison() async {
-        guard analysisLifecyclePermitted else { return }
+        guard analysisLifecyclePermitted, !analysisResetInFlight else { return }
         await container.libraryComparisonCoordinator?.reconcile()
     }
 }

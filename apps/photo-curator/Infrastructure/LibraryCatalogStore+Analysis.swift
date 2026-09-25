@@ -76,14 +76,46 @@ extension LibraryCatalogStore {
         let states = try context.fetch(FetchDescriptor<AnalysisWorkState>(
             predicate: #Predicate { $0.capabilityRawValue == capabilityRawValue }
         )).filter { generationID == nil || $0.generationID == generationID }
+        let automaticAssignments = try context.fetch(FetchDescriptor<CatalogAutomaticLabelAssignment>())
+        let comparisonSnapshots = try context.fetch(FetchDescriptor<CatalogComparisonSnapshotProjection>())
+        let comparisonGroups = try context.fetch(FetchDescriptor<CatalogComparisonGroupProjection>())
+        let comparisonMembers = try context.fetch(FetchDescriptor<CatalogComparisonMemberProjection>())
+        let comparisonEvidence = try context.fetch(FetchDescriptor<CatalogComparisonEvidenceProjection>())
 
         try context.transaction {
+            // Automatic assignments and comparison rows are derived analysis
+            // evidence. User-owned overrides, personal-label definitions and
+            // assignments, and catalog action records are different models and
+            // are intentionally not touched here.
+            for assignment in automaticAssignments {
+                context.delete(assignment)
+            }
             for state in states {
                 state.status = .pending
                 state.reason = .cancelled
                 clearCompletedEvidence(from: state)
             }
             try resetLabelAnalysisStates()
+            for member in comparisonMembers {
+                context.delete(member)
+            }
+            for group in comparisonGroups {
+                context.delete(group)
+            }
+            for evidence in comparisonEvidence {
+                context.delete(evidence)
+            }
+            for snapshot in comparisonSnapshots {
+                context.delete(snapshot)
+            }
+            let singletonKey = CatalogComparisonState.singletonID
+            let comparisonState = try context.fetch(FetchDescriptor<CatalogComparisonState>(
+                predicate: #Predicate { $0.singletonKey == singletonKey }
+            )).first
+            if let comparisonState {
+                comparisonState.currentSnapshotID = nil
+                comparisonState.updatedAt = Date()
+            }
             try context.save()
         }
     }

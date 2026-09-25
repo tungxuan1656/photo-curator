@@ -129,9 +129,23 @@ actor LibraryAnalysisCoordinator {
     /// Invalidate and drain first, then clear checkpoint, evidence, and V4
     /// catalog work state so no old result can reappear after reset.
     func reset() async throws {
+        await invalidateAndDrain()
+        try await clearDerivedState()
+    }
+
+    /// Invalidates the active run before draining it. Callers that coordinate
+    /// another derived cache can clear that cache between this boundary and
+    /// `clearDerivedState()`.
+    func invalidateAndDrain() async {
         runToken += 1
         await drainRootTask()
         progressHandler = nil
+    }
+
+    /// Clears only the durable catalog-analysis handoff and derived evidence.
+    /// User-owned labels and operation/workspace records remain outside this
+    /// boundary.
+    func clearDerivedState() async throws {
         await checkpointStore.reset()
         await evidenceStore.reset()
         try await catalogStore.resetAnalysisWork()

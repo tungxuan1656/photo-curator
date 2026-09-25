@@ -452,7 +452,7 @@
       "depends_on": ["feat-046"],
       "gate": "Default catalog cutover, legacy saved-work recovery, bounded lifecycle/reset behavior and truthful current documentation; ./init.sh passes",
       "id": "feat-047",
-      "status": "todo",
+      "status": "done",
       "title": "Catalog cutover and lifecycle hardening"
     }
   ],

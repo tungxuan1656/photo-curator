@@ -73,7 +73,7 @@ struct Saving: View {
                 .padding()
                 .task {
                     liveAuthorization = await appModel.photoLibrary.authorizationStatus()
-                    outcome = await appModel.saveAlbum(for: sessionID)
+                    outcome = await appModel.loadAlbumSaveEntry(for: sessionID)
                 }
             }
         }

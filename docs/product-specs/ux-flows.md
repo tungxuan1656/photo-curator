@@ -1,8 +1,9 @@
 # UX Flows
 
-**Status:** Intended organization-first UX · 2026-09-23.
+**Status:** Organization-first UX with catalog entry and recovery boundaries · 2026-09-25.
 Owns navigation, visible states, inspection, and accessibility.
-Current code remains session-oriented until the [pivot features](../exec-plans/roadmap.md) land.
+Catalog faceted discovery is the default authorized entry. Legacy session flows are historical
+compatibility paths exposed only through recovery, not new entry routes.
 
 ## Primary navigation
 
@@ -12,13 +13,13 @@ Access education → Library / Discover
   ├─ Labels → Filtered photos ↔ Matching groups
   ├─ All photos → Photo detail
   ├─ Analysis status → Pause / Resume / Retry unavailable work
-  └─ Saved work → Album drafts / Staged deletion / Operation outcomes
+  └─ Saved Work → Catalog actions / Workspace scopes / Album operations / Deletion operations / Legacy artifacts
 
 Any result → Select photos → Label / Add to album / Stage deletion
 Staged deletion → Exact-set review → Confirmation → Outcome
 ```
 
-Discovery opens without a cleanup/album intent choice.
+After authorization, discovery opens directly without a cleanup/album intent choice.
 Similar groups receive the primary discovery entry. Label shortcuts and All Photos remain directly reachable.
 Group cards never appear only after the complete photo grid.
 The exact visual layout is implementation work; these routes are required behavior.
@@ -75,10 +76,13 @@ Only selection mode exposes bulk action controls.
 Album selection is a destination choice after photo selection, not a permanent checkbox on every photo.
 An operation preview names exact photos and the action. Rules belong to [review rules](review-rules.md).
 
-Saved album drafts, staged deletion, and unresolved operations remain reachable across app launches.
+Saved Work aggregates catalog actions, workspace scopes, album operations, deletion operations, and
+legacy artifacts, and remains reachable across app launches. Unreadable or missing data stays
+unavailable or unresolved; it is not presented as successful work.
 Their recovery does not require the old discovery query to still match.
 Storage failure shows the last committed state and explicit retry.
 Opening a result or accepting a suggested comparison never dispatches a Photos mutation.
+Opening recovery is read-only: it never retries work or dispatches a catalog, album, or deletion operation.
 
 ## Accessibility and language
 

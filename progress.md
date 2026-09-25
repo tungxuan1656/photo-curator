@@ -12,6 +12,30 @@
 
 <!-- Add each new block below this note. Do not edit older blocks. -->
 
+## 2026-09-25 — feat-047 completion
+
+**State**: done
+**Done**: Completed catalog default cutover, aggregate Saved Work recovery without auto-mutation, derived-only reset drain/cache clear, compatibility recovery, lifecycle bounds, and documentation/localization reconciliation.
+**Evidence**: Final `./init.sh` PASS (SwiftFormat, strict SwiftLint 0, generic iOS Simulator `BUILD SUCCEEDED`; test skipped per DEC-040); `git diff --check` PASS; final @oracle invariant review APPROVED.
+**Blockers**: none
+**Next**: No follow-up feature; maintain catalog lifecycle and compatibility recovery.
+
+## 2026-09-25 — feat-047 Saved Work recovery checkpoint
+
+**State**: active
+**Done**: Implemented aggregate Saved Work presentation for catalog actions, legacy workspace/session artifacts, album saves, deletion operations, and unavailable storage/artifacts. RootView now loads the recovery snapshot and keeps the existing recovery callback. Added explicit en/vi open, continue, inspect, and unavailable copy without implying automatic retry or rerun.
+**Evidence**: Targeted SwiftLint 0 violations; String Catalog JSON validation PASS; `git diff --check` PASS; simulator `xcodebuild` `BUILD SUCCEEDED`. `./init.sh` reached the same successful build but returned overall verification failure because the test stage is skipped under DEC-040.
+**Blockers**: feat-047 still lacks live `WorkspaceStore.actionContexts` wiring, persisted-record/reader inventory, lifecycle/reset boundaries, catalog route cutover, and final acceptance evidence. No feature close claimed.
+**Next**: Repair the live action-context wiring and inventory persisted readers before continuing lifecycle and route work.
+
+## 2026-09-25 — feat-047 activation
+
+**State**: active
+**Done**: Activated feat-047 after feat-046 completion. Decision: catalog discovery is the default; legacy review/session is compatibility recovery only, with no new-session entry.
+**Evidence**: Documentation/tracker activation only; no source or implementation claim. Baseline `./init.sh` PASS (SwiftFormat, strict SwiftLint 0 violations, generic iOS Simulator `BUILD SUCCEEDED`; tests skipped DEC-040).
+**Blockers**: none
+**Next**: Repair the live `WorkspaceStore.actionContexts` wiring and inventory persisted records/readers before implementation.
+
 ## 2026-09-25 — feat-046 completion
 
 **State**: done

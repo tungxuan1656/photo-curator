@@ -208,6 +208,7 @@ struct AppContainer: Sendable {
             albumSaveService: workspace.albumSaveService,
             deletionOperations: workspace.deletionOperations,
             deletionService: workspace.deletionService,
+            actionContexts: workspace.actionContexts,
             analytics: NoopAnalytics(),
             memoryPressure: MemoryPressureObserver(),
             modelInstallation: ModelInstallationService(

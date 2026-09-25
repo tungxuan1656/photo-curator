@@ -9,6 +9,11 @@ enum FileStoreError: Error, Sendable {
 /// Holds derived data and manifests, never image pixels or face data.
 /// All callers cross actor isolation with await.
 actor FileStore {
+    struct JSONFileListing: Sendable {
+        let files: [String]
+        let isAvailable: Bool
+    }
+
     private let rootDirectory: URL
 
     init(rootDirectory: URL) {
@@ -69,12 +74,33 @@ actor FileStore {
     /// Lists JSON filenames (no directories) under one relative directory.
     /// Missing directory returns []. Never throws: resume probing must not fail launch.
     func listJSONFiles(under relativePath: String) -> [String] {
-        guard let target = try? url(for: relativePath) else { return [] }
-        guard let items = try? FileManager.default.contentsOfDirectory(
-            at: target, includingPropertiesForKeys: [.contentModificationDateKey]
-        ) else { return [] }
-        return items
-            .filter { $0.pathExtension == "json" }
-            .map { $0.deletingPathExtension().lastPathComponent }
+        listJSONFilesWithAvailability(under: relativePath).files
+    }
+
+    /// Lists JSON filenames while distinguishing an absent directory from a
+    /// directory that exists but cannot be inspected. Recovery surfaces use
+    /// this result so an I/O failure is not presented as an empty saved-work
+    /// store.
+    func listJSONFilesWithAvailability(under relativePath: String) -> JSONFileListing {
+        guard let target = try? url(for: relativePath) else {
+            return JSONFileListing(files: [], isAvailable: false)
+        }
+        var isDirectory = ObjCBool(false)
+        guard FileManager.default.fileExists(atPath: target.path, isDirectory: &isDirectory) else {
+            return JSONFileListing(files: [], isAvailable: true)
+        }
+        guard isDirectory.boolValue,
+              let items = try? FileManager.default.contentsOfDirectory(
+                  at: target, includingPropertiesForKeys: [.contentModificationDateKey]
+              )
+        else {
+            return JSONFileListing(files: [], isAvailable: false)
+        }
+        return JSONFileListing(
+            files: items
+                .filter { $0.pathExtension == "json" }
+                .map { $0.deletingPathExtension().lastPathComponent },
+            isAvailable: true
+        )
     }
 }

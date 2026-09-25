@@ -1,6 +1,6 @@
 # Privacy and Retention
 
-**Status:** Organization pivot contract · 2026-09-23.
+**Status:** Organization pivot contract · 2026-09-25.
 Owns sensitive-data boundaries, local retention, access changes, and disclosure.
 
 ## Data boundary
@@ -32,13 +32,15 @@ When access changes, remove inaccessible assets from actionable results and inva
 Preserve local corrections and unresolved operation records without exposing inaccessible image content.
 Reauthorization can reconnect records by asset ID and current revision.
 
-An inaccessible asset is not proof of deletion.
+An unreadable or missing asset remains unavailable/unresolved and is not proof of deletion.
 Original deletion follows the exact-set/full-access contract in [review rules](../product-specs/review-rules.md#deletion-gate).
 
 ## Reset and retention
 
-- Reset Analysis removes derived facts and projections, then permits recomputation.
-- Reset Analysis preserves user labels, overrides, album drafts, staging, and operation history.
+- Reset Analysis cancels and drains catalog plus legacy workers, then removes derived cache/evidence,
+  projections, status, and checkpoints before permitting recomputation.
+- Reset Analysis preserves user labels, overrides, workspace choices, action contexts, staged drafts,
+  and mutation records.
 - Cache eviction never removes originals or user state.
 - Unresolved mutation records survive screen dismissal and analysis reset.
 - Any future action that erases user organization data needs separate explicit wording and confirmation.
